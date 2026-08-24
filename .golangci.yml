@@ -1,0 +1,269 @@
+# golangci-lint v2 config — https://golangci-lint.run/config/
+#
+# Deliberately minimal: every linter is off except errcheck (unchecked
+# errors). More linters will be enabled incrementally; generated files
+# (*_generated.go carry a "Code generated ... DO NOT EDIT." header) are
+# skipped automatically by the default "lenient" generated-files rule.
+version: "2"
+
+issues:
+  # No caps: a lint gate must show everything it found.
+  max-issues-per-linter: 0
+  max-same-issues: 0
+
+linters:
+  # none — start from zero enabled linters (v2 replacement for disable-all);
+  # linters are being enabled step by step, see git history.
+  default: none
+  enable:
+    # --- step 1: correctness core ---
+    - errcheck
+    - funcorder
+    - govet
+    - ineffassign
+    - staticcheck
+    - unused
+    # --- step 2: bug hunters ---
+    - asasalint
+    - asciicheck
+    - bidichk
+    - bodyclose
+    - canonicalheader
+    - contextcheck
+    - dogsled
+    - durationcheck
+    - embeddedstructfieldcheck
+    - errchkjson
+    - errname
+    - errorlint
+    - fatcontext
+    - gochecksumtype
+    - gocheckcompilerdirectives
+    - goprintffuncname
+    - gosec
+    - gosmopolitan
+    - iotamixing
+    - loggercheck
+    - makezero
+    - nilerr
+    - nilnesserr
+    - nilnil
+    - noctx
+    - reassign
+    - recvcheck
+    - rowserrcheck
+    - sloglint
+    - spancheck
+    - sqlclosecheck
+    - unconvert
+    - usestdlibvars
+    - wastedassign
+    - zerologlint
+    # --- step 3: modernization / performance ---
+    - copyloopvar
+    - dupword
+    - exptostd
+    - intrange
+    - misspell
+    - mirror
+    - modernize
+    - nolintlint
+    - prealloc
+    - perfsprint
+    - usetesting
+    # --- step 4: style / structure ---
+    # (goconst is off: schema field string keys mirror ARM ARM / ABI field
+    # names — the repetition is inherent to the DSL, a constant layer adds
+    # no safety: the keys are cross-checked by roundtrip gates.)
+    - decorder
+    - forcetypeassert
+    - godot
+    - gocritic
+    - godox
+    - importas
+    - inamedparam
+    - interfacebloat
+    - predeclared
+    - revive
+    - unparam
+    # --- step 5: the rest that fits the project ---
+    - arangolint
+    - clickhouselint
+    - containedctx
+    - exhaustive
+    - ginkgolinter
+    - gomoddirectives
+    - gomodguard_v2
+    - musttag
+    - nakedret
+    - nosprintfhostport
+    - promlinter
+    - protogetter
+    - tagalign
+    - tagliatelle
+    - testableexamples
+    - thelper
+    - unqueryvet
+    - whitespace
+    - wsl_v5
+
+    # --- deliberately NOT enabled (2026-08-16, step 5) ---
+    # They conflict with the nature of the codebase:
+    #   mnd            — bit masks/opcodes are the essence of the decoder (cf. gosec G115).
+    #   goconst        — schema string keys mirror ARM ARM field names.
+    #   dupl           — per-instruction files are uniform by design.
+    #   funlen, lll, gocyclo, cyclop, gocognit, maintidx, nestif — large
+    #                    switch decoders are the norm; golines keeps line length in check.
+    #   varnamelen     — short domain names (w, p, off, sh) are a tradition.
+    #   ireturn        — the Instr interface is the architectural backbone of the packages.
+    #   exhaustruct    — partial struct initialization is deliberate.
+    #   gochecknoglobals — parsec combinators are package-level var by nature.
+    #   gochecknoinits — an init() that registers transforms is legitimate.
+    #   err113, wrapcheck — terminal errors with context are the project
+    #                    style (CLI/tests, errors are not propagated outside the API).
+    #   nonamedreturns, noinlineerr — named returns (writeOutput) and
+    #                    inline `if err :=` are the house style.
+#   nlreturn, grouper — blank-line placement is outside the project convention.
+#   wsl_v5 is enabled with only the single after-block check (see settings):
+#   the default cuddling rules (assign/range/if/return...) conflict
+#   with the house style and are not enabled.
+    #   paralleltest, testpackage — tests are sequential and white-box (files,
+    #                    external tools, access to package internals).
+    #   iface          — single-impl backend interfaces are the arch layer.
+    #   forbidigo, goheader, depguard — they require project configuration,
+    #                    which does not exist yet (outside the enablement scope).
+    #   godoclint      — overlaps with revive (package-comments is active);
+    #                    full godoc style is the same content task as
+    #                    revive/exported.
+  settings:
+    gosec:
+      excludes:
+        # G115: decoder bit fields are masked (& 0x1f etc.) before
+        # conversion — overflow is excluded by construction.
+        - G115
+        # G101: it fires on the Mach-O load-command name table — there is
+        # no credential data in the project.
+        - G101
+        # G120: multipart parsing is already limited by http.MaxBytesReader
+        # before ParseMultipartForm is called.
+        - G120
+        # G204: launching objdump with arguments is the standard external
+        # tool of the differential tests.
+        - G204
+        # G304: paths from CLI arguments and test fixtures, not web-client input.
+        - G304
+        # G306: write permissions are chosen by file purpose (0o644 for
+        # regular files, 0o755 for executable fixtures).
+        - G306
+        # G404: math/rand in property tests — a deterministic seed, not
+        # cryptography.
+        - G404
+        # G703: path taint analysis in tests (t.TempDir + fixture names) —
+        # there is no user input there.
+        - G703
+    misspell:
+      ignore-words:
+        # Rela/RELA — an ELF relocation type (SHT_RELA, Elf64_Rela), not a
+        # misspelling of "real": misspell once "fixed" them directly in identifiers.
+        - rela
+    exhaustive:
+      # A switch with an explicit default counts as exhaustive: the author
+      # considered the remaining values. Without this, exhaustive demands
+      # listing all ~180 elf.Machine values in the name tables — pointless.
+      default-signifies-exhaustive: true
+    tagliatelle:
+      case:
+        rules:
+          # The JSON CLI (assembly-rt etc.) emits snake_case — we pin it
+          # as a convention instead of renaming to camelCase.
+          json: snake
+    revive:
+      # The explicit list = revive-defaults (the rules section replaces the
+      # whole set) minus three rules disabled with rationale below.
+      rules:
+        - name: blank-imports
+        - name: context-as-argument
+        - name: context-keys-type
+        - name: dot-imports
+        - name: empty-block
+        - name: error-naming
+        - name: error-return
+        - name: error-strings
+        - name: errorf
+        - name: superfluous-else
+        - name: if-return
+        - name: increment-decrement
+        - name: indent-error-flow
+        - name: package-comments
+        - name: range
+        - name: receiver-naming
+        - name: redefines-builtin-id
+        - name: time-naming
+        - name: unexported-return
+        - name: unreachable-code
+        - name: var-declaration
+        # ALL_CAPS constants mirror names from the ELF/Mach-O/ARM specs
+        # (like DT_NEEDED in stdlib debug/elf) — renaming breaks the
+        # resemblance to the source.
+        # - name: var-naming (disabled)
+        # 645 undocumented exports — documentation is being filled in
+        # gradually; forcing it all at once is a separate content task.
+        # - name: exported (disabled)
+        # Uniform signatures of interface implementations (WriteTo/Size):
+        # the addr parameter is deliberately the same everywhere; being
+        # unused is the norm for some instructions.
+        # - name: unused-parameter (disabled)
+    errcheck:
+      # `_ = f()` (explicit blank discard) is flagged too — handle or justify
+      # every error; silent discards are not allowed.
+      check-blank: true
+      # Report about not checking of errors in type assertions: `a := b.(MyStruct)`.
+      # Such cases aren't reported by default.
+      # Default: false
+      check-type-assertions: true
+    wsl_v5:
+      # after-block only: a blank line after a block statement's closing
+      # `}` before the next statement. The default cuddling rules
+      # (assign/range/if/return...) are the project's deliberate style;
+      # we do not enable them.
+      default: none
+      enable:
+        - after-block
+
+  exclusions:
+    rules:
+      # Rela/RELA — an ELF relocation type (SHT_RELA, Elf64_Rela), not a
+      # misspelling of "real": misspell with autofix once renamed them in identifiers.
+      - linters: [misspell]
+        text: '`(Rela|RELA|rela)` is a misspelling'
+      # Repeated register names are standard assembler syntax
+      # ("addi a0, a0, 1", "csinc x0, xzr, xzr, ne"): this is test data and
+      # technical comments, not word duplication.
+      - linters: [dupword]
+        path: _test\.go
+      - linters: [dupword]
+        path: arch/riscv/pseudo/la\.go
+      # The frontend's existing HTTP API uses camelCase tags (baseAddr):
+      # the contract must not change; the new json: snake convention is for new code.
+      - linters: [tagliatelle]
+        path: ^server/
+
+# Formatters are checked by `golangci-lint run` and applied by
+# `golangci-lint fmt` (the make fmt target).
+formatters:
+  enable:
+    - gofmt
+    - goimports
+    - gci
+    - golines
+  settings:
+    gofmt:
+      # gofmt -s: the code is already run through it (make fmt-check);
+      # the same rule here for a single source of truth.
+      simplify: true
+    gci:
+      # Import groups: std / external / own module.
+      sections:
+        - standard
+        - default
+        - prefix(github.com/okneniz/assembly)

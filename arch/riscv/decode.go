@@ -1,0 +1,141 @@
+package riscv
+
+// Decode table: the order defines the match priority
+// (first-match-wins) - for example, OP-IMM shifts before OP-IMM arithmetic
+// (a single opcode 0x13). match/mask are authoritative - from the generated
+// riscvEncodings (Spike encoding.h); each entry builds its own
+// per-instruction structure.
+
+import "strings"
+
+type decodeEntry struct {
+	name string
+	ctor func(word uint32, addr uint64) Instr
+}
+
+func newDecodeEntry(name string, ctor func(word uint32, addr uint64) Instr) decodeEntry {
+	return decodeEntry{
+		name: name,
+		ctor: ctor,
+	}
+}
+
+var decodeTable = []decodeEntry{
+	newDecodeEntry("lui", decodeLui),
+	newDecodeEntry("auipc", decodeAuipc),
+	newDecodeEntry("jal", decodeJal),
+	newDecodeEntry("jalr", decodeJalr),
+	newDecodeEntry("beq", decodeBeq),
+	newDecodeEntry("bne", decodeBne),
+	newDecodeEntry("blt", decodeBlt),
+	newDecodeEntry("bge", decodeBge),
+	newDecodeEntry("bltu", decodeBltu),
+	newDecodeEntry("bgeu", decodeBgeu),
+	newDecodeEntry("lb", decodeLb),
+	newDecodeEntry("lh", decodeLh),
+	newDecodeEntry("lw", decodeLw),
+	newDecodeEntry("ld", decodeLd),
+	newDecodeEntry("lbu", decodeLbu),
+	newDecodeEntry("lhu", decodeLhu),
+	newDecodeEntry("lwu", decodeLwu),
+	newDecodeEntry("sb", decodeSb),
+	newDecodeEntry("sh", decodeSh),
+	newDecodeEntry("sw", decodeSw),
+	newDecodeEntry("sd", decodeSd),
+	newDecodeEntry("slli", decodeSlli),
+	newDecodeEntry("srli", decodeSrli),
+	newDecodeEntry("srai", decodeSrai),
+	newDecodeEntry("addi", decodeAddi),
+	newDecodeEntry("slti", decodeSlti),
+	newDecodeEntry("sltiu", decodeSltiu),
+	newDecodeEntry("xori", decodeXori),
+	newDecodeEntry("ori", decodeOri),
+	newDecodeEntry("andi", decodeAndi),
+	newDecodeEntry("slliw", decodeSlliw),
+	newDecodeEntry("srliw", decodeSrliw),
+	newDecodeEntry("sraiw", decodeSraiw),
+	newDecodeEntry("addiw", decodeAddiw),
+	newDecodeEntry("add", decodeAdd),
+	newDecodeEntry("sub", decodeSub),
+	newDecodeEntry("sll", decodeSll),
+	newDecodeEntry("slt", decodeSlt),
+	newDecodeEntry("sltu", decodeSltu),
+	newDecodeEntry("xor", decodeXor),
+	newDecodeEntry("srl", decodeSrl),
+	newDecodeEntry("sra", decodeSra),
+	newDecodeEntry("or", decodeOr),
+	newDecodeEntry("and", decodeAnd),
+	newDecodeEntry("addw", decodeAddw),
+	newDecodeEntry("subw", decodeSubw),
+	newDecodeEntry("sllw", decodeSllw),
+	newDecodeEntry("srlw", decodeSrlw),
+	newDecodeEntry("sraw", decodeSraw),
+	newDecodeEntry("mul", decodeMul),
+	newDecodeEntry("mulh", decodeMulh),
+	newDecodeEntry("mulhsu", decodeMulhsu),
+	newDecodeEntry("mulhu", decodeMulhu),
+	newDecodeEntry("div", decodeDiv),
+	newDecodeEntry("divu", decodeDivu),
+	newDecodeEntry("rem", decodeRem),
+	newDecodeEntry("remu", decodeRemu),
+	newDecodeEntry("mulw", decodeMulw),
+	newDecodeEntry("divw", decodeDivw),
+	newDecodeEntry("divuw", decodeDivuw),
+	newDecodeEntry("remw", decodeRemw),
+	newDecodeEntry("remuw", decodeRemuw),
+	newDecodeEntry("flw", decodeFlw),
+	newDecodeEntry("fld", decodeFld),
+	newDecodeEntry("fsw", decodeFsw),
+	newDecodeEntry("fsd", decodeFsd),
+	newDecodeEntry("fadd.s", decodeFaddS),
+	newDecodeEntry("fsub.s", decodeFsubS),
+	newDecodeEntry("fmul.s", decodeFmulS),
+	newDecodeEntry("fdiv.s", decodeFdivS),
+	newDecodeEntry("fadd.d", decodeFaddD),
+	newDecodeEntry("fsub.d", decodeFsubD),
+	newDecodeEntry("fmul.d", decodeFmulD),
+	newDecodeEntry("fdiv.d", decodeFdivD),
+	newDecodeEntry("fmadd.s", decodeFmaddS),
+	newDecodeEntry("fmadd.d", decodeFmaddD),
+	newDecodeEntry("fmsub.s", decodeFmsubS),
+	newDecodeEntry("fmsub.d", decodeFmsubD),
+	newDecodeEntry("fnmsub.s", decodeFnmsubS),
+	newDecodeEntry("fnmsub.d", decodeFnmsubD),
+	newDecodeEntry("fnmadd.s", decodeFnmaddS),
+	newDecodeEntry("fnmadd.d", decodeFnmaddD),
+	newDecodeEntry("amoadd.w", decodeAmoaddW),
+	newDecodeEntry("amoadd.d", decodeAmoaddD),
+	newDecodeEntry("amoswap.w", decodeAmoswapW),
+	newDecodeEntry("amoswap.d", decodeAmoswapD),
+	newDecodeEntry("amoxor.w", decodeAmoxorW),
+	newDecodeEntry("amoxor.d", decodeAmoxorD),
+	newDecodeEntry("amoor.w", decodeAmoorW),
+	newDecodeEntry("amoor.d", decodeAmoorD),
+	newDecodeEntry("amoand.w", decodeAmoandW),
+	newDecodeEntry("amoand.d", decodeAmoandD),
+	newDecodeEntry("amomin.w", decodeAmominW),
+	newDecodeEntry("amomin.d", decodeAmominD),
+	newDecodeEntry("amomax.w", decodeAmomaxW),
+	newDecodeEntry("amomax.d", decodeAmomaxD),
+	newDecodeEntry("amominu.w", decodeAmominuW),
+	newDecodeEntry("amominu.d", decodeAmominuD),
+	newDecodeEntry("amomaxu.w", decodeAmomaxuW),
+	newDecodeEntry("amomaxu.d", decodeAmomaxuD),
+	newDecodeEntry("fence", decodeFence),
+	newDecodeEntry("csrrw", decodeCsrrw),
+	newDecodeEntry("csrrs", decodeCsrrs),
+	newDecodeEntry("csrrc", decodeCsrrc),
+	newDecodeEntry("csrrwi", decodeCsrrwi),
+	newDecodeEntry("csrrsi", decodeCsrrsi),
+	newDecodeEntry("csrrci", decodeCsrrci),
+	newDecodeEntry("ecall", decodeSystem("ecall", "RV32I")),
+	newDecodeEntry("ebreak", decodeSystem("ebreak", "RV32I")),
+	newDecodeEntry("mret", decodeSystem("mret", "Privileged")),
+	newDecodeEntry("sret", decodeSystem("sret", "Privileged")),
+	newDecodeEntry("wfi", decodeSystem("wfi", "Privileged")),
+}
+
+// encName converts a mnemonic to an riscvEncodings key ("fadd.s" -> "fadd_s").
+func encName(mnem string) string {
+	return strings.ReplaceAll(mnem, ".", "_")
+}

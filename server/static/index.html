@@ -1,0 +1,650 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>assembly · ARM64 disassembly viewer</title>
+<style>
+  /* ---------- Tokens / theme ---------- */
+  :root {
+    --bg:        #0d1117;
+    --bg-soft:   #161b22;
+    --bg-row:    #0d1117;
+    --bg-hover:  #1c2230;
+    --bg-sel:    #1f2a3d;
+    --border:    #30363d;
+    --text:      #e6edf3;
+    --text-dim:  #8b949e;
+    --text-faint:#6e7681;
+
+    /* syntax */
+    --c-mnemonic-data:   #7ee787; /* data processing - green */
+    --c-mnemonic-branch: #79c0ff; /* branch - blue */
+    --c-mnemonic-load:   #ffa657; /* load/store - orange */
+    --c-mnemonic-system: #8b949e; /* system/hint - gray */
+    --c-mnemonic-simd:   #d2a8ff; /* SIMD - purple */
+    --c-mnemonic-logic:  #f0883e; /* logic - amber */
+    --c-mnemonic-unknown:#f85149; /* unknown/.word - red */
+    --c-reg:    #79c0ff;
+    --c-imm:    #e3b341;
+    --c-addr:   #7ee787;
+    --c-bytes:  #6e7681;
+    --c-addr-l: #8b949e;
+    --c-punct:  #6e7681;
+  }
+
+  * { box-sizing: border-box; }
+  html, body { height: 100%; margin: 0; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    font-size: 13px;
+    -webkit-font-smoothing: antialiased;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+  }
+
+  code, .mono {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, Consolas, monospace;
+  }
+
+  /* ---------- Header ---------- */
+  header {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-soft);
+    flex: 0 0 auto;
+  }
+  header .brand { font-weight: 600; letter-spacing: .2px; }
+  header .brand .accent { color: var(--c-mnemonic-branch); }
+  header .sep { color: var(--text-faint); }
+  header .sub { color: var(--text-dim); font-size: 12px; }
+  header .spacer { flex: 1 1 auto; }
+  header .meta { color: var(--text-dim); font-size: 12px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+
+  .btn {
+    appearance: none;
+    background: #238636;
+    color: #fff;
+    border: 1px solid rgba(240,246,252,.1);
+    border-radius: 6px;
+    padding: 6px 14px;
+    font: inherit;
+    font-weight: 500;
+    cursor: pointer;
+  }
+  .btn:hover { background: #2ea043; }
+  .btn.secondary { background: #21262d; color: var(--text); }
+  .btn.secondary:hover { background: #30363d; }
+
+  /* ---------- Dropzone ---------- */
+  #dropzone {
+    position: absolute;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(13,17,23,.85);
+    backdrop-filter: blur(3px);
+    transition: opacity .15s;
+  }
+  #dropzone.hidden { opacity: 0; pointer-events: none; }
+  #dropzone .card {
+    border: 2px dashed var(--border);
+    border-radius: 12px;
+    padding: 48px 64px;
+    text-align: center;
+    color: var(--text-dim);
+  }
+  #dropzone.dragging .card { border-color: var(--c-mnemonic-branch); color: var(--text); }
+  #dropzone .title { font-size: 16px; color: var(--text); margin-bottom: 8px; }
+  #dropzone .hint { font-size: 12px; }
+
+  /* ---------- Main layout ---------- */
+  main {
+    flex: 1 1 auto;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 380px;
+    min-height: 0;
+  }
+
+  /* ---------- Instruction list (virtual scroll) ---------- */
+  #list-wrap {
+    position: relative;
+    overflow: auto;
+    border-right: 1px solid var(--border);
+    contain: strict;
+  }
+  #list-spacer { position: relative; width: 1px; }
+  #list-viewport { position: absolute; left: 0; right: 0; will-change: transform; }
+
+  .row {
+    display: grid;
+    grid-template-columns: 92px 116px 92px 1fr;
+    column-gap: 16px;
+    align-items: baseline;
+    padding: 0 16px;
+    height: 22px;
+    line-height: 22px;
+    white-space: pre;
+    cursor: pointer;
+    border-top: 1px solid transparent;
+    border-bottom: 1px solid transparent;
+  }
+  .row:hover { background: var(--bg-hover); }
+  .row.selected { background: var(--bg-sel); }
+  .row .col-addr  { color: var(--c-addr-l); }
+  .row .col-bytes { color: var(--c-bytes); }
+  .row .col-mn    { font-weight: 600; }
+
+  /* group color on mnemonic */
+  .g-branch  .col-mn { color: var(--c-mnemonic-branch); }
+  .g-data    .col-mn { color: var(--c-mnemonic-data); }
+  .g-load    .col-mn { color: var(--c-mnemonic-load); }
+  .g-logic   .col-mn { color: var(--c-mnemonic-logic); }
+  .g-system  .col-mn { color: var(--c-mnemonic-system); }
+  .g-simd    .col-mn { color: var(--c-mnemonic-simd); }
+  .g-unknown .col-mn { color: var(--c-mnemonic-unknown); }
+
+  /* token classes (operand highlight) */
+  .tok-reg   { color: var(--c-reg); }
+  .tok-imm   { color: var(--c-imm); }
+  .tok-addr  { color: var(--c-addr); }
+  .tok-punct { color: var(--c-punct); }
+
+  /* tooltip on hover */
+  #tip {
+    position: fixed;
+    z-index: 100;
+    max-width: 360px;
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 10px 12px;
+    font-size: 12px;
+    line-height: 1.5;
+    color: var(--text);
+    box-shadow: 0 8px 24px rgba(0,0,0,.4);
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .08s;
+  }
+  #tip.show { opacity: 1; }
+  #tip .tip-name { font-weight: 600; }
+  #tip .tip-group { color: var(--text-dim); margin-top: 2px; }
+  #tip .tip-desc { margin-top: 6px; color: var(--text); }
+
+  /* ---------- Detail panel ---------- */
+  #detail {
+    overflow: auto;
+    padding: 16px 18px;
+    background: var(--bg);
+    min-width: 0;
+  }
+  #detail .empty { color: var(--text-faint); font-size: 13px; padding: 24px 0; }
+  #detail h2 {
+    margin: 0 0 4px;
+    font-size: 18px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+  }
+  #detail .group-tag {
+    display: inline-block;
+    font-size: 11px;
+    color: var(--text-dim);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 2px 10px;
+    margin-bottom: 12px;
+  }
+  #detail dl { display: grid; grid-template-columns: 96px 1fr; gap: 6px 12px; margin: 12px 0; }
+  #detail dt { color: var(--text-dim); font-size: 12px; }
+  #detail dd { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; word-break: break-all; }
+  #detail .desc { margin: 12px 0; color: var(--text); line-height: 1.55; font-size: 13px; }
+  #detail a { color: var(--c-mnemonic-branch); text-decoration: none; }
+  #detail a:hover { text-decoration: underline; }
+  #detail .chips { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 4px; }
+  #detail .chip {
+    font-size: 11px; color: var(--text-dim);
+    background: var(--bg-soft); border: 1px solid var(--border);
+    border-radius: 4px; padding: 1px 7px;
+  }
+  #detail .fields-table { width: 100%; border-collapse: collapse; margin-top: 8px; font-size: 12px; }
+  #detail .fields-table td { padding: 3px 8px; border-top: 1px solid var(--border); }
+  #detail .fields-table td:first-child { color: var(--text-dim); width: 40%; }
+  #detail .fields-table td:last-child { font-family: ui-monospace, "SF Mono", Menlo, monospace; word-break: break-all; }
+  #detail .section-title { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--text-faint); margin: 18px 0 6px; }
+
+  /* ---------- Status ---------- */
+  #status {
+    position: absolute;
+    bottom: 12px; left: 50%; transform: translateX(-50%);
+    background: var(--bg-soft);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 6px 16px;
+    font-size: 12px;
+    color: var(--text-dim);
+    box-shadow: 0 4px 12px rgba(0,0,0,.3);
+    opacity: 0;
+    transition: opacity .2s;
+    z-index: 60;
+  }
+  #status.show { opacity: 1; }
+  #status.err { color: var(--c-mnemonic-unknown); border-color: rgba(248,81,73,.4); }
+
+  /* ---------- Assembler modal ---------- */
+  #asm-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 60;
+    background: rgba(1,4,9,.7); backdrop-filter: blur(2px);
+  }
+  #asm-backdrop.open { display: flex; align-items: center; justify-content: center; }
+  #asm-modal {
+    width: min(760px, 92vw); max-height: 86vh; display: flex; flex-direction: column;
+    background: var(--bg-soft); border: 1px solid var(--border); border-radius: 8px;
+  }
+  #asm-modal .head { display:flex; gap:10px; align-items:center; padding:12px 16px; border-bottom:1px solid var(--border); }
+  #asm-modal .head .title { font-weight:600; }
+  #asm-src {
+    flex:1; min-height:180px; resize:vertical; margin:12px 16px 0;
+    background: var(--bg); color: var(--text); border:1px solid var(--border); border-radius:6px;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size:12px; padding:10px;
+  }
+  #asm-out {
+    margin:12px 16px 16px; padding:10px; min-height:60px; max-height:32vh; overflow:auto;
+    background: var(--bg); border:1px solid var(--border); border-radius:6px; white-space:pre;
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size:12px; color: var(--text-dim);
+  }
+  #asm-out .err { color: var(--c-mnemonic-unknown); }
+  select, input#asm-base {
+    background: var(--bg); color: var(--text); border:1px solid var(--border); border-radius:6px; padding:4px 8px;
+  }
+
+  ::-webkit-scrollbar { width: 10px; height: 10px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: #30363d; border-radius: 5px; }
+  ::-webkit-scrollbar-thumb:hover { background: #484f58; }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="brand">dis<span class="accent">respect</span></div>
+  <span class="sep">·</span>
+  <span class="sub" id="arch-label">ARM64 disassembly viewer</span>
+  <span class="spacer"></span>
+  <span class="meta" id="count-label"></span>
+  <input type="file" id="file-input" hidden>
+  <button class="btn secondary" id="asm-btn">Assemble</button>
+  <button class="btn secondary" id="upload-btn">Open binary</button>
+</header>
+
+<div id="dropzone">
+  <div class="card">
+    <div class="title">Drop a binary here</div>
+    <div class="hint">ELF or Mach-O · the code section will be disassembled</div>
+    <div style="margin-top:18px"><button class="btn" id="dz-btn">Choose file</button></div>
+  </div>
+</div>
+
+<main>
+  <div id="list-wrap" tabindex="0">
+    <div id="list-spacer"><div id="list-viewport"></div></div>
+  </div>
+  <aside id="detail">
+    <div class="empty">Click an instruction to see full details.</div>
+  </aside>
+</main>
+
+<div id="asm-backdrop">
+  <div id="asm-modal">
+    <div class="head">
+      <span class="title">Assembler</span>
+      <select id="asm-arch">
+        <option value="riscv64">riscv64</option>
+        <option value="arm64">arm64</option>
+      </select>
+      <input id="asm-base" placeholder="base addr (hex)" value="0x1000" size="12">
+      <span class="spacer"></span>
+      <button class="btn secondary" id="asm-close">Close</button>
+      <button class="btn" id="asm-run">Assemble</button>
+    </div>
+    <textarea id="asm-src" spellcheck="false" placeholder="start:&#10;  li a0, 0x42&#10;  ret"></textarea>
+    <div id="asm-out">output</div>
+  </div>
+</div>
+
+<div id="tip"></div>
+<div id="status"></div>
+
+<script>
+"use strict";
+(function () {
+  const ROW_H = 22;
+  const OVERSCAN = 12; // extra rows above/below viewport
+
+  let data = null;        // parsed disasmResponse
+  let selected = -1;      // index of selected instruction
+  let lastRender = { start: 0, end: 0 };
+
+  const wrap     = document.getElementById("list-wrap");
+  const spacer   = document.getElementById("list-spacer");
+  const viewport = document.getElementById("list-viewport");
+  const detail   = document.getElementById("detail");
+  const tip      = document.getElementById("tip");
+  const statusEl = document.getElementById("status");
+  const dropzone = document.getElementById("dropzone");
+  const fileInput= document.getElementById("file-input");
+
+  /* ---------- status / messages ---------- */
+  let statusTimer = null;
+  function status(msg, isErr) {
+    statusEl.textContent = msg;
+    statusEl.classList.toggle("err", !!isErr);
+    statusEl.classList.add("show");
+    clearTimeout(statusTimer);
+    statusTimer = setTimeout(() => statusEl.classList.remove("show"), 3200);
+  }
+
+  /* ---------- assembler panel ---------- */
+  const asmBackdrop = document.getElementById("asm-backdrop");
+  const asmOut      = document.getElementById("asm-out");
+  function asmOpen(open) { asmBackdrop.classList.toggle("open", open); }
+  document.getElementById("asm-btn").addEventListener("click", () => asmOpen(true));
+  document.getElementById("asm-close").addEventListener("click", () => asmOpen(false));
+  asmBackdrop.addEventListener("click", (e) => { if (e.target === asmBackdrop) asmOpen(false); });
+  document.getElementById("asm-run").addEventListener("click", async () => {
+    const req = {
+      arch: document.getElementById("asm-arch").value,
+      source: document.getElementById("asm-src").value,
+      baseAddr: document.getElementById("asm-base").value || "0",
+    };
+    asmOut.textContent = "assembling…";
+    try {
+      const r = await fetch("/api/v1/asm", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(req),
+      });
+      const resp = await r.json();
+      if (resp.error) { asmOut.innerHTML = '<span class="err">' + resp.error + "</span>"; return; }
+      let out = "";
+      for (const sec of resp.sections || []) {
+        out += ".section " + sec.name + " @ " + sec.addr + " (" + sec.size + " bytes)\n";
+        const bytes = [];
+        for (let i = 0; i < sec.data.length; i += 2) bytes.push(parseInt(sec.data.substr(i, 2), 16));
+        for (let i = 0; i < bytes.length; i += 16) {
+          const row = bytes.slice(i, i + 16).map(b => b.toString(16).padStart(2, "0")).join(" ");
+          const base = parseInt(sec.addr) + i;
+          out += base.toString(16).padStart(8, "0") + ": " + row + "\n";
+        }
+      }
+      const syms = Object.entries(resp.symbols || {});
+      if (syms.length) out += "\nsymbols:\n" + syms.map(([n, a]) => "  " + a + " " + n).join("\n");
+      const errs = resp.errors || [];
+      if (errs.length) {
+        out += "\nerrors:\n" + errs.map(e => "  " + e.line + ":" + e.col + ": " + e.msg).join("\n");
+        asmOut.innerHTML = escapeHtml(out).replace(/(errors:\n(?:.*\n?)*)/, '<span class="err">$1</span>');
+      } else {
+        asmOut.textContent = out || "(empty)";
+      }
+    } catch (e) {
+      asmOut.innerHTML = '<span class="err">' + e + "</span>";
+    }
+  });
+
+  /* ---------- group classification -> css class ---------- */
+  function groupClass(group, mnemonic) {
+    const g = (group || "").toLowerCase();
+    if (mnemonic === ".word") return "g-unknown";
+    if (g.includes("branch")) return "g-branch";
+    if (g.includes("load") || g.includes("store")) return "g-load";
+    if (g.includes("logic")) return "g-logic";
+    if (g.includes("system") || g.includes("hint")) return "g-system";
+    if (g.includes("simd") || g.includes("neon") || g.includes("float")) return "g-simd";
+    return "g-data"; // data processing default
+  }
+
+  /* ---------- operand tokenization -> safe HTML spans ---------- */
+  function escapeHtml(s) {
+    return s.replace(/[&<>"']/g, c => (
+      {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]
+    ));
+  }
+  const T_REG   = /^(x|w|v|b|h|q|s|d)(\d+|zr|sp)$/;
+  function highlightOperands(op) {
+    if (!op) return "";
+    // Split into tokens keeping delimiters, classify each.
+    const parts = op.split(/(\s+|,|\[|\]|\{|\}|!)/);
+    let out = "";
+    for (const p of parts) {
+      if (p === "") continue;
+      if (/^\s+$/.test(p))            { out += " "; continue; }
+      if (/^[,{}!\]]$/.test(p))       { out += `<span class="tok-punct">${escapeHtml(p)}</span>`; continue; }
+      if (p === "[")                  { out += `<span class="tok-punct">[</span>`; continue; }
+      if (/^#?0x[0-9a-f]+$/i.test(p)) { out += `<span class="tok-imm">${escapeHtml(p)}</span>`; continue; }
+      if (/^#\d+$/.test(p))           { out += `<span class="tok-imm">${escapeHtml(p)}</span>`; continue; }
+      if (/^#/.test(p))               { out += `<span class="tok-imm">${escapeHtml(p)}</span>`; continue; }
+      if (T_REG.test(p))              { out += `<span class="tok-reg">${escapeHtml(p)}</span>`; continue; }
+      if (/^0x[0-9a-f]{6,}$/i.test(p)){ out += `<span class="tok-addr">${escapeHtml(p)}</span>`; continue; }
+      out += escapeHtml(p);
+    }
+    return out;
+  }
+
+  function rowHTML(inst, idx) {
+    const gc = groupClass(inst.group, inst.mnemonic);
+    return (
+      `<div class="row ${gc}" data-i="${idx}">`
+      + `<span class="col-addr mono">${inst.addr}</span>`
+      + `<span class="col-bytes mono">${escapeHtml(inst.bytes)}</span>`
+      + `<span class="col-mn mono">${escapeHtml(inst.mnemonic)}</span>`
+      + `<span class="col-op mono">${highlightOperands(inst.operands)}</span>`
+      + `</div>`
+    );
+  }
+
+  /* ---------- virtual scroll ---------- */
+  function render() {
+    if (!data) return;
+    const h = wrap.clientHeight;
+    const top = wrap.scrollTop;
+    const start = Math.max(0, Math.floor(top / ROW_H) - OVERSCAN);
+    const end = Math.min(data.instructions.length, Math.ceil((top + h) / ROW_H) + OVERSCAN);
+
+    let html = "";
+    for (let i = start; i < end; i++) html += rowHTML(data.instructions[i], i);
+    viewport.innerHTML = html;
+    viewport.style.transform = `translateY(${start * ROW_H}px)`;
+    if (selected >= start && selected < end) {
+      const el = viewport.querySelector(`.row[data-i="${selected}"]`);
+      if (el) el.classList.add("selected");
+    }
+    lastRender = { start, end };
+  }
+
+  function setupScroll() {
+    spacer.style.height = (data.instructions.length * ROW_H) + "px";
+    wrap.scrollTop = 0;
+    render();
+    let raf = 0;
+    wrap.addEventListener("scroll", () => {
+      if (raf) return;
+      raf = requestAnimationFrame(() => { render(); raf = 0; });
+    }, { passive: true });
+  }
+
+  /* ---------- selection / detail ---------- */
+  function selectRow(idx) {
+    if (idx === selected) return;
+    const prev = viewport.querySelector(`.row[data-i="${selected}"]`);
+    if (prev) prev.classList.remove("selected");
+    selected = idx;
+    const cur = viewport.querySelector(`.row[data-i="${selected}"]`);
+    if (cur) cur.classList.add("selected");
+    renderDetail(data.instructions[idx]);
+  }
+
+  function fmtFields(fields) {
+    if (!fields) return "";
+    const keys = Object.keys(fields);
+    if (!keys.length) return "";
+    let rows = "";
+    for (const k of keys) {
+      let v = fields[k];
+      if (typeof v === "number") v = (v >>> 0);
+      rows += `<tr><td>${escapeHtml(k)}</td><td>${escapeHtml(String(v))}</td></tr>`;
+    }
+    return `<table class="fields-table"><tbody>${rows}</tbody></table>`;
+  }
+
+  function renderDetail(inst) {
+    const gc = groupClass(inst.group, inst.mnemonic);
+    const chips = (inst.tags || []).map(t => `<span class="chip">${escapeHtml(t)}</span>`).join("");
+    const aliases = (inst.aliases || []).join(", ");
+    const doc = inst.docurl ? `<a href="${escapeHtml(inst.docurl)}" target="_blank" rel="noopener">${escapeHtml(inst.docurl)}</a>` : "—";
+    detail.innerHTML = (
+      `<h2 class="${gc}">${escapeHtml(inst.mnemonic)}</h2>`
+      + `<span class="group-tag">${escapeHtml(inst.group || "—")}</span>`
+      + (chips ? `<div class="chips">${chips}</div>` : "")
+      + (inst.description
+          ? `<div class="desc">${escapeHtml(inst.description)}</div>`
+          : `<div class="desc" style="color:var(--text-faint)">No description provided.</div>`)
+      + `<div class="section-title">Encoding</div>`
+      + `<dl>`
+      +   `<dt>address</dt><dd>${inst.addr}</dd>`
+      +   `<dt>bytes</dt><dd>${escapeHtml(inst.bytes)}</dd>`
+      +   `<dt>raw</dt><dd>${inst.raw}</dd>`
+      + `</dl>`
+      + `<div class="section-title">Reference</div>`
+      + `<dl>`
+      +   `<dt>aliases</dt><dd>${aliases ? escapeHtml(aliases) : "—"}</dd>`
+      +   `<dt>doc</dt><dd>${doc}</dd>`
+      + `</dl>`
+      + (inst.fields && Object.keys(inst.fields).length
+          ? `<div class="section-title">Decoded fields</div>` + fmtFields(inst.fields)
+          : "")
+    );
+  }
+
+  /* ---------- tooltip ---------- */
+  function showTip(inst, x, y) {
+    const name = escapeHtml(inst.mnemonic);
+    const group = inst.group ? `<div class="tip-group">${escapeHtml(inst.group)}</div>` : "";
+    const desc = inst.description
+      ? `<div class="tip-desc">${escapeHtml(inst.description)}</div>`
+      : (group ? "" : `<div class="tip-desc" style="color:var(--text-faint)">No description.</div>`);
+    tip.innerHTML = `<span class="tip-name mono">${name}</span>${group}${desc}`;
+    tip.classList.add("show");
+    const w = tip.offsetWidth, hgt = tip.offsetHeight;
+    let px = x + 14, py = y + 14;
+    if (px + w > window.innerWidth - 8)  px = x - w - 14;
+    if (py + hgt > window.innerHeight - 8) py = y - hgt - 14;
+    tip.style.left = px + "px";
+    tip.style.top = py + "px";
+  }
+  function hideTip() { tip.classList.remove("show"); }
+
+  /* ---------- event delegation on list ---------- */
+  viewport.addEventListener("mouseover", (e) => {
+    const row = e.target.closest(".row");
+    if (!row) return;
+    const idx = +row.dataset.i;
+    showTip(data.instructions[idx], e.clientX, e.clientY);
+  });
+  viewport.addEventListener("mousemove", (e) => {
+    if (!tip.classList.contains("show")) return;
+    const row = e.target.closest(".row");
+    if (!row) return;
+    const w = tip.offsetWidth, hgt = tip.offsetHeight;
+    let px = e.clientX + 14, py = e.clientY + 14;
+    if (px + w > window.innerWidth - 8)  px = e.clientX - w - 14;
+    if (py + hgt > window.innerHeight - 8) py = e.clientY - hgt - 14;
+    tip.style.left = px + "px";
+    tip.style.top = py + "px";
+  });
+  viewport.addEventListener("mouseout", (e) => {
+    const row = e.target.closest(".row");
+    if (row && !row.contains(e.relatedTarget)) hideTip();
+  });
+  viewport.addEventListener("click", (e) => {
+    const row = e.target.closest(".row");
+    if (!row) return;
+    selectRow(+row.dataset.i);
+  });
+  // keyboard navigation
+  wrap.addEventListener("keydown", (e) => {
+    if (!data || selected < 0) return;
+    if (e.key === "ArrowDown" && selected < data.instructions.length - 1) {
+      e.preventDefault(); selectRow(selected + 1); scrollToSelected();
+    } else if (e.key === "ArrowUp" && selected > 0) {
+      e.preventDefault(); selectRow(selected - 1); scrollToSelected();
+    }
+  });
+  function scrollToSelected() {
+    const top = selected * ROW_H;
+    const bot = top + ROW_H;
+    if (top < wrap.scrollTop) wrap.scrollTop = top;
+    else if (bot > wrap.scrollTop + wrap.clientHeight) wrap.scrollTop = bot - wrap.clientHeight;
+  }
+
+  /* ---------- upload ---------- */
+  document.getElementById("upload-btn").addEventListener("click", () => fileInput.click());
+  document.getElementById("dz-btn").addEventListener("click", () => fileInput.click());
+  fileInput.addEventListener("change", () => {
+    if (fileInput.files[0]) upload(fileInput.files[0]);
+  });
+
+  ["dragenter","dragover"].forEach(ev =>
+    document.addEventListener(ev, (e) => { e.preventDefault(); dropzone.classList.add("dragging"); dropzone.classList.remove("hidden"); })
+  );
+  ["dragleave","drop"].forEach(ev =>
+    document.addEventListener(ev, (e) => {
+      e.preventDefault();
+      if (ev === "dragleave" && (e.clientX > 0 || e.clientY > 0)) return;
+      if (!data) dropzone.classList.add("hidden");
+      dropzone.classList.remove("dragging");
+    })
+  );
+  document.addEventListener("drop", (e) => {
+    const f = e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0];
+    if (f) upload(f);
+  });
+
+  function upload(file) {
+    status(`Uploading ${file.name} …`);
+    const fd = new FormData();
+    fd.append("file", file);
+    fetch("/api/v1/disasm", { method: "POST", body: fd })
+      .then(async (r) => {
+        const body = await r.json();
+        if (!r.ok) throw new Error(body.error || ("HTTP " + r.status));
+        return body;
+      })
+      .then((resp) => {
+        data = resp;
+        selected = -1;
+        detail.innerHTML = `<div class="empty">Click an instruction to see full details.</div>`;
+        document.getElementById("count-label").textContent =
+          `${resp.count.toLocaleString()} instructions · ${resp.section.name} @ ${resp.section.addr}`;
+        dropzone.classList.add("hidden");
+        setupScroll();
+        status(`Loaded ${resp.count.toLocaleString()} instructions (${resp.arch}).`);
+      })
+      .catch((err) => {
+        status("Error: " + err.message, true);
+        if (!data) dropzone.classList.remove("hidden");
+      });
+  }
+
+  window.addEventListener("resize", () => { if (data) render(); });
+})();
+</script>
+</body>
+</html>
