@@ -3,10 +3,13 @@ package arm64
 // Generator for ret — one generator, one type, one constructor (arm64.NewRet).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,16 +49,18 @@ func Ret(rnd *rand.Rand) ohsnap.Arbitrary[RetParams] {
 	return newRetGen(rnd)
 }
 
-func (g retGen) Generate() RetParams {
-	return NewRetParams(genReg(g.rnd, true, false, true))
+func (g retGen) Generate() iter.Seq[RetParams] {
+	return arb.Stream(func() RetParams {
+		return NewRetParams(genReg(g.rnd, true, false, true))
+	})
 }
 
-func (g retGen) Shrink(p RetParams) []RetParams {
+func (g retGen) Shrink(p RetParams) iter.Seq[RetParams] {
 	rn := regShrunk(p.Rn)
 	out := make([]RetParams, 0, len(rn))
 	for _, r := range rn {
 		out = append(out, NewRetParams(r))
 	}
 
-	return out
+	return slices.Values(out)
 }

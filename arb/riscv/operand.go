@@ -7,11 +7,14 @@ package riscv
 
 import (
 	"fmt"
+	"iter"
 	"math/rand/v2"
+	"slices"
 	"strconv"
 	"strings"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
@@ -74,26 +77,30 @@ func Off(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Off] {
 
 // --- methods -------------------------------------------------------------------
 
-func (a regArb) Generate() riscv.Reg {
-	return reg(a.rnd)
+func (a regArb) Generate() iter.Seq[riscv.Reg] {
+	return arb.Stream(func() riscv.Reg {
+		return reg(a.rnd)
+	})
 }
 
-func (a regArb) Shrink(r riscv.Reg) []riscv.Reg {
-	return regShrunk(r)
+func (a regArb) Shrink(r riscv.Reg) iter.Seq[riscv.Reg] {
+	return slices.Values(regShrunk(r))
 }
 
-func (a immArb[T]) Generate() T {
-	v, err := a.make(a.from + a.rnd.Int64N(a.to-a.from+1))
-	if err != nil {
-		var zero T // unreachable: the from..to range is bounded by construction
-		return zero
-	}
+func (a immArb[T]) Generate() iter.Seq[T] {
+	return arb.Stream(func() T {
+		v, err := a.make(a.from + a.rnd.Int64N(a.to-a.from+1))
+		if err != nil {
+			var zero T // unreachable: the from..to range is bounded by construction
+			return zero
+		}
 
-	return v
+		return v
+	})
 }
 
-func (a immArb[T]) Shrink(v T) []T {
-	return immShrunk(v, a.make)
+func (a immArb[T]) Shrink(v T) iter.Seq[T] {
+	return slices.Values(immShrunk(v, a.make))
 }
 
 // --- generation and shrink helpers ---------------------------------------------
@@ -160,7 +167,7 @@ func regShrunk(r riscv.Reg) []riscv.Reg {
 }
 
 // immShrunk — halved shrink candidates for an immediate: the numeric value
-// from String(), halving toward zero (arb.Halved), re-wrapping with the
+// from String(), halving toward zero (shrink.Halving), re-wrapping with the
 // checked constructor. A parse error is an invariant violation on our side
 // (nil); a constructor error means the candidate is out of range, skip it.
 func immShrunk[T any](v T, mk func(int64) (T, error)) []T {
@@ -170,7 +177,7 @@ func immShrunk[T any](v T, mk func(int64) (T, error)) []T {
 	}
 
 	var out []T
-	for _, d := range arb.Halved(n) {
+	for d := range shrink.Halving[int64](0)(n) {
 		t, err := mk(d)
 		if err != nil {
 			continue // the halved value is out of range — skip the candidate

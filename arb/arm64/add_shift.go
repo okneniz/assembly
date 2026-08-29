@@ -4,9 +4,12 @@ package arm64
 // constructor (arm64.NewAddShift).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
@@ -64,26 +67,28 @@ func AddShift(rnd *rand.Rand) ohsnap.Arbitrary[AddShiftParams] {
 	return newAddShiftGen(rnd)
 }
 
-func (g addShiftGen) Generate() AddShiftParams {
-	is64 := g.rnd.IntN(2) == 1
-	hi := int64(63)
-	if !is64 {
-		hi = 31
-	}
+func (g addShiftGen) Generate() iter.Seq[AddShiftParams] {
+	return arb.Stream(func() AddShiftParams {
+		is64 := g.rnd.IntN(2) == 1
+		hi := int64(63)
+		if !is64 {
+			hi = 31
+		}
 
-	return NewAddShiftParams(
-		genReg(g.rnd, is64, false, true),
-		genReg(g.rnd, is64, false, true),
-		genReg(g.rnd, is64, false, true),
-		imm6(g.rnd.Int64N(hi+1)),
-		arm64.Shift(g.rnd.IntN(3)),
-	)
+		return NewAddShiftParams(
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, is64, false, true),
+			imm6(g.rnd.Int64N(hi+1)),
+			arm64.Shift(g.rnd.IntN(3)),
+		)
+	})
 }
 
-func (g addShiftGen) Shrink(p AddShiftParams) []AddShiftParams {
+func (g addShiftGen) Shrink(p AddShiftParams) iter.Seq[AddShiftParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return nil // String() of our own type is unparseable — invariant
+		return ohsnap.Empty[AddShiftParams]() // String() of our own type is unparseable — invariant
 	}
 
 	var out []AddShiftParams
@@ -99,7 +104,7 @@ func (g addShiftGen) Shrink(p AddShiftParams) []AddShiftParams {
 		out = append(out, NewAddShiftParams(p.Rd, p.Rn, r, p.Imm, p.Sh))
 	}
 
-	for _, d := range arb.Halved(v) {
+	for d := range shrink.Halving[int64](0)(v) {
 		imm, err := arm64.NewImm6(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm6 is always in 0..63
@@ -112,5 +117,5 @@ func (g addShiftGen) Shrink(p AddShiftParams) []AddShiftParams {
 		out = append(out, NewAddShiftParams(p.Rd, p.Rn, p.Rm, p.Imm, arm64.LSL))
 	}
 
-	return out
+	return slices.Values(out)
 }

@@ -3,9 +3,12 @@ package arm64
 // Generator for movz — one generator, one type, one constructor (arm64.NewMovz).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
@@ -54,17 +57,19 @@ func Movz(rnd *rand.Rand) ohsnap.Arbitrary[MovzParams] {
 	return newMovzGen(rnd)
 }
 
-func (g movzGen) Generate() MovzParams {
-	hw := arm64.Hw(g.rnd.IntN(4))
-	// hw>=Hw2 (lsl #32/#48) occurs only in the 64-bit form.
-	is64 := hw >= arm64.Hw2 || g.rnd.IntN(2) == 1
-	return NewMovzParams(genReg(g.rnd, is64, false, true), imm16(g.rnd.Int64N(0x10000)), hw)
+func (g movzGen) Generate() iter.Seq[MovzParams] {
+	return arb.Stream(func() MovzParams {
+		hw := arm64.Hw(g.rnd.IntN(4))
+		// hw>=Hw2 (lsl #32/#48) occurs only in the 64-bit form.
+		is64 := hw >= arm64.Hw2 || g.rnd.IntN(2) == 1
+		return NewMovzParams(genReg(g.rnd, is64, false, true), imm16(g.rnd.Int64N(0x10000)), hw)
+	})
 }
 
-func (g movzGen) Shrink(p MovzParams) []MovzParams {
+func (g movzGen) Shrink(p MovzParams) iter.Seq[MovzParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return nil // String() of our own type is unparseable — invariant
+		return ohsnap.Empty[MovzParams]() // String() of our own type is unparseable — invariant
 	}
 
 	var out []MovzParams
@@ -72,7 +77,7 @@ func (g movzGen) Shrink(p MovzParams) []MovzParams {
 		out = append(out, NewMovzParams(r, p.Imm, p.Hw))
 	}
 
-	for _, d := range arb.Halved(v) {
+	for d := range shrink.Halving[int64](0)(v) {
 		imm, err := arm64.NewImm16(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm16 is always in 0..65535
@@ -85,5 +90,5 @@ func (g movzGen) Shrink(p MovzParams) []MovzParams {
 		out = append(out, NewMovzParams(p.Rd, p.Imm, arm64.Hw0))
 	}
 
-	return out
+	return slices.Values(out)
 }

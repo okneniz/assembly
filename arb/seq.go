@@ -1,7 +1,9 @@
 package arb
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 )
@@ -25,17 +27,19 @@ func Seq[T any](rnd *rand.Rand, gens []func() T) ohsnap.Arbitrary[[]T] {
 	}
 }
 
-func (s seqArb[T]) Generate() []T {
-	n := 1 + s.rnd.IntN(32)
-	out := make([]T, n)
-	for i := range out {
-		out[i] = s.gens[s.rnd.IntN(len(s.gens))]()
-	}
+func (s seqArb[T]) Generate() iter.Seq[[]T] {
+	return Stream(func() []T {
+		n := 1 + s.rnd.IntN(32)
+		out := make([]T, n)
+		for i := range out {
+			out[i] = s.gens[s.rnd.IntN(len(s.gens))]()
+		}
 
-	return out
+		return out
+	})
 }
 
-func (s seqArb[T]) Shrink(v []T) [][]T {
+func (s seqArb[T]) Shrink(v []T) iter.Seq[[]T] {
 	var out [][]T
 	if h := len(v) / 2; h > 0 {
 		out = append(out, v[:h])
@@ -49,5 +53,5 @@ func (s seqArb[T]) Shrink(v []T) [][]T {
 		out = append(out, append(append([]T{}, v[:i]...), v[i+1:]...))
 	}
 
-	return out
+	return slices.Values(out)
 }

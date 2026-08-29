@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	ohsnap "github.com/okneniz/oh-snap"
+
 	"github.com/okneniz/assembly/dtree"
 	"github.com/okneniz/assembly/dtree/arb"
 )
@@ -46,7 +48,7 @@ func benchCases(b *testing.B) (cases []arb.Case, big []dtree.Rule[int], words []
 	gen := arb.LookupCase(rnd)
 
 	for range 1000 {
-		c := gen.Generate()
+		c := ohsnap.First(gen.Generate())
 		cases = append(cases, c)
 
 		for _, r := range c.Rules {

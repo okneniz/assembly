@@ -293,7 +293,7 @@ func TestPropertyRiscvAliasRoundTrip(t *testing.T) {
 // is created once; see instrOf in property_a64_test.go).
 func rvInstrOf[P rvInstrParam](a ohsnap.Arbitrary[P]) func() riscv.Instr {
 	return func() riscv.Instr {
-		return a.Generate().Instr()
+		return ohsnap.First(a.Generate()).Instr()
 	}
 }
 

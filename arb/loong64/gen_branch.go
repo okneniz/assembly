@@ -9,9 +9,12 @@ package loong64
 // directly.
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -31,7 +34,7 @@ func branchOffset(rnd *rand.Rand, span int64) int64 {
 // alignment are skipped — a misaligned offset cannot encode.
 func branchShrunk(off int64) []int64 {
 	var out []int64
-	for _, d := range arb.Halved(off) {
+	for d := range shrink.Halving[int64](0)(off) {
 		if d%4 != 0 {
 			continue // unaligned offset — skip the candidate
 		}
@@ -104,12 +107,14 @@ func Branch2(rnd *rand.Rand) ohsnap.Arbitrary[Branch2Params] {
 	return newBranch2Gen(rnd)
 }
 
-func (g branch2Gen) Generate() Branch2Params {
-	e := branch2[g.rnd.IntN(len(branch2))]
-	return NewBranch2Params(reg(g.rnd), reg(g.rnd), branchOffset(g.rnd, branch2Span), e.ctor)
+func (g branch2Gen) Generate() iter.Seq[Branch2Params] {
+	return arb.Stream(func() Branch2Params {
+		e := branch2[g.rnd.IntN(len(branch2))]
+		return NewBranch2Params(reg(g.rnd), reg(g.rnd), branchOffset(g.rnd, branch2Span), e.ctor)
+	})
 }
 
-func (g branch2Gen) Shrink(p Branch2Params) []Branch2Params {
+func (g branch2Gen) Shrink(p Branch2Params) iter.Seq[Branch2Params] {
 	rj, rd := regShrunk(p.Rj), regShrunk(p.Rd)
 	ts := branchShrunk(p.Target)
 	out := make([]Branch2Params, 0, len(rj)+len(rd)+len(ts))
@@ -125,7 +130,7 @@ func (g branch2Gen) Shrink(p Branch2Params) []Branch2Params {
 		out = append(out, NewBranch2Params(p.Rj, p.Rd, t, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // Branch1Ctor — a compare-with-zero constructor: rj, target.
@@ -184,12 +189,14 @@ func Branch1(rnd *rand.Rand) ohsnap.Arbitrary[Branch1Params] {
 	return newBranch1Gen(rnd)
 }
 
-func (g branch1Gen) Generate() Branch1Params {
-	e := branch1[g.rnd.IntN(len(branch1))]
-	return NewBranch1Params(reg(g.rnd), branchOffset(g.rnd, branch1Span), e.ctor)
+func (g branch1Gen) Generate() iter.Seq[Branch1Params] {
+	return arb.Stream(func() Branch1Params {
+		e := branch1[g.rnd.IntN(len(branch1))]
+		return NewBranch1Params(reg(g.rnd), branchOffset(g.rnd, branch1Span), e.ctor)
+	})
 }
 
-func (g branch1Gen) Shrink(p Branch1Params) []Branch1Params {
+func (g branch1Gen) Shrink(p Branch1Params) iter.Seq[Branch1Params] {
 	rj := regShrunk(p.Rj)
 	ts := branchShrunk(p.Target)
 	out := make([]Branch1Params, 0, len(rj)+len(ts))
@@ -201,7 +208,7 @@ func (g branch1Gen) Shrink(p Branch1Params) []Branch1Params {
 		out = append(out, NewBranch1Params(p.Rj, t, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // JumpCtor — an unconditional constructor: bare target (b/bl).
@@ -258,19 +265,21 @@ func Jump(rnd *rand.Rand) ohsnap.Arbitrary[JumpParams] {
 	return newJumpGen(rnd)
 }
 
-func (g jumpGen) Generate() JumpParams {
-	e := jump[g.rnd.IntN(len(jump))]
-	return NewJumpParams(branchOffset(g.rnd, jumpSpan), e.ctor)
+func (g jumpGen) Generate() iter.Seq[JumpParams] {
+	return arb.Stream(func() JumpParams {
+		e := jump[g.rnd.IntN(len(jump))]
+		return NewJumpParams(branchOffset(g.rnd, jumpSpan), e.ctor)
+	})
 }
 
-func (g jumpGen) Shrink(p JumpParams) []JumpParams {
+func (g jumpGen) Shrink(p JumpParams) iter.Seq[JumpParams] {
 	ts := branchShrunk(p.Target)
 	out := make([]JumpParams, 0, len(ts))
 	for _, t := range ts {
 		out = append(out, NewJumpParams(t, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // jirl — the indirect-jump family (a "reg, reg, role" family over the

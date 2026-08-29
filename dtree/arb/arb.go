@@ -8,11 +8,14 @@ package arb
 
 import (
 	"fmt"
+	"iter"
 	"math/rand/v2"
+	"slices"
 	"strings"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	basearb "github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/dtree"
 )
 
@@ -45,43 +48,45 @@ type lookupCase struct {
 	rnd *rand.Rand
 }
 
-func (a lookupCase) Generate() Case {
-	n := a.rnd.IntN(41)
-	rules := make([]dtree.Rule[int], 0, n)
+func (a lookupCase) Generate() iter.Seq[Case] {
+	return basearb.Stream(func() Case {
+		n := a.rnd.IntN(41)
+		rules := make([]dtree.Rule[int], 0, n)
 
-	for range n {
-		var mask uint32
-		switch a.rnd.IntN(4) {
-		case 0:
-			for range 1 + a.rnd.IntN(4) {
-				mask |= 1 << a.rnd.IntN(32)
+		for range n {
+			var mask uint32
+			switch a.rnd.IntN(4) {
+			case 0:
+				for range 1 + a.rnd.IntN(4) {
+					mask |= 1 << a.rnd.IntN(32)
+				}
+
+			case 1: // catch-all
+				mask = 0
+			default:
+				mask = a.rnd.Uint32()
 			}
 
-		case 1: // catch-all
-			mask = 0
-		default:
-			mask = a.rnd.Uint32()
+			match := a.rnd.Uint32() & mask
+			if a.rnd.IntN(5) == 0 {
+				match = a.rnd.Uint32() // dead rule
+			}
+
+			rules = append(rules, dtree.Rule[int]{
+				Mask:    mask,
+				Match:   match,
+				Payload: len(rules),
+			})
 		}
 
-		match := a.rnd.Uint32() & mask
-		if a.rnd.IntN(5) == 0 {
-			match = a.rnd.Uint32() // dead rule
-		}
-
-		rules = append(rules, dtree.Rule[int]{
-			Mask:    mask,
-			Match:   match,
-			Payload: len(rules),
-		})
-	}
-
-	return Case{Rules: rules, Word: a.rnd.Uint32()}
+		return Case{Rules: rules, Word: a.rnd.Uint32()}
+	})
 }
 
 // Shrink produces simpler candidates: without each rule one at a time; the
 // word toward zero (by clearing the lowest set bit); the mask of each rule
 // toward zero.
-func (lookupCase) Shrink(c Case) []Case {
+func (lookupCase) Shrink(c Case) iter.Seq[Case] {
 	var out []Case
 
 	for i := range c.Rules {
@@ -105,5 +110,5 @@ func (lookupCase) Shrink(c Case) []Case {
 		out = append(out, Case{Rules: zeroed, Word: c.Word})
 	}
 
-	return out
+	return slices.Values(out)
 }

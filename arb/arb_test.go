@@ -1,7 +1,10 @@
 package arb
 
 import (
+	"slices"
 	"testing"
+
+	ohsnap "github.com/okneniz/oh-snap"
 
 	"github.com/stretchr/testify/require"
 )
@@ -9,23 +12,33 @@ import (
 // TestWordShrink — shrinking a word by halving toward zero (built-in ArbitraryUint32).
 func TestWordShrink(t *testing.T) {
 	w := Word(Rnd(42))
-	require.NotEmpty(t, w.Shrink(w.Generate()), "Word.Shrink is empty")
+	candidates := slices.Collect(w.Shrink(ohsnap.First(w.Generate())))
+	require.NotEmpty(t, candidates, "Word.Shrink is empty")
 }
 
-// TestHalved — sign-preserving shrink helper.
-func TestHalved(t *testing.T) {
-	got := Halved(9)
-	require.Len(t, got, 4, "Halved(9) = %v", got)
-	require.Equal(t, int64(4), got[0], "Halved(9) = %v", got)
-	require.Equal(t, int64(0), got[3], "Halved(9) = %v", got)
-	got = Halved(-9)
-	require.Len(t, got, 4, "Halved(-9) = %v", got)
-	require.Equal(t, int64(-4), got[0], "Halved(-9) = %v", got)
-	require.Equal(t, int64(0), got[3], "Halved(-9) = %v", got)
-	require.Empty(t, Halved(0), "Halved(0)")
-	got = Halved(1)
-	require.Len(t, got, 1, "Halved(1) = %v", got)
-	require.Equal(t, int64(0), got[0], "Halved(1) = %v", got)
+// TestStream — the sequence yields f() values until the consumer stops:
+// after an early break f is not called anymore (laziness).
+func TestStream(t *testing.T) {
+	calls := 0
+	seq := Stream(func() int {
+		calls++
+		return calls
+	})
+
+	got := slices.Collect(func(yield func(int) bool) {
+		for v := range seq {
+			if v == 2 {
+				return
+			}
+
+			if !yield(v) {
+				return
+			}
+		}
+	})
+
+	require.Equal(t, []int{1}, got, "Stream yielded %v", got)
+	require.Equal(t, 2, calls, "Stream called f after the consumer stopped")
 }
 
 // TestRndDeterminism — the same seed yields the same sequence.

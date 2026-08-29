@@ -17,9 +17,12 @@ package loong64
 // through the role constructors).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -149,21 +152,25 @@ func Code15(rnd *rand.Rand) ohsnap.Arbitrary[arch.Code15] {
 
 // --- methods -------------------------------------------------------------------
 
-func (a regArb) Generate() arch.Reg {
-	return reg(a.rnd)
+func (a regArb) Generate() iter.Seq[arch.Reg] {
+	return arb.Stream(func() arch.Reg {
+		return reg(a.rnd)
+	})
 }
 
-func (a regArb) Shrink(r arch.Reg) []arch.Reg {
-	return regShrunk(r)
+func (a regArb) Shrink(r arch.Reg) iter.Seq[arch.Reg] {
+	return slices.Values(regShrunk(r))
 }
 
-func (a immArb[T]) Generate() T {
-	steps := (a.to - a.from) / a.step
-	return wrapImm(a.from+a.step*a.rnd.Int64N(steps+1), a.mk)
+func (a immArb[T]) Generate() iter.Seq[T] {
+	return arb.Stream(func() T {
+		steps := (a.to - a.from) / a.step
+		return wrapImm(a.from+a.step*a.rnd.Int64N(steps+1), a.mk)
+	})
 }
 
-func (a immArb[T]) Shrink(v T) []T {
-	return immShrunk(v, a.mk)
+func (a immArb[T]) Shrink(v T) iter.Seq[T] {
+	return slices.Values(immShrunk(v, a.mk))
 }
 
 // --- generation and shrink helpers ---------------------------------------------
@@ -187,12 +194,12 @@ func reg(rnd *rand.Rand) arch.Reg {
 }
 
 // immShrunk — halved shrink candidates for a role immediate: the numeric
-// value from Val(), halving toward zero (arb.Halved), re-wrapping with
+// value from Val(), halving toward zero (shrink.Halving), re-wrapping with
 // the checked constructor. A constructor error (a halved value that lost
 // alignment or left the range) skips the candidate.
 func immShrunk[T immRole](v T, mk func(int64) (T, error)) []T {
 	var out []T
-	for _, d := range arb.Halved(v.Val()) {
+	for d := range shrink.Halving[int64](0)(v.Val()) {
 		t, err := mk(d)
 		if err != nil {
 			continue // the halved value is out of range — skip the candidate

@@ -7,11 +7,14 @@ package arm64
 
 import (
 	"fmt"
+	"iter"
 	"math/rand/v2"
+	"slices"
 	"strconv"
 	"strings"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
@@ -107,24 +110,26 @@ func Off(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Off] {
 
 // --- methods -------------------------------------------------------------------
 
-func (a immArb[T]) Generate() T {
-	v, err := a.make(a.rnd.Int64N(a.max + 1))
-	if err != nil {
-		var zero T // unreachable: the range [0, max] is set by the generator's constructor
-		return zero
-	}
+func (a immArb[T]) Generate() iter.Seq[T] {
+	return arb.Stream(func() T {
+		v, err := a.make(a.rnd.Int64N(a.max + 1))
+		if err != nil {
+			var zero T // unreachable: the range [0, max] is set by the generator's constructor
+			return zero
+		}
 
-	return v
+		return v
+	})
 }
 
-func (a immArb[T]) Shrink(v T) []T {
+func (a immArb[T]) Shrink(v T) iter.Seq[T] {
 	n, err := immValue(v)
 	if err != nil {
-		return nil // String() of our own type is unparseable — invariant
+		return ohsnap.Empty[T]() // String() of our own type is unparseable — invariant
 	}
 
 	var out []T
-	for _, d := range arb.Halved(n) {
+	for d := range shrink.Halving[int64](0)(n) {
 		c, err := a.make(d)
 		if err != nil {
 			continue // unreachable: half of a value from [0, max] is always in range
@@ -133,23 +138,27 @@ func (a immArb[T]) Shrink(v T) []T {
 		out = append(out, c)
 	}
 
-	return out
+	return slices.Values(out)
 }
 
-func (a regArb) Generate() arm64.Reg {
-	return genReg(a.rnd, a.rnd.IntN(2) == 1, true, true)
+func (a regArb) Generate() iter.Seq[arm64.Reg] {
+	return arb.Stream(func() arm64.Reg {
+		return genReg(a.rnd, a.rnd.IntN(2) == 1, true, true)
+	})
 }
 
-func (a regArb) Shrink(r arm64.Reg) []arm64.Reg {
-	return regShrunk(r)
+func (a regArb) Shrink(r arm64.Reg) iter.Seq[arm64.Reg] {
+	return slices.Values(regShrunk(r))
 }
 
-func (a offArb) Generate() arm64.Off {
-	return arm64.Off(a.rnd.Int64N(0x1000) * 4)
+func (a offArb) Generate() iter.Seq[arm64.Off] {
+	return arb.Stream(func() arm64.Off {
+		return arm64.Off(a.rnd.Int64N(0x1000) * 4)
+	})
 }
 
-func (a offArb) Shrink(o arm64.Off) []arm64.Off {
-	return offShrunk(o, 2)
+func (a offArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {
+	return slices.Values(offShrunk(o, 2))
 }
 
 // --- generation and shrink helpers ---------------------------------------------

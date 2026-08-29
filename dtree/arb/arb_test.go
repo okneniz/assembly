@@ -2,7 +2,10 @@ package arb
 
 import (
 	"math/rand/v2"
+	"slices"
 	"testing"
+
+	ohsnap "github.com/okneniz/oh-snap"
 
 	"github.com/stretchr/testify/require"
 
@@ -15,7 +18,7 @@ func TestLookupCaseGenerate(t *testing.T) {
 
 	empty, nonEmpty := 0, 0
 	for range 1000 {
-		c := gen.Generate()
+		c := ohsnap.First(gen.Generate())
 		require.LessOrEqual(t, len(c.Rules), 40)
 
 		if len(c.Rules) == 0 {
@@ -40,7 +43,7 @@ func TestLookupCaseShrink(t *testing.T) {
 
 	// Shrink order: without each rule one at a time, the word without the
 	// lowest set bit, the mask of each rule (non-zero) toward zero.
-	got := LookupCase(nil).Shrink(base)
+	got := slices.Collect(LookupCase(nil).Shrink(base))
 	require.Len(t, got, 5)
 	require.Equal(t, Case{Rules: base.Rules[1:], Word: 0b1010}, got[0])
 	require.Equal(t, Case{Rules: base.Rules[:1], Word: 0b1010}, got[1])
@@ -74,6 +77,6 @@ func TestLookupCaseShrinkEdges(t *testing.T) {
 		Word:  0,
 	}
 
-	got := LookupCase(nil).Shrink(base)
+	got := slices.Collect(LookupCase(nil).Shrink(base))
 	require.Equal(t, []Case{{Rules: []dtree.Rule[int]{}, Word: 0}}, got)
 }

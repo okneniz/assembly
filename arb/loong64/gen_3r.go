@@ -7,10 +7,13 @@ package loong64
 // inventory can prove full coverage of arch.Mnemonics().
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -62,12 +65,14 @@ func newR3Gen(rnd *rand.Rand, ctors []r3Entry) r3Gen {
 	}
 }
 
-func (g r3Gen) Generate() R3Params {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewR3Params(reg(g.rnd), reg(g.rnd), reg(g.rnd), e.ctor)
+func (g r3Gen) Generate() iter.Seq[R3Params] {
+	return arb.Stream(func() R3Params {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewR3Params(reg(g.rnd), reg(g.rnd), reg(g.rnd), e.ctor)
+	})
 }
 
-func (g r3Gen) Shrink(p R3Params) []R3Params {
+func (g r3Gen) Shrink(p R3Params) iter.Seq[R3Params] {
 	rd, rj, rk := regShrunk(p.Rd), regShrunk(p.Rj), regShrunk(p.Rk)
 	out := make([]R3Params, 0, len(rd)+len(rj)+len(rk))
 	for _, r := range rd {
@@ -82,7 +87,7 @@ func (g r3Gen) Shrink(p R3Params) []R3Params {
 		out = append(out, NewR3Params(p.Rd, p.Rj, r, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // alu3R — the 3R arithmetic/logic/shift-register family (46 ctors).
@@ -185,12 +190,14 @@ func newR2Gen(rnd *rand.Rand, ctors []r2Entry) r2Gen {
 	}
 }
 
-func (g r2Gen) Generate() R2Params {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewR2Params(reg(g.rnd), reg(g.rnd), e.ctor)
+func (g r2Gen) Generate() iter.Seq[R2Params] {
+	return arb.Stream(func() R2Params {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewR2Params(reg(g.rnd), reg(g.rnd), e.ctor)
+	})
 }
 
-func (g r2Gen) Shrink(p R2Params) []R2Params {
+func (g r2Gen) Shrink(p R2Params) iter.Seq[R2Params] {
 	rd, rj := regShrunk(p.Rd), regShrunk(p.Rj)
 	out := make([]R2Params, 0, len(rd)+len(rj))
 	for _, r := range rd {
@@ -201,7 +208,7 @@ func (g r2Gen) Shrink(p R2Params) []R2Params {
 		out = append(out, NewR2Params(p.Rd, r, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // alu2R — the 2R bit-manipulation family (26 ctors).

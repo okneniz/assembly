@@ -4,10 +4,13 @@ package riscv
 // (riscv.NewLd).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -47,11 +50,13 @@ func Ld(rnd *rand.Rand) ohsnap.Arbitrary[LdParams] {
 	return newLdGen(rnd)
 }
 
-func (g ldGen) Generate() LdParams {
-	return NewLdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
+func (g ldGen) Generate() iter.Seq[LdParams] {
+	return arb.Stream(func() LdParams {
+		return NewLdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
+	})
 }
 
-func (g ldGen) Shrink(p LdParams) []LdParams {
+func (g ldGen) Shrink(p LdParams) iter.Seq[LdParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
 	offs := immShrunk(p.Off, riscv.NewOff)
 	out := make([]LdParams, 0, len(rd)+len(rs1)+len(offs))
@@ -67,5 +72,5 @@ func (g ldGen) Shrink(p LdParams) []LdParams {
 		out = append(out, NewLdParams(p.Rd, p.Rs1, v))
 	}
 
-	return out
+	return slices.Values(out)
 }

@@ -279,7 +279,7 @@ func TestPropertyAliasRoundTrip(t *testing.T) {
 // created once and closed over; each sampler call is just Generate.
 func instrOf[P instrParam](a ohsnap.Arbitrary[P]) func() arm64.Instr {
 	return func() arm64.Instr {
-		return a.Generate().Instr()
+		return ohsnap.First(a.Generate()).Instr()
 	}
 }
 

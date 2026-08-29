@@ -1,7 +1,9 @@
 package arb
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 )
@@ -22,14 +24,16 @@ func Enum[T comparable](rnd *rand.Rand, vals ...T) ohsnap.Arbitrary[T] {
 	}
 }
 
-func (a enumArb[T]) Generate() T {
-	return a.vals[a.rnd.IntN(len(a.vals))]
+func (a enumArb[T]) Generate() iter.Seq[T] {
+	return Stream(func() T {
+		return a.vals[a.rnd.IntN(len(a.vals))]
+	})
 }
 
-func (a enumArb[T]) Shrink(v T) []T {
+func (a enumArb[T]) Shrink(v T) iter.Seq[T] {
 	if v == a.vals[0] {
-		return nil
+		return ohsnap.Empty[T]()
 	}
 
-	return []T{a.vals[0]}
+	return slices.Values([]T{a.vals[0]})
 }

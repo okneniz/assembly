@@ -6,10 +6,13 @@ package loong64
 // hints with their ui5 leading operand (preld/cacop, preldx).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -151,12 +154,14 @@ func newU5RI12Gen(rnd *rand.Rand, ctors []u5ri12Entry) u5ri12Gen {
 	}
 }
 
-func (g u5ri12Gen) Generate() U5RI12Params {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewU5RI12Params(g.op.Generate(), reg(g.rnd), g.off.Generate(), e.ctor)
+func (g u5ri12Gen) Generate() iter.Seq[U5RI12Params] {
+	return arb.Stream(func() U5RI12Params {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewU5RI12Params(ohsnap.First(g.op.Generate()), reg(g.rnd), ohsnap.First(g.off.Generate()), e.ctor)
+	})
 }
 
-func (g u5ri12Gen) Shrink(p U5RI12Params) []U5RI12Params {
+func (g u5ri12Gen) Shrink(p U5RI12Params) iter.Seq[U5RI12Params] {
 	ops := immShrunk(p.Op, arch.NewUImm5)
 	rjs := regShrunk(p.Rj)
 	offs := immShrunk(p.Off, arch.NewImm12)
@@ -173,7 +178,7 @@ func (g u5ri12Gen) Shrink(p U5RI12Params) []U5RI12Params {
 		out = append(out, NewU5RI12Params(p.Op, p.Rj, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // hints — the "ui5, reg, si12" memory-hint family (2 ctors).
@@ -235,12 +240,14 @@ func newU5rrGen(rnd *rand.Rand, ctors []u5rrentry) u5rrGen {
 	}
 }
 
-func (g u5rrGen) Generate() U5RRParams {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewU5RRParams(g.op.Generate(), reg(g.rnd), reg(g.rnd), e.ctor)
+func (g u5rrGen) Generate() iter.Seq[U5RRParams] {
+	return arb.Stream(func() U5RRParams {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewU5RRParams(ohsnap.First(g.op.Generate()), reg(g.rnd), reg(g.rnd), e.ctor)
+	})
 }
 
-func (g u5rrGen) Shrink(p U5RRParams) []U5RRParams {
+func (g u5rrGen) Shrink(p U5RRParams) iter.Seq[U5RRParams] {
 	ops := immShrunk(p.Op, arch.NewUImm5)
 	rj, rk := regShrunk(p.Rj), regShrunk(p.Rk)
 	out := make([]U5RRParams, 0, len(ops)+len(rj)+len(rk))
@@ -256,7 +263,7 @@ func (g u5rrGen) Shrink(p U5RRParams) []U5RRParams {
 		out = append(out, NewU5RRParams(p.Op, p.Rj, r, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // preldx — the "ui5, reg, reg" hint family (1 ctor; invtlb of the same

@@ -7,10 +7,13 @@ package loong64
 // of its table plus random registers.
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -69,14 +72,16 @@ func newR2RoleGen[T immRole](
 	}
 }
 
-func (g r2RoleGen[T]) Generate() R2RoleParams[T] {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewR2RoleParams(reg(g.rnd), reg(g.rnd), g.role.Generate(), e.ctor)
+func (g r2RoleGen[T]) Generate() iter.Seq[R2RoleParams[T]] {
+	return arb.Stream(func() R2RoleParams[T] {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewR2RoleParams(reg(g.rnd), reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
+	})
 }
 
-func (g r2RoleGen[T]) Shrink(p R2RoleParams[T]) []R2RoleParams[T] {
+func (g r2RoleGen[T]) Shrink(p R2RoleParams[T]) iter.Seq[R2RoleParams[T]] {
 	a, b := regShrunk(p.A), regShrunk(p.B)
-	vs := g.role.Shrink(p.V)
+	vs := slices.Collect(g.role.Shrink(p.V))
 	out := make([]R2RoleParams[T], 0, len(a)+len(b)+len(vs))
 	for _, r := range a {
 		out = append(out, NewR2RoleParams(r, p.B, p.V, p.Ctor))
@@ -90,7 +95,7 @@ func (g r2RoleGen[T]) Shrink(p R2RoleParams[T]) []R2RoleParams[T] {
 		out = append(out, NewR2RoleParams(p.A, p.B, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // R1RoleCtor — a "reg, role" constructor (lu12i.w and the pcaddi family,
@@ -145,14 +150,16 @@ func newR1RoleGen[T immRole](
 	}
 }
 
-func (g r1RoleGen[T]) Generate() R1RoleParams[T] {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewR1RoleParams(reg(g.rnd), g.role.Generate(), e.ctor)
+func (g r1RoleGen[T]) Generate() iter.Seq[R1RoleParams[T]] {
+	return arb.Stream(func() R1RoleParams[T] {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewR1RoleParams(reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
+	})
 }
 
-func (g r1RoleGen[T]) Shrink(p R1RoleParams[T]) []R1RoleParams[T] {
+func (g r1RoleGen[T]) Shrink(p R1RoleParams[T]) iter.Seq[R1RoleParams[T]] {
 	rs := regShrunk(p.R)
-	vs := g.role.Shrink(p.V)
+	vs := slices.Collect(g.role.Shrink(p.V))
 	out := make([]R1RoleParams[T], 0, len(rs)+len(vs))
 	for _, r := range rs {
 		out = append(out, NewR1RoleParams(r, p.V, p.Ctor))
@@ -162,7 +169,7 @@ func (g r1RoleGen[T]) Shrink(p R1RoleParams[T]) []R1RoleParams[T] {
 		out = append(out, NewR1RoleParams(p.R, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // CodeCtor — a bare ui15 code constructor (break/syscall/dbcl/dbar/ibar/
@@ -211,19 +218,21 @@ func newCodeGen(rnd *rand.Rand, ctors []codeEntry) codeGen {
 	}
 }
 
-func (g codeGen) Generate() CodeParams {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewCodeParams(g.code.Generate(), e.ctor)
+func (g codeGen) Generate() iter.Seq[CodeParams] {
+	return arb.Stream(func() CodeParams {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewCodeParams(ohsnap.First(g.code.Generate()), e.ctor)
+	})
 }
 
-func (g codeGen) Shrink(p CodeParams) []CodeParams {
+func (g codeGen) Shrink(p CodeParams) iter.Seq[CodeParams] {
 	cs := immShrunk(p.Code, arch.NewCode15)
 	out := make([]CodeParams, 0, len(cs))
 	for _, c := range cs {
 		out = append(out, NewCodeParams(c, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // aluImm12 — the si12 ALU immediate family (5 ctors).

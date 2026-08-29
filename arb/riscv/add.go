@@ -6,10 +6,13 @@ package riscv
 // (riscv.NewAdd).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -48,11 +51,13 @@ func Add(rnd *rand.Rand) ohsnap.Arbitrary[AddParams] {
 	return newAddGen(rnd)
 }
 
-func (g addGen) Generate() AddParams {
-	return NewAddParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
+func (g addGen) Generate() iter.Seq[AddParams] {
+	return arb.Stream(func() AddParams {
+		return NewAddParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
+	})
 }
 
-func (g addGen) Shrink(p AddParams) []AddParams {
+func (g addGen) Shrink(p AddParams) iter.Seq[AddParams] {
 	rd, rs1, rs2 := regShrunk(p.Rd), regShrunk(p.Rs1), regShrunk(p.Rs2)
 	out := make([]AddParams, 0, len(rd)+len(rs1)+len(rs2))
 	for _, r := range rd {
@@ -67,5 +72,5 @@ func (g addGen) Shrink(p AddParams) []AddParams {
 		out = append(out, NewAddParams(p.Rd, p.Rs1, r))
 	}
 
-	return out
+	return slices.Values(out)
 }

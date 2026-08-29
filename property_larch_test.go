@@ -334,7 +334,7 @@ func TestPropertyLoongAliasRoundTrip(t *testing.T) {
 // generator is created once; see rvInstrOf in property_rv_test.go).
 func laInstrOf[P laInstrParam](a ohsnap.Arbitrary[P]) func() loong64.Instr {
 	return func() loong64.Instr {
-		return a.Generate().Instr()
+		return ohsnap.First(a.Generate()).Instr()
 	}
 }
 

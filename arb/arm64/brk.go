@@ -3,9 +3,12 @@ package arm64
 // Generator for brk — one generator, one type, one constructor (arm64.NewBrk).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
@@ -42,18 +45,20 @@ func Brk(rnd *rand.Rand) ohsnap.Arbitrary[BrkParams] {
 	return newBrkGen(rnd)
 }
 
-func (g brkGen) Generate() BrkParams {
-	return NewBrkParams(imm16(g.rnd.Int64N(0x10000)))
+func (g brkGen) Generate() iter.Seq[BrkParams] {
+	return arb.Stream(func() BrkParams {
+		return NewBrkParams(imm16(g.rnd.Int64N(0x10000)))
+	})
 }
 
-func (g brkGen) Shrink(p BrkParams) []BrkParams {
+func (g brkGen) Shrink(p BrkParams) iter.Seq[BrkParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return nil // String() of our own type is unparseable — invariant
+		return ohsnap.Empty[BrkParams]() // String() of our own type is unparseable — invariant
 	}
 
 	var out []BrkParams
-	for _, d := range arb.Halved(v) {
+	for d := range shrink.Halving[int64](0)(v) {
 		imm, err := arm64.NewImm16(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm16 is always in 0..65535
@@ -62,5 +67,5 @@ func (g brkGen) Shrink(p BrkParams) []BrkParams {
 		out = append(out, NewBrkParams(imm))
 	}
 
-	return out
+	return slices.Values(out)
 }

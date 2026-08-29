@@ -8,9 +8,12 @@ package expr
 // structural growth with a depth budget and per-axis shrink (like the arb/arch families).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/asm/expr"
@@ -43,17 +46,19 @@ func Tree(rnd *rand.Rand) ohsnap.Arbitrary[*expr.Expr] {
 	return treeGen{rnd: rnd}
 }
 
-func (g treeGen) Generate() *expr.Expr {
-	return g.grow(4)
+func (g treeGen) Generate() iter.Seq[*expr.Expr] {
+	return arb.Stream(func() *expr.Expr {
+		return g.grow(4)
+	})
 }
 
 // Shrink — one axis at a time: structural simplification (unary → operand,
 // binary → operand), leaf (the number is halved toward zero, the name is
 // trimmed from the end), in depth (a child is replaced by one of its own
 // candidates), operator → vals[0].
-func (g treeGen) Shrink(e *expr.Expr) []*expr.Expr {
+func (g treeGen) Shrink(e *expr.Expr) iter.Seq[*expr.Expr] {
 	if e == nil {
-		return nil
+		return ohsnap.Empty[*expr.Expr]()
 	}
 
 	var out []*expr.Expr
@@ -63,7 +68,7 @@ func (g treeGen) Shrink(e *expr.Expr) []*expr.Expr {
 	case expr.ExprBinary:
 		out = append(out, e.X, e.Y)
 	case expr.ExprNum:
-		for _, v := range arb.Halved(e.Num) {
+		for v := range shrink.Halving[int64](0)(e.Num) {
 			out = append(out, expr.Num(v))
 		}
 	case expr.ExprSym:
@@ -72,11 +77,11 @@ func (g treeGen) Shrink(e *expr.Expr) []*expr.Expr {
 		}
 	}
 
-	for _, c := range g.Shrink(e.X) {
+	for c := range g.Shrink(e.X) {
 		out = append(out, expr.NewExpr(e.Kind, e.Num, e.Sym, e.Op, c, e.Y))
 	}
 
-	for _, c := range g.Shrink(e.Y) {
+	for c := range g.Shrink(e.Y) {
 		out = append(out, expr.NewExpr(e.Kind, e.Num, e.Sym, e.Op, e.X, c))
 	}
 
@@ -88,7 +93,7 @@ func (g treeGen) Shrink(e *expr.Expr) []*expr.Expr {
 		out = append(out, expr.NewExpr(expr.ExprBinary, 0, "", binOps[0], e.X, e.Y))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // grow — a subtree of depth <= depth; a 1/3 chance of a leaf and within the budget.

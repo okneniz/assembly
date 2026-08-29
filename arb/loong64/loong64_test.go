@@ -3,6 +3,7 @@ package loong64
 import (
 	"bytes"
 	"math/rand/v2"
+	"slices"
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
@@ -27,7 +28,7 @@ func TestRegGenDistribution(t *testing.T) {
 	rnd := arb.Rnd(42)
 	seen := map[string]bool{}
 	for range 1000 {
-		seen[Reg(rnd).Generate().String()] = true
+		seen[ohsnap.First(Reg(rnd).Generate()).String()] = true
 	}
 
 	for _, want := range []string{"$zero", "$ra", "$tp", "$sp", "$a0", "$t0", "$r21", "$s8"} {
@@ -53,7 +54,7 @@ func TestRegGenShrink(t *testing.T) {
 	require.Equal(t, arch.Zero, got[0])
 
 	// the same through the Arbitrary interface
-	require.Equal(t, regShrunk(r9), Reg(arb.Rnd(7)).Shrink(r9))
+	require.Equal(t, regShrunk(r9), slices.Collect(Reg(arb.Rnd(7)).Shrink(r9)))
 }
 
 // TestImmGenProperty — every role: samples in range (the aligned roles
@@ -68,7 +69,7 @@ func TestImmGenProperty(t *testing.T) {
 
 		lo, err := arch.NewImm12(-2048)
 		require.NoError(t, err)
-		for _, s := range Imm12(rnd).Shrink(lo) {
+		for s := range Imm12(rnd).Shrink(lo) {
 			require.GreaterOrEqual(t, s.Val(), int64(-2048), "shrink out of range: %v", s)
 			require.LessOrEqual(t, s.Val(), int64(2047), "shrink out of range: %v", s)
 		}
@@ -91,7 +92,7 @@ func TestImmGenProperty(t *testing.T) {
 		// surviving candidates are aligned and in range
 		hi, err := arch.NewImm14(16380)
 		require.NoError(t, err)
-		cs := Imm14(rnd).Shrink(hi)
+		cs := slices.Collect(Imm14(rnd).Shrink(hi))
 		require.NotEmpty(t, cs)
 		for _, s := range cs {
 			require.Equal(t, int64(0), s.Val()%4, "unaligned shrink candidate: %v", s)
@@ -202,12 +203,12 @@ func newInstrCase[P laInstrParam](name string, mk func() ohsnap.Arbitrary[P]) in
 	return instrCase{
 		name: name,
 		sample: func() (arch.Instr, string) {
-			p := mk().Generate()
+			p := ohsnap.First(mk().Generate())
 			return p.Instr(), p.String()
 		},
 		shrink: func() []arch.Instr {
 			g := mk()
-			cs := g.Shrink(g.Generate())
+			cs := slices.Collect(g.Shrink(ohsnap.First(g.Generate())))
 			out := make([]arch.Instr, len(cs))
 			for i, c := range cs {
 				out[i] = c.Instr()
@@ -373,7 +374,7 @@ func TestFieldParamsProperty(t *testing.T) {
 			return false
 		}
 
-		for _, c := range FieldW(rnd).Shrink(p) {
+		for c := range FieldW(rnd).Shrink(p) {
 			if !pair(c.Msb.Val(), c.Lsb.Val()) {
 				return false
 			}
@@ -386,7 +387,7 @@ func TestFieldParamsProperty(t *testing.T) {
 			return false
 		}
 
-		for _, c := range FieldD(rnd).Shrink(p) {
+		for c := range FieldD(rnd).Shrink(p) {
 			if !pair(c.Msb.Val(), c.Lsb.Val()) {
 				return false
 			}

@@ -7,9 +7,13 @@ package expr
 // generator for deterministic failures.
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+
+	"github.com/okneniz/assembly/arb"
 )
 
 // junkAlphabet — runes of the expression lexicon: digits and base prefixes,
@@ -26,18 +30,20 @@ func Junk(rnd *rand.Rand) ohsnap.Arbitrary[string] {
 	return junkGen{rnd: rnd}
 }
 
-func (g junkGen) Generate() string {
-	rs := make([]rune, g.rnd.IntN(33))
-	for i := range rs {
-		rs[i] = rune(junkAlphabet[g.rnd.IntN(len(junkAlphabet))])
-	}
+func (g junkGen) Generate() iter.Seq[string] {
+	return arb.Stream(func() string {
+		rs := make([]rune, g.rnd.IntN(33))
+		for i := range rs {
+			rs[i] = rune(junkAlphabet[g.rnd.IntN(len(junkAlphabet))])
+		}
 
-	return string(rs)
+		return string(rs)
+	})
 }
 
 // Shrink — prefix-half and "drop one" (like arb.Seq): a minimal
 // failing substring localizes the bug.
-func (junkGen) Shrink(s string) []string {
+func (junkGen) Shrink(s string) iter.Seq[string] {
 	r := []rune(s)
 	var out []string
 	if h := len(r) / 2; h > 0 {
@@ -48,5 +54,5 @@ func (junkGen) Shrink(s string) []string {
 		out = append(out, string(append(append([]rune{}, r[:i]...), r[i+1:]...)))
 	}
 
-	return out
+	return slices.Values(out)
 }

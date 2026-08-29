@@ -4,10 +4,13 @@ package riscv
 // (riscv.NewSub).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,11 +49,13 @@ func Sub(rnd *rand.Rand) ohsnap.Arbitrary[SubParams] {
 	return newSubGen(rnd)
 }
 
-func (g subGen) Generate() SubParams {
-	return NewSubParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
+func (g subGen) Generate() iter.Seq[SubParams] {
+	return arb.Stream(func() SubParams {
+		return NewSubParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
+	})
 }
 
-func (g subGen) Shrink(p SubParams) []SubParams {
+func (g subGen) Shrink(p SubParams) iter.Seq[SubParams] {
 	rd, rs1, rs2 := regShrunk(p.Rd), regShrunk(p.Rs1), regShrunk(p.Rs2)
 	out := make([]SubParams, 0, len(rd)+len(rs1)+len(rs2))
 	for _, r := range rd {
@@ -65,5 +70,5 @@ func (g subGen) Shrink(p SubParams) []SubParams {
 		out = append(out, NewSubParams(p.Rd, p.Rs1, r))
 	}
 
-	return out
+	return slices.Values(out)
 }

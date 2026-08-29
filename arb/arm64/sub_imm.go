@@ -4,9 +4,12 @@ package arm64
 // (arm64.NewSubImm).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
@@ -56,20 +59,22 @@ func SubImm(rnd *rand.Rand) ohsnap.Arbitrary[SubImmParams] {
 	return newSubImmGen(rnd)
 }
 
-func (g subImmGen) Generate() SubImmParams {
-	is64 := g.rnd.IntN(2) == 1
-	return NewSubImmParams(
-		genReg(g.rnd, is64, true, false),
-		genReg(g.rnd, is64, true, false),
-		imm12(g.rnd.Int64N(0x1000)),
-		arm64.Sh12(g.rnd.IntN(2)),
-	)
+func (g subImmGen) Generate() iter.Seq[SubImmParams] {
+	return arb.Stream(func() SubImmParams {
+		is64 := g.rnd.IntN(2) == 1
+		return NewSubImmParams(
+			genReg(g.rnd, is64, true, false),
+			genReg(g.rnd, is64, true, false),
+			imm12(g.rnd.Int64N(0x1000)),
+			arm64.Sh12(g.rnd.IntN(2)),
+		)
+	})
 }
 
-func (g subImmGen) Shrink(p SubImmParams) []SubImmParams {
+func (g subImmGen) Shrink(p SubImmParams) iter.Seq[SubImmParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return nil // String() of our own type is unparseable — invariant
+		return ohsnap.Empty[SubImmParams]() // String() of our own type is unparseable — invariant
 	}
 
 	var out []SubImmParams
@@ -81,7 +86,7 @@ func (g subImmGen) Shrink(p SubImmParams) []SubImmParams {
 		out = append(out, NewSubImmParams(p.Rd, r, p.Imm, p.Sh))
 	}
 
-	for _, d := range arb.Halved(v) {
+	for d := range shrink.Halving[int64](0)(v) {
 		imm, err := arm64.NewImm12(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm12 is always in 0..4095
@@ -94,5 +99,5 @@ func (g subImmGen) Shrink(p SubImmParams) []SubImmParams {
 		out = append(out, NewSubImmParams(p.Rd, p.Rn, p.Imm, arm64.NoSh12))
 	}
 
-	return out
+	return slices.Values(out)
 }

@@ -6,9 +6,12 @@ package loong64
 // the three-registers-plus-role shape over a random ctor.
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -72,14 +75,16 @@ func newR3RoleGen[T immRole](
 	}
 }
 
-func (g r3RoleGen[T]) Generate() R3RoleParams[T] {
-	e := g.ctors[g.rnd.IntN(len(g.ctors))]
-	return NewR3RoleParams(reg(g.rnd), reg(g.rnd), reg(g.rnd), g.role.Generate(), e.ctor)
+func (g r3RoleGen[T]) Generate() iter.Seq[R3RoleParams[T]] {
+	return arb.Stream(func() R3RoleParams[T] {
+		e := g.ctors[g.rnd.IntN(len(g.ctors))]
+		return NewR3RoleParams(reg(g.rnd), reg(g.rnd), reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
+	})
 }
 
-func (g r3RoleGen[T]) Shrink(p R3RoleParams[T]) []R3RoleParams[T] {
+func (g r3RoleGen[T]) Shrink(p R3RoleParams[T]) iter.Seq[R3RoleParams[T]] {
 	a, b, c := regShrunk(p.A), regShrunk(p.B), regShrunk(p.C)
-	vs := g.role.Shrink(p.V)
+	vs := slices.Collect(g.role.Shrink(p.V))
 	out := make([]R3RoleParams[T], 0, len(a)+len(b)+len(c)+len(vs))
 	for _, r := range a {
 		out = append(out, NewR3RoleParams(r, p.B, p.C, p.V, p.Ctor))
@@ -97,7 +102,7 @@ func (g r3RoleGen[T]) Shrink(p R3RoleParams[T]) []R3RoleParams[T] {
 		out = append(out, NewR3RoleParams(p.A, p.B, p.C, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // FieldWCtor — a .w bit-field constructor: rd, rj, msb, lsb.
@@ -156,20 +161,21 @@ func FieldW(rnd *rand.Rand) ohsnap.Arbitrary[FieldWParams] {
 	return newFieldWGen(rnd)
 }
 
-func (g fieldWGen) Generate() FieldWParams {
-	e := fieldW[g.rnd.IntN(len(fieldW))]
-	lsb := wrapImm(g.rnd.Int64N(32), arch.NewUImm5)
-	msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.NewUImm5)
-	return NewFieldWParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
+func (g fieldWGen) Generate() iter.Seq[FieldWParams] {
+	return arb.Stream(func() FieldWParams {
+		e := fieldW[g.rnd.IntN(len(fieldW))]
+		lsb := wrapImm(g.rnd.Int64N(32), arch.NewUImm5)
+		msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.NewUImm5)
+		return NewFieldWParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
+	})
 }
 
-func (g fieldWGen) Shrink(p FieldWParams) []FieldWParams {
+func (g fieldWGen) Shrink(p FieldWParams) iter.Seq[FieldWParams] {
 	rd, rj := regShrunk(p.Rd), regShrunk(p.Rj)
 	// the field gap (msb - lsb) halves toward zero: msb keeps >= lsb and
 	// in range (lsb + d <= the old msb <= 31)
-	halved := arb.Halved(p.Msb.Val() - p.Lsb.Val())
-	msbs := make([]arch.UImm5, 0, len(halved))
-	for _, d := range halved {
+	var msbs []arch.UImm5
+	for d := range shrink.Halving[int64](0)(p.Msb.Val() - p.Lsb.Val()) {
 		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm5))
 	}
 
@@ -193,7 +199,7 @@ func (g fieldWGen) Shrink(p FieldWParams) []FieldWParams {
 		out = append(out, NewFieldWParams(p.Rd, p.Rj, p.Msb, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // FieldDCtor — a .d bit-field constructor: rd, rj, msb, lsb.
@@ -250,20 +256,21 @@ func FieldD(rnd *rand.Rand) ohsnap.Arbitrary[FieldDParams] {
 	return newFieldDGen(rnd)
 }
 
-func (g fieldDGen) Generate() FieldDParams {
-	e := fieldD[g.rnd.IntN(len(fieldD))]
-	lsb := wrapImm(g.rnd.Int64N(64), arch.NewUImm6)
-	msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.NewUImm6)
-	return NewFieldDParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
+func (g fieldDGen) Generate() iter.Seq[FieldDParams] {
+	return arb.Stream(func() FieldDParams {
+		e := fieldD[g.rnd.IntN(len(fieldD))]
+		lsb := wrapImm(g.rnd.Int64N(64), arch.NewUImm6)
+		msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.NewUImm6)
+		return NewFieldDParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
+	})
 }
 
-func (g fieldDGen) Shrink(p FieldDParams) []FieldDParams {
+func (g fieldDGen) Shrink(p FieldDParams) iter.Seq[FieldDParams] {
 	rd, rj := regShrunk(p.Rd), regShrunk(p.Rj)
 	// the field gap (msb - lsb) halves toward zero: msb keeps >= lsb and
 	// in range (lsb + d <= the old msb <= 63)
-	halved := arb.Halved(p.Msb.Val() - p.Lsb.Val())
-	msbs := make([]arch.UImm6, 0, len(halved))
-	for _, d := range halved {
+	var msbs []arch.UImm6
+	for d := range shrink.Halving[int64](0)(p.Msb.Val() - p.Lsb.Val()) {
 		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm6))
 	}
 
@@ -287,7 +294,7 @@ func (g fieldDGen) Shrink(p FieldDParams) []FieldDParams {
 		out = append(out, NewFieldDParams(p.Rd, p.Rj, p.Msb, v, p.Ctor))
 	}
 
-	return out
+	return slices.Values(out)
 }
 
 // alsl — the alsl family over the shared three-registers-plus-role shape

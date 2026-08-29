@@ -4,10 +4,13 @@ package riscv
 // (riscv.NewLui).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,11 +49,13 @@ func Lui(rnd *rand.Rand) ohsnap.Arbitrary[LuiParams] {
 	return newLuiGen(rnd)
 }
 
-func (g luiGen) Generate() LuiParams {
-	return NewLuiParams(reg(g.rnd), imm20(g.rnd))
+func (g luiGen) Generate() iter.Seq[LuiParams] {
+	return arb.Stream(func() LuiParams {
+		return NewLuiParams(reg(g.rnd), imm20(g.rnd))
+	})
 }
 
-func (g luiGen) Shrink(p LuiParams) []LuiParams {
+func (g luiGen) Shrink(p LuiParams) iter.Seq[LuiParams] {
 	rd := regShrunk(p.Rd)
 	imms := immShrunk(p.Imm, riscv.NewImm20)
 	out := make([]LuiParams, 0, len(rd)+len(imms))
@@ -62,5 +67,5 @@ func (g luiGen) Shrink(p LuiParams) []LuiParams {
 		out = append(out, NewLuiParams(p.Rd, v))
 	}
 
-	return out
+	return slices.Values(out)
 }

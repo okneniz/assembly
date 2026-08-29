@@ -4,10 +4,13 @@ package arm64
 // constructor (arm64.NewStr).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,21 +57,23 @@ func Str(rnd *rand.Rand) ohsnap.Arbitrary[StrParams] {
 	return newStrGen(rnd)
 }
 
-func (g strGen) Generate() StrParams {
-	is64 := g.rnd.IntN(2) == 1
-	align := int64(4)
-	if is64 {
-		align = 8
-	}
+func (g strGen) Generate() iter.Seq[StrParams] {
+	return arb.Stream(func() StrParams {
+		is64 := g.rnd.IntN(2) == 1
+		align := int64(4)
+		if is64 {
+			align = 8
+		}
 
-	return NewStrParams(
-		genReg(g.rnd, is64, false, true),
-		genReg(g.rnd, true, true, false),
-		arm64.Off(g.rnd.Int64N(0x1000)*align),
-	)
+		return NewStrParams(
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, true, true, false),
+			arm64.Off(g.rnd.Int64N(0x1000)*align),
+		)
+	})
 }
 
-func (g strGen) Shrink(p StrParams) []StrParams {
+func (g strGen) Shrink(p StrParams) iter.Seq[StrParams] {
 	scale := uint32(2)
 	if p.Rt.Is64() {
 		scale = 3
@@ -92,5 +97,5 @@ func (g strGen) Shrink(p StrParams) []StrParams {
 		out = append(out, NewStrParams(p.Rt, p.Rn, o))
 	}
 
-	return out
+	return slices.Values(out)
 }

@@ -8,6 +8,7 @@
 package arb
 
 import (
+	"iter"
 	"math/rand/v2"
 
 	ohsnap "github.com/okneniz/oh-snap"
@@ -23,17 +24,14 @@ func Word(rnd *rand.Rand) ohsnap.Arbitrary[uint32] {
 	return ohsnap.ArbitraryUint32(rnd, 0, 0xffffffff)
 }
 
-// Halved — shrink candidates for a number by halving toward zero (v/2, v/4, ..., 0).
-// Sign-preserving: negative values approach zero through negatives.
-func Halved(v int64) []int64 {
-	var out []int64
-	for d := v / 2; d != 0; d /= 2 {
-		out = append(out, d)
+// Stream — a lazy infinite sequence of values from f: the adapter that
+// turns a plain value constructor into the oh-snap Generate sequence.
+func Stream[T any](f func() T) iter.Seq[T] {
+	return func(yield func(T) bool) {
+		for {
+			if !yield(f()) {
+				return
+			}
+		}
 	}
-
-	if v != 0 {
-		out = append(out, 0)
-	}
-
-	return out
 }

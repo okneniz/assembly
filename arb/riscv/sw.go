@@ -4,10 +4,13 @@ package riscv
 // (riscv.NewSw).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -47,11 +50,13 @@ func Sw(rnd *rand.Rand) ohsnap.Arbitrary[SwParams] {
 	return newSwGen(rnd)
 }
 
-func (g swGen) Generate() SwParams {
-	return NewSwParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
+func (g swGen) Generate() iter.Seq[SwParams] {
+	return arb.Stream(func() SwParams {
+		return NewSwParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
+	})
 }
 
-func (g swGen) Shrink(p SwParams) []SwParams {
+func (g swGen) Shrink(p SwParams) iter.Seq[SwParams] {
 	rs2, rs1 := regShrunk(p.Rs2), regShrunk(p.Rs1)
 	offs := immShrunk(p.Off, riscv.NewOff)
 	out := make([]SwParams, 0, len(rs2)+len(rs1)+len(offs))
@@ -67,5 +72,5 @@ func (g swGen) Shrink(p SwParams) []SwParams {
 		out = append(out, NewSwParams(p.Rs2, p.Rs1, v))
 	}
 
-	return out
+	return slices.Values(out)
 }

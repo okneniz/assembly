@@ -3,6 +3,7 @@ package arm64
 import (
 	"bytes"
 	"math/rand/v2"
+	"slices"
 	"strings"
 	"testing"
 
@@ -55,7 +56,7 @@ func TestRegGenDistribution(t *testing.T) {
 	rnd := arb.Rnd(42)
 	seen := map[string]bool{}
 	for range 1000 {
-		seen[Reg(rnd).Generate().String()] = true
+		seen[ohsnap.First(Reg(rnd).Generate()).String()] = true
 	}
 
 	for _, want := range []string{"x0", "w0", "xzr", "wzr", "sp", "wsp", "x30"} {
@@ -122,17 +123,17 @@ func TestImmGenProperty(t *testing.T) {
 	rnd := arb.Rnd(1)
 	i12 := Imm12(rnd)
 	i16 := Imm16(rnd)
-	for _, s := range i12.Shrink(i12.Generate()) {
+	for s := range i12.Shrink(ohsnap.First(i12.Generate())) {
 		n := mustImmValue(t, s)
 		require.True(t, n >= 0 && n <= 0xfff, "Imm12 shrink out of range: %v", s)
 	}
 
-	for _, s := range i16.Shrink(i16.Generate()) {
+	for s := range i16.Shrink(ohsnap.First(i16.Generate())) {
 		n := mustImmValue(t, s)
 		require.True(t, n >= 0 && n <= 0xffff, "Imm16 shrink out of range: %v", s)
 	}
 
-	n := mustImmValue(t, Imm6(rnd).Generate())
+	n := mustImmValue(t, ohsnap.First(Imm6(rnd).Generate()))
 	require.GreaterOrEqual(t, n, int64(0), "Imm6: immValue failed to parse String()")
 }
 
@@ -141,7 +142,7 @@ func TestImmGenBounds(t *testing.T) {
 	rnd := arb.Rnd(7)
 	min12, max12 := int64(1<<62), int64(-1)
 	for range 2000 {
-		n := mustImmValue(t, Imm12(rnd).Generate())
+		n := mustImmValue(t, ohsnap.First(Imm12(rnd).Generate()))
 		min12 = min(min12, n)
 		max12 = max(max12, n)
 	}
@@ -167,10 +168,10 @@ func TestEnumGen(t *testing.T) {
 	ohsnap.Check(t, 200, Sh12(rnd), func(s arm64.Sh12) bool {
 		return s == arm64.NoSh12 || s == arm64.LSL12
 	})
-	shifts := Shift(rnd).Shrink(arm64.ROR)
+	shifts := slices.Collect(Shift(rnd).Shrink(arm64.ROR))
 	require.Len(t, shifts, 1, "Shift.Shrink(ROR) = %v", shifts)
 	require.Equal(t, arm64.LSL, shifts[0], "Shift.Shrink(ROR) = %v", shifts)
-	sh12s := Sh12(rnd).Shrink(arm64.LSL12)
+	sh12s := slices.Collect(Sh12(rnd).Shrink(arm64.LSL12))
 	require.Len(t, sh12s, 1, "Sh12.Shrink(LSL12) = %v", sh12s)
 	require.Equal(t, arm64.NoSh12, sh12s[0], "Sh12.Shrink(LSL12) = %v", sh12s)
 }
@@ -205,37 +206,37 @@ func newInstrCase(name string, gen func() arm64.Instr) instrCase {
 func instrCases(rnd *rand.Rand) []instrCase {
 	return []instrCase{
 		newInstrCase("Ret", func() arm64.Instr {
-			return Ret(rnd).Generate().Instr()
+			return ohsnap.First(Ret(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Svc", func() arm64.Instr {
-			return Svc(rnd).Generate().Instr()
+			return ohsnap.First(Svc(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Brk", func() arm64.Instr {
-			return Brk(rnd).Generate().Instr()
+			return ohsnap.First(Brk(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Movz", func() arm64.Instr {
-			return Movz(rnd).Generate().Instr()
+			return ohsnap.First(Movz(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Movk", func() arm64.Instr {
-			return Movk(rnd).Generate().Instr()
+			return ohsnap.First(Movk(rnd).Generate()).Instr()
 		}),
 		newInstrCase("AddImm", func() arm64.Instr {
-			return AddImm(rnd).Generate().Instr()
+			return ohsnap.First(AddImm(rnd).Generate()).Instr()
 		}),
 		newInstrCase("SubImm", func() arm64.Instr {
-			return SubImm(rnd).Generate().Instr()
+			return ohsnap.First(SubImm(rnd).Generate()).Instr()
 		}),
 		newInstrCase("AddShift", func() arm64.Instr {
-			return AddShift(rnd).Generate().Instr()
+			return ohsnap.First(AddShift(rnd).Generate()).Instr()
 		}),
 		newInstrCase("SubShift", func() arm64.Instr {
-			return SubShift(rnd).Generate().Instr()
+			return ohsnap.First(SubShift(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Ldr", func() arm64.Instr {
-			return Ldr(rnd).Generate().Instr()
+			return ohsnap.First(Ldr(rnd).Generate()).Instr()
 		}),
 		newInstrCase("Str", func() arm64.Instr {
-			return Str(rnd).Generate().Instr()
+			return ohsnap.First(Str(rnd).Generate()).Instr()
 		}),
 	}
 }
@@ -258,8 +259,8 @@ func TestInstrGenValid(t *testing.T) {
 // TestInstrGenText — String() of the parameters = ObjDump of the instruction.
 func TestInstrGenText(t *testing.T) {
 	rnd := arb.Rnd(42)
-	require.NotEmpty(t, Movz(rnd).Generate().String(), "MovzParams.String() is empty")
-	got := Ldr(rnd).Generate().String()
+	require.NotEmpty(t, ohsnap.First(Movz(rnd).Generate()).String(), "MovzParams.String() is empty")
+	got := ohsnap.First(Ldr(rnd).Generate()).String()
 	require.True(t, strings.HasPrefix(got, "ldr "), "LdrParams.String() = %q", got)
 }
 
@@ -270,8 +271,8 @@ func TestInstrGenShrinkValid(t *testing.T) {
 	// Movz/Movk: shrinking a W-form never leaves hw>=2.
 	movz := Movz(rnd)
 	for range 200 {
-		p := movz.Generate()
-		for _, s := range movz.Shrink(p) {
+		p := ohsnap.First(movz.Generate())
+		for s := range movz.Shrink(p) {
 			require.True(
 				t,
 				s.Rd.Is64() || s.Hw <= arm64.Hw1,
@@ -285,8 +286,8 @@ func TestInstrGenShrinkValid(t *testing.T) {
 	// AddImm: the width of rd/rn matches after shrinking.
 	add := AddImm(rnd)
 	for range 200 {
-		p := add.Generate()
-		for _, s := range add.Shrink(p) {
+		p := ohsnap.First(add.Generate())
+		for s := range add.Shrink(p) {
 			require.Equal(t, s.Rd.Is64(), s.Rn.Is64(), "shrink broke the width: %s", s)
 			s.Instr()
 		}
@@ -295,8 +296,8 @@ func TestInstrGenShrinkValid(t *testing.T) {
 	// Ldr: the offset is aligned to the width of rt after shrinking.
 	ldr := Ldr(rnd)
 	for range 200 {
-		p := ldr.Generate()
-		for _, s := range ldr.Shrink(p) {
+		p := ohsnap.First(ldr.Generate())
+		for s := range ldr.Shrink(p) {
 			align := int64(4)
 			if s.Rt.Is64() {
 				align = 8

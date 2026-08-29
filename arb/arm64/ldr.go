@@ -4,10 +4,13 @@ package arm64
 // constructor (arm64.NewLdr).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,21 +57,23 @@ func Ldr(rnd *rand.Rand) ohsnap.Arbitrary[LdrParams] {
 	return newLdrGen(rnd)
 }
 
-func (g ldrGen) Generate() LdrParams {
-	is64 := g.rnd.IntN(2) == 1
-	align := int64(4)
-	if is64 {
-		align = 8
-	}
+func (g ldrGen) Generate() iter.Seq[LdrParams] {
+	return arb.Stream(func() LdrParams {
+		is64 := g.rnd.IntN(2) == 1
+		align := int64(4)
+		if is64 {
+			align = 8
+		}
 
-	return NewLdrParams(
-		genReg(g.rnd, is64, false, true),
-		genReg(g.rnd, true, true, false),
-		arm64.Off(g.rnd.Int64N(0x1000)*align),
-	)
+		return NewLdrParams(
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, true, true, false),
+			arm64.Off(g.rnd.Int64N(0x1000)*align),
+		)
+	})
 }
 
-func (g ldrGen) Shrink(p LdrParams) []LdrParams {
+func (g ldrGen) Shrink(p LdrParams) iter.Seq[LdrParams] {
 	scale := uint32(2)
 	if p.Rt.Is64() {
 		scale = 3
@@ -92,5 +97,5 @@ func (g ldrGen) Shrink(p LdrParams) []LdrParams {
 		out = append(out, NewLdrParams(p.Rt, p.Rn, o))
 	}
 
-	return out
+	return slices.Values(out)
 }
