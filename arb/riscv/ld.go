@@ -58,7 +58,7 @@ func (g ldGen) Generate() iter.Seq[LdParams] {
 
 func (g ldGen) Shrink(p LdParams) iter.Seq[LdParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff)
+	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
 	out := make([]LdParams, 0, len(rd)+len(rs1)+len(offs))
 	for _, r := range rd {
 		out = append(out, NewLdParams(r, p.Rs1, p.Off))

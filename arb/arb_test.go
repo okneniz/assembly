@@ -5,7 +5,6 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
-
 	"github.com/stretchr/testify/require"
 )
 

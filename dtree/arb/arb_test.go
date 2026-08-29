@@ -6,7 +6,6 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
-
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/dtree"

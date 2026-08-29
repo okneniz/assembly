@@ -157,14 +157,19 @@ func newU5RI12Gen(rnd *rand.Rand, ctors []u5ri12Entry) u5ri12Gen {
 func (g u5ri12Gen) Generate() iter.Seq[U5RI12Params] {
 	return arb.Stream(func() U5RI12Params {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewU5RI12Params(ohsnap.First(g.op.Generate()), reg(g.rnd), ohsnap.First(g.off.Generate()), e.ctor)
+		return NewU5RI12Params(
+			ohsnap.First(g.op.Generate()),
+			reg(g.rnd),
+			ohsnap.First(g.off.Generate()),
+			e.ctor,
+		)
 	})
 }
 
 func (g u5ri12Gen) Shrink(p U5RI12Params) iter.Seq[U5RI12Params] {
-	ops := immShrunk(p.Op, arch.NewUImm5)
+	ops := immShrunk(p.Op, arch.NewUImm5, halvingOnly)
 	rjs := regShrunk(p.Rj)
-	offs := immShrunk(p.Off, arch.NewImm12)
+	offs := immShrunk(p.Off, arch.NewImm12, halvingOnly)
 	out := make([]U5RI12Params, 0, len(ops)+len(rjs)+len(offs))
 	for _, v := range ops {
 		out = append(out, NewU5RI12Params(v, p.Rj, p.Off, p.Ctor))
@@ -248,7 +253,7 @@ func (g u5rrGen) Generate() iter.Seq[U5RRParams] {
 }
 
 func (g u5rrGen) Shrink(p U5RRParams) iter.Seq[U5RRParams] {
-	ops := immShrunk(p.Op, arch.NewUImm5)
+	ops := immShrunk(p.Op, arch.NewUImm5, halvingOnly)
 	rj, rk := regShrunk(p.Rj), regShrunk(p.Rk)
 	out := make([]U5RRParams, 0, len(ops)+len(rj)+len(rk))
 	for _, v := range ops {

@@ -57,7 +57,7 @@ func (g luiGen) Generate() iter.Seq[LuiParams] {
 
 func (g luiGen) Shrink(p LuiParams) iter.Seq[LuiParams] {
 	rd := regShrunk(p.Rd)
-	imms := immShrunk(p.Imm, riscv.NewImm20)
+	imms := immShrunk(p.Imm, riscv.NewImm20, imm20Shrink)
 	out := make([]LuiParams, 0, len(rd)+len(imms))
 	for _, r := range rd {
 		out = append(out, NewLuiParams(r, p.Imm))

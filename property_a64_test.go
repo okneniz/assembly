@@ -152,6 +152,13 @@ type instrParam interface {
 	Instr() arm64.Instr
 }
 
+// textShrinkBudget - the cap on property calls spent shrinking a failing
+// text case: every candidate costs a full Assemble+Parse round trip, an
+// unbounded minimization of a broken encoder would stall the suite. A
+// descent over an instruction's shrink axes takes hundreds of calls, so
+// 1000 keeps a full minimization and cuts the pathological ones.
+const textShrinkBudget = 1000
+
 // propFamilyEntry - one family in the TestPropertySingleInstrRoundTrip table.
 type propFamilyEntry struct {
 	name string
@@ -181,9 +188,9 @@ func newPropFamily[P instrParam](
 			})
 
 			t.Run("text", func(t *testing.T) {
-				ohsnap.Check(t, 100000, mk(rnd), func(p P) bool {
+				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
 					return propTextRoundTrip(t, p.Instr())
-				})
+				}, ohsnap.CheckOptions{Budget: textShrinkBudget})
 			})
 		},
 	}
@@ -244,13 +251,13 @@ func newAliasFamily[P instrParam](
 			})
 
 			t.Run("text", func(t *testing.T) {
-				ohsnap.Check(t, 100000, mk(rnd), func(p P) bool {
+				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
 					if in, ok := pinned(p); ok {
 						return propTextRoundTrip(t, in)
 					}
 
 					return true
-				})
+				}, ohsnap.CheckOptions{Budget: textShrinkBudget})
 			})
 		},
 	}

@@ -11,7 +11,6 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
-	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -78,7 +77,13 @@ func newR3RoleGen[T immRole](
 func (g r3RoleGen[T]) Generate() iter.Seq[R3RoleParams[T]] {
 	return arb.Stream(func() R3RoleParams[T] {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR3RoleParams(reg(g.rnd), reg(g.rnd), reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
+		return NewR3RoleParams(
+			reg(g.rnd),
+			reg(g.rnd),
+			reg(g.rnd),
+			ohsnap.First(g.role.Generate()),
+			e.ctor,
+		)
 	})
 }
 
@@ -175,12 +180,12 @@ func (g fieldWGen) Shrink(p FieldWParams) iter.Seq[FieldWParams] {
 	// the field gap (msb - lsb) halves toward zero: msb keeps >= lsb and
 	// in range (lsb + d <= the old msb <= 31)
 	var msbs []arch.UImm5
-	for d := range shrink.Halving[int64](0)(p.Msb.Val() - p.Lsb.Val()) {
+	for d := range halvingOnly(p.Msb.Val() - p.Lsb.Val()) {
 		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm5))
 	}
 
 	// lsb halves toward zero: the candidates stay <= msb
-	lsbs := immShrunk(p.Lsb, arch.NewUImm5)
+	lsbs := immShrunk(p.Lsb, arch.NewUImm5, halvingOnly)
 
 	out := make([]FieldWParams, 0, len(rd)+len(rj)+len(msbs)+len(lsbs))
 	for _, r := range rd {
@@ -270,12 +275,12 @@ func (g fieldDGen) Shrink(p FieldDParams) iter.Seq[FieldDParams] {
 	// the field gap (msb - lsb) halves toward zero: msb keeps >= lsb and
 	// in range (lsb + d <= the old msb <= 63)
 	var msbs []arch.UImm6
-	for d := range shrink.Halving[int64](0)(p.Msb.Val() - p.Lsb.Val()) {
+	for d := range halvingOnly(p.Msb.Val() - p.Lsb.Val()) {
 		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm6))
 	}
 
 	// lsb halves toward zero: the candidates stay <= msb
-	lsbs := immShrunk(p.Lsb, arch.NewUImm6)
+	lsbs := immShrunk(p.Lsb, arch.NewUImm6, halvingOnly)
 
 	out := make([]FieldDParams, 0, len(rd)+len(rj)+len(msbs)+len(lsbs))
 	for _, r := range rd {

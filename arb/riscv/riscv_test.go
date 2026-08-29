@@ -3,6 +3,7 @@ package riscv
 import (
 	"bytes"
 	"math/rand/v2"
+	"slices"
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
@@ -93,6 +94,22 @@ func TestImmGenProperty(t *testing.T) {
 		require.GreaterOrEqual(t, n, int64(-2048), "Imm12 shrink out of range: %v", s)
 		require.LessOrEqual(t, n, int64(2047), "Imm12 shrink out of range: %v", s)
 	}
+
+	// The range boundaries come first (shrink.Boundaries), halving toward
+	// zero follows and ends with zero.
+	mid, err := riscv.NewImm12(100)
+	require.NoError(t, err)
+	cs := slices.Collect(Imm12(rnd).Shrink(mid))
+	require.NotEmpty(t, cs)
+	first, err := immValue(cs[0])
+	require.NoError(t, err)
+	second, err := immValue(cs[1])
+	require.NoError(t, err)
+	require.Equal(t, int64(-2048), first, "Imm12 shrink candidates: %v", cs)
+	require.Equal(t, int64(2047), second, "Imm12 shrink candidates: %v", cs)
+	last, err := immValue(cs[len(cs)-1])
+	require.NoError(t, err)
+	require.Equal(t, int64(0), last, "Imm12 shrink candidates: %v", cs)
 }
 
 // TestImmValue — parsing String() (hex without #, negatives with a minus).

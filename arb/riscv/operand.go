@@ -3,7 +3,7 @@ package riscv
 // Operand generators for riscv: one per operand type
 // (arch/riscv/operand.go). There are no contextual constraints — in riscv
 // any register is valid in any position; the shrink is semantic: X(0)/zero,
-// immediates toward zero (sign-preserving).
+// the range boundaries first, then immediates toward zero (sign-preserving).
 
 import (
 	"fmt"
@@ -38,6 +38,17 @@ type immArb[T any] struct {
 	make     func(int64) (T, error)
 }
 
+// --- constants -------------------------------------------------------------------
+
+// Immediate ranges: the single source for the generator bounds and the
+// shrink strategies; they mirror the checked arch constructors
+// (NewImm12/NewImm20/NewOff).
+const (
+	si12Min = -2048
+	si12Max = 2047
+	luiMax  = 0xfffff // the U-type lui field is unsigned
+)
+
 // --- constructors --------------------------------------------------------------
 
 // Reg — an arbitrary register x0..x31 (the ABI name comes from String()).
@@ -49,8 +60,8 @@ func Reg(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Reg] {
 func Imm12(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Imm12] {
 	return immArb[riscv.Imm12]{
 		rnd:  rnd,
-		from: -2048,
-		to:   2047,
+		from: si12Min,
+		to:   si12Max,
 		make: riscv.NewImm12,
 	}
 }
@@ -60,7 +71,7 @@ func Imm20(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Imm20] {
 	return immArb[riscv.Imm20]{
 		rnd:  rnd,
 		from: 0,
-		to:   0xfffff,
+		to:   luiMax,
 		make: riscv.NewImm20,
 	}
 }
@@ -69,8 +80,8 @@ func Imm20(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Imm20] {
 func Off(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Off] {
 	return immArb[riscv.Off]{
 		rnd:  rnd,
-		from: -2048,
-		to:   2047,
+		from: si12Min,
+		to:   si12Max,
 		make: riscv.NewOff,
 	}
 }
@@ -100,7 +111,7 @@ func (a immArb[T]) Generate() iter.Seq[T] {
 }
 
 func (a immArb[T]) Shrink(v T) iter.Seq[T] {
-	return slices.Values(immShrunk(v, a.make))
+	return slices.Values(immShrunk(v, a.make, immShrink(a.from, a.to)))
 }
 
 // --- generation and shrink helpers ---------------------------------------------
@@ -166,21 +177,21 @@ func regShrunk(r riscv.Reg) []riscv.Reg {
 	return out
 }
 
-// immShrunk — halved shrink candidates for an immediate: the numeric value
-// from String(), halving toward zero (shrink.Halving), re-wrapping with the
-// checked constructor. A parse error is an invariant violation on our side
-// (nil); a constructor error means the candidate is out of range, skip it.
-func immShrunk[T any](v T, mk func(int64) (T, error)) []T {
+// immShrunk — shrink candidates for an immediate: the strategy's numeric
+// candidates, re-wrapped with the checked constructor. A parse error is an
+// invariant violation on our side (nil); a constructor error means the
+// candidate is out of range, skip it.
+func immShrunk[T any](v T, mk func(int64) (T, error), s shrink.Shrinker[int64]) []T {
 	n, err := immValue(v)
 	if err != nil {
 		return nil // String() of our own type is unparseable — invariant
 	}
 
 	var out []T
-	for d := range shrink.Halving[int64](0)(n) {
+	for d := range s(n) {
 		t, err := mk(d)
 		if err != nil {
-			continue // the halved value is out of range — skip the candidate
+			continue // the candidate is out of range — skip it
 		}
 
 		out = append(out, t)
@@ -188,6 +199,25 @@ func immShrunk[T any](v T, mk func(int64) (T, error)) []T {
 
 	return out
 }
+
+// --- shrink strategies ----------------------------------------------------------
+
+// immShrink — the shrink strategy of an immediate range: the boundaries
+// first (decoder bugs live at the range edges — sign extension, overflow
+// truncation), then halving toward zero.
+func immShrink(from, to int64) shrink.Shrinker[int64] {
+	return shrink.Concat(
+		shrink.Boundaries(from, to),
+		shrink.Halving[int64](0),
+	)
+}
+
+// Shared strategies of the instruction-level imm axes (the si12 range of
+// imm12 and load/store offsets; the lui field).
+var (
+	si12Shrink  = immShrink(si12Min, si12Max)
+	imm20Shrink = immShrink(0, luiMax)
+)
 
 // immValue — the numeric value of an immediate from its String() ("0x.."/"-0x..").
 // The input is produced by String() of this package's types; an error means an

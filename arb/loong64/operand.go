@@ -13,8 +13,8 @@ package loong64
 // Operand generators for loong64: one per operand role type
 // (arch/loong64/operand.go). There are no contextual constraints — any
 // register is valid in any position; the shrink is semantic: $zero,
-// immediates toward zero (sign-preserving, alignment- and range-checked
-// through the role constructors).
+// the range boundaries first, then immediates toward zero (sign-preserving,
+// alignment- and range-checked through the role constructors).
 
 import (
 	"iter"
@@ -70,6 +70,15 @@ func newImmArb[T immRole](
 	}
 }
 
+// --- constants -------------------------------------------------------------------
+
+// The si12 range of Imm12: shared by the generator bounds and the shrink
+// boundary candidates; it mirrors the checked arch constructor NewImm12.
+const (
+	si12Min = -2048
+	si12Max = 2047
+)
+
 // --- constructors --------------------------------------------------------------
 
 // Reg — an arbitrary register $r0..$r31 (the canonical name comes from
@@ -80,7 +89,7 @@ func Reg(rnd *rand.Rand) ohsnap.Arbitrary[arch.Reg] {
 
 // Imm12 — an arbitrary si12 (-2048..2047).
 func Imm12(rnd *rand.Rand) ohsnap.Arbitrary[arch.Imm12] {
-	return newImmArb(rnd, -2048, 2047, 1, arch.NewImm12)
+	return newImmArb(rnd, si12Min, si12Max, 1, arch.NewImm12)
 }
 
 // UImm12 — an arbitrary ui12 (0..4095).
@@ -170,7 +179,7 @@ func (a immArb[T]) Generate() iter.Seq[T] {
 }
 
 func (a immArb[T]) Shrink(v T) iter.Seq[T] {
-	return slices.Values(immShrunk(v, a.mk))
+	return slices.Values(immShrunk(v, a.mk, immShrink(a.from, a.to)))
 }
 
 // --- generation and shrink helpers ---------------------------------------------
@@ -193,22 +202,41 @@ func reg(rnd *rand.Rand) arch.Reg {
 	return arch.NewReg(uint8(rnd.IntN(32)))
 }
 
-// immShrunk — halved shrink candidates for a role immediate: the numeric
-// value from Val(), halving toward zero (shrink.Halving), re-wrapping with
-// the checked constructor. A constructor error (a halved value that lost
-// alignment or left the range) skips the candidate.
-func immShrunk[T immRole](v T, mk func(int64) (T, error)) []T {
+// immShrunk — shrink candidates for a role immediate: the strategy's numeric
+// candidates from Val(), re-wrapped with the checked constructor. A
+// constructor error (a candidate that lost alignment or left the range)
+// skips the candidate.
+func immShrunk[T immRole](v T, mk func(int64) (T, error), s shrink.Shrinker[int64]) []T {
 	var out []T
-	for d := range shrink.Halving[int64](0)(v.Val()) {
+	for d := range s(v.Val()) {
 		t, err := mk(d)
 		if err != nil {
-			continue // the halved value is out of range — skip the candidate
+			continue // the candidate is out of range — skip it
 		}
 
 		out = append(out, t)
 	}
 
 	return out
+}
+
+// --- shrink strategies ----------------------------------------------------------
+
+// halvingOnly — the strategy of the instruction-level role axes: plain
+// halving toward zero, no boundary candidates.
+var halvingOnly = shrink.Halving[int64](0)
+
+// immShrink — the shrink strategy of a standalone immediate range: the
+// boundaries first (decoder bugs live at the range edges — sign extension,
+// overflow truncation), then halving toward zero.
+// It is used by the operand generators only: the instruction-level role
+// axes stay halving-only — role boundaries ignore cross-constraints of
+// the families (field msb >= lsb), a boundary candidate would break them.
+func immShrink(from, to int64) shrink.Shrinker[int64] {
+	return shrink.Concat(
+		shrink.Boundaries(from, to),
+		shrink.Halving[int64](0),
+	)
 }
 
 // regShrunk — register shrink candidates: zero and the halved number.

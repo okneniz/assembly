@@ -129,10 +129,15 @@ func (a immArb[T]) Shrink(v T) iter.Seq[T] {
 	}
 
 	var out []T
-	for d := range shrink.Halving[int64](0)(n) {
+	// The upper bound first (decoder bugs live at the range edges),
+	// then halving toward zero; zero itself is the halving target.
+	for d := range shrink.Concat(
+		shrink.Boundaries[int64](0, a.max),
+		shrink.Halving[int64](0),
+	)(n) {
 		c, err := a.make(d)
 		if err != nil {
-			continue // unreachable: half of a value from [0, max] is always in range
+			continue // unreachable: the candidates of [0, max] are in range
 		}
 
 		out = append(out, c)

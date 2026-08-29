@@ -226,7 +226,7 @@ func (g codeGen) Generate() iter.Seq[CodeParams] {
 }
 
 func (g codeGen) Shrink(p CodeParams) iter.Seq[CodeParams] {
-	cs := immShrunk(p.Code, arch.NewCode15)
+	cs := immShrunk(p.Code, arch.NewCode15, halvingOnly)
 	out := make([]CodeParams, 0, len(cs))
 	for _, c := range cs {
 		out = append(out, NewCodeParams(c, p.Ctor))

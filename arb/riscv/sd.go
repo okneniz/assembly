@@ -58,7 +58,7 @@ func (g sdGen) Generate() iter.Seq[SdParams] {
 
 func (g sdGen) Shrink(p SdParams) iter.Seq[SdParams] {
 	rs2, rs1 := regShrunk(p.Rs2), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff)
+	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
 	out := make([]SdParams, 0, len(rs2)+len(rs1)+len(offs))
 	for _, r := range rs2 {
 		out = append(out, NewSdParams(r, p.Rs1, p.Off))

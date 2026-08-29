@@ -58,7 +58,7 @@ func (g addiGen) Generate() iter.Seq[AddiParams] {
 
 func (g addiGen) Shrink(p AddiParams) iter.Seq[AddiParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
-	imms := immShrunk(p.Imm, riscv.NewImm12)
+	imms := immShrunk(p.Imm, riscv.NewImm12, si12Shrink)
 	out := make([]AddiParams, 0, len(rd)+len(rs1)+len(imms))
 	for _, r := range rd {
 		out = append(out, NewAddiParams(r, p.Rs1, p.Imm))

@@ -58,7 +58,7 @@ func (g swGen) Generate() iter.Seq[SwParams] {
 
 func (g swGen) Shrink(p SwParams) iter.Seq[SwParams] {
 	rs2, rs1 := regShrunk(p.Rs2), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff)
+	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
 	out := make([]SwParams, 0, len(rs2)+len(rs1)+len(offs))
 	for _, r := range rs2 {
 		out = append(out, NewSwParams(r, p.Rs1, p.Off))
