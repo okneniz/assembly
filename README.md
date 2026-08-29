@@ -2,24 +2,34 @@
 
 Low-level toolkit to work at the lowest level.
 
-Data driven - architecture instruction sets are described as **data** (serializable schemas), not hardcoded switch statements. This makes it straightforward to add new architectures, serialize schema definitions to JSON/YAML, and extend coverage incrementally.
+Data driven - the authoritative decode data is generated, not hardcoded: match/mask tables come from each architecture's machine-readable source (the ARM A64 ISA XML, Spike's `encoding.h`, the `loongarch-opcodes` tables) via `gen/cmd/*` generators; what cannot be machine-generated (operand formats, aliases) is hand-written and joins the generated tables by mnemonic.
 
 ## Motivation
 
 - interested in low-level stuff or just system programming
 - interested in AI / agentic development (all code has been written by GLM (z.ai))
-- interested in spec-driven development (A64 ISA XML + RISC-V header file)
+- interested in spec-driven development (A64 ISA XML + RISC-V header file + loongarch-opcodes tables)
 - want to build something complex straight to machine code - without C or asm
+
+## Architectures
+
+Three ISA backends, fully separated (no shared line between them):
+
+- **ARM64** — decode + assemble; match/mask from the official A64 ISA XML
+- **RISC-V** (RV64GC) — decode + assemble with RVC compression; encodings from Spike's `encoding.h`
+- **LoongArch** (LA64) — decode + assemble, the full scalar integer set (248 instructions); encodings from the `loongarch-opcodes` tables
 
 ## Status
 
 - **99.97% byte-for-byte match** with `llvm-objdump` on a real Go Mach-O binary (155,576 of 155,625 instructions); RISC-V example matches 100%
+- **LoongArch** — the third backend: the full scalar integer set (248 instructions), 100% against `llvm-objdump` in a per-word differential over the whole table
 - **Assembler with round-trip oracle** — GNU-as compatible syntax subset plus assembly's own `Text()` output:
   - ARM64: **99.86%** byte-exact round-trip over the 155k-instruction example (the rest are decode-equivalent encodings of ambiguous aliases)
   - RISC-V: 89/93 byte-exact + 4 FP-rounding (lossy in objdump-style text) on the example; 400/400 on a synthetic corpus
+  - LoongArch: byte-exact on the example; `li.w`/`li.d` ladders and `la` pairs match `llvm-mc` byte-for-byte
   - RVC compressor: 32-bit forms compress to 16-bit exactly like GNU as
-- **Data-driven schemas** — each instruction is a `Schema{Mask, Value, Fields, Formatter}` with string-keyed transforms/formatters (no closures, fully serializable)
-- **Self-contained binary parsers** — full ELF and Mach-O container parsers in `file/elf` and `file/macho`, fully separated like `arch/arm64` and `arch/riscv` (not a single shared line), all via parsec:
+- **Data-driven schemas (ARM64)** — each ARM64 instruction is a `Schema{Mask, Value, Fields, Formatter}` with string-keyed transforms/formatters (no closures); RISC-V and LoongArch join generated `{match, mask}` tables to hand-written decode tables
+- **Self-contained binary parsers** — full ELF and Mach-O container parsers in `file/elf` and `file/macho`, fully separated like `arch/arm64`, `arch/riscv` and `arch/loong64` (not a single shared line), all via parsec:
   - **ELF**, 32/64 LE/BE: program headers, section headers (incl. extended numbering), symtab/dynsym, RELA/REL with all `R_AARCH64_*`/`R_RISCV_*`, dynamic + `DT_*`, notes/build-id, verneed/verdef, `.gnu.hash`/`.hash`
   - **Mach-O**, incl. FAT/Universal: all ~50 load commands, nlist + stabs, dysymtab + indirect, section relocations, dyld_info rebase/bind/lazy/weak opcode streams, exports trie, chained fixups, function starts, data-in-code, thread states, code-signature superblob
   - zero runtime dependency on `debug/macho` or `debug/elf` (stdlib only as the diff oracle in tests)
@@ -28,39 +38,9 @@ Data driven - architecture instruction sets are described as **data** (serializa
 
 ## Economics
 
-Built over **16 days** (Aug 9–24, 2026) as a human–AI collaboration:
-the entire codebase was written by an AI coding agent, with the human
-owner setting direction, reviewing architecture and making the final calls.
-
-### Scale
-
-| Metric | Value |
-|---|---|
-| Hand-written Go code | 79,562 lines (70,110 production + 9,452 tests) in 440 files |
-| Other hand-written code (C / asm / shell / Makefile) | ~1,100 lines |
-| Generated tables & vendored data | ~36,000 lines |
-| AI sessions | 117 |
-| Model requests | 9,830 |
-
-### Token usage (actual, measured across all sessions)
-
-| Category | Tokens |
-|---|---|
-| Input (total) | ~2.32B |
-| — of which cache reads | ~2.30B (99%) |
-| Output | ~7.06M |
-| Total processed | ~2.33B |
-
-Fun ratio: the full pipeline burned ~29K tokens per line of code — that is
-what it costs to weigh, test and review every line; the pure output cost is
-only ~87 tokens per line.
-
-### Cost
-
-In reality the whole run cost a flat monthly coding subscription —
-no per-token billing. For reference only: the same volume at pay-per-token
-API rates would have been roughly ~$200 (budget models) to ~$5,200
-(frontier models), almost all of it cache reads at their discounted rate.
+The build statistics live in [ECONOMICS.md](ECONOMICS.md) — a log with
+an entry per big feature (the base build, then each architecture that
+landed on top).
 
 ## Quick start
 
@@ -82,8 +62,8 @@ go run ./tests/cmd/assembly-diff tests/examples/hello-world/hello-world
 make -C tests/examples/hello-asm          # prints "hello world"
 make -C tests/examples/hello-asm disasm   # disassembles hello.bin back
 
-# Cross-architecture VMs (qemu-system): riscv64 + arm64 bare-metal
-make -C tests/examples/hello-asm vm       # both VMs print "hello world"
+# Cross-architecture VMs (qemu-system): riscv64 + arm64 + loong64 bare-metal
+make -C tests/examples/hello-asm vm       # all three VMs print "hello world"
 make -C tests/examples/hello-asm compare  # same program, three ISAs side by side
 ```
 
@@ -93,7 +73,7 @@ make -C tests/examples/hello-asm compare  # same program, three ISAs side by sid
 # Assemble (raw binary out, hex dump to stdout, symbol table)
 go run ./cmd/assembly-asm -arch riscv64 -base 0x1000 -o prog.bin --sym prog.sym --hex prog.s
 
-# Assemble into a minimal static ELF64 — runs natively on Linux arm64/riscv64,
+# Assemble into a minimal static ELF64 — runs natively on Linux arm64/riscv64/loong64,
 # under qemu on any host, no system assembler/linker needed
 go run ./cmd/assembly-asm -arch arm64 -base 0x40100000 -format elf -o prog.elf prog.s
 
@@ -111,7 +91,7 @@ go run ./tests/cmd/assembly-diff tests/examples/hello-world/hello-world
 
 # The demo folder does all of it: assemble → execute (native + VMs) → disasm
 make -C tests/examples/hello-asm            # native: "hello world"
-make -C tests/examples/hello-asm vm         # qemu-system riscv64 + arm64 VMs
+make -C tests/examples/hello-asm vm         # qemu-system riscv64 + arm64 + loong64 VMs
 make -C tests/examples/hello-asm compare    # same program across three ISAs
 ```
 
@@ -133,13 +113,13 @@ One command runs every gate: `make tests`. What it actually checks:
   - ARM64: 99.97% on a Go Mach-O build (155,576 of 155,625)
   - RISC-V: 100% on the example
 - **Round-trip fidelity on real binaries**:
-  - the project's own CLIs, cross-built for linux/arm64 and linux/riscv64
+  - the project's own CLIs, cross-built for linux/arm64, linux/riscv64 and linux/loong64
   - each binary: disasm → listing → assemble, 3 iterations
   - sha256 gate on `.text` + the whole ELF rebuilt by our own writer
-  - 6/6 binaries pass, millions of instructions each
+  - 9/9 binaries pass (3 CLIs × 3 architectures), millions of instructions each
 - **Behavioral VM matrix**:
   - original vs rebuilt binaries run side by side
-  - isolated `qemu-system` VMs, aarch64 + riscv64
+  - isolated `qemu-system` VMs, aarch64 + riscv64 + loong64
   - the code we emit must actually execute — and behave identically
 - **Decode is proven, not sampled**:
   - property oracle equivalent to the linear rule list
@@ -155,11 +135,11 @@ On top of that, `make lint` (gofmt, go vet, errcheck, golangci-lint) runs on eve
 
 ## Design decisions
 
-Conventions and trade-offs established for this codebase (ARM64 and RISC-V).
+Conventions and trade-offs established for this codebase (ARM64, RISC-V and LoongArch).
 
-**Data-driven schemas.** Every instruction is `Schema{Mask, Value, Fields, Formatter}` matched by `(word & Mask) == Value`. `Transform`/`Formatter` are string keys into registries (not closures), so a schema stays plain, serializable data.
+**Data-driven schemas (ARM64).** Every ARM64 instruction is `Schema{Mask, Value, Fields, Formatter}` matched by `(word & Mask) == Value`. `Transform`/`Formatter` are string keys into registries (not closures), so a schema stays plain, serializable data.
 
-**Decode data is generated; formatting is hand-written.** Match/mask tables come from each arch's authoritative source (Spike's `encoding.h`, ARM sysreg XML + m1n1) via `gen/cmd/*`; operand layout and alias mnemonics are hand-written because they can't be machine-generated. RISC-V joins the two by mnemonic: `decodeTable` holds the format config, `riscvEncodings` (generated) holds the match/mask.
+**Decode data is generated; formatting is hand-written.** Match/mask tables come from each arch's authoritative source (Spike's `encoding.h`, ARM sysreg XML + m1n1, the loongarch-opcodes tables) via `gen/cmd/*`; operand layout and alias mnemonics are hand-written because they can't be machine-generated. RISC-V joins the two by mnemonic: `decodeTable` holds the format config, `riscvEncodings` (generated) holds the match/mask.
 
 **No shared instruction type — instructions represent themselves.** Each arch owns its decode result with its own `Parse` and rendering; duplication between the arches is accepted as the lesser evil compared to a bad abstraction (a shared "universal instruction" model was tried and reverted). What crosses package boundaries are only small capability interfaces (`disasm.ObjDump`, `asm.Instr`); consumers `switch` on `file.ArchKind` and call the arch directly — no registry, no shared `Architecture` interface.
 
@@ -190,10 +170,29 @@ ARM_SYSREG_URL='https://.../SysReg_xml_v9x-YYYY-MM.tar.gz' make update-sysreg-da
 
 The vendored data carries its own licenses — see [`arch/arm64/data/LICENSE`](arch/arm64/data/LICENSE). The ARM XML is under Arm's click-through terms (each file retains its header); `apple_regs.json` is MIT (© The Asahi Linux Contributors).
 
+## LoongArch opcode data
+
+The `arch/loong64` encodings come from the community
+[loongarch-opcodes](https://github.com/loongson-community/loongarch-opcodes)
+tables (12 scalar-integer subsets, CC-BY 4.0), vendored under
+`arch/loong64/data/`:
+
+- the official mnemonics are restored from the upstream `@orig_name` renames;
+  `csrrd`/`csrwr` — merged upstream — are derived back from `csrxchg`
+- `gen-loongarch-instr` emits the 248-entry `{match, mask}` table; the mask
+  is derived from the operand-format notation, not from trailing zero bits
+
+```bash
+make update-loong-data   # re-download the vendored tables
+make gen-loongarch-instr # regenerate the Go table
+```
+
 ## License
 
 MIT.
 
 The vendored system-register data under `arch/arm64/data/` is third-party and
 carries its own licenses (Arm click-through for the XML, MIT for `apple_regs.json`);
-see [`arch/arm64/data/LICENSE`](arch/arm64/data/LICENSE).
+see [`arch/arm64/data/LICENSE`](arch/arm64/data/LICENSE). The loongarch-opcodes
+tables under `arch/loong64/data/` are CC-BY 4.0; see
+[`arch/loong64/data/LICENSE`](arch/loong64/data/LICENSE).

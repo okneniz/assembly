@@ -24,3 +24,8 @@ arch/riscv/data/encoding.h
 # extracted into arch/arm64/data/instr/. The derived Go table
 # (arch/arm64/isa_generated.go) IS tracked.
 arch/arm64/data/instr/
+
+# loongarch-opcodes tables — canonical, regenerable via
+# `make update-loong-data` (then `make gen-loongarch-instr`). The derived Go
+# table (arch/loong64/instr_generated.go) IS tracked.
+arch/loong64/data/*.txt

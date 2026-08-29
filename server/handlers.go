@@ -16,9 +16,11 @@ import (
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/arm64/alias"
+	lpseudo "github.com/okneniz/assembly/asm/loong64/pseudo"
 	"github.com/okneniz/assembly/asm/riscv/pseudo"
 	bf "github.com/okneniz/assembly/file"
 )
@@ -181,6 +183,14 @@ func (s *Server) handleDisasm(w http.ResponseWriter, r *http.Request) {
 		}
 
 		resp = buildResponseInstr(riscv.Name, "text", sec.Addr, uint64(len(sec.Data)), insts)
+	case bf.ArchLOONGARCH64:
+		insts, err := loong64.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		if err != nil {
+			writeError(w, http.StatusBadRequest, "decode: "+err.Error())
+			return
+		}
+
+		resp = buildResponseInstr(loong64.Name, "text", sec.Addr, uint64(len(sec.Data)), insts)
 	default:
 		writeError(
 			w,
@@ -335,8 +345,10 @@ func (s *Server) handleAsm(w http.ResponseWriter, r *http.Request) {
 		assemble = alias.Assemble
 	case "riscv64", "riscv":
 		assemble = pseudo.Assemble
+	case "loong64", "loongarch64":
+		assemble = lpseudo.Assemble
 	default:
-		writeError(w, http.StatusBadRequest, "unknown arch (want arm64 or riscv64)")
+		writeError(w, http.StatusBadRequest, "unknown arch (want arm64, riscv64 or loong64)")
 		return
 	}
 

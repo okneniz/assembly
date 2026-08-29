@@ -86,7 +86,7 @@ func rebuildELF(binPath string, text []byte, outPath string) error {
 
 	// Size = memory [minAddr, maxEnd), the file only fileEnd-minAddr:
 	// the difference (the NOBITS tail) goes into p_memsz
-	blob, werr := file.WriteELF(machine, minAddr, hdr.Entry, []file.Section{
+	blob, werr := file.WriteELF(machine, elfFlags(hdr.Machine), minAddr, hdr.Entry, []file.Section{
 		*file.NewSection(".image", "", minAddr, 0, maxEnd-minAddr, image),
 	})
 	if werr != nil {
@@ -104,6 +104,17 @@ func allocSection(s *elf.Section) bool {
 
 // elfMachines - the e_machine values of the originals the writer can rebuild.
 var elfMachines = map[elf.Machine]uint16{
-	elf.EM_AARCH64: file.EM_AARCH64,
-	elf.EM_RISCV:   file.EM_RISCV,
+	elf.EM_AARCH64:   file.EM_AARCH64,
+	elf.EM_RISCV:     file.EM_RISCV,
+	elf.EM_LOONGARCH: file.EM_LOONGARCH,
+}
+
+// elfFlags — e_flags by machine: the LoongArch kernel requires the ABI
+// bits (base + double-float); everything else writes zero.
+func elfFlags(machine elf.Machine) uint32 {
+	if machine == elf.EM_LOONGARCH {
+		return 0x43
+	}
+
+	return 0
 }

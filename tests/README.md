@@ -30,12 +30,21 @@ tests <target>` - all targets and their descriptions are in the
   you need a build with that target: Apple's `/usr/bin/objdump` does not
   support it; the `cmd/objdump` wrapper tries candidates itself (homebrew
   `llvm-objdump` and others);
-- **qemu-system-aarch64 / qemu-system-riscv64** - `TestHelloVM` and the
+- **qemu-system-aarch64 / qemu-system-riscv64 / qemu-system-loongarch64** - `TestHelloVM` and the
   `rt-vm` VM matrix; `rt-vm` also needs the downloaded `corpus/vm/cache`
   (kernels/minirootfs);
-- **clang with the RISC-V target** - only for `make -C tests examples`
+- **clang with the RISC-V and LoongArch targets** - only for `make -C tests examples`
   (Apple's `/usr/bin/clang` lacks the target;
   `/opt/homebrew/opt/llvm/bin/clang` works).
 
 Without a required tool the corresponding step fails loudly - gates must not
 stay silent; simply do not run the specific targets without it.
+
+The loong64 VM boots the Alpine edge minirootfs snapshot (the port lives
+only in edge, as dated tarballs) with the linux-lts kernel extracted from
+its apk (no netboot tarball for the port); the artifacts live in
+tests/corpus/vm/cache with the apk sha256 pinned in rt-vm.sh. Two platform
+quirks, both worked around in rt-vm.sh: the kernel panics in i8042_flush
+before init (initcall_blacklist=i8042_init), and the page size is 16 KiB -
+the ELF writer aligns images to 64 KiB for p_offset/p_vaddr congruence
+(e_flags carries the ABI bits, 0x43).

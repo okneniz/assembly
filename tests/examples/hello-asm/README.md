@@ -19,15 +19,20 @@ make clean
 ```bash
 make vm-riscv   # qemu-system-riscv64 -machine virt: UART + sifive_test-exit
 make vm-arm     # qemu-system-aarch64 -machine virt: PL011 + PSCI SYSTEM_OFF
+make vm-loong   # qemu-system-loongarch64 -machine virt: UART, idle loop
 make compare    # the same program on three instruction sets, side by side
 ```
 
-- `hello-riscv.s` / `hello-arm-vm.s` - bare-metal: byte-by-byte output to the
-  UART (MMIO), termination via the sifive_test test device (riscv) / PSCI
-  through HVC (arm).
-- addresses: riscv - RAM 0x80000000; arm - 0x40100000 (above the DTB area).
-- `TestHelloVM` in the repository root runs both VMs and requires "hello
-  world".
+- `hello-riscv.s` / `hello-arm-vm.s` / `hello-loongarch.s` - bare-metal:
+  byte-by-byte output to the UART (MMIO), termination via the sifive_test
+  test device (riscv) / PSCI through HVC (arm) / an idle loop (loong64: the
+  upstream virt machine has no bare-metal poweroff register, the gate stops
+  the machine).
+- addresses: riscv - RAM 0x80000000; arm - 0x40100000 (above the DTB area);
+  loong64 - the flash reset vector 0x1c000000 (LoongArch resets into the
+  flash, not RAM).
+- `TestHelloVM` in the repository root runs all three VMs and requires
+  "hello world".
 
 For true isolation of untrusted arm64/Linux code on macOS there is also
 Virtualization.framework (UTM, Lima) - a VM of the native architecture; riscv

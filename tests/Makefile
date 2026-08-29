@@ -8,7 +8,7 @@
 #
 # Recipes execute from the repository root (cd ..), so the paths inside are
 # root-level (tests/..., arch/..., cmd/...). A full run needs objdump and
-# qemu-system-* on PATH; for examples - clang with the RISC-V target.
+# qemu-system-* on PATH; for examples - clang with the RISC-V and LoongArch targets.
 
 .PHONY: all test examples file-fixtures rt-cli rt-run rt-report rt-vm
 
@@ -38,13 +38,13 @@ examples:
 # + a fat binary. Tools are optional — missing pieces are skipped gracefully.
 file-fixtures:
 	@cd .. && printf 'package main\nfunc main() { println("hi") }\n' > /tmp/hello.go
-	@cd .. && for t in linux/arm64 linux/riscv64 linux/386 linux/ppc64 linux/s390x; do \
+	@cd .. && for t in linux/arm64 linux/riscv64 linux/loong64 linux/386 linux/ppc64 linux/s390x; do \
 		CGO_ENABLED=0 GOOS=$${t%/*} GOARCH=$${t#*/} go build -ldflags="-s -w" \
 			-o file/elf/testdata/hello-$${t#*/} /tmp/hello.go; done
 	@cd .. && CGO_ENABLED=0 GOOS=linux GOARCH=arm64 go build -buildmode=pie -ldflags="-s -w" \
 		-o file/elf/testdata/dyn-pie-arm64 /tmp/hello.go
 	@cd .. && printf 'int glob = 42;\nextern int ext(int);\nint call(int x) { return ext(x) + glob; }\nint *ptr = &glob;\n' > /tmp/reloc.c
-	@cd .. && for tgt in aarch64-linux-gnu riscv64-linux-gnu i386-linux-gnu powerpc-linux-gnu; do \
+	@cd .. && for tgt in aarch64-linux-gnu riscv64-linux-gnu loongarch64-linux-gnu i386-linux-gnu powerpc-linux-gnu; do \
 		"$(CLANG)" -c -target $$tgt -x c -o file/elf/testdata/reloc-$$(echo $$tgt | cut -d- -f1).o /tmp/reloc.c; done
 	@cd .. && printf 'int main(void) { return 42; }\n' > /tmp/mh.c
 	@cd .. && "$(CLANG)" -arch arm64 -o file/macho/testdata/exec-arm64 /tmp/mh.c
@@ -59,7 +59,7 @@ file-fixtures:
 
 # Paths, not names: assembly-diff is a test utility living in tests/cmd.
 RT_CMDS := cmd/assembly-asm tests/cmd/assembly-diff cmd/assembly-server
-RT_ARCHES := arm64 riscv64
+RT_ARCHES := arm64 riscv64 loong64
 
 # rt-cli cross-builds the final-test corpus: our own CLIs for linux/arm64 and
 # linux/riscv64 (CGO off - static, no libc). Artifacts go to tests/corpus/src

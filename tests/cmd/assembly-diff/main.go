@@ -26,6 +26,7 @@ import (
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 	"github.com/okneniz/assembly/file"
@@ -35,7 +36,7 @@ import (
 
 func main() {
 	n := flag.Int("n", 15, "max mismatches to print")
-	archFlag := flag.String("arch", "", "override architecture (arm64|riscv64)")
+	archFlag := flag.String("arch", "", "override architecture (arm64|riscv64|loong64)")
 	flag.Parse()
 	if flag.NArg() < 1 {
 		fmt.Fprintln(os.Stderr, "usage: assembly-diff <binary> [-n N] [-arch ARCH]")
@@ -87,6 +88,18 @@ func main() {
 		}
 	case file.ArchRISCV64:
 		insts, err := riscv.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		if err != nil {
+			fmt.Fprintln(os.Stderr, "decode:", err)
+			os.Exit(1)
+		}
+
+		for _, in := range insts {
+			ours[in.Addr()] = objdump.Normalize(
+				disasm.Line(in.Addr(), sec.Data[in.Addr()-sec.Addr:], in, opts),
+			)
+		}
+	case file.ArchLOONGARCH64:
+		insts, err := loong64.Parse(sec.Addr)(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
@@ -154,6 +167,8 @@ func parseArchFlag(s string) (file.ArchKind, bool) {
 		return file.ArchARM64, true
 	case "riscv64", "riscv":
 		return file.ArchRISCV64, true
+	case "loong64", "loongarch64":
+		return file.ArchLOONGARCH64, true
 	}
 
 	return file.ArchUnknown, false

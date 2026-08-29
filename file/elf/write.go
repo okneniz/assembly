@@ -8,16 +8,22 @@ package elf
 //
 // File layout:
 //
-//	0x0000  Elf64_Ehdr (64) + zero padding (ehdr does not have to be mapped)
-//	0x1000  the section image (as is, back to back; with an unaligned base -
-//	        prefixed with zeros up to base)
+//	0x0000   Elf64_Ehdr (64) + zero padding (ehdr does not have to be mapped)
+//	0x10000  the section image (as is, back to back; with an unaligned base -
+//	         prefixed with zeros up to base)
 //	at the end  Elf64_Phdr - INSIDE the mapped area of the segment
 //
-// The single PT_LOAD maps the image at a page-aligned vaddr <= base (the code
-// lands exactly at base - absolute la/call addressing stays correct), and the
-// phdr sits at the end of the image with e_phoff pointing at it: the kernel
-// builds auxv AT_PHDR as vaddr+e_phoff, and the runtimes of real ELF programs
-// (e.g. Go) read the program headers at that address.
+// The single PT_LOAD maps the image at a 64 KiB-aligned vaddr <= base (the
+// code lands exactly at base - absolute la/call addressing stays correct),
+// and the phdr sits at the end of the image with e_phoff pointing at it: the
+// kernel builds auxv AT_PHDR as vaddr+e_phoff, and the runtimes of real ELF
+// programs (e.g. Go) read the program headers at that address.
+//
+// 64 KiB (not 4 KiB) is the unit of BOTH the image offset and p_align: the
+// kernel requires p_offset to be congruent to p_vaddr modulo the TARGET page
+// size, and the supported targets run kernels with 4/16/64 KiB pages (the
+// Alpine loongarch64 lts kernel, for one, is 16 KiB - a 0x1000 offset is
+// rejected there with EINVAL at execve).
 
 import (
 	"encoding/binary"
@@ -30,7 +36,7 @@ const (
 
 	ptLoad     = 1 // PT_LOAD
 	pfRXW      = 7 // PF_R|PF_W|PF_X - demo loader: code+data in one page
-	elfCodeOff = 0x1000
+	elfCodeOff = 0x10000
 )
 
 // Blob is a section to write: data Data at virtual address Addr
@@ -67,13 +73,14 @@ func NewNobitsBlob(addr uint64, data []byte, memSize int) Blob {
 // (usually base + the offset of the start symbol). Sections are placed into
 // the file back to back.
 //
-// The base is rounded down to a page boundary (p_vaddr must be aligned and
-// congruent to p_offset; the image is padded with zeros up to base), and the
+// The base is rounded down to a 64 KiB boundary (p_vaddr must be aligned
+// and congruent to p_offset for every target page size; the image is padded
+// with zeros up to base), and the
 // phdr is placed at the end of the image - inside the mapped area of the
 // segment (see the package comment about AT_PHDR). The NOBITS tail of the last
 // blob yields p_memsz > p_filesz: the file carries no zeros, the kernel
 // reserves them as anonymous zero pages.
-func Write(machine Machine, base, entry uint64, blobs []Blob) ([]byte, error) {
+func Write(machine Machine, flags uint32, base, entry uint64, blobs []Blob) ([]byte, error) {
 	var code []byte
 	memTail := 0
 	for i, b := range blobs {
@@ -91,7 +98,7 @@ func Write(machine Machine, base, entry uint64, blobs []Blob) ([]byte, error) {
 		}
 	}
 
-	imgBase := base &^ 0xfff
+	imgBase := base &^ 0xffff
 	pad := int(base - imgBase)
 	image := make([]byte, pad+len(code))
 	copy(image[pad:], code)
@@ -108,6 +115,7 @@ func Write(machine Machine, base, entry uint64, blobs []Blob) ([]byte, error) {
 	ehdr[EI_VERSION] = byte(elfVersion)
 	binary.LittleEndian.PutUint16(ehdr[hdr64Type:], elfTypeExec)
 	binary.LittleEndian.PutUint16(ehdr[hdr64Machine:], uint16(machine))
+	binary.LittleEndian.PutUint32(ehdr[hdr64Flags:], flags)
 	binary.LittleEndian.PutUint32(ehdr[hdr64Version:], elfVersion)
 	binary.LittleEndian.PutUint64(ehdr[hdr64Entry:], entry)
 	binary.LittleEndian.PutUint64(ehdr[hdr64Phoff:], uint64(phOff))
@@ -115,7 +123,7 @@ func Write(machine Machine, base, entry uint64, blobs []Blob) ([]byte, error) {
 	binary.LittleEndian.PutUint16(ehdr[hdr64Phentsz:], 56)
 	binary.LittleEndian.PutUint16(ehdr[hdr64Phnum:], 1)
 
-	// --- Elf64_Phdr (a single PT_LOAD; offset 0x1000 -> vaddr = imgBase) ---
+	// --- Elf64_Phdr (a single PT_LOAD; offset 0x10000 -> vaddr = imgBase) ---
 	phdr := out[phOff:]
 	binary.LittleEndian.PutUint32(phdr[0:], ptLoad)
 	binary.LittleEndian.PutUint32(phdr[4:], pfRXW)
@@ -124,7 +132,7 @@ func Write(machine Machine, base, entry uint64, blobs []Blob) ([]byte, error) {
 	binary.LittleEndian.PutUint64(phdr[24:], imgBase)                       // p_paddr
 	binary.LittleEndian.PutUint64(phdr[32:], uint64(len(image)+56))         // p_filesz
 	binary.LittleEndian.PutUint64(phdr[40:], uint64(len(image)+56+memTail)) // p_memsz
-	binary.LittleEndian.PutUint64(phdr[48:], 0x1000)                        // p_align
+	binary.LittleEndian.PutUint64(phdr[48:], 0x10000)                       // p_align
 
 	copy(out[elfCodeOff:], image)
 	return out, nil

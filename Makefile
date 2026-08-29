@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check vet lint tests build tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data
+.PHONY: fmt fmt-check vet lint tests build tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data
 
 # GOLANGCI_LINT_VERSION pins the project-local linter (see bin/golangci-lint).
 GOLANGCI_LINT_VERSION ?= v2.12.2
@@ -56,7 +56,7 @@ gen-sysregs:
 	go vet ./...
 
 # generate runs all code generators.
-generate: gen-sysregs gen-riscv-csr gen-riscv-instr gen-arm-instr
+generate: gen-sysregs gen-riscv-csr gen-riscv-instr gen-arm-instr gen-loongarch-instr
 
 # bin/golangci-lint installs the pinned golangci-lint into ./bin (GOBIN), so
 # the project doesn't depend on whatever golangci-lint is on PATH. The
@@ -109,6 +109,19 @@ gen-arm-instr:
 # extracts instruction XMLs into arch/arm64/data/instr. Run gen-arm-instr afterwards.
 update-arm-instr-data:
 	arch/arm64/data/update-instr.sh
+
+# gen-loongarch-instr regenerates arch/loong64/instr_generated.go (the
+# {match,mask} encoding table) from the vendored loongarch-opcodes tables.
+# Re-run after updating arch/loong64/data via update-loong-data.
+gen-loongarch-instr:
+	go run ./gen/cmd/gen-loongarch-instr -i arch/loong64/data -o arch/loong64/instr_generated.go
+	gofmt -s -w .
+	go vet ./...
+
+# update-loong-data re-downloads the vendored loongarch-opcodes tables (the
+# scalar integer subsets of the LoongArch ISA). Run gen-loongarch-instr afterwards.
+update-loong-data:
+	arch/loong64/data/update.sh
 
 tidy:
 	go mod tidy

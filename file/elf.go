@@ -23,6 +23,8 @@ func (x elfFormat) ArchKind() ArchKind {
 		return ArchARM64
 	case elf.EM_RISCV:
 		return ArchRISCV64
+	case elf.EM_LOONGARCH:
+		return ArchLOONGARCH64
 	default:
 		return ArchUnknown
 	}

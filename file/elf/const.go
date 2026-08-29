@@ -344,6 +344,7 @@ const (
 	EM_RISCV         Machine = 243
 	EM_BPF           Machine = 247
 	EM_C_SKY         Machine = 252
+	EM_LOONGARCH     Machine = 258
 )
 
 var machNames = map[Machine]string{
@@ -521,6 +522,7 @@ var machNames = map[Machine]string{
 	EM_MOXIE:         "EM_MOXIE",
 	EM_AMDGPU:        "EM_AMDGPU",
 	EM_RISCV:         "EM_RISCV",
+	EM_LOONGARCH:     "EM_LOONGARCH",
 	EM_BPF:           "EM_BPF",
 	EM_C_SKY:         "EM_C_SKY",
 }

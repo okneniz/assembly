@@ -23,6 +23,7 @@ import (
 
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/arm64/alias"
+	lpseudo "github.com/okneniz/assembly/asm/loong64/pseudo"
 	"github.com/okneniz/assembly/asm/riscv/pseudo"
 	"github.com/okneniz/assembly/file"
 )
@@ -196,6 +197,10 @@ func backendFor(arch file.ArchKind) (func(string, uint64) (*asm.Result, []asm.As
 		return pseudo.Assemble, nil
 	}
 
+	if arch == file.ArchLOONGARCH64 {
+		return lpseudo.Assemble, nil
+	}
+
 	return nil, fmt.Errorf("unsupported architecture %d", arch)
 }
 
@@ -207,6 +212,10 @@ func archName(arch file.ArchKind) string {
 
 	if arch == file.ArchRISCV64 {
 		return "riscv64"
+	}
+
+	if arch == file.ArchLOONGARCH64 {
+		return "loong64"
 	}
 
 	return "unknown"

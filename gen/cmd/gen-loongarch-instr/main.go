@@ -1,0 +1,207 @@
+// Command gen-loongarch-instr builds the LoongArch (LA64) instruction
+// encoding table from the vendored loongarch-opcodes tables
+// (arch/loong64/data/la-*.txt - the scalar integer subsets of the ISA).
+//
+// Each table line carries the fixed encoding word (operand fields zeroed),
+// the upstream mnemonic, and the canonical operand format string. This
+// command parses the lines, restores the official ISA mnemonics (the
+// upstream tables rename some instructions; @orig_name carries the
+// official spelling), derives the mask from the operand format
+// (gen/loong/opcodes Slots), and emits name -> {match, mask}, the
+// authoritative decode data. The hand-written decodeTable
+// (arch/loong64/decode.go) joins by mnemonic to supply operand/format
+// config; only that subset is matched at decode time.
+//
+// Data quirks handled here:
+//   - csrrd/csrwr are merged into csrxchg upstream; the official triple
+//     is derived back (rj=0 for csrrd, rj=1 for csrwr, fixed in the mask);
+//   - provisional placeholder rows (xxx.*) are skipped.
+//
+// Output: arch/loong64/instr_generated.go, `var loongEncodings = map[string][2]uint32{...}`
+// keyed by the official mnemonic (e.g. "add.d", "lu52i.d"), value is
+// {match, mask}.
+//
+// Usage:
+//
+//	go run ./gen/cmd/gen-loongarch-instr -i arch/loong64/data -o arch/loong64/instr_generated.go
+package main
+
+import (
+	"flag"
+	"fmt"
+	"log"
+	"os"
+	"sort"
+	"strings"
+
+	"github.com/okneniz/assembly/gen/loong/opcodes"
+)
+
+// subsets - the vendored tables in load order (first-wins on duplicates).
+// The scalar integer scope: base, multiply, atomics, bitops, bound checks,
+// privileged. FP/LSX/LASX/LBT/LVZ are out of scope.
+var subsets = []string{
+	"la-base-32",
+	"la-base-64",
+	"la-mul-32",
+	"la-mul-64",
+	"la-atomics-32",
+	"la-atomics-64",
+	"la-bitops-32",
+	"la-bitops-64",
+	"la-bound",
+	"la-bound-64",
+	"la-privileged-32",
+	"la-privileged-64",
+}
+
+type enc struct {
+	match, mask uint32
+}
+
+func newEnc(match uint32, mask uint32) enc {
+	return enc{
+		match: match,
+		mask:  mask,
+	}
+}
+
+func main() {
+	in := flag.String("i", "arch/loong64/data", "loongarch-opcodes data directory")
+	out := flag.String("o", "arch/loong64/instr_generated.go", "output Go file")
+	flag.Parse()
+
+	requireData(*in)
+
+	encs := map[string]enc{}
+	for _, subset := range subsets {
+		path := *in + "/" + subset + ".txt"
+
+		data, err := os.ReadFile(path)
+		if err != nil {
+			log.Fatalf("read %s: %v", path, err)
+		}
+
+		entries, perr := opcodes.Parse([]rune(string(data)))
+		if perr != nil {
+			log.Fatalf("parse %s: %v (at %s)", path, perr, perr.Position())
+		}
+
+		for _, e := range entries {
+			addEntry(encs, e)
+		}
+	}
+
+	log.Printf("parsed %d instruction encodings", len(encs))
+	emit(*out, encs)
+}
+
+// addEntry folds one table line into the encodings map: the official
+// mnemonic with the mask derived from the operand format. The upstream
+// csrxchg merge is undone here (csrrd/csrwr with the rj field fixed).
+func addEntry(encs map[string]enc, e opcodes.Entry) {
+	if strings.HasPrefix(e.Name, "xxx.") {
+		return // provisional placeholder rows
+	}
+
+	slots, err := opcodes.ParseFormat(e.Format)
+	if err != nil {
+		log.Fatalf("format of %s: %v", e.Name, err)
+	}
+
+	mask, err := slots.Mask()
+	if err != nil {
+		log.Fatalf("mask of %s (%s): %v", e.Name, e.Format, err)
+	}
+
+	if e.Word&mask != e.Word {
+		log.Fatalf("word of %s (%#x) escapes its mask (%#x)", e.Name, e.Word, mask)
+	}
+
+	name := e.OfficialName()
+	put(encs, name, newEnc(e.Word, mask))
+
+	if name == "csrxchg" {
+		// The official triple: rj=0 reads, rj=1 writes, rj>=2 exchanges.
+		put(encs, "csrrd", newEnc(e.Word, mask|0x3e0))
+		put(encs, "csrwr", newEnc(e.Word|0x20, mask|0x3e0))
+	}
+}
+
+// put adds the encoding; a duplicate name with a different value is corrupt
+// data (the same value - a benign cross-subset repeat).
+func put(encs map[string]enc, name string, e enc) {
+	if old, ok := encs[name]; ok && old != e {
+		log.Fatalf(
+			"duplicate mnemonic %s: %#x/%#x vs %#x/%#x",
+			name,
+			old.match,
+			old.mask,
+			e.match,
+			e.mask,
+		)
+	}
+
+	encs[name] = e
+}
+
+// requireData fails fast with an actionable hint if the vendored tables
+// are absent (they are gitignored and must be fetched first).
+func requireData(dir string) {
+	if _, err := os.Stat(dir + "/la-base-32.txt"); err != nil {
+		fmt.Fprintf(os.Stderr, "\nerror: %s/la-base-32.txt not found\n", dir)
+		fmt.Fprintf(
+			os.Stderr,
+			"       The tables are gitignored (canonical, regenerable) and must be downloaded.\n\n",
+		)
+		fmt.Fprintf(os.Stderr, "       Fix:    make update-loong-data\n")
+		fmt.Fprintf(os.Stderr, "       Then:  make gen-loongarch-instr\n\n")
+		os.Exit(1)
+	}
+}
+
+func emit(outPath string, encs map[string]enc) {
+	names := make([]string, 0, len(encs))
+	for n := range encs {
+		names = append(names, n)
+	}
+
+	sort.Strings(names)
+
+	var b strings.Builder
+	fmt.Fprintln(&b, "// Code generated by gen/cmd/gen-loongarch-instr; DO NOT EDIT.")
+	fmt.Fprintln(&b, "//")
+	fmt.Fprintln(&b, "// LoongArch (LA64) instruction encodings, parsed from the vendored")
+	fmt.Fprintln(&b, "// loongarch-opcodes tables (arch/loong64/data/la-*.txt - the scalar integer")
+	fmt.Fprintln(
+		&b,
+		"// subsets). Keyed by the official ISA mnemonic (the upstream tables' renames",
+	)
+	fmt.Fprintln(
+		&b,
+		"// are restored via @orig_name; csrrd/csrwr, merged into csrxchg upstream, are",
+	)
+	fmt.Fprintln(
+		&b,
+		"// derived back); value is {match, mask} - the authoritative decode data. The",
+	)
+	fmt.Fprintln(&b, "// hand-written decodeTable (decode.go) joins by mnemonic to supply")
+	fmt.Fprintln(&b, "// operand/format config; only that subset is matched at decode time.")
+	fmt.Fprintln(&b)
+	fmt.Fprintln(&b, "package loong64")
+	fmt.Fprintln(&b)
+	fmt.Fprintln(&b, "// loongEncodings[name] = {match, mask}.")
+	fmt.Fprintln(&b, "var loongEncodings = map[string][2]uint32{")
+	for _, n := range names {
+		e := encs[n]
+		fmt.Fprintf(&b, "\t%q: {0x%x, 0x%x},\n", n, e.match, e.mask)
+	}
+
+	fmt.Fprintln(&b, "}")
+
+	if err := os.WriteFile(outPath, []byte(b.String()), 0o644); err != nil {
+		log.Fatalf("write %s: %v", outPath, err)
+	}
+
+	log.Printf("wrote %d instruction encodings to %s", len(encs), outPath)
+}

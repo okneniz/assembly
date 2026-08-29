@@ -24,9 +24,11 @@ import (
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/arm64/alias"
+	lpseudo "github.com/okneniz/assembly/asm/loong64/pseudo"
 	"github.com/okneniz/assembly/asm/riscv/pseudo"
 	"github.com/okneniz/assembly/disasm"
 	"github.com/okneniz/assembly/file"
@@ -34,7 +36,7 @@ import (
 )
 
 func main() {
-	archFlag := flag.String("arch", "", "architecture: arm64|riscv64 (required)")
+	archFlag := flag.String("arch", "", "architecture: arm64|riscv64|loong64 (required)")
 	baseFlag := flag.String("base", "0", "base address of the .text section (hex or dec)")
 	outPath := flag.String("o", "", "output binary file (default: stdout ignored with --hex)")
 	symPath := flag.String("sym", "", "write symbol table to this file")
@@ -69,8 +71,10 @@ func main() {
 		assemble = alias.Assemble
 	case "riscv64", "riscv":
 		assemble = pseudo.Assemble
+	case "loong64", "loongarch64":
+		assemble = lpseudo.Assemble
 	default:
-		fmt.Fprintf(os.Stderr, "unknown -arch %q (want arm64 or riscv64)\n", *archFlag)
+		fmt.Fprintf(os.Stderr, "unknown -arch %q (want arm64, riscv64 or loong64)\n", *archFlag)
 		os.Exit(2)
 	}
 
@@ -122,7 +126,7 @@ func main() {
 	if *outPath != "" && len(errs) == 0 {
 		var blob []byte
 		if *formatFlag == "elf" {
-			machine, merr := elfMachine(strings.ToLower(*archFlag))
+			machine, flags, merr := elfMachine(strings.ToLower(*archFlag))
 			if merr != nil {
 				fmt.Fprintln(os.Stderr, merr)
 				os.Exit(2)
@@ -136,7 +140,7 @@ func main() {
 				}
 			}
 
-			elfBlob, werr := file.WriteELF(machine, base, entry, fileSections(res.Sections))
+			elfBlob, werr := file.WriteELF(machine, flags, base, entry, fileSections(res.Sections))
 			if werr != nil {
 				fmt.Fprintln(os.Stderr, "elf:", werr)
 				os.Exit(1)
@@ -208,21 +212,38 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			instrs,
 			disasm.NewOptions(text.CodeWord),
 		)
+	case "loong64", "loongarch64":
+		instrs, err := loong64.Parse(base)(bytes.Buffer(data))
+		if err != nil {
+			return err
+		}
+
+		return disasm.Write(
+			os.Stdout,
+			base,
+			data,
+			instrs,
+			disasm.NewOptions(text.CodeWord),
+		)
 	}
 
 	return nil
 }
 
-// elfMachine — e_machine from the CLI's string architecture name.
-func elfMachine(arch string) (uint16, error) {
+// elfMachine — e_machine and e_flags from the CLI's string architecture
+// name. LoongArch carries the ABI bits (base + double-float): the kernel
+// rejects an ELF without a valid float-ABI setting.
+func elfMachine(arch string) (uint16, uint32, error) {
 	switch arch {
 	case "arm64", "aarch64":
-		return file.EM_AARCH64, nil
+		return file.EM_AARCH64, 0, nil
 	case "riscv64", "riscv":
-		return file.EM_RISCV, nil
+		return file.EM_RISCV, 0, nil
+	case "loong64", "loongarch64":
+		return file.EM_LOONGARCH, 0x43, nil
 	}
 
-	return 0, fmt.Errorf("no ELF machine for %q", arch)
+	return 0, 0, fmt.Errorf("no ELF machine for %q", arch)
 }
 
 // fileSections converts the sections of the assembly result into sections

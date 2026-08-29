@@ -73,6 +73,8 @@ fi
 # --- assembly-server: static files and the JSON API (assembling a source) ---
 if [ "$ARCH" = arm64 ]; then
 	ASM_SRC='mov x0, #42\n'
+elif [ "$ARCH" = loong64 ]; then
+	ASM_SRC='li.w $a0, 42\n'
 else
 	ASM_SRC='li a0, 42\n'
 fi

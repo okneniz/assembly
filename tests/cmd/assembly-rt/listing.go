@@ -9,6 +9,7 @@ import (
 	parsecbytes "github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/disasm"
@@ -64,7 +65,8 @@ func buildListing(
 	st := newLineStats(map[string]int{})
 	off := 0
 
-	if arch == file.ArchRISCV64 {
+	switch arch {
+	case file.ArchRISCV64:
 		textOf := firstInstrTextRISCV
 		insts, err := riscv.Parse(base)(parsecbytes.Buffer(data))
 		if err != nil {
@@ -96,7 +98,38 @@ func buildListing(
 
 			off += n
 		}
-	} else {
+	case file.ArchLOONGARCH64:
+		textOf := firstInstrTextLOONG
+		insts, err := loong64.Parse(base)(parsecbytes.Buffer(data))
+		if err != nil {
+			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
+		}
+
+		for _, in := range insts {
+			line := cleanLine(in.ObjDump(disasm.DefaultViewCtx()))
+			if line == "" || line == "<unknown>" {
+				emitRaw(&sb, data[off:off+4])
+				st.addFiller("unknown-loong64", in.Addr(), line)
+			} else {
+				switch classifyLine(assemble, line, in.Addr(), data[off:off+4], textOf) {
+				case verOK:
+					fmt.Fprintln(&sb, line)
+					st.instrLines++
+				case verAsmErr:
+					emitRaw(&sb, data[off:off+4])
+					st.addFiller("asm-error", in.Addr(), line)
+				case verEquiv:
+					emitRaw(&sb, data[off:off+4])
+					st.addFiller("equiv-encoding", in.Addr(), line)
+				case verMismatch:
+					emitRaw(&sb, data[off:off+4])
+					st.addFiller("hard-mismatch", in.Addr(), line)
+				}
+			}
+
+			off += 4
+		}
+	default:
 		textOf := firstInstrTextARM
 		insts, err := arm64.Parse(base)(parsecbytes.Buffer(data))
 		if err != nil {
@@ -246,6 +279,21 @@ func firstInstrTextARM(b []byte, addr uint64) string {
 // buffer (riscv64, including compressed forms).
 func firstInstrTextRISCV(b []byte, addr uint64) string {
 	insts, err := riscv.Parse(addr)(parsecbytes.Buffer(b))
+	if err != nil {
+		return ""
+	}
+
+	if len(insts) == 0 {
+		return ""
+	}
+
+	return cleanLine(insts[0].ObjDump(disasm.DefaultViewCtx()))
+}
+
+// firstInstrTextLOONG - the first instruction's text of a loong64 word
+// buffer.
+func firstInstrTextLOONG(b []byte, addr uint64) string {
+	insts, err := loong64.Parse(addr)(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}

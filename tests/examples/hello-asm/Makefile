@@ -19,6 +19,7 @@ ASM := go run ../../../cmd/assembly-asm
 # qemu-system-* from brew: full virt machines (VMs) for riscv64/arm64.
 QEMU_RISCV ?= qemu-system-riscv64
 QEMU_ARM   ?= qemu-system-aarch64
+QEMU_LOONG ?= qemu-system-loongarch64
 
 all: run
 
@@ -52,7 +53,14 @@ vm-arm: hello-arm-vm.elf
 	@echo "--- arm64 VM (qemu virt, bare-metal) ---"
 	$(QEMU_ARM) -machine virt -cpu cortex-a53 -nographic -device loader,file=hello-arm-vm.elf,cpu-num=0
 
-vm: vm-riscv vm-arm
+hello-loongarch.bin: hello-loongarch.s
+	$(ASM) -arch loong64 -base 0x1c000000 -format bin -o hello-loongarch.bin hello-loongarch.s
+
+vm-loong: hello-loongarch.bin
+	@echo "--- loong64 VM (qemu virt, bare-metal) ---"
+	$(QEMU_LOONG) -machine virt -nographic -device loader,file=hello-loongarch.bin,addr=0x1c000000,cpu-num=0
+
+vm: vm-riscv vm-arm vm-loong
 
 # Architecture comparison: the same program assembled for riscv64/arm64.
 compare: hello.bin hello-riscv.elf hello-arm-vm.elf

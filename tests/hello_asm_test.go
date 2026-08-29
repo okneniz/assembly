@@ -14,9 +14,11 @@ import (
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/arm64/alias"
+	lpseudo "github.com/okneniz/assembly/asm/loong64/pseudo"
 	"github.com/okneniz/assembly/asm/riscv/pseudo"
 	"github.com/okneniz/assembly/disasm"
 	"github.com/okneniz/assembly/file"
@@ -27,6 +29,20 @@ import (
 // (for decode-equivalence comparison).
 func instrText(b []byte, addr uint64) string {
 	insts, err := arm64.Parse(addr)(parsecbytes.Buffer(b))
+	if err != nil {
+		return ""
+	}
+
+	if len(insts) == 0 {
+		return ""
+	}
+
+	return objdump.Normalize(insts[0].ObjDump(disasm.DefaultViewCtx()))
+}
+
+// loongInstrText - the same for LoongArch.
+func loongInstrText(b []byte, addr uint64) string {
+	insts, err := loong64.Parse(addr)(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -89,6 +105,7 @@ func TestHelloAsmExample(t *testing.T) {
 		{"examples/hello-asm/hello-linux.s", 0, alias.Assemble},
 		{"examples/hello-asm/hello-arm-vm.s", 0x40100000, alias.Assemble},
 		{"examples/hello-asm/hello-riscv.s", 0x80000000, pseudo.Assemble},
+		{"examples/hello-asm/hello-loongarch.s", 0x1c000000, lpseudo.Assemble},
 	}
 	for _, c := range cases {
 		t.Run(filepath.Base(c.src), func(t *testing.T) {
@@ -106,13 +123,30 @@ func TestHelloAsmExample(t *testing.T) {
 			require.NotZero(t, res.Symbols["msg"], "symbols: %+v", res.Symbols)
 
 			riscvCase := strings.Contains(c.src, "riscv")
+			loongCase := strings.Contains(c.src, "loong")
 			type slot struct {
 				addr uint64
 				line string
 				size int // length of the source instruction
 			}
 			var instrs []slot
-			if riscvCase {
+			switch {
+			case loongCase:
+				insts, err := loong64.Parse(c.base)(parsecbytes.Buffer(bin))
+				require.NoError(t, err)
+				for _, in := range insts {
+					line := objdump.StripComments(
+						objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())),
+					)
+					if line != "" && line != "<unknown>" {
+						instrs = append(instrs, slot{
+							in.Addr(),
+							line,
+							in.Len(),
+						})
+					}
+				}
+			case riscvCase:
 				insts, err := riscv.Parse(c.base)(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				for _, in := range insts {
@@ -127,7 +161,7 @@ func TestHelloAsmExample(t *testing.T) {
 						})
 					}
 				}
-			} else {
+			default:
 				insts, err := arm64.Parse(c.base)(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				for _, in := range insts {
@@ -165,11 +199,17 @@ func TestHelloAsmExample(t *testing.T) {
 				// lengths may differ: a symbolic target of the source is not
 				// compressed, while a numeric one from the round-trip is;
 				// these are decode-equivalent forms of the same text
-				if riscvCase {
-					if riscvInstrText(got, st.addr) == riscvInstrText(want, st.addr) {
-						continue
-					}
-				} else if instrText(got, st.addr) == instrText(want, st.addr) {
+				var equiv func(b []byte, addr uint64) string
+				switch {
+				case riscvCase:
+					equiv = riscvInstrText
+				case loongCase:
+					equiv = loongInstrText
+				default:
+					equiv = instrText
+				}
+
+				if equiv(got, st.addr) == equiv(want, st.addr) {
 					continue
 				}
 
@@ -197,6 +237,22 @@ func TestHelloVM(t *testing.T) {
 	)
 	elfPath := filepath.Join(t.TempDir(), "hello-riscv.elf")
 	err = os.WriteFile(elfPath, riscvELF, 0o755)
+	require.NoError(t, err)
+
+	srcL, err := os.ReadFile("examples/hello-asm/hello-loongarch.s")
+	if err != nil {
+		t.Skipf("example source not available: %v", err)
+	}
+
+	resL, errsL := lpseudo.Assemble(string(srcL), 0x1c000000)
+	require.Empty(t, errsL, "assemble loong")
+	loongBin := filepath.Join(t.TempDir(), "hello-loong.bin")
+	loongImage := make([]byte, 0)
+	for _, sec := range resL.Sections {
+		loongImage = append(loongImage, sec.Data...)
+	}
+
+	err = os.WriteFile(loongBin, loongImage, 0o755)
 	require.NoError(t, err)
 
 	src2, err := os.ReadFile("examples/hello-asm/hello-arm-vm.s")
@@ -229,6 +285,15 @@ func TestHelloVM(t *testing.T) {
 			[]string{"-machine", "virt", "-cpu", "cortex-a53", "-nographic",
 				"-device", "loader,file=" + armPath + ",cpu-num=0"},
 		},
+		{
+			// LoongArch resets into the flash (0x1c000000), not RAM; the
+			// machine has no bare-metal poweroff, so the program idles after
+			// printing - the deadline-stop below is the expected exit.
+			"loong64-virt",
+			"qemu-system-loongarch64",
+			[]string{"-machine", "virt", "-nographic",
+				"-device", "loader,file=" + loongBin + ",addr=0x1c000000,cpu-num=0"},
+		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -259,7 +324,7 @@ func mustWriteELF(
 	sections []file.Section,
 ) []byte {
 	t.Helper()
-	blob, err := file.WriteELF(machine, base, entry, sections)
+	blob, err := file.WriteELF(machine, 0, base, entry, sections)
 	require.NoError(t, err, "WriteELF")
 	return blob
 }

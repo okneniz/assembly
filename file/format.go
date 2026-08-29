@@ -22,6 +22,7 @@ const (
 	ArchUnknown ArchKind = iota
 	ArchARM64
 	ArchRISCV64
+	ArchLOONGARCH64
 )
 
 // FileFormat — a binary file format (ELF, Mach-O), implemented in this package.
