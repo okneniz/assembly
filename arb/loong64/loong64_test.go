@@ -67,7 +67,7 @@ func TestImmGenProperty(t *testing.T) {
 			return v.Val() >= -2048 && v.Val() <= 2047
 		})
 
-		lo, err := arch.NewImm12(-2048)
+		lo, err := arch.New().Imm12(-2048)
 		require.NoError(t, err)
 		for s := range Imm12(rnd).Shrink(lo) {
 			require.GreaterOrEqual(t, s.Val(), int64(-2048), "shrink out of range: %v", s)
@@ -90,7 +90,7 @@ func TestImmGenProperty(t *testing.T) {
 
 		// the halved candidates that lost alignment are skipped: the
 		// surviving candidates are aligned and in range
-		hi, err := arch.NewImm14(16380)
+		hi, err := arch.New().Imm14(16380)
 		require.NoError(t, err)
 		cs := slices.Collect(Imm14(rnd).Shrink(hi))
 		require.NotEmpty(t, cs)

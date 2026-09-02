@@ -8,11 +8,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmoorW — amoor.w rd, rs2, (rs1).
+// AmoorW - amoor.w rd, rs2, (rs1).
 type AmoorW struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// AmoorW - amoor.w rd, rs2, (rs1).
+func (Builder) AmoorW(rd, rs1, rs2 Reg) Instr {
+	return AmoorW{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeAmoorW(w uint32, addr uint64) Instr {

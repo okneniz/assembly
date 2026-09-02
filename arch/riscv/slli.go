@@ -15,6 +15,15 @@ type Slli struct {
 	shamt   imm
 }
 
+// Slli - slli rd, rs1, shamt (shamt5/6 is checked at encoding).
+func (Builder) Slli(rd, rs1 Reg, shamt Imm12) Instr {
+	return Slli{
+		rd:    rd.name(),
+		rs1:   rs1.name(),
+		shamt: immNum(shamt.v),
+	}
+}
+
 func decodeSlli(w uint32, addr uint64) Instr {
 	return Slli{
 		base:  newBase(addr, w),

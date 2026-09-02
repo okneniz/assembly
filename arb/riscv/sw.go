@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for sw — one generator, one type, one constructor
-// (riscv.NewSw).
+// (Sw).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewSwParams(rs2 riscv.Reg, rs1 riscv.Reg, off riscv.Off) SwParams {
 }
 
 func (p SwParams) Instr() riscv.Instr {
-	return riscv.NewSw(p.Rs2, p.Rs1, p.Off)
+	return riscv.New().Sw(p.Rs2, p.Rs1, p.Off)
 }
 func (p SwParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -58,7 +58,7 @@ func (g swGen) Generate() iter.Seq[SwParams] {
 
 func (g swGen) Shrink(p SwParams) iter.Seq[SwParams] {
 	rs2, rs1 := regShrunk(p.Rs2), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
+	offs := immShrunk(p.Off, riscv.New().Off, si12Shrink)
 	out := make([]SwParams, 0, len(rs2)+len(rs1)+len(offs))
 	for _, r := range rs2 {
 		out = append(out, NewSwParams(r, p.Rs1, p.Off))

@@ -9,7 +9,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	"github.com/okneniz/assembly/asm/expr"
@@ -132,7 +132,7 @@ var labelNumC = parsecstrings.Cast(
 )
 
 // directiveC is '.' + a known directive + arguments per specification.
-var directiveC = func(buf common.Buffer[rune, parsecstrings.Position]) (*directive, common.Error[parsecstrings.Position]) {
+var directiveC = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*directive, parsec.Error[parsecstrings.Position]) {
 	pos := buf.Position()
 	if _, err := parsecstrings.Try(parsecstrings.Eq("'.'", '.'))(buf); err != nil {
 		return nil, err
@@ -140,7 +140,7 @@ var directiveC = func(buf common.Buffer[rune, parsecstrings.Position]) (*directi
 
 	name, err := cIdent(buf)
 	if err != nil {
-		return nil, common.NewParseError(pos, "directive name expected")
+		return nil, parsec.NewParseError(pos, "directive name expected")
 	}
 
 	full := "." + name
@@ -150,7 +150,7 @@ var directiveC = func(buf common.Buffer[rune, parsecstrings.Position]) (*directi
 	}
 
 	if !ok {
-		return nil, common.NewParseError(pos, fmt.Sprintf("unknown directive %q", full))
+		return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown directive %q", full))
 	}
 
 	args, aerr := directiveArgs(kind)(buf)
@@ -163,7 +163,7 @@ var directiveC = func(buf common.Buffer[rune, parsecstrings.Position]) (*directi
 
 // skipLineBody consumes everything up to end of line, NOT including the
 // newline (unlike skipToEOL - parseLine will eat it).
-func skipLineBody(buf common.Buffer[rune, parsecstrings.Position]) {
+func skipLineBody(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	for {
 		if _, err := cNotNL(buf); err != nil {
 			return
@@ -172,8 +172,8 @@ func skipLineBody(buf common.Buffer[rune, parsecstrings.Position]) {
 }
 
 // directiveArgs is the directive arguments per its specification.
-func directiveArgs(kind dirArgsKind) common.Combinator[rune, parsecstrings.Position, []dirArg] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) ([]dirArg, common.Error[parsecstrings.Position]) {
+func directiveArgs(kind dirArgsKind) parsec.Combinator[rune, parsecstrings.Position, []dirArg] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]dirArg, parsec.Error[parsecstrings.Position]) {
 		switch kind {
 		case argsNone:
 			return nil, nil
@@ -268,9 +268,9 @@ func directiveArgs(kind dirArgsKind) common.Combinator[rune, parsecstrings.Posit
 // exprList is comma-separated expressions; single - exactly one. Before each
 // expression a '#' is allowed (objdump-style immediates: ".word #0x1234").
 func exprList(
-	buf common.Buffer[rune, parsecstrings.Position],
+	buf parsec.Buffer[rune, parsecstrings.Position],
 	single bool,
-) ([]dirArg, common.Error[parsecstrings.Position]) {
+) ([]dirArg, parsec.Error[parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
 	expr.SkipHash(buf)
 	first, err := expr.CExpr()(buf)
@@ -307,8 +307,8 @@ func exprList(
 
 // strList is comma-separated string literals.
 func strList(
-	buf common.Buffer[rune, parsecstrings.Position],
-) ([]dirArg, common.Error[parsecstrings.Position]) {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) ([]dirArg, parsec.Error[parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
 	first, err := cStringLit(buf)
 	if err != nil {
@@ -368,17 +368,17 @@ func parseSource(src []rune, be Syntax) []statement {
 	return out
 }
 
-func posErrFrom(e common.Error[parsecstrings.Position]) AsmError {
+func posErrFrom(e parsec.Error[parsecstrings.Position]) AsmError {
 	return posErr(e.Position(), e.Error())
 }
 
 // parseLine is the grammar of one line. Consumes the newline (or reaches
 // EOF).
 func parseLine(
-	buf common.Buffer[rune, parsecstrings.Position],
-	instr common.Combinator[rune, parsecstrings.Position, Unresolved],
-	comment common.Combinator[rune, parsecstrings.Position, string],
-) (statement, common.Error[parsecstrings.Position]) {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	instr parsec.Combinator[rune, parsecstrings.Position, Unresolved],
+	comment parsec.Combinator[rune, parsecstrings.Position, string],
+) (statement, parsec.Error[parsecstrings.Position]) {
 	start := buf.Position()
 	st := newStatement(start, nil)
 
@@ -437,7 +437,7 @@ func parseLine(
 	expr.SkipSpaces(buf)
 	consumeComment(buf, comment)
 	if !atEOL(buf) {
-		return statement{}, common.NewParseError(buf.Position(), "unexpected trailing characters")
+		return statement{}, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
 	}
 
 	consumeEOL(buf)

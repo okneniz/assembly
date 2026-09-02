@@ -15,8 +15,8 @@ type SrliD struct {
 	imm    imm
 }
 
-// NewSrliD - srli.d rd, rj, ui6.
-func NewSrliD(rd, rj Reg, v UImm6) Instr {
+// SrliD - srli.d rd, rj, ui6.
+func (Builder) SrliD(rd, rj Reg, v UImm6) Instr {
 	return SrliD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

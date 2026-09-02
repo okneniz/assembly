@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sraiw — sraiw rd, rs1, shamt (shamt5).
+// Sraiw - sraiw rd, rs1, shamt (shamt5).
 type Sraiw struct {
 	base
 
 	rd, rs1 string
 	shamt   imm
+}
+
+// Sraiw - sraiw rd, rs1, shamt (shamt5).
+func (Builder) Sraiw(rd, rs1 Reg, shamt Imm12) Instr {
+	return Sraiw{
+		rd:    rd.name(),
+		rs1:   rs1.name(),
+		shamt: immNum(shamt.v),
+	}
 }
 
 func decodeSraiw(w uint32, addr uint64) Instr {

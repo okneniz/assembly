@@ -7,15 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Add — add rd, rs1, rs2.
+// Add - add rd, rs1, rs2.
 type Add struct {
 	base
 
 	rd, rs1, rs2 string
 }
 
-// NewAdd — add rd, rs1, rs2.
-func NewAdd(rd, rs1, rs2 Reg) Instr {
+// Add - add rd, rs1, rs2.
+func (Builder) Add(rd, rs1, rs2 Reg) Instr {
 	return Add{
 		rd:  rd.name(),
 		rs1: rs1.name(),

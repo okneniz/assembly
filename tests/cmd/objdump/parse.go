@@ -16,7 +16,7 @@ import (
 	"bufio"
 	"strings"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 )
 
@@ -63,8 +63,8 @@ var cAddr = parsecstrings.Cast(
 // continues with a third/fifth byte - that is data, not an instruction).
 // Peek reads character by character; the position is restored.
 func noByteAfter(
-	buf common.Buffer[rune, parsecstrings.Position],
-) common.Error[parsecstrings.Position] {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) parsec.Error[parsecstrings.Position] {
 	start := buf.Position()
 	for {
 		if _, err := cSp(buf); err != nil {
@@ -90,11 +90,11 @@ func noByteAfter(
 	}
 
 	if err := buf.Seek(start); err != nil {
-		return common.NewParseError(buf.Position(), err.Error())
+		return parsec.NewParseError(buf.Position(), err.Error())
 	}
 
 	if len(tok) == 2 && isHexRune(tok[0]) && isHexRune(tok[1]) {
-		return common.NewParseError(start, "unexpected third code byte")
+		return parsec.NewParseError(start, "unexpected third code byte")
 	}
 
 	return nil
@@ -104,8 +104,8 @@ func noByteAfter(
 // is a separate token: after two hex digits there must be a space or the end
 // of the line (otherwise "ad" inside the mnemonic "add" would be swallowed
 // as a byte).
-func bytesField(n int) common.Combinator[rune, parsecstrings.Position, []string] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) ([]string, common.Error[parsecstrings.Position]) {
+func bytesField(n int) parsec.Combinator[rune, parsecstrings.Position, []string] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
 		toks := make([]string, 0, n)
 		for i := range n {
 			if i > 0 {
@@ -121,7 +121,7 @@ func bytesField(n int) common.Combinator[rune, parsecstrings.Position, []string]
 
 			if !buf.IsEOF() {
 				if r, perr := buf.Read(false); perr == nil && r != ' ' {
-					return nil, common.NewParseError(
+					return nil, parsec.NewParseError(
 						buf.Position(),
 						"code byte is not a separate token",
 					)
@@ -140,8 +140,8 @@ func bytesField(n int) common.Combinator[rune, parsecstrings.Position, []string]
 }
 
 // wordField - exactly n hex digits as a single word (4 or 8).
-func wordField(n int) common.Combinator[rune, parsecstrings.Position, []string] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) ([]string, common.Error[parsecstrings.Position]) {
+func wordField(n int) parsec.Combinator[rune, parsecstrings.Position, []string] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
 		rs, err := parsecstrings.Count(n, "code word", cHex)(buf)
 		if err != nil {
 			return nil, err
@@ -149,7 +149,7 @@ func wordField(n int) common.Combinator[rune, parsecstrings.Position, []string] 
 
 		if !buf.IsEOF() {
 			if r, perr := buf.Read(false); perr == nil && isHexRune(r) {
-				return nil, common.NewParseError(
+				return nil, parsec.NewParseError(
 					buf.Position(),
 					"unexpected hex digits after code word",
 				)
@@ -171,7 +171,7 @@ var cCodeField = parsecstrings.Choice("code field",
 
 // cInstrLine - the address, ':' and the code column; the tail (mnemonic and
 // operands) is not consumed by the grammar. Returns addr.
-var cInstrLine = func(buf common.Buffer[rune, parsecstrings.Position]) (uint64, common.Error[parsecstrings.Position]) {
+var cInstrLine = func(buf parsec.Buffer[rune, parsecstrings.Position]) (uint64, parsec.Error[parsecstrings.Position]) {
 	addr, err := cAddr(buf)
 	if err != nil {
 		return 0, err

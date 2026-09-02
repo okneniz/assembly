@@ -8,12 +8,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Auipc — auipc rd, imm.
+// Auipc - auipc rd, imm.
 type Auipc struct {
 	base
 
 	rd  string
 	imm imm
+}
+
+// Auipc - auipc rd, imm20 (imm20 = the raw U-type field: rd = pc + imm20<<12).
+func (Builder) Auipc(rd Reg, imm Imm20) Instr {
+	return Auipc{
+		rd:  rd.name(),
+		imm: immNum(imm.v),
+	}
 }
 
 func decodeAuipc(w uint32, addr uint64) Instr {

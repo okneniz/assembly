@@ -6,16 +6,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Ibar - ibar hint (Ud15): the instruction barrier hint (serializes the
-// instruction stream), the hint code occupies the [14:0] field.
+// Ibar - ibar hint (Ud15): the instruction barrier hint (serializes the instruction stream).
 type Ibar struct {
 	base
 
 	code imm
 }
 
-// NewIbar - ibar hint (a 15-bit code).
-func NewIbar(code Code15) Instr {
+// Ibar - ibar hint (a 15-bit code).
+func (Builder) Ibar(code Code15) Instr {
 	return Ibar{
 		code: immNum(code.Val()),
 	}

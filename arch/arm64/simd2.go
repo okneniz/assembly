@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Simd2 - op.Arr vd, vn (a single vector source operand).
+// Simd2 — op.Arr vd, vn (a single vector source operand).
 type Simd2 struct {
 	base
 

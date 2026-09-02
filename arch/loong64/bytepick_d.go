@@ -16,8 +16,8 @@ type BytepickD struct {
 	sel        imm
 }
 
-// NewBytepickD - bytepick.d rd, rj, rk, sel.
-func NewBytepickD(rd, rj, rk Reg, sel UImm3) Instr {
+// BytepickD - bytepick.d rd, rj, rk, sel.
+func (Builder) BytepickD(rd, rj, rk Reg, sel UImm3) Instr {
 	return BytepickD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

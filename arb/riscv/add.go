@@ -3,7 +3,7 @@
 package riscv
 
 // Generator for add — one generator, one type, one constructor
-// (riscv.NewAdd).
+// (Add).
 
 import (
 	"iter"
@@ -31,7 +31,7 @@ func NewAddParams(rd riscv.Reg, rs1 riscv.Reg, rs2 riscv.Reg) AddParams {
 }
 
 func (p AddParams) Instr() riscv.Instr {
-	return riscv.NewAdd(p.Rd, p.Rs1, p.Rs2)
+	return riscv.New().Add(p.Rd, p.Rs1, p.Rs2)
 }
 func (p AddParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())

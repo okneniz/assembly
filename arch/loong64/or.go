@@ -14,8 +14,8 @@ type Or struct {
 	rd, rj, rk uint8
 }
 
-// NewOr - or rd, rj, rk.
-func NewOr(rd, rj, rk Reg) Instr {
+// Or - or rd, rj, rk.
+func (Builder) Or(rd, rj, rk Reg) Instr {
 	return Or{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -1,6 +1,6 @@
 package arm64
 
-// Generator for movz — one generator, one type, one constructor (arm64.NewMovz).
+// Generator for movz — one generator, one type, one constructor (Movz).
 
 import (
 	"iter"
@@ -31,7 +31,7 @@ func NewMovzParams(rd arm64.Reg, imm arm64.Imm16, hw arm64.Hw) MovzParams {
 }
 
 func (p MovzParams) Instr() arm64.Instr {
-	in, err := arm64.NewMovz(p.Rd, p.Imm, p.Hw)
+	in, err := arm64.New().Movz(p.Rd, p.Imm, p.Hw)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -78,7 +78,7 @@ func (g movzGen) Shrink(p MovzParams) iter.Seq[MovzParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm16(d)
+		imm, err := arm64.New().Imm16(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm16 is always in 0..65535
 		}

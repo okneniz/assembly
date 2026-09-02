@@ -23,9 +23,9 @@ const (
 	AddImmW uint32 = 0x11000000
 )
 
-// NewAddImm — add rd, rn, #imm12[, lsl #12]. Register 31 reads as
+// AddImm — add rd, rn, #imm12[, lsl #12]. Register 31 reads as
 // sp/wsp (XZR/WZR are not allowed — use SP/WSP).
-func NewAddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
+func (Builder) AddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
 	if err := requireClass(rd, "AddImm", "rd", "register 31 reads as sp/wsp — use SP/WSP",
 		classX, classW, classSP, classWSP); err != nil {
 		return nil, err

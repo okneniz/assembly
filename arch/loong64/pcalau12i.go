@@ -17,8 +17,8 @@ type Pcalau12i struct {
 	imm imm
 }
 
-// NewPcalau12i - pcalau12i rd, si20.
-func NewPcalau12i(rd Reg, v Imm20) Instr {
+// Pcalau12i - pcalau12i rd, si20.
+func (Builder) Pcalau12i(rd Reg, v Imm20) Instr {
 	return Pcalau12i{
 		rd:  rd.Num(),
 		imm: immNum(v.Val()),

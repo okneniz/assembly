@@ -1,7 +1,7 @@
 package arm64
 
 // Generator for add (shifted register) — one generator, one type, one
-// constructor (arm64.NewAddShift).
+// constructor (AddShift).
 
 import (
 	"iter"
@@ -40,7 +40,7 @@ func NewAddShiftParams(
 }
 
 func (p AddShiftParams) Instr() arm64.Instr {
-	in, err := arm64.NewAddShift(p.Rd, p.Rn, p.Rm, p.Imm, p.Sh)
+	in, err := arm64.New().AddShift(p.Rd, p.Rn, p.Rm, p.Imm, p.Sh)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -105,7 +105,7 @@ func (g addShiftGen) Shrink(p AddShiftParams) iter.Seq[AddShiftParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm6(d)
+		imm, err := arm64.New().Imm6(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm6 is always in 0..63
 		}

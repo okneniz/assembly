@@ -8,11 +8,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmomaxuD — amomaxu.d rd, rs2, (rs1).
+// AmomaxuD - amomaxu.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = max(MEM[rs1], rs2), unsigned.
 type AmomaxuD struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// AmomaxuD - amomaxu.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = max(MEM[rs1], rs2), unsigned.
+func (Builder) AmomaxuD(rd, rs1, rs2 Reg) Instr {
+	return AmomaxuD{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeAmomaxuD(w uint32, addr uint64) Instr {

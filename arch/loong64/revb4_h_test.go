@@ -13,10 +13,10 @@ func TestRevb4HCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000035ac),
-		ctorWord(t, NewRevb4H(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().Revb4H(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewRevb4H(lreg(t, 1), lreg(t, 2))
+	in := New().Revb4H(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(Revb4H)
 	require.True(t, ok, "type = %T, want Revb4H", in)
 }

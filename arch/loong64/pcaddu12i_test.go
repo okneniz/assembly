@@ -10,10 +10,10 @@ import (
 
 func TestPcaddu12iCtor(t *testing.T) {
 	// llvm-mc-verified: pcaddu12i $t0, 5.
-	v, err := NewImm20(5)
+	v, err := New().Imm20(5)
 	require.NoError(t, err)
 
-	in := NewPcaddu12i(lreg(t, 12), v)
+	in := New().Pcaddu12i(lreg(t, 12), v)
 	require.Equal(t, uint32(0x1c0000ac), ctorWord(t, in))
 
 	_, ok := in.(Pcaddu12i)

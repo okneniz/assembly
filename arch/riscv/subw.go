@@ -14,6 +14,15 @@ type Subw struct {
 	rd, rs1, rs2 string
 }
 
+// Subw - subw rd, rs1, rs2 (rs1 = zero is printed as negw).
+func (Builder) Subw(rd, rs1, rs2 Reg) Instr {
+	return Subw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
+}
+
 func decodeSubw(w uint32, addr uint64) Instr {
 	return Subw{
 		base: newBase(addr, w),

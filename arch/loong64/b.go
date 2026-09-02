@@ -14,8 +14,8 @@ type B struct {
 	off imm
 }
 
-// NewB - b offs (the pc-relative byte offset).
-func NewB(off int64) Instr {
+// B - b offs (the pc-relative byte offset).
+func (Builder) B(off int64) Instr {
 	return B{
 		off: immNum(off),
 	}

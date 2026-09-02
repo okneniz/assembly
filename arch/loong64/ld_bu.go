@@ -15,8 +15,8 @@ type LdBu struct {
 	off    imm
 }
 
-// NewLdBu - ld.bu rd, rj, si12.
-func NewLdBu(rd, rj Reg, v Imm12) Instr {
+// LdBu - ld.bu rd, rj, si12.
+func (Builder) LdBu(rd, rj Reg, v Imm12) Instr {
 	return LdBu{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

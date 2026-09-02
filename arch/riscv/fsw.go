@@ -15,6 +15,16 @@ type Fsw struct {
 	off      imm
 }
 
+// Fsw - fsw rs2, off(rs1); rs2 is an FP register taken by number
+// (Reg 0..31 is printed ft0/fa0/...).
+func (Builder) Fsw(rs2, rs1 Reg, off Off) Instr {
+	return Fsw{
+		rs1: rs1.name(),
+		rs2: fpName(rs2),
+		off: immNum(off.v),
+	}
+}
+
 func decodeFsw(w uint32, addr uint64) Instr {
 	return Fsw{
 		base: newBase(addr, w),

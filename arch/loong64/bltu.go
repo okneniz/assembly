@@ -17,8 +17,8 @@ type Bltu struct {
 	off    imm
 }
 
-// NewBltu - bltu rj, rd, offs (the pc-relative byte offset).
-func NewBltu(rj, rd Reg, off int64) Instr {
+// Bltu - bltu rj, rd, offs (the pc-relative byte offset).
+func (Builder) Bltu(rj, rd Reg, off int64) Instr {
 	return Bltu{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

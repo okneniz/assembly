@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sw — sw rs2, off(rs1).
+// Sw - sw rs2, off(rs1).
 type Sw struct {
 	base
 
@@ -15,8 +15,8 @@ type Sw struct {
 	off      imm
 }
 
-// NewSw — sw rs2, off(rs1).
-func NewSw(rs2, rs1 Reg, off Off) Instr {
+// Sw - sw rs2, off(rs1).
+func (Builder) Sw(rs2, rs1 Reg, off Off) Instr {
 	return Sw{
 		rs1: rs1.name(),
 		rs2: rs2.name(),

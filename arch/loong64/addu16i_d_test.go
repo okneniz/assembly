@@ -10,13 +10,13 @@ import (
 
 func TestAddu16iDCtor(t *testing.T) {
 	// llvm-mc-verified: addu16i.d $t0, $t1, -1.
-	v, err := NewImm16(-1)
+	v, err := New().Imm16(-1)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x13fffdac),
-		ctorWord(t, NewAddu16iD(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().Addu16iD(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

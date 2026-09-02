@@ -13,10 +13,10 @@ func TestAmmaxDbDuCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x3870b5cc),
-		ctorWord(t, NewAmmaxDbDu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmmaxDbDu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmmaxDbDu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmmaxDbDu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmmaxDbDu)
 	require.True(t, ok, "type = %T, want AmmaxDbDu", in)
 }

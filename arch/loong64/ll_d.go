@@ -7,9 +7,8 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// LlD - ll.d rd, rj, offs (DJSk14): rd = MEM[rj + offs] with a
-// reservation (load-linked 64 bits; offs is word-scaled - a byte offset
-// multiple of 4 in +-16380, relative to the rj VALUE, like jirl).
+// LlD - ll.d rd, rj, offs (DJSk14): rd = MEM[rj + offs] with a reservation
+// (load-linked 64 bits; offs - a byte offset, a multiple of 4, in +-16380).
 type LlD struct {
 	base
 
@@ -17,8 +16,8 @@ type LlD struct {
 	off    imm
 }
 
-// NewLlD - ll.d rd, rj, offs (the byte offset from rj).
-func NewLlD(rd, rj Reg, off Imm14) Instr {
+// LlD - ll.d rd, rj, offs (the byte offset from rj).
+func (Builder) LlD(rd, rj Reg, off Imm14) Instr {
 	return LlD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

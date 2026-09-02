@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 )
 
 // errf is a helper for creating ELF parsing errors.
@@ -15,32 +15,32 @@ func errf(f string, args ...any) error {
 }
 
 // readU16At reads a uint16 at the absolute position off (restoring the position).
-func readU16At(buf common.Buffer[byte, int], order binary.ByteOrder, off int) (uint16, error) {
+func readU16At(buf parsec.Buffer[byte, int], order binary.ByteOrder, off int) (uint16, error) {
 	return readAt(buf, bytes.ReadAs[uint16](2, "elf: u16", order), off)
 }
 
 // readU32At reads a uint32 at the absolute position off.
-func readU32At(buf common.Buffer[byte, int], order binary.ByteOrder, off int) (uint32, error) {
+func readU32At(buf parsec.Buffer[byte, int], order binary.ByteOrder, off int) (uint32, error) {
 	return readAt(buf, bytes.ReadAs[uint32](4, "elf: u32", order), off)
 }
 
 // readU64At reads a uint64 at the absolute position off.
-func readU64At(buf common.Buffer[byte, int], order binary.ByteOrder, off int) (uint64, error) {
+func readU64At(buf parsec.Buffer[byte, int], order binary.ByteOrder, off int) (uint64, error) {
 	return readAt(buf, bytes.ReadAs[uint64](8, "elf: u64", order), off)
 }
 
 // readByteAt reads a single byte at the absolute position off.
-func readByteAt(buf common.Buffer[byte, int], off int) (byte, error) {
+func readByteAt(buf parsec.Buffer[byte, int], off int) (byte, error) {
 	return readAt(buf, bytes.Any(), off)
 }
 
 // readBytes reads size bytes at the absolute position off.
-func readBytes(buf common.Buffer[byte, int], off, size int) ([]byte, error) {
+func readBytes(buf parsec.Buffer[byte, int], off, size int) ([]byte, error) {
 	if err := checkSpan(off, size); err != nil {
 		return nil, err
 	}
 
-	return readAt(buf, common.Count(size, "elf: raw bytes", bytes.Any()), off)
+	return readAt(buf, parsec.Count(size, "elf: raw bytes", bytes.Any()), off)
 }
 
 // checkSpan rejects negative values and overflow of off+size (without this,
@@ -55,7 +55,7 @@ func checkSpan(off, size int) error {
 
 // readCStringAt reads a null-terminated string starting at position off
 // (ManyTill combinator: any bytes up to the null one).
-func readCStringAt(buf common.Buffer[byte, int], off int) (string, error) {
+func readCStringAt(buf parsec.Buffer[byte, int], off int) (string, error) {
 	if off < 0 {
 		return "", errf("read string at negative offset %d", off)
 	}
@@ -65,10 +65,10 @@ func readCStringAt(buf common.Buffer[byte, int], off int) (string, error) {
 		return "", err
 	}
 
-	bs, err := common.ManyTill(
+	bs, err := parsec.ManyTill(
 		16, "elf: cstring",
 		bytes.Any(),
-		common.Eq[byte, int]("elf: string terminator", 0),
+		parsec.Eq[byte, int]("elf: string terminator", 0),
 	)(buf)
 	// restore position: a seek-back error matters only if the read succeeded
 	if seekErr := buf.Seek(prev); seekErr != nil && err == nil {
@@ -86,8 +86,8 @@ func readCStringAt(buf common.Buffer[byte, int], off int) (string, error) {
 // buffer to its original position. Random access on top of a single streaming
 // buffer.
 func readAt[T any](
-	buf common.Buffer[byte, int],
-	c common.Combinator[byte, int, T],
+	buf parsec.Buffer[byte, int],
+	c parsec.Combinator[byte, int, T],
 	off int,
 ) (T, error) {
 	if off < 0 {

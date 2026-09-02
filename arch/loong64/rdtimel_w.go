@@ -14,8 +14,8 @@ type RdtimelW struct {
 	rd, rj uint8
 }
 
-// NewRdtimelW - rdtimel.w rd, rj.
-func NewRdtimelW(rd, rj Reg) Instr {
+// RdtimelW - rdtimel.w rd, rj.
+func (Builder) RdtimelW(rd, rj Reg) Instr {
 	return RdtimelW{
 		rd: rd.Num(),
 		rj: rj.Num(),

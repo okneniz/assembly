@@ -14,10 +14,10 @@ func TestBstrpickDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x00c50dac),
-		ctorWord(t, NewBstrpickD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))),
+		ctorWord(t, New().BstrpickD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))),
 	)
 
-	in := NewBstrpickD(lreg(t, 1), lreg(t, 2), uimm6v(t, 63), uimm6v(t, 0))
+	in := New().BstrpickD(lreg(t, 1), lreg(t, 2), uimm6v(t, 63), uimm6v(t, 0))
 	_, ok := in.(BstrpickD)
 	require.True(t, ok, "type = %T, want BstrpickD", in)
 }

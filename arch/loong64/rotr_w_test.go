@@ -13,10 +13,10 @@ func TestRotrWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001b39ac),
-		ctorWord(t, NewRotrW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().RotrW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewRotrW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().RotrW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(RotrW)
 	require.True(t, ok, "type = %T, want RotrW", in)
 }

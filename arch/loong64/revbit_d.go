@@ -14,8 +14,8 @@ type RevbitD struct {
 	rd, rj uint8
 }
 
-// NewRevbitD - bitrev.d rd, rj.
-func NewRevbitD(rd, rj Reg) Instr {
+// RevbitD - bitrev.d rd, rj.
+func (Builder) RevbitD(rd, rj Reg) Instr {
 	return RevbitD{
 		rd: rd.Num(),
 		rj: rj.Num(),

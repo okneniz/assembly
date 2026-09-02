@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Uaddlv - uaddlv.Arr hN/sN/dN, vn (scalar dest by size).
+// Uaddlv — uaddlv.Arr hN/sN/dN, vn (scalar dest by size).
 type Uaddlv struct {
 	base
 

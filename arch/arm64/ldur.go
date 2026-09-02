@@ -13,6 +13,35 @@ type Ldur struct {
 	lsBase
 }
 
+// Encodings of the 64/32-bit forms: the access size is set by rt.
+const (
+	ldurXEnc uint32 = 0xF8400000 // ldur xt, [xn, #±imm9]
+	ldurWEnc uint32 = 0xB8400000 // ldur wt, [xn, #±imm9]
+)
+
+// Ldur — ldur rt, [rn, #off]: the unscaled form, rt — x/w register
+// (register 31 reads as zr), rn — x register or SP (register 31 in the
+// base reads as sp); the offset is a signed imm9 (-0x100..0xff, any
+// alignment).
+func (Builder) Ldur(rt, rn Reg, off Off) (Instr, error) {
+	if err := lsOperand(rt, rn, "Ldur"); err != nil {
+		return nil, err
+	}
+
+	enc := ldurWEnc
+	if rt.Is64() {
+		enc = ldurXEnc
+	}
+
+	if err := requireUnscaledOff("Ldur", off); err != nil {
+		return nil, err
+	}
+
+	return Ldur{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
+	}, nil
+}
+
 func (i Ldur) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldur %s, %s", i.rt, i.lsText())
 }

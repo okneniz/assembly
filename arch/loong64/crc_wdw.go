@@ -15,8 +15,8 @@ type CrcWDW struct {
 	rd, rj, rk uint8
 }
 
-// NewCrcWDW - crc.w.d.w rd, rj, rk.
-func NewCrcWDW(rd, rj, rk Reg) Instr {
+// CrcWDW - crc.w.d.w rd, rj, rk.
+func (Builder) CrcWDW(rd, rj, rk Reg) Instr {
 	return CrcWDW{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SubsImm - subs rd, rn, #imm12[, lsl #12]; pseudo: cmp (Rd = zr).
+// SubsImm — subs rd, rn, #imm12[, lsl #12]; pseudo: cmp (Rd = zr).
 type SubsImm struct {
 	base
 
@@ -22,6 +22,40 @@ const (
 	SubsImmX uint32 = 0xF1000000
 	SubsImmW uint32 = 0x71000000
 )
+
+// SubsImm — subs rd, rn, #imm12[, lsl #12] (cmp when Rd = zr).
+// Rd: register 31 reads as zr; Rn — as sp/wsp.
+func (Builder) SubsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"SubsImm",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR (the cmp form)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "SubsImm", "rn", "register 31 reads as sp/wsp — use SP/WSP",
+		classX, classW, classSP, classWSP); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("SubsImm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	return SubsImm{
+		rdNum: rd.bits(),
+		rnNum: rn.bits(),
+		imm12: imm.v,
+		shift: sh == LSL12,
+		isf:   rd.Is64(),
+	}, nil
+}
 
 func decodeSubsImm(w uint32, addr uint64) Instr {
 	return SubsImm{

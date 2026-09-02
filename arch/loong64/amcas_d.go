@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmcasD - amcas.d rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): compare-swap, old value to rd.
+// AmcasD - amcas.d rd, rk, rj (3R): if MEM[rj] == rd then MEM[rj] = rk; rd = old MEM[rj].
 type AmcasD struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmcasD - amcas.d rd, rk, rj (the operand order the assembler writes).
-func NewAmcasD(rd, rk, rj Reg) Instr {
+// AmcasD - amcas.d rd, rk, rj.
+func (Builder) AmcasD(rd, rk, rj Reg) Instr {
 	return AmcasD{
 		rd: rd.Num(),
 		rk: rk.Num(),

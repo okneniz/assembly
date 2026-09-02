@@ -1,7 +1,7 @@
 # tests/cmd/
 
 This directory holds commands and wrappers needed only for tests and quality
-gates - everything that is not a product CLI (`cmd/assembly-asm`,
+gates - everything that is not a product CLI (`cmd/assembly`,
 `cmd/assembly-server`).
 
 - `assembly-diff/` - differential of our disassembler against objdump

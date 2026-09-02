@@ -16,6 +16,37 @@ type Rev32 struct {
 
 const Rev32X uint32 = 0xDAC00800
 
+// Rev32 — rev32 rd, rn. Only the 64-bit form: the architecture has
+// no 32-bit rev32 (the sf=0 slot of the encoding is the 32-bit rev).
+func (Builder) Rev32(rd, rn Reg) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Rev32",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Rev32",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Rev32{
+		rd: rd.name(),
+		rn: rn.name(),
+	}, nil
+}
+
 func decodeRev32(w uint32, addr uint64) Instr {
 	return Rev32{
 		base: newBase(addr, w),

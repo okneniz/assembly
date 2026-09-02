@@ -15,6 +15,16 @@ type Fsd struct {
 	off      imm
 }
 
+// Fsd - fsd rs2, off(rs1); rs2 is an FP register taken by number
+// (Reg 0..31 is printed ft0/fa0/...).
+func (Builder) Fsd(rs2, rs1 Reg, off Off) Instr {
+	return Fsd{
+		rs1: rs1.name(),
+		rs2: fpName(rs2),
+		off: immNum(off.v),
+	}
+}
+
 func decodeFsd(w uint32, addr uint64) Instr {
 	return Fsd{
 		base: newBase(addr, w),

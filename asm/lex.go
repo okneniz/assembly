@@ -9,7 +9,7 @@ package asm
 // job (the parsec library contract).
 
 import (
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	"github.com/okneniz/assembly/asm/expr"
@@ -47,32 +47,32 @@ var cStringLit = parsecstrings.Cast(
 
 // stringBody is any characters except '"' and '\n'; escape sequences are
 // expanded.
-func stringBody() common.Combinator[rune, parsecstrings.Position, []rune] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) ([]rune, common.Error[parsecstrings.Position]) {
+func stringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
 		for {
 			pos := buf.Position()
 			r, err := parsecstrings.Any()(buf)
 			if err != nil {
-				return nil, common.NewParseError(pos, "unterminated string")
+				return nil, parsec.NewParseError(pos, "unterminated string")
 			}
 
 			if r == '"' {
 				if err := buf.Seek(pos); err != nil {
-					return nil, common.NewParseError(pos, err.Error())
+					return nil, parsec.NewParseError(pos, err.Error())
 				}
 
 				return out, nil
 			}
 
 			if r == '\n' {
-				return nil, common.NewParseError(pos, "newline in string literal")
+				return nil, parsec.NewParseError(pos, "newline in string literal")
 			}
 
 			if r == '\\' {
 				e, err := parsecstrings.Any()(buf)
 				if err != nil {
-					return nil, common.NewParseError(pos, "unterminated escape")
+					return nil, parsec.NewParseError(pos, "unterminated escape")
 				}
 
 				switch e {
@@ -95,12 +95,12 @@ func stringBody() common.Combinator[rune, parsecstrings.Position, []rune] {
 }
 
 // atEOL is true when the end of line follows (newline or EOF).
-func atEOL(buf common.Buffer[rune, parsecstrings.Position]) bool {
+func atEOL(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
 	return expr.AtEOL(buf)
 }
 
 // consumeEOL consumes '\n' if present.
-func consumeEOL(buf common.Buffer[rune, parsecstrings.Position]) {
+func consumeEOL(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	if _, err := cNL(buf); err != nil {
 		return // no '\n' - nothing to consume
 	}
@@ -109,8 +109,8 @@ func consumeEOL(buf common.Buffer[rune, parsecstrings.Position]) {
 // consumeComment consumes a trailing comment if present (the combinator is
 // passed by the backend); the absence of a comment is not an error.
 func consumeComment(
-	buf common.Buffer[rune, parsecstrings.Position],
-	c common.Combinator[rune, parsecstrings.Position, string],
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	c parsec.Combinator[rune, parsecstrings.Position, string],
 ) {
 	if _, err := c(buf); err != nil {
 		return // no comment - nothing to consume
@@ -119,7 +119,7 @@ func consumeComment(
 
 // skipToEOL consumes everything up to end of line inclusive (recovery after
 // a line parse error).
-func skipToEOL(buf common.Buffer[rune, parsecstrings.Position]) {
+func skipToEOL(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	for {
 		if _, err := cNotNL(buf); err != nil {
 			break

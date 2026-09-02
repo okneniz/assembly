@@ -48,35 +48,35 @@ func TestLdrCtor(t *testing.T) {
 		{
 			"ldr sp,rt",
 			func() error {
-				_, err := NewLdr(SP, xreg(t, 1), 0)
+				_, err := New().Ldr(SP, xreg(t, 1), 0)
 				return err
 			},
 		},
 		{
 			"ldr w,[w1]",
 			func() error {
-				_, err := NewLdr(wreg(t, 0), wreg(t, 1), 0)
+				_, err := New().Ldr(wreg(t, 0), wreg(t, 1), 0)
 				return err
 			},
 		},
 		{
 			"ldr xzr base",
 			func() error {
-				_, err := NewLdr(xreg(t, 0), XZR, 0)
+				_, err := New().Ldr(xreg(t, 0), XZR, 0)
 				return err
 			},
 		},
 		{
 			"ldr off 4 in x form",
 			func() error {
-				_, err := NewLdr(xreg(t, 0), xreg(t, 1), 4)
+				_, err := New().Ldr(xreg(t, 0), xreg(t, 1), 4)
 				return err
 			},
 		},
 		{
 			"ldr off 0x8000 in w form",
 			func() error {
-				_, err := NewLdr(wreg(t, 0), xreg(t, 1), 0x8000)
+				_, err := New().Ldr(wreg(t, 0), xreg(t, 1), 0x8000)
 				return err
 			},
 		},

@@ -16,6 +16,33 @@ type Adrp struct {
 	page uint64
 }
 
+// Adrp — adrp rd, #off: off — the signed imm21 count of 4KB pages
+// from the page of the instruction (-0x100000..0xfffff pages). The
+// absolute-page annotation of the decoded form needs the instruction
+// address and stays zero here. rd — only x registers (register 31 reads
+// as zr).
+func (Builder) Adrp(rd Reg, off int64) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Adrp",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if off < -(1<<20) || off >= 1<<20 {
+		return nil, fmt.Errorf(
+			"arm64.NewAdrp: operand off: %d is out of the imm21 page range (-0x100000..0xfffff pages)",
+			off,
+		)
+	}
+
+	return Adrp{rd: rd.name(), off: off}, nil
+}
+
 func decodeAdrp(w uint32, addr uint64) Instr {
 	raw := (w>>5&0x7ffff)<<2 | w>>29&3
 	imm21 := signExtendN(raw, 21)

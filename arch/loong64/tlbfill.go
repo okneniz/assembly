@@ -12,8 +12,8 @@ type Tlbfill struct {
 	base
 }
 
-// NewTlbfill - tlbfill (no operands).
-func NewTlbfill() Instr {
+// Tlbfill - tlbfill (no operands).
+func (Builder) Tlbfill() Instr {
 	return Tlbfill{}
 }
 

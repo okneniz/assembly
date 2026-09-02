@@ -14,8 +14,8 @@ type Sltu struct {
 	rd, rj, rk uint8
 }
 
-// NewSltu - sltu rd, rj, rk.
-func NewSltu(rd, rj, rk Reg) Instr {
+// Sltu - sltu rd, rj, rk.
+func (Builder) Sltu(rd, rj, rk Reg) Instr {
 	return Sltu{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Xor — xor rd, rs1, rs2.
+// Xor - xor rd, rs1, rs2.
 type Xor struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Xor - xor rd, rs1, rs2.
+func (Builder) Xor(rd, rs1, rs2 Reg) Instr {
+	return Xor{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeXor(w uint32, addr uint64) Instr {

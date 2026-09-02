@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SubShift - sub rd, rn, rm[, shift #imm6]; pseudo: neg (Rn = zr).
+// SubShift — sub rd, rn, rm[, shift #imm6]; pseudo: neg (Rn = zr).
 type SubShift struct {
 	base
 
@@ -23,10 +23,10 @@ const (
 	SubShiftW uint32 = 0x4B000000
 )
 
-// NewSubShift - sub rd, rn, rm[, shift #imm6]. Register 31 reads as zr
+// SubShift — sub rd, rn, rm[, shift #imm6]. Register 31 reads as zr
 // (SP/WSP are not allowed - use XZR/WZR). The shift is lsl/lsr/asr only;
 // the 32-bit form limits the amount to 0..31 (see requireShift).
-func NewSubShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+func (Builder) SubShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	for _, r := range []struct {
 		reg Reg
 		op  string

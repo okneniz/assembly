@@ -6,16 +6,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Syscall - syscall code (Ud15): the system-call trap, the code occupies
-// the [14:0] field.
+// Syscall - syscall code (Ud15): the system-call trap.
 type Syscall struct {
 	base
 
 	code imm
 }
 
-// NewSyscall - syscall code (a 15-bit code).
-func NewSyscall(code Code15) Instr {
+// Syscall - syscall code (a 15-bit code).
+func (Builder) Syscall(code Code15) Instr {
 	return Syscall{
 		code: immNum(code.Val()),
 	}

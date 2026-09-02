@@ -10,9 +10,9 @@ import (
 
 func TestTlbwrCtor(t *testing.T) {
 	// llvm-mc-verified: tlbwr.
-	require.Equal(t, uint32(0x06483000), ctorWord(t, NewTlbwr()))
+	require.Equal(t, uint32(0x06483000), ctorWord(t, New().Tlbwr()))
 
-	in := NewTlbwr()
+	in := New().Tlbwr()
 	_, ok := in.(Tlbwr)
 	require.True(t, ok, "type = %T, want Tlbwr", in)
 }

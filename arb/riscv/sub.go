@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for sub — one generator, one type, one constructor
-// (riscv.NewSub).
+// (Sub).
 
 import (
 	"iter"
@@ -29,7 +29,7 @@ func NewSubParams(rd riscv.Reg, rs1 riscv.Reg, rs2 riscv.Reg) SubParams {
 }
 
 func (p SubParams) Instr() riscv.Instr {
-	return riscv.NewSub(p.Rd, p.Rs1, p.Rs2)
+	return riscv.New().Sub(p.Rd, p.Rs1, p.Rs2)
 }
 func (p SubParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())

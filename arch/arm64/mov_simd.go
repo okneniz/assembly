@@ -1,6 +1,6 @@
 package arm64
 
-// MovSimd - mov.16b/mov.8b vd, vm: ORR-vector with Rn == Rm (the mov
+// MovSimd — mov.16b/mov.8b vd, vm: ORR-vector with Rn == Rm (the mov
 // alias). The decoder does not know this encoding (no schema) - skipVerify:
 // the constructor's encoding is unambiguous.
 
@@ -41,5 +41,5 @@ func (i MovSimd) MarshalJSON() ([]byte, error) {
 	)
 }
 
-// SkipVerify - there is no decoding schema.
+// SkipVerify — there is no decoding schema.
 func (i MovSimd) SkipVerify() {}

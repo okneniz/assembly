@@ -14,10 +14,10 @@ func TestBstrinsWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x00650dac),
-		ctorWord(t, NewBstrinsW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))),
+		ctorWord(t, New().BstrinsW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))),
 	)
 
-	in := NewBstrinsW(lreg(t, 1), lreg(t, 2), uimm5v(t, 31), uimm5v(t, 0))
+	in := New().BstrinsW(lreg(t, 1), lreg(t, 2), uimm5v(t, 31), uimm5v(t, 0))
 	_, ok := in.(BstrinsW)
 	require.True(t, ok, "type = %T, want BstrinsW", in)
 }

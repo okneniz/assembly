@@ -31,37 +31,37 @@ func TestImmValidation(t *testing.T) {
 		call func() error
 	}{
 		{
-			"NewImm12(2048)",
+			"New().Imm12(2048)",
 			func() error {
-				_, err := NewImm12(2048)
+				_, err := New().Imm12(2048)
 				return err
 			},
 		},
 		{
-			"NewImm12(-2049)",
+			"New().Imm12(-2049)",
 			func() error {
-				_, err := NewImm12(-2049)
+				_, err := New().Imm12(-2049)
 				return err
 			},
 		},
 		{
-			"NewImm20(-1)",
+			"New().Imm20(-1)",
 			func() error {
-				_, err := NewImm20(-1)
+				_, err := New().Imm20(-1)
 				return err
 			},
 		},
 		{
-			"NewImm20(0x100000)",
+			"New().Imm20(0x100000)",
 			func() error {
-				_, err := NewImm20(0x100000)
+				_, err := New().Imm20(0x100000)
 				return err
 			},
 		},
 		{
-			"NewOff(2048)",
+			"New().Off(2048)",
 			func() error {
-				_, err := NewOff(2048)
+				_, err := New().Off(2048)
 				return err
 			},
 		},
@@ -76,44 +76,44 @@ func TestImmValidation(t *testing.T) {
 		call func() error
 	}{
 		{
-			"NewImm12(-2048)",
+			"New().Imm12(-2048)",
 			func() error {
-				_, err := NewImm12(-2048)
+				_, err := New().Imm12(-2048)
 				return err
 			},
 		},
 		{
-			"NewImm12(2047)",
+			"New().Imm12(2047)",
 			func() error {
-				_, err := NewImm12(2047)
+				_, err := New().Imm12(2047)
 				return err
 			},
 		},
 		{
-			"NewImm20(0)",
+			"New().Imm20(0)",
 			func() error {
-				_, err := NewImm20(0)
+				_, err := New().Imm20(0)
 				return err
 			},
 		},
 		{
-			"NewImm20(0xfffff)",
+			"New().Imm20(0xfffff)",
 			func() error {
-				_, err := NewImm20(0xfffff)
+				_, err := New().Imm20(0xfffff)
 				return err
 			},
 		},
 		{
-			"NewOff(-2048)",
+			"New().Off(-2048)",
 			func() error {
-				_, err := NewOff(-2048)
+				_, err := New().Off(-2048)
 				return err
 			},
 		},
 		{
-			"NewOff(2047)",
+			"New().Off(2047)",
 			func() error {
-				_, err := NewOff(2047)
+				_, err := New().Off(2047)
 				return err
 			},
 		},

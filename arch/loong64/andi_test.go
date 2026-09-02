@@ -10,13 +10,13 @@ import (
 
 func TestAndiCtor(t *testing.T) {
 	// llvm-mc-verified: andi $t0, $t1, 3855.
-	v, err := NewUImm12(3855)
+	v, err := New().UImm12(3855)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x037c3dac),
-		ctorWord(t, NewAndi(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().Andi(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

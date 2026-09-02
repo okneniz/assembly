@@ -11,11 +11,11 @@ import (
 func TestBgeuCtor(t *testing.T) {
 	// llvm-mc-verified: bgeu $t1, $t0, 8 (at pc 0; the manual order prints
 	// rj first). The constructor takes (rj, rd, target).
-	in := NewBgeu(lreg(t, 13), lreg(t, 12), 8)
+	in := New().Bgeu(lreg(t, 13), lreg(t, 12), 8)
 	require.Equal(t, uint32(0x6c0009ac), ctorWord(t, in))
 
 	// llvm-mc-verified: bgeu $t1, $t0, -8 (at pc 0).
-	neg := NewBgeu(lreg(t, 13), lreg(t, 12), -8)
+	neg := New().Bgeu(lreg(t, 13), lreg(t, 12), -8)
 	require.Equal(t, uint32(0x6ffff9ac), ctorWord(t, neg))
 }
 

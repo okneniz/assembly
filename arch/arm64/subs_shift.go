@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SubsShift - subs rd, rn, rm[, shift #imm6]; pseudo: cmp (Rd = zr), negs (Rn = zr).
+// SubsShift — subs rd, rn, rm[, shift #imm6]; pseudo: cmp (Rd = zr), negs (Rn = zr).
 type SubsShift struct {
 	base
 
@@ -22,6 +22,44 @@ const (
 	SubsShiftX uint32 = 0xEB000000
 	SubsShiftW uint32 = 0x6B000000
 )
+
+// SubsShift — subs rd, rn, rm[, shift #imm6] (cmp when Rd = zr,
+// negs when Rn = zr). Register 31 reads as zr (SP/WSP are not allowed —
+// use XZR/WZR). Shift — only lsl/lsr/asr; the 32-bit form limits the
+// amount to 0..31 (see requireShift).
+func (Builder) SubsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+	if err := requireClass(rd, "SubsShift", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "SubsShift", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "SubsShift", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("SubsShift", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	if err := requireShift(rd, "SubsShift", imm, sh); err != nil {
+		return nil, err
+	}
+
+	return SubsShift{
+		rd:    rd.name(),
+		rn:    rn.name(),
+		rm:    rm.name(),
+		imm6:  imm.v,
+		shift: sh.String(),
+		isf:   rd.Is64(),
+	}, nil
+}
 
 func decodeSubsShift(w uint32, addr uint64) Instr {
 	return SubsShift{

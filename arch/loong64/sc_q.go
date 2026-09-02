@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// ScQ - sc.q rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// sequential-store 16 bytes {rd, rd+1} to [rk], rj holds a hint/0.
+// ScQ - sc.q rd, rk, rj (3R): store the {rd, rd+1} pair (16 bytes) to [rk]; rj - a hint (0 = none).
 type ScQ struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewScQ - sc.q rd, rk, rj (the operand order the assembler writes).
-func NewScQ(rd, rk, rj Reg) Instr {
+// ScQ - sc.q rd, rk, rj.
+func (Builder) ScQ(rd, rk, rj Reg) Instr {
 	return ScQ{
 		rd: rd.Num(),
 		rk: rk.Num(),

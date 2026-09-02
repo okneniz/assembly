@@ -14,8 +14,8 @@ type DivDu struct {
 	rd, rj, rk uint8
 }
 
-// NewDivDu - div.du rd, rj, rk.
-func NewDivDu(rd, rj, rk Reg) Instr {
+// DivDu - div.du rd, rj, rk.
+func (Builder) DivDu(rd, rj, rk Reg) Instr {
 	return DivDu{
 		rd: rd.Num(),
 		rj: rj.Num(),

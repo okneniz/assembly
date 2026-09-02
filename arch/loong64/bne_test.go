@@ -11,11 +11,11 @@ import (
 func TestBneCtor(t *testing.T) {
 	// llvm-mc-verified: bne $t1, $t0, 8 (at pc 0; the manual order prints
 	// rj first). The constructor takes (rj, rd, target).
-	in := NewBne(lreg(t, 13), lreg(t, 12), 8)
+	in := New().Bne(lreg(t, 13), lreg(t, 12), 8)
 	require.Equal(t, uint32(0x5c0009ac), ctorWord(t, in))
 
 	// llvm-mc-verified: bne $t1, $t0, -8 (at pc 0).
-	neg := NewBne(lreg(t, 13), lreg(t, 12), -8)
+	neg := New().Bne(lreg(t, 13), lreg(t, 12), -8)
 	require.Equal(t, uint32(0x5ffff9ac), ctorWord(t, neg))
 }
 

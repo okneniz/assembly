@@ -16,8 +16,8 @@ type Lu12iW struct {
 	imm imm
 }
 
-// NewLu12iW - lu12i.w rd, si20.
-func NewLu12iW(rd Reg, v Imm20) Instr {
+// Lu12iW - lu12i.w rd, si20.
+func (Builder) Lu12iW(rd Reg, v Imm20) Instr {
 	return Lu12iW{
 		rd:  rd.Num(),
 		imm: immNum(v.Val()),

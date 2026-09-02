@@ -14,8 +14,8 @@ type Revbit4B struct {
 	rd, rj uint8
 }
 
-// NewRevbit4B - bitrev.4b rd, rj.
-func NewRevbit4B(rd, rj Reg) Instr {
+// Revbit4B - bitrev.4b rd, rj.
+func (Builder) Revbit4B(rd, rj Reg) Instr {
 	return Revbit4B{
 		rd: rd.Num(),
 		rj: rj.Num(),

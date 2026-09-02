@@ -16,6 +16,29 @@ type Rbit struct {
 
 const RbitX uint32 = 0xDAC00000
 
+// Rbit — rbit rd, rn. Register 31 reads as zr (SP/WSP are not
+// allowed — use XZR/WZR); the width is shared by both registers.
+func (Builder) Rbit(rd, rn Reg) (Instr, error) {
+	if err := requireClass(rd, "Rbit", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Rbit", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("Rbit", rd, rn); err != nil {
+		return nil, err
+	}
+
+	return Rbit{
+		rd: rd.name(),
+		rn: rn.name(),
+	}, nil
+}
+
 func decodeRbit(w uint32, addr uint64) Instr {
 	return Rbit{
 		base: newBase(addr, w),

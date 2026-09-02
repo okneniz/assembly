@@ -3,8 +3,8 @@ package elf
 import (
 	"encoding/binary"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 )
 
 // Header is a full Elf{32,64}_Ehdr with normalized fields: all offsets and
@@ -71,7 +71,7 @@ const (
 // header, program headers, and section table are read eagerly; symbol,
 // relocation, and other tables lazily via methods.
 type File struct {
-	buf      common.Buffer[byte, int]
+	buf      parsec.Buffer[byte, int]
 	order    binary.ByteOrder
 	class    Class
 	hdr      Header
@@ -91,7 +91,7 @@ type File struct {
 	dynDone bool
 }
 
-func NewFile(buf common.Buffer[byte, int], order binary.ByteOrder, class Class) *File {
+func NewFile(buf parsec.Buffer[byte, int], order binary.ByteOrder, class Class) *File {
 	return &File{
 		buf:   buf,
 		order: order,

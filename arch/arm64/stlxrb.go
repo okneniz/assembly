@@ -14,6 +14,40 @@ type Stlxrb struct {
 	enc uint32
 }
 
+const stlxrbEnc uint32 = 0x0800FC00 // stlxrb ws, wt, [xn]
+
+// Stlxrb — stlxrb rs, rt, [rn]: byte access, rs — the w status
+// register (register 31 reads as wzr), rt — w register only (register 31
+// reads as wzr), rn — x register or SP (register 31 in the base reads
+// as sp).
+func (Builder) Stlxrb(rs, rt, rn Reg) (Instr, error) {
+	if err := requireClass(rs, "Stlxrb", "rs", "w status register (register 31 in rs reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rt, "Stlxrb", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Stlxrb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	return Stlxrb{
+		excl: newExcl(rs.name(), rt.name(), rn.name()),
+		enc:  stlxrbEnc,
+	}, nil
+}
+
 func decodeStlxrbOf(enc uint32, x64 bool) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		return Stlxrb{

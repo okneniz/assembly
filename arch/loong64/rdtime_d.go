@@ -14,8 +14,8 @@ type RdtimeD struct {
 	rd, rj uint8
 }
 
-// NewRdtimeD - rdtime.d rd, rj.
-func NewRdtimeD(rd, rj Reg) Instr {
+// RdtimeD - rdtime.d rd, rj.
+func (Builder) RdtimeD(rd, rj Reg) Instr {
 	return RdtimeD{
 		rd: rd.Num(),
 		rj: rj.Num(),

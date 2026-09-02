@@ -187,7 +187,7 @@ func run(binPath string, iterations int, rebuildPath string) (*report, error) {
 }
 
 // backendFor returns the assembler backend of the architecture (aliases/
-// pseudo - same as in assembly-asm).
+// pseudo - same as in assembly).
 func backendFor(arch file.ArchKind) (func(string, uint64) (*asm.Result, []asm.AsmError), error) {
 	if arch == file.ArchARM64 {
 		return alias.Assemble, nil

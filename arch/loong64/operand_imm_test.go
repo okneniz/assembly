@@ -14,18 +14,26 @@ func TestImmRoleTypes(t *testing.T) {
 		make func(int64) (interface{ Val() int64 }, error)
 		v    int64
 	}{
-		{"si12", func(v int64) (interface{ Val() int64 }, error) { return NewImm12(v) }, -2048},
-		{"ui12", func(v int64) (interface{ Val() int64 }, error) { return NewUImm12(v) }, 4095},
-		{"si14", func(v int64) (interface{ Val() int64 }, error) { return NewImm14(v) }, 16380},
-		{"si16", func(v int64) (interface{ Val() int64 }, error) { return NewImm16(v) }, -32768},
-		{"off16", func(v int64) (interface{ Val() int64 }, error) { return NewOff16(v) }, 131068},
-		{"si20", func(v int64) (interface{ Val() int64 }, error) { return NewImm20(v) }, 524287},
-		{"ui5", func(v int64) (interface{ Val() int64 }, error) { return NewUImm5(v) }, 31},
-		{"ui6", func(v int64) (interface{ Val() int64 }, error) { return NewUImm6(v) }, 63},
-		{"alsl shift", func(v int64) (interface{ Val() int64 }, error) { return NewShift3(v) }, 4},
-		{"ui8", func(v int64) (interface{ Val() int64 }, error) { return NewUImm8(v) }, 255},
-		{"csr", func(v int64) (interface{ Val() int64 }, error) { return NewUImm14(v) }, 16383},
-		{"code", func(v int64) (interface{ Val() int64 }, error) { return NewCode15(v) }, 32767},
+		{"si12", func(v int64) (interface{ Val() int64 }, error) { return New().Imm12(v) }, -2048},
+		{"ui12", func(v int64) (interface{ Val() int64 }, error) { return New().UImm12(v) }, 4095},
+		{"si14", func(v int64) (interface{ Val() int64 }, error) { return New().Imm14(v) }, 16380},
+		{"si16", func(v int64) (interface{ Val() int64 }, error) { return New().Imm16(v) }, -32768},
+		{
+			"off16",
+			func(v int64) (interface{ Val() int64 }, error) { return New().Off16(v) },
+			131068,
+		},
+		{"si20", func(v int64) (interface{ Val() int64 }, error) { return New().Imm20(v) }, 524287},
+		{"ui5", func(v int64) (interface{ Val() int64 }, error) { return New().UImm5(v) }, 31},
+		{"ui6", func(v int64) (interface{ Val() int64 }, error) { return New().UImm6(v) }, 63},
+		{
+			"alsl shift",
+			func(v int64) (interface{ Val() int64 }, error) { return New().Shift3(v) },
+			4,
+		},
+		{"ui8", func(v int64) (interface{ Val() int64 }, error) { return New().UImm8(v) }, 255},
+		{"csr", func(v int64) (interface{ Val() int64 }, error) { return New().UImm14(v) }, 16383},
+		{"code", func(v int64) (interface{ Val() int64 }, error) { return New().Code15(v) }, 32767},
 	}
 	for _, tc := range ok {
 		x, err := tc.make(tc.v)
@@ -38,73 +46,81 @@ func TestImmRoleTypes(t *testing.T) {
 		make func(int64) (interface{ Val() int64 }, error)
 		v    int64
 	}{
-		{"si12 over", func(v int64) (interface{ Val() int64 }, error) { return NewImm12(v) }, 2048},
+		{
+			"si12 over",
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm12(v) },
+			2048,
+		},
 		{
 			"si12 under",
-			func(v int64) (interface{ Val() int64 }, error) { return NewImm12(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm12(v) },
 			-2049,
 		},
 		{
 			"ui12 negative",
-			func(v int64) (interface{ Val() int64 }, error) { return NewUImm12(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().UImm12(v) },
 			-1,
 		},
 		{
 			"ui12 over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewUImm12(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().UImm12(v) },
 			4096,
 		},
 		{
 			"si14 misaligned",
-			func(v int64) (interface{ Val() int64 }, error) { return NewImm14(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm14(v) },
 			6,
 		},
 		{
 			"si14 over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewImm14(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm14(v) },
 			16384,
 		},
 		{
 			"si16 over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewImm16(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm16(v) },
 			32768,
 		},
 		{
 			"off16 misaligned",
-			func(v int64) (interface{ Val() int64 }, error) { return NewOff16(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Off16(v) },
 			2,
 		},
 		{
 			"off16 over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewOff16(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Off16(v) },
 			131072,
 		},
 		{
 			"si20 over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewImm20(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Imm20(v) },
 			524288,
 		},
-		{"ui5 over", func(v int64) (interface{ Val() int64 }, error) { return NewUImm5(v) }, 32},
-		{"ui6 over", func(v int64) (interface{ Val() int64 }, error) { return NewUImm6(v) }, 64},
+		{"ui5 over", func(v int64) (interface{ Val() int64 }, error) { return New().UImm5(v) }, 32},
+		{"ui6 over", func(v int64) (interface{ Val() int64 }, error) { return New().UImm6(v) }, 64},
 		{
 			"alsl shift zero",
-			func(v int64) (interface{ Val() int64 }, error) { return NewShift3(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Shift3(v) },
 			0,
 		},
 		{
 			"alsl shift over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewShift3(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Shift3(v) },
 			5,
 		},
-		{"ui8 over", func(v int64) (interface{ Val() int64 }, error) { return NewUImm8(v) }, 256},
+		{
+			"ui8 over",
+			func(v int64) (interface{ Val() int64 }, error) { return New().UImm8(v) },
+			256,
+		},
 		{
 			"csr over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewUImm14(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().UImm14(v) },
 			16384,
 		},
 		{
 			"code over",
-			func(v int64) (interface{ Val() int64 }, error) { return NewCode15(v) },
+			func(v int64) (interface{ Val() int64 }, error) { return New().Code15(v) },
 			32768,
 		},
 	}
@@ -132,18 +148,18 @@ func TestBitsScatter(t *testing.T) {
 }
 
 func TestBEncodeOutOfRange(t *testing.T) {
-	in := NewB(1 << 28)
+	in := New().B(1 << 28)
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "does not fit")
 
-	in = NewB(2)
+	in = New().B(2)
 	_, err = in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "not word-aligned")
 }
 
 func TestBeqzEncodeOutOfRange(t *testing.T) {
-	in := NewBeqz(lreg(t, 13), 1<<23)
+	in := New().Beqz(lreg(t, 13), 1<<23)
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "does not fit")

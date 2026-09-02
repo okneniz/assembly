@@ -14,8 +14,8 @@ type Orn struct {
 	rd, rj, rk uint8
 }
 
-// NewOrn - orn rd, rj, rk.
-func NewOrn(rd, rj, rk Reg) Instr {
+// Orn - orn rd, rj, rk.
+func (Builder) Orn(rd, rj, rk Reg) Instr {
 	return Orn{
 		rd: rd.Num(),
 		rj: rj.Num(),

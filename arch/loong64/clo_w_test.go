@@ -13,10 +13,10 @@ func TestCloWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000011ac),
-		ctorWord(t, NewCloW(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().CloW(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewCloW(lreg(t, 1), lreg(t, 2))
+	in := New().CloW(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(CloW)
 	require.True(t, ok, "type = %T, want CloW", in)
 }

@@ -16,6 +16,35 @@ type Udiv struct {
 
 const UdivX uint32 = 0x9AC00800
 
+// Udiv — udiv rd, rn, rm. Register 31 reads as zr (SP/WSP are not
+// allowed — use XZR/WZR); the width is shared by all three registers.
+func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(rd, "Udiv", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Udiv", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Udiv", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("Udiv", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return Udiv{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeUdiv(w uint32, addr uint64) Instr {
 	return Udiv{
 		base: newBase(addr, w),

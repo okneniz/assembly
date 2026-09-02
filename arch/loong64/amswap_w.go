@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmswapW - amswap.w rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): swap, old value to rd.
+// AmswapW - amswap.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = rk.
 type AmswapW struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmswapW - amswap.w rd, rk, rj (the operand order the assembler writes).
-func NewAmswapW(rd, rk, rj Reg) Instr {
+// AmswapW - amswap.w rd, rk, rj.
+func (Builder) AmswapW(rd, rk, rj Reg) Instr {
 	return AmswapW{
 		rd: rd.Num(),
 		rk: rk.Num(),

@@ -44,21 +44,21 @@ func wreg(t *testing.T, n int) Reg {
 
 func imm12(t *testing.T, v int64) Imm12 {
 	t.Helper()
-	iv, err := NewImm12(v)
+	iv, err := New().Imm12(v)
 	require.NoError(t, err)
 	return iv
 }
 
 func imm16(t *testing.T, v int64) Imm16 {
 	t.Helper()
-	iv, err := NewImm16(v)
+	iv, err := New().Imm16(v)
 	require.NoError(t, err)
 	return iv
 }
 
 func imm6(t *testing.T, v int64) Imm6 {
 	t.Helper()
-	iv, err := NewImm6(v)
+	iv, err := New().Imm6(v)
 	require.NoError(t, err)
 	return iv
 }
@@ -67,63 +67,63 @@ func imm6(t *testing.T, v int64) Imm6 {
 // table literals: valid operands, an error is impossible by construction.
 func ctorAddImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
 	t.Helper()
-	in, err := NewAddImm(rd, rn, imm, sh)
+	in, err := New().AddImm(rd, rn, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorAddShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
-	in, err := NewAddShift(rd, rn, rm, imm, sh)
+	in, err := New().AddShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorSubImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
 	t.Helper()
-	in, err := NewSubImm(rd, rn, imm, sh)
+	in, err := New().SubImm(rd, rn, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorSubShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
-	in, err := NewSubShift(rd, rn, rm, imm, sh)
+	in, err := New().SubShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorMovz(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
 	t.Helper()
-	in, err := NewMovz(rd, imm, hw)
+	in, err := New().Movz(rd, imm, hw)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorMovk(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
 	t.Helper()
-	in, err := NewMovk(rd, imm, hw)
+	in, err := New().Movk(rd, imm, hw)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorLdr(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
-	in, err := NewLdr(rt, rn, off)
+	in, err := New().Ldr(rt, rn, off)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorStr(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
-	in, err := NewStr(rt, rn, off)
+	in, err := New().Str(rt, rn, off)
 	require.NoError(t, err)
 	return in
 }
 
 func ctorRet(t *testing.T, rn Reg) Instr {
 	t.Helper()
-	in, err := NewRet(rn)
+	in, err := New().Ret(rn)
 	require.NoError(t, err)
 	return in
 }

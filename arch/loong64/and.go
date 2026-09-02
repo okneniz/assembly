@@ -14,8 +14,8 @@ type And struct {
 	rd, rj, rk uint8
 }
 
-// NewAnd - and rd, rj, rk.
-func NewAnd(rd, rj, rk Reg) Instr {
+// And - and rd, rj, rk.
+func (Builder) And(rd, rj, rk Reg) Instr {
 	return And{
 		rd: rd.Num(),
 		rj: rj.Num(),

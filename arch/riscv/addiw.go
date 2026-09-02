@@ -15,6 +15,15 @@ type Addiw struct {
 	imm     imm
 }
 
+// Addiw - addiw rd, rs1, imm (imm = 0 is printed as sext.w).
+func (Builder) Addiw(rd, rs1 Reg, imm Imm12) Instr {
+	return Addiw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		imm: immNum(imm.v),
+	}
+}
+
 func decodeAddiw(w uint32, addr uint64) Instr {
 	return Addiw{
 		base: newBase(addr, w),

@@ -17,8 +17,8 @@ type sysImm struct {
 	shift uint // offset of the imm16 field (5 for svc/brk/udf, 21 for hlt/hvc)
 }
 
-// NewSvc — svc #imm16.
-func NewSvc(imm Imm16) Instr {
+// Svc — svc #imm16.
+func (Builder) Svc(imm Imm16) Instr {
 	return sysImm{
 		name:  "svc",
 		imm16: imm.v,
@@ -27,8 +27,8 @@ func NewSvc(imm Imm16) Instr {
 	}
 }
 
-// NewBrk — brk #imm16.
-func NewBrk(imm Imm16) Instr {
+// Brk — brk #imm16.
+func (Builder) Brk(imm Imm16) Instr {
 	return sysImm{
 		name:  "brk",
 		imm16: imm.v,

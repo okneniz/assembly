@@ -46,7 +46,7 @@ func xreg(t *testing.T, n int) Reg {
 // imm12 - a signed immediate -2048..2047; a validation error fails the test.
 func imm12(t *testing.T, v int64) Imm12 {
 	t.Helper()
-	i, err := NewImm12(v)
+	i, err := New().Imm12(v)
 	require.NoError(t, err)
 	return i
 }
@@ -54,7 +54,7 @@ func imm12(t *testing.T, v int64) Imm12 {
 // imm20 - a U-type immediate 0..0xfffff; a validation error fails the test.
 func imm20(t *testing.T, v int64) Imm20 {
 	t.Helper()
-	i, err := NewImm20(v)
+	i, err := New().Imm20(v)
 	require.NoError(t, err)
 	return i
 }
@@ -62,7 +62,7 @@ func imm20(t *testing.T, v int64) Imm20 {
 // off - a load/store byte offset -2048..2047; a validation error fails the test.
 func off(t *testing.T, v int64) Off {
 	t.Helper()
-	o, err := NewOff(v)
+	o, err := New().Off(v)
 	require.NoError(t, err)
 	return o
 }

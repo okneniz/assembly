@@ -13,10 +13,10 @@ func TestAmmaxDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x3865b5cc),
-		ctorWord(t, NewAmmaxD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmmaxD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmmaxD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmmaxD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmmaxD)
 	require.True(t, ok, "type = %T, want AmmaxD", in)
 }

@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmcasDbB - amcas_db.b rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): compare-swap with a built-in barrier, old value to rd.
+// AmcasDbB - amcas_db.b rd, rk, rj (3R): if MEM[rj] == rd then MEM[rj] = rk; rd = old MEM[rj]. A built-in barrier.
 type AmcasDbB struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmcasDbB - amcas_db.b rd, rk, rj (the operand order the assembler writes).
-func NewAmcasDbB(rd, rk, rj Reg) Instr {
+// AmcasDbB - amcas_db.b rd, rk, rj.
+func (Builder) AmcasDbB(rd, rk, rj Reg) Instr {
 	return AmcasDbB{
 		rd: rd.Num(),
 		rk: rk.Num(),

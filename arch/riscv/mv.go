@@ -16,6 +16,17 @@ type Mv struct {
 	rd, rs2 string
 }
 
+// Mv - mv rd, rs2 (the c.mv halfword).
+func (Builder) Mv(rd, rs2 Reg) Instr {
+	h := uint32(0x8002) | uint32(rd.Num())<<7 | uint32(rs2.Num())<<2
+
+	return Mv{
+		base: newHalfBase(h, 0),
+		rd:   rd.name(),
+		rs2:  rs2.name(),
+	}
+}
+
 // cMv - compressed forms (c.mv): base - halfword, length 2.
 func cMv(h uint32, addr uint64, rd, rs2 string) Mv {
 	return Mv{

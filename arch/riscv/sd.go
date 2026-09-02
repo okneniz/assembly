@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sd — sd rs2, off(rs1).
+// Sd - sd rs2, off(rs1).
 type Sd struct {
 	base
 
@@ -15,8 +15,8 @@ type Sd struct {
 	off      imm
 }
 
-// NewSd — sd rs2, off(rs1).
-func NewSd(rs2, rs1 Reg, off Off) Instr {
+// Sd - sd rs2, off(rs1).
+func (Builder) Sd(rs2, rs1 Reg, off Off) Instr {
 	return Sd{
 		rs1: rs1.name(),
 		rs2: rs2.name(),

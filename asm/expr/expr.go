@@ -10,7 +10,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 )
 
@@ -153,10 +153,10 @@ func (e *Expr) Eval(resolve func(string) (uint64, bool)) (int64, error) {
 // Special case "/": a single slash is division, but "//" starts a comment
 // (arm/riscv Comment), such an operator does not match (Try restores the
 // position).
-func op2(sym string) common.Combinator[rune, parsecstrings.Position, common.BinaryOp[*Expr]] {
+func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]] {
 	return parsecstrings.Cast(
-		parsecstrings.Try(func() common.Combinator[rune, parsecstrings.Position, string] {
-			return func(buf common.Buffer[rune, parsecstrings.Position]) (string, common.Error[parsecstrings.Position]) {
+		parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, string] {
+			return func(buf parsec.Buffer[rune, parsecstrings.Position]) (string, parsec.Error[parsecstrings.Position]) {
 				pos := buf.Position()
 				got, err := parsecstrings.String("operator "+sym, sym)(buf)
 				if err != nil {
@@ -165,14 +165,14 @@ func op2(sym string) common.Combinator[rune, parsecstrings.Position, common.Bina
 
 				if sym == "/" {
 					if r, ok := peekRune(buf); ok && r == '/' {
-						return "", common.NewParseError(pos, "comment start //")
+						return "", parsec.NewParseError(pos, "comment start //")
 					}
 				}
 
 				return got, nil
 			}
 		}()),
-		func(string) (common.BinaryOp[*Expr], error) {
+		func(string) (parsec.BinaryOp[*Expr], error) {
 			return func(x, y *Expr) *Expr {
 				return NewExpr(ExprBinary, 0, "", sym, x, y)
 			}, nil
@@ -181,20 +181,20 @@ func op2(sym string) common.Combinator[rune, parsecstrings.Position, common.Bina
 }
 
 // binLevel is a precedence level: strictChainl1(term, op1 | op2).
-func binLevel(term common.Combinator[rune, parsecstrings.Position, *Expr],
-	ops ...common.Combinator[rune, parsecstrings.Position, common.BinaryOp[*Expr]],
-) common.Combinator[rune, parsecstrings.Position, *Expr] {
+func binLevel(term parsec.Combinator[rune, parsecstrings.Position, *Expr],
+	ops ...parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
+) parsec.Combinator[rune, parsecstrings.Position, *Expr] {
 	return strictChainl1(term, parsecstrings.Choice("operator", ops...))
 }
 
-// strictChainl1 is like common.Chainl1, but an operator without a right
+// strictChainl1 is like parsec.Chainl1, but an operator without a right
 // operand is an error, not silent absorption ("1+" must not assemble as
 // "1").
 func strictChainl1(
-	term common.Combinator[rune, parsecstrings.Position, *Expr],
-	op common.Combinator[rune, parsecstrings.Position, common.BinaryOp[*Expr]],
-) common.Combinator[rune, parsecstrings.Position, *Expr] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, common.Error[parsecstrings.Position]) {
+	term parsec.Combinator[rune, parsecstrings.Position, *Expr],
+	op parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
+) parsec.Combinator[rune, parsecstrings.Position, *Expr] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		x, err := term(buf)
 		if err != nil {
 			return nil, err
@@ -215,7 +215,7 @@ func strictChainl1(
 
 			y, yerr := term(buf)
 			if yerr != nil {
-				return nil, common.NewParseError(save, "operator without right operand", yerr)
+				return nil, parsec.NewParseError(save, "operator without right operand", yerr)
 			}
 
 			rest = f(rest, y)
@@ -231,15 +231,15 @@ func strictChainl1(
 // Built in init(): the grammar is mutually recursive (primary → parens →
 // expression), a var chain would create an initialization cycle.
 var (
-	cPrimary common.Combinator[rune, parsecstrings.Position, *Expr]
-	cUnary   common.Combinator[rune, parsecstrings.Position, *Expr]
-	cMul     common.Combinator[rune, parsecstrings.Position, *Expr]
-	cAdd     common.Combinator[rune, parsecstrings.Position, *Expr]
-	cShift   common.Combinator[rune, parsecstrings.Position, *Expr]
-	cAnd     common.Combinator[rune, parsecstrings.Position, *Expr]
-	cXor     common.Combinator[rune, parsecstrings.Position, *Expr]
-	cOr      common.Combinator[rune, parsecstrings.Position, *Expr]
-	cExpr    common.Combinator[rune, parsecstrings.Position, *Expr]
+	cPrimary parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cUnary   parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cMul     parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cAdd     parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cShift   parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cAnd     parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cXor     parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cOr      parsec.Combinator[rune, parsecstrings.Position, *Expr]
+	cExpr    parsec.Combinator[rune, parsecstrings.Position, *Expr]
 )
 
 func init() {
@@ -247,8 +247,8 @@ func init() {
 		"operand",
 		parsecstrings.Try(parsecstrings.Between(
 			cLParen,
-			func() common.Combinator[rune, parsecstrings.Position, *Expr] {
-				return func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, common.Error[parsecstrings.Position]) {
+			func() parsec.Combinator[rune, parsecstrings.Position, *Expr] {
+				return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 					return cExpr(buf) // lazy reference for mutual recursion
 				}
 			}(),
@@ -262,11 +262,11 @@ func init() {
 		parsecstrings.Try(cSymbolExpr), // identifier; "." and ".+8" give Sym(".")/binary
 	)
 
-	cUnary = func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, common.Error[parsecstrings.Position]) {
+	cUnary = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		skipWS(buf)
 		for _, u := range []struct {
 			op string
-			c  common.Combinator[rune, parsecstrings.Position, rune]
+			c  parsec.Combinator[rune, parsecstrings.Position, rune]
 		}{{
 			"-",
 			cMinus,
@@ -303,21 +303,21 @@ func init() {
 
 // CExpr is the whole GAS expression grammar (numbers/symbols/operators).
 // A function, not a var: the levels are built in init() (mutual recursion).
-func CExpr() common.Combinator[rune, parsecstrings.Position, *Expr] {
+func CExpr() parsec.Combinator[rune, parsecstrings.Position, *Expr] {
 	return cExpr
 }
 
 // ParseExpr parses an expression from a string (for tests and utilities);
 // the whole text must be consumed.
 func ParseExpr(s string) (*Expr, error) {
-	body := func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, common.Error[parsecstrings.Position]) {
+	body := func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		e, err := cExpr(buf)
 		if err != nil {
 			return nil, err
 		}
 
 		if !buf.IsEOF() {
-			return nil, common.NewParseError(buf.Position(), "unexpected trailing characters")
+			return nil, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
 		}
 
 		return e, nil

@@ -9,14 +9,14 @@ import (
 )
 
 func TestDbarCtor(t *testing.T) {
-	c0, err := NewCode15(0)
+	c0, err := New().Code15(0)
 	require.NoError(t, err)
-	c1, err := NewCode15(1)
+	c1, err := New().Code15(1)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: dbar 0 and dbar 1.
-	require.Equal(t, uint32(0x38720000), ctorWord(t, NewDbar(c0)))
-	require.Equal(t, uint32(0x38720001), ctorWord(t, NewDbar(c1)))
+	require.Equal(t, uint32(0x38720000), ctorWord(t, New().Dbar(c0)))
+	require.Equal(t, uint32(0x38720001), ctorWord(t, New().Dbar(c1)))
 }
 
 func TestDbarDecodeEncode(t *testing.T) {

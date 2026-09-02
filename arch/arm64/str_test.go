@@ -31,6 +31,8 @@ func TestStrCtor(t *testing.T) {
 	in := ctorStr(t, xreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Str)
 	require.True(t, ok, "type = %T, want Str", in)
-	_, err := NewStr(xreg(t, 0), xreg(t, 1), -8)
+	_, err := New().Str(xreg(t, 0), xreg(t, 1), -8)
 	assertErr(t, "str negative offset", err)
+	_, err = New().Str(SP, xreg(t, 1), 0)
+	assertErr(t, "str sp rt", err)
 }

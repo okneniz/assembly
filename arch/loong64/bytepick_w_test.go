@@ -14,10 +14,10 @@ func TestBytepickWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x0009b9ac),
-		ctorWord(t, NewBytepickW(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm2v(t, 3))),
+		ctorWord(t, New().BytepickW(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm2v(t, 3))),
 	)
 
-	in := NewBytepickW(lreg(t, 1), lreg(t, 2), lreg(t, 3), uimm2v(t, 0))
+	in := New().BytepickW(lreg(t, 1), lreg(t, 2), lreg(t, 3), uimm2v(t, 0))
 	_, ok := in.(BytepickW)
 	require.True(t, ok, "type = %T, want BytepickW", in)
 }

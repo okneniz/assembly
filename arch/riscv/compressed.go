@@ -36,7 +36,7 @@ func compressedInstruction(halfword uint32, addr uint64) Instr {
 		return decodeQ2(h, addr)
 	}
 
-	return NewUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h, addr))
 }
 
 // CI imm {bit12, bits[6:2]} → 6-bit signed (c.addi/c.li/c.addiw).
@@ -57,7 +57,7 @@ func decodeQ0(h uint32, addr uint64) Instr {
 	case 0: // c.addi4spn: addi rd', sp, nzuimm
 		imm := addi4spnImm(h)
 		if imm == 0 {
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		}
 
 		return cAddi(h, addr, r3(h>>2), "sp", imm)
@@ -71,7 +71,7 @@ func decodeQ0(h uint32, addr uint64) Instr {
 		return cSd(h, addr, rs13, r3(h>>2), clLdImm(h))
 	}
 
-	return NewUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h, addr))
 }
 
 // c.addi4spn nzuimm: [9:6]=inst[10:7], [5:4]=inst[12:11], [3]=inst[5], [2]=inst[6].
@@ -104,7 +104,7 @@ func decodeQ1(h uint32, addr uint64) Instr {
 		return cAddi(h, addr, rd, rd, imm)
 	case 1: // c.addiw (RV64; c.jal on RV32)
 		if (h>>7)&0x1f == 0 {
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		}
 
 		return cAddiw(h, addr, rd, rd, ciImm(h))
@@ -119,7 +119,7 @@ func decodeQ1(h uint32, addr uint64) Instr {
 		case 2:
 			return cAddi(h, addr, "sp", "sp", addi16spImm(h))
 		case 0:
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		default:
 			return cLui(h, addr, rd, luiImm(h))
 		}
@@ -134,7 +134,7 @@ func decodeQ1(h uint32, addr uint64) Instr {
 		return cJal(h, addr, "zero", int64(addr)+cjImm(h))
 	}
 
-	return NewUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h, addr))
 }
 
 func decodeCA(h uint32, addr uint64) Instr {
@@ -168,7 +168,7 @@ func decodeCA(h uint32, addr uint64) Instr {
 		return cAddw(h, addr, rs, rs, rs2)
 	}
 
-	return NewUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h, addr))
 }
 
 // c.addi16sp nzimm: [9]=inst[12], [8:7]=inst[4:3], [6]=inst[5], [5]=inst[2], [4]=inst[6].
@@ -206,19 +206,19 @@ func decodeQ2(h uint32, addr uint64) Instr {
 	switch (h >> 13) & 0x7 {
 	case 0: // c.slli
 		if (h>>7)&0x1f == 0 {
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		}
 
 		return cSlli(h, addr, rd, rd, int64(ciShamt(h)))
 	case 2: // c.lwsp
 		if (h>>7)&0x1f == 0 {
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		}
 
 		return cLw(h, addr, rd, "sp", lwspImm(h))
 	case 3: // c.ldsp (RV64)
 		if (h>>7)&0x1f == 0 {
-			return NewUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h, addr))
 		}
 
 		return cLd(h, addr, rd, "sp", ldspImm(h))
@@ -228,14 +228,14 @@ func decodeQ2(h uint32, addr uint64) Instr {
 		if (h>>12)&1 == 0 {
 			if (h>>2)&0x1f == 0 { // c.jr
 				if rs1 == "zero" {
-					return NewUnknown(newHalfBase(h, addr))
+					return newUnknown(newHalfBase(h, addr))
 				}
 
 				return cJalr(h, addr, "zero", rs1, 0)
 			}
 
 			if (h>>7)&0x1f == 0 {
-				return NewUnknown(newHalfBase(h, addr))
+				return newUnknown(newHalfBase(h, addr))
 			}
 
 			return cMv(h, addr, rd, rs2) // c.mv
@@ -256,7 +256,7 @@ func decodeQ2(h uint32, addr uint64) Instr {
 		return cSd(h, addr, "sp", rvRegNames[(h>>2)&0x1f], sdspImm(h))
 	}
 
-	return NewUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h, addr))
 }
 
 // c.lwsp offset: [5]=inst[12], [4:2]=inst[6:4], [7:6]=inst[3:2].

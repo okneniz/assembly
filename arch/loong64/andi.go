@@ -15,8 +15,8 @@ type Andi struct {
 	imm    imm
 }
 
-// NewAndi - andi rd, rj, ui12.
-func NewAndi(rd, rj Reg, v UImm12) Instr {
+// Andi - andi rd, rj, ui12.
+func (Builder) Andi(rd, rj Reg, v UImm12) Instr {
 	return Andi{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

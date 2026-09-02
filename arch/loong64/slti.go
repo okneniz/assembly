@@ -15,8 +15,8 @@ type Slti struct {
 	imm    imm
 }
 
-// NewSlti - slti rd, rj, si12.
-func NewSlti(rd, rj Reg, v Imm12) Instr {
+// Slti - slti rd, rj, si12.
+func (Builder) Slti(rd, rj Reg, v Imm12) Instr {
 	return Slti{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

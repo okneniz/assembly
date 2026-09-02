@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Or — or rd, rs1, rs2.
+// Or - or rd, rs1, rs2.
 type Or struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Or - or rd, rs1, rs2.
+func (Builder) Or(rd, rs1, rs2 Reg) Instr {
+	return Or{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeOr(w uint32, addr uint64) Instr {

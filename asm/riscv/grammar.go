@@ -8,7 +8,7 @@ package riscv
 import (
 	"fmt"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
@@ -64,8 +64,8 @@ func buildAsmRegNum() map[string]asmReg {
 var cOperand = parsecstrings.Choice("operand",
 	parsecstrings.Try(cMemOperand),
 	parsecstrings.Try(cRegOperand),
-	parsecstrings.Try(func() common.Combinator[rune, parsecstrings.Position, Op] {
-		return func(buf common.Buffer[rune, parsecstrings.Position]) (Op, common.Error[parsecstrings.Position]) {
+	parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, Op] {
+		return func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
 			e, err := expr.CExpr()(buf)
 			if err != nil {
 				return Op{}, err
@@ -95,10 +95,10 @@ func regName(r asmReg) string {
 }
 
 // cMemOperand — [expr] '(' reg ')': "0x8(sp)", "(a0)".
-var cMemOperand = func() common.Combinator[rune, parsecstrings.Position, Op] {
+var cMemOperand = func() parsec.Combinator[rune, parsecstrings.Position, Op] {
 	lparen := parsecstrings.Try(parsecstrings.Eq("'('", '('))
 	rparen := parsecstrings.Try(parsecstrings.Eq("')'", ')'))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (Op, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
 		var off *expr.Expr
 		if r, ok := expr.PeekRune(buf); ok && r == '(' {
 			if _, err := lparen(buf); err != nil {
@@ -131,21 +131,21 @@ var cMemOperand = func() common.Combinator[rune, parsecstrings.Position, Op] {
 }()
 
 // skipSpaces consumes spaces (except the newline).
-func skipSpaces(buf common.Buffer[rune, parsecstrings.Position]) {
+func skipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
 }
 
 // peekRune returns the next rune without consuming it; ok=false at
 // EOF.
-func peekRune(buf common.Buffer[rune, parsecstrings.Position]) (rune, bool) {
+func peekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 	return expr.PeekRune(buf)
 }
 
 // ParseOps parses the operand list after the mnemonic (to the end of
 // the line, comma-separated) - the assembler's operand grammar.
 func ParseOps(
-	buf common.Buffer[rune, parsecstrings.Position],
-) ([]Op, common.Error[parsecstrings.Position]) {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) ([]Op, parsec.Error[parsecstrings.Position]) {
 	var ops []Op
 	expr.SkipSpaces(buf)
 	if expr.AtEOL(buf) {

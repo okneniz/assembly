@@ -16,8 +16,8 @@ type Preldx struct {
 	hint   imm
 }
 
-// NewPreldx - preldx hint, rj, rk.
-func NewPreldx(hint UImm5, rj, rk Reg) Instr {
+// Preldx - preldx hint, rj, rk.
+func (Builder) Preldx(hint UImm5, rj, rk Reg) Instr {
 	return Preldx{
 		rj:   rj.Num(),
 		rk:   rk.Num(),

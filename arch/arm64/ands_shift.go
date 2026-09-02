@@ -23,6 +23,39 @@ const (
 	AndsShiftW uint32 = 0x6A000000
 )
 
+// AndsShift — ands rd, rn, rm[, shift #imm6] (tst when Rd = zr).
+// Register 31 reads as zr (SP/WSP are not allowed — use XZR/WZR);
+// shift — lsl/lsr/asr/ror.
+func (Builder) AndsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+	if err := requireClass(rd, "AndsShift", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "AndsShift", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "AndsShift", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("AndsShift", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return AndsShift{
+		rd:    rd.name(),
+		rn:    rn.name(),
+		rm:    rm.name(),
+		imm6:  imm.v,
+		shift: sh.String(),
+		isf:   rd.Is64(),
+	}, nil
+}
+
 func decodeAndsShift(w uint32, addr uint64) Instr {
 	return AndsShift{
 		base:  newBase(addr, w),

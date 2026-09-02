@@ -14,8 +14,8 @@ type Sub struct {
 	rd, rs1, rs2 string
 }
 
-// NewSub - sub rd, rs1, rs2 (rs1 = zero is printed as neg).
-func NewSub(rd, rs1, rs2 Reg) Instr {
+// Sub - sub rd, rs1, rs2 (rs1 = zero is printed as neg).
+func (Builder) Sub(rd, rs1, rs2 Reg) Instr {
 	return Sub{
 		rd:  rd.name(),
 		rs1: rs1.name(),

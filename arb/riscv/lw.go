@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for lw — one generator, one type, one constructor
-// (riscv.NewLw).
+// (Lw).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewLwParams(rd riscv.Reg, rs1 riscv.Reg, off riscv.Off) LwParams {
 }
 
 func (p LwParams) Instr() riscv.Instr {
-	return riscv.NewLw(p.Rd, p.Rs1, p.Off)
+	return riscv.New().Lw(p.Rd, p.Rs1, p.Off)
 }
 func (p LwParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -58,7 +58,7 @@ func (g lwGen) Generate() iter.Seq[LwParams] {
 
 func (g lwGen) Shrink(p LwParams) iter.Seq[LwParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
+	offs := immShrunk(p.Off, riscv.New().Off, si12Shrink)
 	out := make([]LwParams, 0, len(rd)+len(rs1)+len(offs))
 	for _, r := range rd {
 		out = append(out, NewLwParams(r, p.Rs1, p.Off))

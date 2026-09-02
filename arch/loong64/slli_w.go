@@ -15,8 +15,8 @@ type SlliW struct {
 	imm    imm
 }
 
-// NewSlliW - slli.w rd, rj, ui5.
-func NewSlliW(rd, rj Reg, v UImm5) Instr {
+// SlliW - slli.w rd, rj, ui5.
+func (Builder) SlliW(rd, rj Reg, v UImm5) Instr {
 	return SlliW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

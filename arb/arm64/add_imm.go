@@ -3,7 +3,7 @@
 package arm64
 
 // Generator for add (immediate) — one generator, one type, one constructor
-// (arm64.NewAddImm).
+// (AddImm).
 
 import (
 	"iter"
@@ -35,7 +35,7 @@ func NewAddImmParams(rd arm64.Reg, rn arm64.Reg, imm arm64.Imm12, sh arm64.Sh12)
 }
 
 func (p AddImmParams) Instr() arm64.Instr {
-	in, err := arm64.NewAddImm(p.Rd, p.Rn, p.Imm, p.Sh)
+	in, err := arm64.New().AddImm(p.Rd, p.Rn, p.Imm, p.Sh)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -89,7 +89,7 @@ func (g addImmGen) Shrink(p AddImmParams) iter.Seq[AddImmParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm12(d)
+		imm, err := arm64.New().Imm12(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm12 is always in 0..4095
 		}

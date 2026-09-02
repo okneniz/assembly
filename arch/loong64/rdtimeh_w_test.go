@@ -13,10 +13,10 @@ func TestRdtimehWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000065ac),
-		ctorWord(t, NewRdtimehW(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().RdtimehW(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewRdtimehW(lreg(t, 1), lreg(t, 2))
+	in := New().RdtimehW(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(RdtimehW)
 	require.True(t, ok, "type = %T, want RdtimehW", in)
 }

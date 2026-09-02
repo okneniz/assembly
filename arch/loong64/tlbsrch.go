@@ -12,8 +12,8 @@ type Tlbsrch struct {
 	base
 }
 
-// NewTlbsrch - tlbsrch (no operands).
-func NewTlbsrch() Instr {
+// Tlbsrch - tlbsrch (no operands).
+func (Builder) Tlbsrch() Instr {
 	return Tlbsrch{}
 }
 

@@ -16,8 +16,8 @@ type Pcaddu18i struct {
 	imm imm
 }
 
-// NewPcaddu18i - pcaddu18i rd, si20.
-func NewPcaddu18i(rd Reg, v Imm20) Instr {
+// Pcaddu18i - pcaddu18i rd, si20.
+func (Builder) Pcaddu18i(rd Reg, v Imm20) Instr {
 	return Pcaddu18i{
 		rd:  rd.Num(),
 		imm: immNum(v.Val()),

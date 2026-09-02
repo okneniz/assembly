@@ -21,14 +21,14 @@ func TestMovkCtor(t *testing.T) {
 		{
 			"movk w0,hw3",
 			func() error {
-				_, err := NewMovk(wreg(t, 0), imm16(t, 1), Hw3)
+				_, err := New().Movk(wreg(t, 0), imm16(t, 1), Hw3)
 				return err
 			},
 		},
 		{
 			"movk wsp",
 			func() error {
-				_, err := NewMovk(WSP, imm16(t, 1), Hw0)
+				_, err := New().Movk(WSP, imm16(t, 1), Hw0)
 				return err
 			},
 		},

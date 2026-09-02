@@ -10,10 +10,10 @@ import (
 
 func TestLdptrDCtor(t *testing.T) {
 	// llvm-mc-verified: ldptr.d $t0, $t1, 8 (the si14 word count is 2).
-	v, err := NewImm14(8)
+	v, err := New().Imm14(8)
 	require.NoError(t, err)
 
-	in := NewLdptrD(lreg(t, 12), lreg(t, 13), v)
+	in := New().LdptrD(lreg(t, 12), lreg(t, 13), v)
 	require.Equal(t, uint32(0x260009ac), ctorWord(t, in))
 
 	_, ok := in.(LdptrD)

@@ -12,13 +12,25 @@ const (
 	msubW uint32 = 0x1B008000
 )
 
-// Msub - msub rd, rn, rm, ra; pseudo: mneg (ra = xzr).
+// Msub — msub rd, rn, rm, ra; pseudo: mneg (ra = xzr).
 type Msub struct {
 	Madd
 }
 
-func NewMsub(madd Madd) Msub {
-	return Msub{Madd: madd}
+// Msub — msub rd, rn, rm, ra (mneg when Ra = zr); the operand
+// constraints are those of Madd.
+func (Builder) Msub(rd, rn, rm, ra Reg) (Instr, error) {
+	base, err := New().Madd(rd, rn, rm, ra)
+	if err != nil {
+		return nil, err
+	}
+
+	m, ok := base.(Madd)
+	if !ok {
+		return nil, fmt.Errorf("msub: internal: want Madd, got %T", base)
+	}
+
+	return Msub{Madd: m}, nil
 }
 
 func decodeMsub(w uint32, addr uint64) Instr {

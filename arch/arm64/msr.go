@@ -14,6 +14,29 @@ type Msr struct {
 	rt, sysreg string
 }
 
+// Msr — msr sysreg, rt. rt — only x registers (register 31 reads
+// as zr); sysreg — an architectural name from the registry (SCTLR_EL1,
+// NZCV, ...) or the objdump form S<op0>_<op1>_C<CRn>_C<CRm>_<op2>
+// (see invSysReg).
+func (Builder) Msr(sysreg string, rt Reg) (Instr, error) {
+	if err := requireClass(
+		rt,
+		"Msr",
+		"rt",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if _, err := invSysReg(sysreg); err != nil {
+		return nil, fmt.Errorf("arm64.NewMsr: operand sysreg: %w", err)
+	}
+
+	return Msr{rt: rt.name(), sysreg: sysreg}, nil
+}
+
 func decodeMsr(w uint32, addr uint64) Instr {
 	return Msr{
 		base:   newBase(addr, w),

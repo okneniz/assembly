@@ -16,8 +16,8 @@ type Csrxchg struct {
 	csr    imm
 }
 
-// NewCsrxchg - csrxchg rd, rj, csr.
-func NewCsrxchg(rd, rj Reg, csr UImm14) Instr {
+// Csrxchg - csrxchg rd, rj, csr.
+func (Builder) Csrxchg(rd, rj Reg, csr UImm14) Instr {
 	return Csrxchg{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

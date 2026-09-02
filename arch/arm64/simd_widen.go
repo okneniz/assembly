@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SimdWiden - the widening three-same family: saddw/ssubw/uaddw/usubw.
+// SimdWiden — the widening three-same family: saddw/ssubw/uaddw/usubw.
 // U (bit 29) selects s/u, bit 12 - add/sub, Q - the "2" form. The result
 // and Rn have the arrangement (size+1), the Rm source - size (narrow):
 // saddw=0x0E201000, ssubw=0x0E203000, uaddw=0x2E201000, usubw=0x2E203000,

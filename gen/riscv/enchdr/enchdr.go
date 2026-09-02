@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/strings"
 )
 
@@ -148,7 +148,7 @@ func isLowerIdent(r rune) bool {
 }
 
 // ident is a non-empty sequence of runes satisfying ok.
-func ident(what string, ok func(rune) bool) common.Combinator[rune, strings.Position, string] {
+func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Position, string] {
 	return strings.Cast(
 		strings.Some(16, what, strings.Try(strings.Satisfy(what, true, ok))),
 		func(rs []rune) (string, error) {
@@ -161,8 +161,8 @@ var cUpperIdent = ident("expected macro name", isUpperIdent)
 var cLowerIdent = ident("expected instruction name", isLowerIdent)
 
 // defineLineC is "#define" (MATCH|MASK|CSR)_NAME 0xVALUE [rest of line].
-var defineLineC = func() common.Combinator[rune, strings.Position, parsedLine] {
-	return func(buf common.Buffer[rune, strings.Position]) (parsedLine, common.Error[strings.Position]) {
+var defineLineC = func() parsec.Combinator[rune, strings.Position, parsedLine] {
+	return func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
 		if _, err := cDefine(buf); err != nil {
 			return parsedLine{}, err
 		}
@@ -203,8 +203,8 @@ var defineLineC = func() common.Combinator[rune, strings.Position, parsedLine] {
 }()
 
 // declLineC is DECLARE_INSN(name, MATCH_X, MASK_X) [rest of line].
-var declLineC = func() common.Combinator[rune, strings.Position, parsedLine] {
-	return func(buf common.Buffer[rune, strings.Position]) (parsedLine, common.Error[strings.Position]) {
+var declLineC = func() parsec.Combinator[rune, strings.Position, parsedLine] {
+	return func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
 		if _, err := cDeclare(buf); err != nil {
 			return parsedLine{}, err
 		}
@@ -258,7 +258,7 @@ var linesC = strings.Many(64, strings.Choice("unrecognized line",
 
 // Parse parses encoding.h text. Unrecognized lines are ignored; the result
 // preserves appearance order for consumers' first-wins policies.
-func Parse(data []rune) (Header, common.Error[strings.Position]) {
+func Parse(data []rune) (Header, parsec.Error[strings.Position]) {
 	lines, err := strings.Parse(data, linesC)
 	if err != nil {
 		return Header{}, err

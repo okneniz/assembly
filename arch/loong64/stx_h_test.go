@@ -10,7 +10,7 @@ import (
 
 func TestStxHCtor(t *testing.T) {
 	// llvm-mc-verified: stx.h $t0, $t1, $t2.
-	in := NewStxH(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().StxH(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x381439ac), ctorWord(t, in))
 
 	_, ok := in.(StxH)

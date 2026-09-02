@@ -14,8 +14,8 @@ type Masknez struct {
 	rd, rj, rk uint8
 }
 
-// NewMasknez - masknez rd, rj, rk.
-func NewMasknez(rd, rj, rk Reg) Instr {
+// Masknez - masknez rd, rj, rk.
+func (Builder) Masknez(rd, rj, rk Reg) Instr {
 	return Masknez{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -13,10 +13,10 @@ func TestAmcasBCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x385835cc),
-		ctorWord(t, NewAmcasB(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmcasB(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmcasB(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmcasB(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmcasB)
 	require.True(t, ok, "type = %T, want AmcasB", in)
 }

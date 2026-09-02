@@ -12,8 +12,8 @@ type Tlbclr struct {
 	base
 }
 
-// NewTlbclr - tlbclr (no operands).
-func NewTlbclr() Instr {
+// Tlbclr - tlbclr (no operands).
+func (Builder) Tlbclr() Instr {
 	return Tlbclr{}
 }
 

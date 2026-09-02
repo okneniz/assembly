@@ -1,7 +1,7 @@
 package arm64
 
 // Generator for sub (shifted register) — one generator, one type, one
-// constructor (arm64.NewSubShift).
+// constructor (SubShift).
 
 import (
 	"iter"
@@ -40,7 +40,7 @@ func NewSubShiftParams(
 }
 
 func (p SubShiftParams) Instr() arm64.Instr {
-	in, err := arm64.NewSubShift(p.Rd, p.Rn, p.Rm, p.Imm, p.Sh)
+	in, err := arm64.New().SubShift(p.Rd, p.Rn, p.Rm, p.Imm, p.Sh)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -105,7 +105,7 @@ func (g subShiftGen) Shrink(p SubShiftParams) iter.Seq[SubShiftParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm6(d)
+		imm, err := arm64.New().Imm6(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm6 is always in 0..63
 		}

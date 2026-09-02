@@ -13,12 +13,39 @@ const (
 	movnW uint32 = 0x12800000
 )
 
-// Movn - movn rd, #(~(imm16 << hw*16)); displayed as mov.
+// Movn — movn rd, #(~(imm16 << hw*16)); displayed as mov.
 type Movn struct {
 	base
 
 	rd        string
 	imm16, hw uint32
+}
+
+// Movn — movn rd, #imm16, lsl #hw*16 (displayed as mov). The 32-bit
+// form allows only Hw0/Hw1 (shift up to #16).
+func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Movn",
+		"rd",
+		"x/w register, sp not allowed (register 31 reads as zr)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireHwW(rd, "Movn", hw); err != nil {
+		return nil, err
+	}
+
+	return Movn{
+		rd:    rd.name(),
+		imm16: imm.v,
+		hw:    uint32(hw),
+	}, nil
 }
 
 func decodeMovn(w uint32, addr uint64) Instr {

@@ -18,8 +18,8 @@ type Preld struct {
 	off  imm
 }
 
-// NewPreld - preld hint, rj, si12.
-func NewPreld(hint UImm5, rj Reg, off Imm12) Instr {
+// Preld - preld hint, rj, si12.
+func (Builder) Preld(hint UImm5, rj Reg, off Imm12) Instr {
 	return Preld{
 		rj:   rj.Num(),
 		hint: immNum(hint.Val()),

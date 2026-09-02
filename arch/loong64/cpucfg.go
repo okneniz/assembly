@@ -14,8 +14,8 @@ type Cpucfg struct {
 	rd, rj uint8
 }
 
-// NewCpucfg - cpucfg rd, rj.
-func NewCpucfg(rd, rj Reg) Instr {
+// Cpucfg - cpucfg rd, rj.
+func (Builder) Cpucfg(rd, rj Reg) Instr {
 	return Cpucfg{
 		rd: rd.Num(),
 		rj: rj.Num(),

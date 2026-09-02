@@ -1,0 +1,74 @@
+package arm64
+
+import (
+	"testing"
+
+	"github.com/stretchr/testify/require"
+
+	"github.com/okneniz/assembly/disasm"
+)
+
+func TestLdarCtor(t *testing.T) {
+	cases := []struct {
+		name string
+		in   Instr
+		word uint32
+	}{
+		{
+			"ldar x0,[x1]",
+			ctorLdar(t, xreg(t, 0), xreg(t, 1)),
+			0xc8dffc20,
+		},
+		{
+			"ldar w2,[sp]",
+			ctorLdar(t, wreg(t, 2), SP),
+			0x88dfffe2,
+		},
+		{
+			"ldar xzr,[x3]",
+			ctorLdar(t, XZR, xreg(t, 3)),
+			0xc8dffc7f,
+		},
+	}
+	for _, c := range cases {
+		got := ctorWord(t, c.in)
+		require.Equal(t, c.word, got, "case %q", c.name)
+		back := decodeOne(c.word, 0x1000)
+		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
+			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+	}
+
+	in := ctorLdar(t, xreg(t, 0), xreg(t, 1))
+	_, ok := in.(Ldar)
+	require.True(t, ok, "type = %T, want Ldar", in)
+	for _, c := range []struct {
+		name string
+		call func() error
+	}{
+		{
+			"ldar sp,rt",
+			func() error {
+				_, err := New().Ldar(SP, xreg(t, 1))
+				return err
+			},
+		},
+		{
+			"ldar w1 base",
+			func() error {
+				_, err := New().Ldar(xreg(t, 0), wreg(t, 1))
+				return err
+			},
+		},
+	} {
+		assertErr(t, c.name, c.call())
+	}
+}
+
+// ctorLdar — an instruction constructor wrapper for table literals:
+// valid operands, an error is impossible by construction.
+func ctorLdar(t *testing.T, rt, rn Reg) Instr {
+	t.Helper()
+	in, err := New().Ldar(rt, rn)
+	require.NoError(t, err)
+	return in
+}

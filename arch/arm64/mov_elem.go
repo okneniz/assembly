@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// MovElem - mov.d vd, vn[idx] (imm5[4] - the d-element index).
+// MovElem — mov.d vd, vn[idx] (imm5[4] - the d-element index).
 type MovElem struct {
 	base
 

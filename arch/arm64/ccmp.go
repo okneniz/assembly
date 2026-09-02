@@ -18,6 +18,36 @@ type Ccmp struct {
 
 const ccmpX uint32 = 0xFA400000
 
+// Ccmp — ccmp rn, rm, #nzcv, cond. Only the 64-bit form;
+// register 31 reads as zr (use XZR); nzcv — 0..0xf; cond — the standard
+// condition names (eq/ne/.../nv, see condNum).
+func (Builder) Ccmp(rn, rm Reg, nzcv uint32, cond string) (Instr, error) {
+	if err := requireClass(rn, "Ccmp", "rn",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Ccmp", "rm",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if nzcv > 0xf {
+		return nil, fmt.Errorf("arm64.NewCcmp: operand nzcv: %#x is out of 0..0xf", nzcv)
+	}
+
+	if _, err := condNum(cond); err != nil {
+		return nil, fmt.Errorf("arm64.NewCcmp: operand cond: %w", err)
+	}
+
+	return Ccmp{
+		rn:     rn.name(),
+		rm:     rm.name(),
+		immVal: nzcv,
+		cond:   cond,
+	}, nil
+}
+
 func decodeCcmp(w uint32, addr uint64) Instr {
 	return Ccmp{
 		base:   newBase(addr, w),

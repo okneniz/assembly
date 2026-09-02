@@ -15,8 +15,8 @@ type StgtB struct {
 	rd, rj, rk uint8
 }
 
-// NewStgtB - stgt.b rd, rj, rk.
-func NewStgtB(rd, rj, rk Reg) Instr {
+// StgtB - stgt.b rd, rj, rk.
+func (Builder) StgtB(rd, rj, rk Reg) Instr {
 	return StgtB{
 		rd: rd.Num(),
 		rj: rj.Num(),

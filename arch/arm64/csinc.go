@@ -18,8 +18,20 @@ type Csinc struct {
 	Csel
 }
 
-func NewCsinc(csel Csel) Csinc {
-	return Csinc{Csel: csel}
+// Csinc — csinc rd, rn, rm, cond (cset/cinc pseudos); the operand
+// constraints are those of Csel.
+func (Builder) Csinc(rd, rn, rm Reg, cond string) (Instr, error) {
+	base, err := New().Csel(rd, rn, rm, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	c, ok := base.(Csel)
+	if !ok {
+		return nil, fmt.Errorf("csinc: internal: want Csel, got %T", base)
+	}
+
+	return Csinc{Csel: c}, nil
 }
 
 func decodeCsinc(w uint32, addr uint64) Instr {

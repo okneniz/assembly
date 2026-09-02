@@ -10,9 +10,9 @@ import (
 
 func TestTlbflushCtor(t *testing.T) {
 	// llvm-mc-verified: tlbflush.
-	require.Equal(t, uint32(0x06482400), ctorWord(t, NewTlbflush()))
+	require.Equal(t, uint32(0x06482400), ctorWord(t, New().Tlbflush()))
 
-	in := NewTlbflush()
+	in := New().Tlbflush()
 	_, ok := in.(Tlbflush)
 	require.True(t, ok, "type = %T, want Tlbflush", in)
 }

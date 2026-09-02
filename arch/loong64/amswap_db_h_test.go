@@ -13,10 +13,10 @@ func TestAmswapDbHCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x385eb5cc),
-		ctorWord(t, NewAmswapDbH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmswapDbH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmswapDbH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmswapDbH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmswapDbH)
 	require.True(t, ok, "type = %T, want AmswapDbH", in)
 }

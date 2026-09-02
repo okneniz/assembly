@@ -48,14 +48,21 @@ func TestAddImmCtor(t *testing.T) {
 		{
 			"add xzr",
 			func() error {
-				_, err := NewAddImm(XZR, xreg(t, 1), imm12(t, 1), NoSh12)
+				_, err := New().AddImm(XZR, xreg(t, 1), imm12(t, 1), NoSh12)
+				return err
+			},
+		},
+		{
+			"add rn xzr",
+			func() error {
+				_, err := New().AddImm(xreg(t, 0), XZR, imm12(t, 1), NoSh12)
 				return err
 			},
 		},
 		{
 			"add sp+w",
 			func() error {
-				_, err := NewAddImm(SP, wreg(t, 1), imm12(t, 1), NoSh12)
+				_, err := New().AddImm(SP, wreg(t, 1), imm12(t, 1), NoSh12)
 				return err
 			},
 		},

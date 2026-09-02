@@ -13,10 +13,10 @@ func TestOrnCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001639ac),
-		ctorWord(t, NewOrn(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().Orn(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewOrn(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().Orn(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(Orn)
 	require.True(t, ok, "type = %T, want Orn", in)
 }

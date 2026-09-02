@@ -16,6 +16,35 @@ type LsrReg struct {
 
 const LsrRegX uint32 = 0x9A002400
 
+// LsrReg — lsr rd, rn, rm. Register 31 reads as zr (SP/WSP are
+// not allowed — use XZR/WZR); the width is shared by all three registers.
+func (Builder) LsrReg(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(rd, "LsrReg", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "LsrReg", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "LsrReg", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("LsrReg", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return LsrReg{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeLsrReg(w uint32, addr uint64) Instr {
 	return LsrReg{
 		base: newBase(addr, w),

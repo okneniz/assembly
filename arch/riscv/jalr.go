@@ -17,6 +17,15 @@ type Jalr struct {
 	off     imm
 }
 
+// Jalr - jalr rd, off(rs1) (off = byte offset from rs1).
+func (Builder) Jalr(rd, rs1 Reg, off Off) Instr {
+	return Jalr{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		off: immNum(off.v),
+	}
+}
+
 func decodeJalr(w uint32, addr uint64) Instr {
 	return Jalr{
 		base: newBase(addr, w),

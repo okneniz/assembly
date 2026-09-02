@@ -10,7 +10,7 @@ import (
 
 func TestLdxBCtor(t *testing.T) {
 	// llvm-mc-verified: ldx.b $t0, $t1, $t2.
-	in := NewLdxB(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().LdxB(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x380039ac), ctorWord(t, in))
 
 	_, ok := in.(LdxB)

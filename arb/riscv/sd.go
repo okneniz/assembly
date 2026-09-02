@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for sd — one generator, one type, one constructor
-// (riscv.NewSd).
+// (Sd).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewSdParams(rs2 riscv.Reg, rs1 riscv.Reg, off riscv.Off) SdParams {
 }
 
 func (p SdParams) Instr() riscv.Instr {
-	return riscv.NewSd(p.Rs2, p.Rs1, p.Off)
+	return riscv.New().Sd(p.Rs2, p.Rs1, p.Off)
 }
 func (p SdParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -58,7 +58,7 @@ func (g sdGen) Generate() iter.Seq[SdParams] {
 
 func (g sdGen) Shrink(p SdParams) iter.Seq[SdParams] {
 	rs2, rs1 := regShrunk(p.Rs2), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
+	offs := immShrunk(p.Off, riscv.New().Off, si12Shrink)
 	out := make([]SdParams, 0, len(rs2)+len(rs1)+len(offs))
 	for _, r := range rs2 {
 		out = append(out, NewSdParams(r, p.Rs1, p.Off))

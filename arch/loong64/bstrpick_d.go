@@ -7,8 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// BstrpickD - bstrpick.d rd, rj, msb, lsb (DJUk6Um6): extract the rj[msb:lsb]
-// field into rd, zero-extended (msb at [21:16], lsb at [15:10]).
+// BstrpickD - bstrpick.d rd, rj, msb, lsb (DJUk6Um6): extract the rj[msb:lsb] field into rd, zero-extended.
 type BstrpickD struct {
 	base
 
@@ -17,8 +16,8 @@ type BstrpickD struct {
 	lsb    imm
 }
 
-// NewBstrpickD - bstrpick.d rd, rj, msb, lsb.
-func NewBstrpickD(rd, rj Reg, msb, lsb UImm6) Instr {
+// BstrpickD - bstrpick.d rd, rj, msb, lsb.
+func (Builder) BstrpickD(rd, rj Reg, msb, lsb UImm6) Instr {
 	return BstrpickD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

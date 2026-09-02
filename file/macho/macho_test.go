@@ -7,7 +7,9 @@ package macho_test
 import (
 	"context"
 	stdmacho "debug/macho"
+	"encoding/binary"
 	"fmt"
+	"io"
 	"math/rand"
 	"os"
 	"os/exec"
@@ -42,11 +44,41 @@ func corpus(t *testing.T) []string {
 	return out
 }
 
-// sysCorpus is system binaries (not committed; skipped if unavailable).
+// sysCorpus is system binaries (not committed; skipped if unavailable or
+// not Mach-O - on a non-macOS host /bin/ls exists but is an ELF).
 var sysCorpus = []string{
 	"/bin/ls",
 	"/usr/bin/otool",
 	"/usr/lib/dyld",
+}
+
+// isMacho - whether the file starts with a Mach-O or FAT magic (both byte
+// orders are accepted, so the CIGAM forms are covered too).
+func isMacho(t *testing.T, path string) bool {
+	t.Helper()
+	var buf [4]byte
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+
+	defer func() {
+		require.NoError(t, f.Close())
+	}()
+
+	if _, err := io.ReadFull(f, buf[:]); err != nil {
+		return false
+	}
+
+	le := binary.LittleEndian.Uint32(buf[:])
+	be := binary.BigEndian.Uint32(buf[:])
+	for _, m := range []uint32{macho.MH_MAGIC, macho.MH_MAGIC_64, macho.FAT_MAGIC, macho.FAT_MAGIC_64} {
+		if le == m || be == m {
+			return true
+		}
+	}
+
+	return false
 }
 
 // stdOpen opens the file via stdlib; for FAT archives it takes the arm64
@@ -76,7 +108,7 @@ func stdOpen(t *testing.T, path string) *stdmacho.File {
 func TestDiffHeader(t *testing.T) {
 	paths := corpus(t)
 	for _, p := range sysCorpus {
-		if _, err := os.Stat(p); err == nil {
+		if isMacho(t, p) {
 			paths = append(paths, p)
 		}
 	}
@@ -449,27 +481,18 @@ func TestDiffRelocs(t *testing.T) {
 	}
 }
 
-// thinSystemArm64 extracts the thin arm64 slice of a system binary via
-// lipo (modern macOS binaries use chained fixups - the only easy access
-// to real LC_DYLD_CHAINED_FIXUPS on this host).
-func thinSystemArm64(t *testing.T) string {
+// systemArm64 - a thin arm64e slice of a real system binary (modern macOS
+// binaries use chained fixups - the only easy access to real
+// LC_DYLD_CHAINED_FIXUPS in the corpus). Committed to testdata; regenerated
+// by the file-fixtures make target on a Mac.
+func systemArm64(t *testing.T) string {
 	t.Helper()
-	lipo, err := exec.LookPath("lipo")
-	if err != nil {
-		t.Skip("lipo unavailable")
+	path := filepath.Join("testdata", "ls-arm64e")
+	if _, err := os.Stat(path); err != nil {
+		t.Skip("no ls-arm64e fixture - regenerate on macOS (see file-fixtures)")
 	}
 
-	if _, err := os.Stat("/bin/ls"); err != nil {
-		t.Skip("/bin/ls unavailable")
-	}
-
-	out := t.TempDir() + "/ls-arm64e"
-	if b, err := exec.CommandContext(context.Background(), lipo, "/bin/ls", "-thin", "arm64e", "-output", out).
-		CombinedOutput(); err != nil {
-		t.Skipf("lipo: %v: %s", err, b)
-	}
-
-	return out
+	return path
 }
 
 // llvmObjdumpMacho runs llvm-objdump --macho with option opt; skips when
@@ -511,7 +534,7 @@ func newBindLine(addr uint64, sym string, add int64) bindLine {
 // "segment section address type addend dylib symbol".
 func parseBindLines(out string) []bindLine {
 	var res []bindLine
-	for _, line := range strings.Split(out, "\n") {
+	for line := range strings.SplitSeq(out, "\n") {
 		f := strings.Fields(line)
 		if len(f) < 6 || !strings.HasPrefix(f[2], "0x") {
 			continue
@@ -547,7 +570,7 @@ func diffBinds(t *testing.T, ours []macho.Bind, llvmOut string, what string) {
 // TestDyldStreamsOnSystemBin - dyld_info streams on a modern system binary
 // (chained fixups; llvm synthesizes binds from the chains).
 func TestDyldStreamsOnSystemBin(t *testing.T) {
-	path := thinSystemArm64(t)
+	path := systemArm64(t)
 	f, err := macho.Open(path)
 	require.NoError(t, err, "Open")
 
@@ -580,7 +603,7 @@ func TestDyldStreamsOnFixture(t *testing.T) {
 			require.NoError(t, err, "Rebases")
 			llvmOut := llvmObjdumpMacho(t, "--rebase", path)
 			want := 0
-			for _, line := range strings.Split(llvmOut, "\n") {
+			for line := range strings.SplitSeq(llvmOut, "\n") {
 				if strings.Contains(line, "0x") && !strings.Contains(line, "Rebase table") &&
 					!strings.Contains(line, "segment") {
 					want++
@@ -594,7 +617,7 @@ func TestDyldStreamsOnFixture(t *testing.T) {
 
 // TestExportsTrie compares the trie exports with llvm-objdump --exports-trie.
 func TestExportsTrie(t *testing.T) {
-	for _, path := range []string{filepath.Join("testdata", "dylib-arm64.dylib"), thinSystemArm64(t)} {
+	for _, path := range []string{filepath.Join("testdata", "dylib-arm64.dylib"), systemArm64(t)} {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			f, err := macho.Open(path)
 			require.NoError(t, err, "Open %s", path)
@@ -606,7 +629,7 @@ func TestExportsTrie(t *testing.T) {
 				addr uint64
 			}
 			var want []ev
-			for _, line := range strings.Split(llvmObjdumpMacho(t, "--exports-trie", path), "\n") {
+			for line := range strings.SplitSeq(llvmObjdumpMacho(t, "--exports-trie", path), "\n") {
 				f := strings.Fields(line)
 				if len(f) != 2 || !strings.HasPrefix(f[0], "0x") {
 					continue
@@ -643,7 +666,7 @@ func TestExportsTrie(t *testing.T) {
 // TestChainedFixups checks Fixups() on a system binary: a full diff of the
 // import table against llvm-objdump --chained-fixups + chain invariants.
 func TestChainedFixups(t *testing.T) {
-	path := thinSystemArm64(t)
+	path := systemArm64(t)
 	f, err := macho.Open(path)
 	require.NoError(t, err, "Open")
 	cx, err := f.Fixups()
@@ -736,14 +759,14 @@ func TestChainedFixups(t *testing.T) {
 
 // TestFunctionStarts compares function start addresses.
 func TestFunctionStarts(t *testing.T) {
-	for _, path := range []string{filepath.Join("testdata", "exec-arm64"), thinSystemArm64(t)} {
+	for _, path := range []string{filepath.Join("testdata", "exec-arm64"), systemArm64(t)} {
 		t.Run(filepath.Base(path), func(t *testing.T) {
 			f, err := macho.Open(path)
 			require.NoError(t, err, "Open %s", path)
 			ours, err := f.FunctionStarts()
 			require.NoError(t, err, "FunctionStarts")
 			var want []uint64
-			for _, line := range strings.Split(llvmObjdumpMacho(t, "--function-starts", path), "\n") {
+			for line := range strings.SplitSeq(llvmObjdumpMacho(t, "--function-starts", path), "\n") {
 				f := strings.Fields(line)
 				if len(f) != 1 {
 					continue
@@ -805,7 +828,7 @@ func TestEntryAndUUID(t *testing.T) {
 
 // TestCodeSignature - the superblob conversion on a system binary.
 func TestCodeSignature(t *testing.T) {
-	path := thinSystemArm64(t)
+	path := systemArm64(t)
 	f, err := macho.Open(path)
 	require.NoError(t, err, "Open")
 	blobs, err := f.CodeSignature()

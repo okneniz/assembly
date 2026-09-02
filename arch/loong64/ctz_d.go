@@ -14,8 +14,8 @@ type CtzD struct {
 	rd, rj uint8
 }
 
-// NewCtzD - ctz.d rd, rj.
-func NewCtzD(rd, rj Reg) Instr {
+// CtzD - ctz.d rd, rj.
+func (Builder) CtzD(rd, rj Reg) Instr {
 	return CtzD{
 		rd: rd.Num(),
 		rj: rj.Num(),

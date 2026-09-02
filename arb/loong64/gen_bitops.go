@@ -157,8 +157,8 @@ func newFieldWGen(rnd *rand.Rand) fieldWGen {
 
 // fieldW — the .w bit-field family (2 ctors).
 var fieldW = []fieldWEntry{
-	{name: "bstrins.w", ctor: arch.NewBstrinsW},
-	{name: "bstrpick.w", ctor: arch.NewBstrpickW},
+	{name: "bstrins.w", ctor: arch.New().BstrinsW},
+	{name: "bstrpick.w", ctor: arch.New().BstrpickW},
 }
 
 // FieldW — an arbitrary .w bstrins/bstrpick instruction.
@@ -169,8 +169,8 @@ func FieldW(rnd *rand.Rand) ohsnap.Arbitrary[FieldWParams] {
 func (g fieldWGen) Generate() iter.Seq[FieldWParams] {
 	return arb.Stream(func() FieldWParams {
 		e := fieldW[g.rnd.IntN(len(fieldW))]
-		lsb := wrapImm(g.rnd.Int64N(32), arch.NewUImm5)
-		msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.NewUImm5)
+		lsb := wrapImm(g.rnd.Int64N(32), arch.New().UImm5)
+		msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.New().UImm5)
 		return NewFieldWParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
 	})
 }
@@ -181,11 +181,11 @@ func (g fieldWGen) Shrink(p FieldWParams) iter.Seq[FieldWParams] {
 	// in range (lsb + d <= the old msb <= 31)
 	var msbs []arch.UImm5
 	for d := range halvingOnly(p.Msb.Val() - p.Lsb.Val()) {
-		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm5))
+		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.New().UImm5))
 	}
 
 	// lsb halves toward zero: the candidates stay <= msb
-	lsbs := immShrunk(p.Lsb, arch.NewUImm5, halvingOnly)
+	lsbs := immShrunk(p.Lsb, arch.New().UImm5, halvingOnly)
 
 	out := make([]FieldWParams, 0, len(rd)+len(rj)+len(msbs)+len(lsbs))
 	for _, r := range rd {
@@ -252,8 +252,8 @@ func newFieldDGen(rnd *rand.Rand) fieldDGen {
 
 // fieldD — the .d bit-field family (2 ctors).
 var fieldD = []fieldDEntry{
-	{name: "bstrins.d", ctor: arch.NewBstrinsD},
-	{name: "bstrpick.d", ctor: arch.NewBstrpickD},
+	{name: "bstrins.d", ctor: arch.New().BstrinsD},
+	{name: "bstrpick.d", ctor: arch.New().BstrpickD},
 }
 
 // FieldD — an arbitrary .d bstrins/bstrpick instruction.
@@ -264,8 +264,8 @@ func FieldD(rnd *rand.Rand) ohsnap.Arbitrary[FieldDParams] {
 func (g fieldDGen) Generate() iter.Seq[FieldDParams] {
 	return arb.Stream(func() FieldDParams {
 		e := fieldD[g.rnd.IntN(len(fieldD))]
-		lsb := wrapImm(g.rnd.Int64N(64), arch.NewUImm6)
-		msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.NewUImm6)
+		lsb := wrapImm(g.rnd.Int64N(64), arch.New().UImm6)
+		msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.New().UImm6)
 		return NewFieldDParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
 	})
 }
@@ -276,11 +276,11 @@ func (g fieldDGen) Shrink(p FieldDParams) iter.Seq[FieldDParams] {
 	// in range (lsb + d <= the old msb <= 63)
 	var msbs []arch.UImm6
 	for d := range halvingOnly(p.Msb.Val() - p.Lsb.Val()) {
-		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.NewUImm6))
+		msbs = append(msbs, wrapImm(p.Lsb.Val()+d, arch.New().UImm6))
 	}
 
 	// lsb halves toward zero: the candidates stay <= msb
-	lsbs := immShrunk(p.Lsb, arch.NewUImm6, halvingOnly)
+	lsbs := immShrunk(p.Lsb, arch.New().UImm6, halvingOnly)
 
 	out := make([]FieldDParams, 0, len(rd)+len(rj)+len(msbs)+len(lsbs))
 	for _, r := range rd {
@@ -305,9 +305,9 @@ func (g fieldDGen) Shrink(p FieldDParams) iter.Seq[FieldDParams] {
 // alsl — the alsl family over the shared three-registers-plus-role shape
 // (3 ctors).
 var alsl = []r3RoleEntry[arch.Shift3]{
-	{name: "alsl.w", ctor: arch.NewAlslW},
-	{name: "alsl.wu", ctor: arch.NewAlslWu},
-	{name: "alsl.d", ctor: arch.NewAlslD},
+	{name: "alsl.w", ctor: arch.New().AlslW},
+	{name: "alsl.wu", ctor: arch.New().AlslWu},
+	{name: "alsl.d", ctor: arch.New().AlslD},
 }
 
 // Alsl — an arbitrary alsl instruction.
@@ -317,7 +317,7 @@ func Alsl(rnd *rand.Rand) ohsnap.Arbitrary[R3RoleParams[arch.Shift3]] {
 
 // bytepickW — the bytepick.w family (1 ctor).
 var bytepickW = []r3RoleEntry[arch.UImm2]{
-	{name: "bytepick.w", ctor: arch.NewBytepickW},
+	{name: "bytepick.w", ctor: arch.New().BytepickW},
 }
 
 // BytepickW — an arbitrary bytepick.w instruction.
@@ -327,7 +327,7 @@ func BytepickW(rnd *rand.Rand) ohsnap.Arbitrary[R3RoleParams[arch.UImm2]] {
 
 // bytepickD — the bytepick.d family (1 ctor).
 var bytepickD = []r3RoleEntry[arch.UImm3]{
-	{name: "bytepick.d", ctor: arch.NewBytepickD},
+	{name: "bytepick.d", ctor: arch.New().BytepickD},
 }
 
 // BytepickD — an arbitrary bytepick.d instruction.

@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Addw — addw rd, rs1, rs2.
+// Addw - addw rd, rs1, rs2.
 type Addw struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Addw - addw rd, rs1, rs2.
+func (Builder) Addw(rd, rs1, rs2 Reg) Instr {
+	return Addw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeAddw(w uint32, addr uint64) Instr {

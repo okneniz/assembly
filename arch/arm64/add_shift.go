@@ -23,10 +23,10 @@ const (
 	AddShiftW uint32 = 0x0B000000
 )
 
-// NewAddShift — add rd, rn, rm[, shift #imm6]. Register 31 reads as
+// AddShift — add rd, rn, rm[, shift #imm6]. Register 31 reads as
 // zr (SP/WSP are not allowed — use XZR/WZR). Shift — only lsl/lsr/asr;
 // the 32-bit form limits the amount to 0..31 (see requireShift).
-func NewAddShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+func (Builder) AddShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	for _, r := range []struct {
 		reg Reg
 		op  string

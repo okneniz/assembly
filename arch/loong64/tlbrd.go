@@ -12,8 +12,8 @@ type Tlbrd struct {
 	base
 }
 
-// NewTlbrd - tlbrd (no operands).
-func NewTlbrd() Instr {
+// Tlbrd - tlbrd (no operands).
+func (Builder) Tlbrd() Instr {
 	return Tlbrd{}
 }
 

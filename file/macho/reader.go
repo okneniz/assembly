@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"math"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 )
 
 // errf is a helper for creating Mach-O parse errors.
@@ -15,32 +15,32 @@ func errf(f string, args ...any) error {
 }
 
 // u32c is a combinator: 4 bytes as uint32 in the given byte order.
-func u32c(order binary.ByteOrder) common.Combinator[byte, int, uint32] {
+func u32c(order binary.ByteOrder) parsec.Combinator[byte, int, uint32] {
 	return bytes.ReadAs[uint32](4, "macho: expected 4 bytes for u32", order)
 }
 
 // u64c is a combinator: 8 bytes as uint64 in the given byte order.
-func u64c(order binary.ByteOrder) common.Combinator[byte, int, uint64] {
+func u64c(order binary.ByteOrder) parsec.Combinator[byte, int, uint64] {
 	return bytes.ReadAs[uint64](8, "macho: expected 8 bytes for u64", order)
 }
 
 // readU32At reads a uint32 at absolute position off.
-func readU32At(buf common.Buffer[byte, int], order binary.ByteOrder, off int) (uint32, error) {
+func readU32At(buf parsec.Buffer[byte, int], order binary.ByteOrder, off int) (uint32, error) {
 	return readAt(buf, u32c(order), off)
 }
 
 // readU64At reads a uint64 at absolute position off.
-func readU64At(buf common.Buffer[byte, int], order binary.ByteOrder, off int) (uint64, error) {
+func readU64At(buf parsec.Buffer[byte, int], order binary.ByteOrder, off int) (uint64, error) {
 	return readAt(buf, u64c(order), off)
 }
 
 // readBytes reads size bytes at absolute position off.
-func readBytes(buf common.Buffer[byte, int], off, size int) ([]byte, error) {
+func readBytes(buf parsec.Buffer[byte, int], off, size int) ([]byte, error) {
 	if err := checkSpan(off, size); err != nil {
 		return nil, err
 	}
 
-	return readAt(buf, common.Count(size, "macho: raw bytes", bytes.Any()), off)
+	return readAt(buf, parsec.Count(size, "macho: raw bytes", bytes.Any()), off)
 }
 
 // checkSpan rejects negative values and off+size overflow (without this,
@@ -67,8 +67,8 @@ func cstr(b []byte) string {
 // readAt runs combinator c at absolute position off, restoring the buffer
 // to its original position. Random access on top of a single streaming buffer.
 func readAt[T any](
-	buf common.Buffer[byte, int],
-	c common.Combinator[byte, int, T],
+	buf parsec.Buffer[byte, int],
+	c parsec.Combinator[byte, int, T],
 	off int,
 ) (T, error) {
 	if off < 0 {

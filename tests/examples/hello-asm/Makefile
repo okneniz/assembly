@@ -1,7 +1,7 @@
 # A full assembly cycle demo: assembly → execution → disassembly.
 #
-#   make          - build hello.bin (assembly-asm) + runner, print hello world
-#   make disasm   - disassemble hello.bin back (assembly-asm -disasm)
+#   make          - build hello.bin (assembly) + runner, print hello world
+#   make disasm   - disassemble hello.bin back (assembly -disasm)
 #   make clean
 #
 # Run from this directory (or make -C tests/examples/hello-asm from the repository root).
@@ -14,7 +14,7 @@ HELLO_SRC := hello-linux.s
 endif
 
 CC ?= cc
-ASM := go run ../../../cmd/assembly-asm
+ASM := go run ../../../cmd/assembly
 
 # qemu-system-* from brew: full virt machines (VMs) for riscv64/arm64.
 QEMU_RISCV ?= qemu-system-riscv64

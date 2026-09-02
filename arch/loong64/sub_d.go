@@ -14,8 +14,8 @@ type SubD struct {
 	rd, rj, rk uint8
 }
 
-// NewSubD - sub.d rd, rj, rk.
-func NewSubD(rd, rj, rk Reg) Instr {
+// SubD - sub.d rd, rj, rk.
+func (Builder) SubD(rd, rj, rk Reg) Instr {
 	return SubD{
 		rd: rd.Num(),
 		rj: rj.Num(),

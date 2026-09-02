@@ -7,27 +7,53 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Madd - madd rd, rn, rm, ra; pseudo: mul (ra = xzr). Msub/msub/mneg are
-// the same encodings with o0=1.
+// Madd — madd rd, rn, rm, ra; pseudo: mul (ra = xzr).
 type Madd struct {
 	base
 
 	rd, rn, rm, ra string
 }
 
-func NewMadd(rd string, rn string, rm string, ra string) Madd {
-	return Madd{
-		rd: rd,
-		rn: rn,
-		rm: rm,
-		ra: ra,
-	}
-}
-
 const (
 	maddX uint32 = 0x9B000000
 	maddW uint32 = 0x1B000000
 )
+
+// Madd — madd rd, rn, rm, ra (mul when Ra = zr). Register 31
+// reads as zr (SP/WSP are not allowed — use XZR/WZR); the width is
+// shared by all four registers.
+func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
+	if err := requireClass(rd, "Madd", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Madd", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Madd", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(ra, "Madd", "ra", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("Madd", rd, rn, rm, ra); err != nil {
+		return nil, err
+	}
+
+	return Madd{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+		ra: ra.name(),
+	}, nil
+}
 
 func decodeMadd(w uint32, addr uint64) Instr {
 	return Madd{

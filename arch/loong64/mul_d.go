@@ -14,8 +14,8 @@ type MulD struct {
 	rd, rj, rk uint8
 }
 
-// NewMulD - mul.d rd, rj, rk.
-func NewMulD(rd, rj, rk Reg) Instr {
+// MulD - mul.d rd, rj, rk.
+func (Builder) MulD(rd, rj, rk Reg) Instr {
 	return MulD{
 		rd: rd.Num(),
 		rj: rj.Num(),

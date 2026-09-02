@@ -13,10 +13,10 @@ func TestRevh2WCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000041ac),
-		ctorWord(t, NewRevh2W(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().Revh2W(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewRevh2W(lreg(t, 1), lreg(t, 2))
+	in := New().Revh2W(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(Revh2W)
 	require.True(t, ok, "type = %T, want Revh2W", in)
 }

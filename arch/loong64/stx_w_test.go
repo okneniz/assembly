@@ -10,7 +10,7 @@ import (
 
 func TestStxWCtor(t *testing.T) {
 	// llvm-mc-verified: stx.w $t0, $t1, $t2.
-	in := NewStxW(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().StxW(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x381839ac), ctorWord(t, in))
 
 	_, ok := in.(StxW)

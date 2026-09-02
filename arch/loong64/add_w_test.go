@@ -14,10 +14,10 @@ func TestAddWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001039ac),
-		ctorWord(t, NewAddW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AddW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAddW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AddW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AddW)
 	require.True(t, ok, "type = %T, want AddW", in)
 }
@@ -41,14 +41,14 @@ func TestAddWObjDumpNoAlias(t *testing.T) {
 }
 
 func TestAddWEncodeError(t *testing.T) {
-	in := NewAddW(lreg(t, 0), lreg(t, 1), lreg(t, 2))
+	in := New().AddW(lreg(t, 0), lreg(t, 1), lreg(t, 2))
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "write failed")
 }
 
 func TestAddWMarshalJSON(t *testing.T) {
-	in := NewAddW(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().AddW(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 
 	b, err := in.MarshalJSON()
 	require.NoError(t, err)

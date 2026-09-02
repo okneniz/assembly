@@ -1,6 +1,7 @@
 package tests
 
 import (
+	"bufio"
 	"bytes"
 	"context"
 	"os"
@@ -220,7 +221,10 @@ func TestHelloAsmExample(t *testing.T) {
 }
 
 // TestHelloVM - running the bare-metal demo in qemu virtual machines
-// (riscv64 and arm64 virt). Skipped without qemu on PATH (brew install qemu).
+// (arm64, riscv64 and loong64 virt). The gate is the "hello world" line
+// on the serial console: machines with a bare-metal poweroff exit by
+// themselves; the idling one (loong64) is stopped as soon as the line is
+// observed - the deadline only bounds a hang.
 func TestHelloVM(t *testing.T) {
 	src, err := os.ReadFile("examples/hello-asm/hello-riscv.s")
 	if err != nil {
@@ -288,30 +292,81 @@ func TestHelloVM(t *testing.T) {
 		{
 			// LoongArch resets into the flash (0x1c000000), not RAM; the
 			// machine has no bare-metal poweroff, so the program idles after
-			// printing - the deadline-stop below is the expected exit.
+			// printing - the test stops it once the line is out.
 			"loong64-virt",
 			"qemu-system-loongarch64",
 			[]string{"-machine", "virt", "-nographic",
 				"-device", "loader,file=" + loongBin + ",addr=0x1c000000,cpu-num=0"},
 		},
 	}
+
+	const (
+		helloLine = "hello world"
+
+		// helloVMDelay is the hang bound, not the expected runtime: the
+		// passing boots finish in a couple of seconds.
+		helloVMDelay = 15 * time.Second
+	)
+
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			if _, err := exec.LookPath(c.qemu); err != nil {
 				t.Skipf("%s not on PATH (brew install qemu)", c.qemu)
 			}
 
-			ctx, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+			ctx, cancel := context.WithTimeout(context.Background(), helloVMDelay)
 			defer cancel()
+
+			console, serialOut, err := os.Pipe()
+			require.NoError(t, err)
+
 			cmd := exec.CommandContext(ctx, c.qemu, c.args...)
-			out, err := cmd.CombinedOutput()
-			// a qemu timeout is not an error: by the deadline the output has
-			// already been produced
-			if ctx.Err() != context.DeadlineExceeded {
-				require.NoError(t, err, "%s: %v\n%s", c.qemu, err, out)
+			cmd.Stdout = serialOut
+			cmd.Stderr = serialOut
+			require.NoError(t, cmd.Start())
+
+			// the child owns the only write end now
+			require.NoError(t, serialOut.Close())
+
+			serial := &bytes.Buffer{}
+			saw := make(chan struct{})
+			scanned := make(chan struct{})
+			go func() {
+				defer close(scanned)
+
+				scanner := bufio.NewScanner(console)
+				for scanner.Scan() {
+					line := scanner.Bytes()
+					serial.Write(line)
+					serial.WriteByte('\n')
+
+					if bytes.Contains(line, []byte(helloLine)) {
+						close(saw)
+					}
+				}
+			}()
+
+			done := make(chan error, 1)
+			go func() { done <- cmd.Wait() }()
+
+			var exitErr error
+			select {
+			case <-saw:
+				// the line is out - stop the idling machine
+				cancel()
+				<-done
+			case exitErr = <-done:
 			}
 
-			require.Contains(t, string(out), "hello world")
+			<-scanned
+
+			// a qemu timeout is not an error: by the deadline the output has
+			// already been produced (or not - the Contains below decides)
+			if exitErr != nil && ctx.Err() != context.DeadlineExceeded {
+				require.NoError(t, exitErr, "%s: %v\n%s", c.qemu, exitErr, serial.String())
+			}
+
+			require.Contains(t, serial.String(), helloLine)
 		})
 	}
 }

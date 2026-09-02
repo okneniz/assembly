@@ -13,10 +13,10 @@ func TestCrcWDWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x0025b9ac),
-		ctorWord(t, NewCrcWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().CrcWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewCrcWDW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().CrcWDW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(CrcWDW)
 	require.True(t, ok, "type = %T, want CrcWDW", in)
 }

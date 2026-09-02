@@ -8,12 +8,12 @@ import (
 
 func TestLwCtor(t *testing.T) {
 	// small aligned offsets with x-registers compress (c.lw).
-	b := ctorBytes(t, NewLw(xreg(t, 10), xreg(t, 11), off(t, 8)))
+	b := ctorBytes(t, New().Lw(xreg(t, 10), xreg(t, 11), off(t, 8)))
 	require.Len(t, b, 2, "lw a0,8(a1) (c.lw)")
-	in := NewLw(xreg(t, 1), xreg(t, 2), off(t, 0))
+	in := New().Lw(xreg(t, 1), xreg(t, 2), off(t, 0))
 	_, ok := in.(Lw)
 	require.True(t, ok, "type = %T, want Lw", in)
 	// Off outside -2048..2047 is rejected by the Off constructor.
-	_, err := NewOff(2048)
+	_, err := New().Off(2048)
 	require.Error(t, err)
 }

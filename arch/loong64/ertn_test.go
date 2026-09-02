@@ -10,9 +10,9 @@ import (
 
 func TestErtnCtor(t *testing.T) {
 	// llvm-mc-verified: ertn.
-	require.Equal(t, uint32(0x06483800), ctorWord(t, NewErtn()))
+	require.Equal(t, uint32(0x06483800), ctorWord(t, New().Ertn()))
 
-	in := NewErtn()
+	in := New().Ertn()
 	_, ok := in.(Ertn)
 	require.True(t, ok, "type = %T, want Ertn", in)
 }

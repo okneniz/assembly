@@ -15,8 +15,8 @@ type Bl struct {
 	off imm
 }
 
-// NewBl - bl offs (the pc-relative byte offset).
-func NewBl(off int64) Instr {
+// Bl - bl offs (the pc-relative byte offset).
+func (Builder) Bl(off int64) Instr {
 	return Bl{
 		off: immNum(off),
 	}

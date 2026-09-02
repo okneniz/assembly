@@ -10,10 +10,10 @@ import (
 
 func TestPcaddiCtor(t *testing.T) {
 	// llvm-mc-verified: pcaddi $t0, 5.
-	v, err := NewImm20(5)
+	v, err := New().Imm20(5)
 	require.NoError(t, err)
 
-	in := NewPcaddi(lreg(t, 12), v)
+	in := New().Pcaddi(lreg(t, 12), v)
 	require.Equal(t, uint32(0x180000ac), ctorWord(t, in))
 
 	_, ok := in.(Pcaddi)

@@ -17,6 +17,10 @@ func TestSubImmCtor(t *testing.T) {
 	in := ctorSubImm(t, xreg(t, 0), xreg(t, 1), imm12(t, 1), NoSh12)
 	_, ok := in.(SubImm)
 	require.True(t, ok, "type = %T, want SubImm", in)
-	_, err := NewSubImm(XZR, xreg(t, 1), imm12(t, 1), NoSh12)
+	_, err := New().SubImm(XZR, xreg(t, 1), imm12(t, 1), NoSh12)
 	assertErr(t, "sub imm zr", err)
+	_, err = New().SubImm(xreg(t, 0), XZR, imm12(t, 1), NoSh12)
+	assertErr(t, "sub imm rn zr", err)
+	_, err = New().SubImm(xreg(t, 0), wreg(t, 1), imm12(t, 1), NoSh12)
+	assertErr(t, "sub imm x+w", err)
 }

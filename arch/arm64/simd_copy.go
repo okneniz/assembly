@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SimdCopy - the Advanced SIMD copy family: dup.Arr vd, wn (DUP general) |
+// SimdCopy — the Advanced SIMD copy family: dup.Arr vd, wn (DUP general) |
 // mov.sz vd[idx], wn (INS general) | smov/umov wd, vn[idx]. imm5 encodes
 // size+index: size = the number of the lowest set bit, index = imm5 >>
 // (size+1); the operation is in bits [13:12] (0=dup, 1=ins, 2=smov, 3=umov),

@@ -16,8 +16,8 @@ type LdptrW struct {
 	off    imm
 }
 
-// NewLdptrW - ldptr.w rd, rj, offs (the byte offset).
-func NewLdptrW(rd, rj Reg, off Imm14) Instr {
+// LdptrW - ldptr.w rd, rj, offs (the byte offset).
+func (Builder) LdptrW(rd, rj Reg, off Imm14) Instr {
 	return LdptrW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

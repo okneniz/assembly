@@ -14,8 +14,8 @@ type LdxD struct {
 	rd, rj, rk uint8
 }
 
-// NewLdxD - ldx.d rd, rj, rk.
-func NewLdxD(rd, rj, rk Reg) Instr {
+// LdxD - ldx.d rd, rj, rk.
+func (Builder) LdxD(rd, rj, rk Reg) Instr {
 	return LdxD{
 		rd: rd.Num(),
 		rj: rj.Num(),

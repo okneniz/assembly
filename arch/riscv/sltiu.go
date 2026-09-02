@@ -15,6 +15,15 @@ type Sltiu struct {
 	imm     imm
 }
 
+// Sltiu - sltiu rd, rs1, imm (imm = 1 is printed as seqz).
+func (Builder) Sltiu(rd, rs1 Reg, imm Imm12) Instr {
+	return Sltiu{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		imm: immNum(imm.v),
+	}
+}
+
 func decodeSltiu(w uint32, addr uint64) Instr {
 	return Sltiu{
 		base: newBase(addr, w),

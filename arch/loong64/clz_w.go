@@ -14,8 +14,8 @@ type ClzW struct {
 	rd, rj uint8
 }
 
-// NewClzW - clz.w rd, rj.
-func NewClzW(rd, rj Reg) Instr {
+// ClzW - clz.w rd, rj.
+func (Builder) ClzW(rd, rj Reg) Instr {
 	return ClzW{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -9,11 +9,11 @@ import (
 )
 
 func TestSyscallCtor(t *testing.T) {
-	c0, err := NewCode15(0)
+	c0, err := New().Code15(0)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: syscall 0.
-	require.Equal(t, uint32(0x002b0000), ctorWord(t, NewSyscall(c0)))
+	require.Equal(t, uint32(0x002b0000), ctorWord(t, New().Syscall(c0)))
 }
 
 func TestSyscallDecodeEncode(t *testing.T) {

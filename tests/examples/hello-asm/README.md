@@ -1,6 +1,6 @@
 # hello-asm - a full assembly cycle demo
 
-An assembly source is built by `assembly-asm`, executed, and disassembled
+An assembly source is built by `assembly`, executed, and disassembled
 back - all three directions with a single utility.
 
 ```bash
@@ -79,10 +79,10 @@ The disassembled tail is the message data: the decoder honestly shows the
 ## Manual run
 
 ```bash
-go run ../../../cmd/assembly-asm -arch arm64 -o hello.bin --sym hello.sym hello-macos.s
+go run ../../../cmd/assembly -arch arm64 -o hello.bin --sym hello.sym hello-macos.s
 cc -O2 -o runner runner.c
 ./runner hello.bin
-go run ../../../cmd/assembly-asm -arch arm64 --disasm hello.bin
+go run ../../../cmd/assembly -arch arm64 --disasm hello.bin
 ```
 
 Regression test: `TestHelloAsmExample` in the repository root checks that

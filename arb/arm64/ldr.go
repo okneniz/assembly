@@ -1,7 +1,7 @@
 package arm64
 
 // Generator for ldr (unsigned offset) — one generator, one type, one
-// constructor (arm64.NewLdr).
+// constructor (Ldr).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewLdrParams(rt arm64.Reg, rn arm64.Reg, off arm64.Off) LdrParams {
 }
 
 func (p LdrParams) Instr() arm64.Instr {
-	in, err := arm64.NewLdr(p.Rt, p.Rn, p.Off)
+	in, err := arm64.New().Ldr(p.Rt, p.Rn, p.Off)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}

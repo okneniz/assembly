@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Simd3 - op.Arr vd, vn, vm; the mov alias: and/orr with Rn == Rm -> mov.16b/8b.
+// Simd3 — op.Arr vd, vn, vm; the mov alias: and/orr with Rn == Rm -> mov.16b/8b.
 type Simd3 struct {
 	base
 

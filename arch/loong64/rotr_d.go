@@ -14,8 +14,8 @@ type RotrD struct {
 	rd, rj, rk uint8
 }
 
-// NewRotrD - rotr.d rd, rj, rk.
-func NewRotrD(rd, rj, rk Reg) Instr {
+// RotrD - rotr.d rd, rj, rk.
+func (Builder) RotrD(rd, rj, rk Reg) Instr {
 	return RotrD{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -14,7 +14,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/strings"
 )
 
@@ -81,7 +81,7 @@ var cBinLit = strings.Cast(
 )
 
 // decUint — a decimal number (bit index) → uint.
-func decUint(what string) common.Combinator[rune, strings.Position, uint] {
+func decUint(what string) parsec.Combinator[rune, strings.Position, uint] {
 	return strings.Cast(
 		strings.Some(2, what, cDigit),
 		func(rs []rune) (uint, error) {
@@ -97,9 +97,9 @@ func decUint(what string) common.Combinator[rune, strings.Position, uint] {
 
 // cSlice — the contents of square brackets: "3" (hi==lo) or "3:0".
 var cSlice = strings.Squares(strings.Choice("expected bit index or range",
-	strings.Try(func() common.Combinator[rune, strings.Position, slice] {
+	strings.Try(func() parsec.Combinator[rune, strings.Position, slice] {
 		hi := decUint("high bit index")
-		return func(buf common.Buffer[rune, strings.Position]) (slice, common.Error[strings.Position]) {
+		return func(buf parsec.Buffer[rune, strings.Position]) (slice, parsec.Error[strings.Position]) {
 			h, err := hi(buf)
 			if err != nil {
 				return slice{}, err
@@ -133,9 +133,9 @@ func toEncValue(prefix uint64, sl slice) (encValue, error) {
 
 // cEncValue — the full value of the v attribute.
 var cEncValue = strings.Choice("malformed enc value",
-	strings.Try(func() common.Combinator[rune, strings.Position, encValue] {
+	strings.Try(func() parsec.Combinator[rune, strings.Position, encValue] {
 		// "0b010:n[3]" / "0b1:n[1:0]"
-		return func(buf common.Buffer[rune, strings.Position]) (encValue, common.Error[strings.Position]) {
+		return func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 			p, err := cBinLit(buf)
 			if err != nil {
 				return encValue{}, err
@@ -156,15 +156,15 @@ var cEncValue = strings.Choice("malformed enc value",
 
 			v, cerr := toEncValue(p, sl)
 			if cerr != nil {
-				return encValue{}, common.NewParseError(buf.Position(), cerr.Error())
+				return encValue{}, parsec.NewParseError(buf.Position(), cerr.Error())
 			}
 
 			return v, nil
 		}
 	}()),
-	strings.Try(func() common.Combinator[rune, strings.Position, encValue] {
+	strings.Try(func() parsec.Combinator[rune, strings.Position, encValue] {
 		// "n[3:0]" / "n[2]"
-		return func(buf common.Buffer[rune, strings.Position]) (encValue, common.Error[strings.Position]) {
+		return func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 			if _, err := cN(buf); err != nil {
 				return encValue{}, err
 			}
@@ -176,15 +176,15 @@ var cEncValue = strings.Choice("malformed enc value",
 
 			v, cerr := toEncValue(0, sl)
 			if cerr != nil {
-				return encValue{}, common.NewParseError(buf.Position(), cerr.Error())
+				return encValue{}, parsec.NewParseError(buf.Position(), cerr.Error())
 			}
 
 			return v, nil
 		}
 	}()),
-	strings.Try(func() common.Combinator[rune, strings.Position, encValue] {
+	strings.Try(func() parsec.Combinator[rune, strings.Position, encValue] {
 		// "0b110"
-		return func(buf common.Buffer[rune, strings.Position]) (encValue, common.Error[strings.Position]) {
+		return func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 			p, err := cBinLit(buf)
 			if err != nil {
 				return encValue{}, err
@@ -199,7 +199,7 @@ var cEncValue = strings.Choice("malformed enc value",
 // is allowed, but trailing junk after the value is an error (as in the
 // previous strconv approach).
 func parseEncValue(v string) (encValue, error) {
-	body := func(buf common.Buffer[rune, strings.Position]) (encValue, common.Error[strings.Position]) {
+	body := func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 		e, err := cEncValue(buf)
 		if err != nil {
 			return encValue{}, err
@@ -207,7 +207,7 @@ func parseEncValue(v string) (encValue, error) {
 
 		// cEof fails exactly when the buffer is not at the end
 		if _, eofErr := cEof(buf); eofErr != nil {
-			return encValue{}, common.NewParseError(
+			return encValue{}, parsec.NewParseError(
 				buf.Position(),
 				"unexpected trailing characters",
 			)

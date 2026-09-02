@@ -7,10 +7,42 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sturb - sturb ... (see lsBase for addressing kinds).
+// Sturb — sturb ... (see lsBase for addressing kinds).
 type Sturb struct {
 	base
 	lsBase
+}
+
+const sturbEnc uint32 = 0x38000000 // sturb wt, [xn, #±imm9]
+
+// Sturb — sturb rt, [rn, #off]: the unscaled form, byte access,
+// rt — w register only (register 31 reads as wzr), rn — x register or
+// SP (register 31 in the base reads as sp); the offset is a signed
+// imm9 (-0x100..0xff, any alignment).
+func (Builder) Sturb(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Sturb", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Sturb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireUnscaledOff("Sturb", off); err != nil {
+		return nil, err
+	}
+
+	return Sturb{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, sturbEnc, "", "", 0),
+	}, nil
 }
 
 func (i Sturb) ObjDump(_ disasm.ViewCtx) string {

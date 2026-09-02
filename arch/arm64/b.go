@@ -16,6 +16,13 @@ type B struct {
 
 const bMatch = 0x14000000
 
+// B — b target (the absolute target address).
+func (Builder) B(target int64) Instr {
+	return B{
+		target: immNum(target),
+	}
+}
+
 func decodeB(w uint32, addr uint64) Instr {
 	return B{
 		base:   newBase(addr, w),

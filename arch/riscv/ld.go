@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Ld — ld rd, off(rs1).
+// Ld - ld rd, off(rs1).
 type Ld struct {
 	base
 
@@ -15,8 +15,8 @@ type Ld struct {
 	off     imm
 }
 
-// NewLd — ld rd, off(rs1).
-func NewLd(rd, rs1 Reg, off Off) Instr {
+// Ld - ld rd, off(rs1).
+func (Builder) Ld(rd, rs1 Reg, off Off) Instr {
 	return Ld{
 		rd:  rd.name(),
 		rs1: rs1.name(),

@@ -17,6 +17,32 @@ const andImmX uint32 = 0x92000000
 
 const andImmW uint32 = 0x12000000
 
+// AndImm — and rd, rn, #bitmask. Register 31 reads as zr
+// (SP/WSP are not allowed — use XZR/WZR); the mask must be encodable
+// as a logical immediate (see encodeBitMasks).
+func (Builder) AndImm(rd, rn Reg, imm uint64) (Instr, error) {
+	if err := requireClass(rd, "AndImm", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "AndImm", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("AndImm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
+	if !ok {
+		return nil, fmt.Errorf("arm64.NewAndImm: operand imm: %#x not encodable as bitmask", imm)
+	}
+
+	return AndImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
+}
+
 func decodeAndImm(w uint32, addr uint64) Instr {
 	return AndImm{
 		newBase(addr, w),

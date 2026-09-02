@@ -11,16 +11,16 @@ import (
 // upper-immediate, load and store instruction (the rest is covered by
 // the per-file tests).
 func TestLdStJSONEncodeError(t *testing.T) {
-	imm12v, err := NewImm12(8)
+	imm12v, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	imm14v, err := NewImm14(8)
+	imm14v, err := New().Imm14(8)
 	require.NoError(t, err)
 
-	imm20v, err := NewImm20(5)
+	imm20v, err := New().Imm20(5)
 	require.NoError(t, err)
 
-	uimm5v, err := NewUImm5(5)
+	uimm5v, err := New().UImm5(5)
 	require.NoError(t, err)
 
 	t0, t1, t2 := lreg(t, 12), lreg(t, 13), lreg(t, 14)
@@ -29,36 +29,36 @@ func TestLdStJSONEncodeError(t *testing.T) {
 		mnem string
 		in   Instr
 	}{
-		{"lu32i.d", NewLu32iD(t0, imm20v)},
-		{"lu52i.d", NewLu52iD(t0, t1, imm12v)},
-		{"pcaddi", NewPcaddi(t0, imm20v)},
-		{"pcalau12i", NewPcalau12i(t0, imm20v)},
-		{"pcaddu12i", NewPcaddu12i(t0, imm20v)},
-		{"pcaddu18i", NewPcaddu18i(t0, imm20v)},
-		{"ld.b", NewLdB(t0, t1, imm12v)},
-		{"ld.h", NewLdH(t0, t1, imm12v)},
-		{"ld.w", NewLdW(t0, t1, imm12v)},
-		{"ld.wu", NewLdWu(t0, t1, imm12v)},
-		{"ld.d", NewLdD(t0, t1, imm12v)},
-		{"st.b", NewStB(t0, t1, imm12v)},
-		{"st.h", NewStH(t0, t1, imm12v)},
-		{"st.w", NewStW(t0, t1, imm12v)},
-		{"st.d", NewStD(t0, t1, imm12v)},
-		{"ldptr.w", NewLdptrW(t0, t1, imm14v)},
-		{"ldptr.d", NewLdptrD(t0, t1, imm14v)},
-		{"stptr.w", NewStptrW(t0, t1, imm14v)},
-		{"stptr.d", NewStptrD(t0, t1, imm14v)},
-		{"ldx.b", NewLdxB(t0, t1, t2)},
-		{"ldx.h", NewLdxH(t0, t1, t2)},
-		{"ldx.w", NewLdxW(t0, t1, t2)},
-		{"ldx.wu", NewLdxWu(t0, t1, t2)},
-		{"ldx.d", NewLdxD(t0, t1, t2)},
-		{"stx.b", NewStxB(t0, t1, t2)},
-		{"stx.h", NewStxH(t0, t1, t2)},
-		{"stx.w", NewStxW(t0, t1, t2)},
-		{"stx.d", NewStxD(t0, t1, t2)},
-		{"preld", NewPreld(uimm5v, t1, imm12v)},
-		{"preldx", NewPreldx(uimm5v, t1, t2)},
+		{"lu32i.d", New().Lu32iD(t0, imm20v)},
+		{"lu52i.d", New().Lu52iD(t0, t1, imm12v)},
+		{"pcaddi", New().Pcaddi(t0, imm20v)},
+		{"pcalau12i", New().Pcalau12i(t0, imm20v)},
+		{"pcaddu12i", New().Pcaddu12i(t0, imm20v)},
+		{"pcaddu18i", New().Pcaddu18i(t0, imm20v)},
+		{"ld.b", New().LdB(t0, t1, imm12v)},
+		{"ld.h", New().LdH(t0, t1, imm12v)},
+		{"ld.w", New().LdW(t0, t1, imm12v)},
+		{"ld.wu", New().LdWu(t0, t1, imm12v)},
+		{"ld.d", New().LdD(t0, t1, imm12v)},
+		{"st.b", New().StB(t0, t1, imm12v)},
+		{"st.h", New().StH(t0, t1, imm12v)},
+		{"st.w", New().StW(t0, t1, imm12v)},
+		{"st.d", New().StD(t0, t1, imm12v)},
+		{"ldptr.w", New().LdptrW(t0, t1, imm14v)},
+		{"ldptr.d", New().LdptrD(t0, t1, imm14v)},
+		{"stptr.w", New().StptrW(t0, t1, imm14v)},
+		{"stptr.d", New().StptrD(t0, t1, imm14v)},
+		{"ldx.b", New().LdxB(t0, t1, t2)},
+		{"ldx.h", New().LdxH(t0, t1, t2)},
+		{"ldx.w", New().LdxW(t0, t1, t2)},
+		{"ldx.wu", New().LdxWu(t0, t1, t2)},
+		{"ldx.d", New().LdxD(t0, t1, t2)},
+		{"stx.b", New().StxB(t0, t1, t2)},
+		{"stx.h", New().StxH(t0, t1, t2)},
+		{"stx.w", New().StxW(t0, t1, t2)},
+		{"stx.d", New().StxD(t0, t1, t2)},
+		{"preld", New().Preld(uimm5v, t1, imm12v)},
+		{"preldx", New().Preldx(uimm5v, t1, t2)},
 	}
 
 	for _, f := range family {

@@ -26,7 +26,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/strings"
 )
 
@@ -167,7 +167,7 @@ func cutPrefix(s, prefix string) (string, bool) {
 }
 
 // skipSpaces - consume the run of horizontal spaces.
-func skipSpaces(buf common.Buffer[rune, strings.Position]) {
+func skipSpaces(buf parsec.Buffer[rune, strings.Position]) {
 	for {
 		if _, err := cHSpace(buf); err != nil {
 			return
@@ -176,15 +176,15 @@ func skipSpaces(buf common.Buffer[rune, strings.Position]) {
 }
 
 // consumeNewline - the line's newline, if present.
-func consumeNewline(buf common.Buffer[rune, strings.Position]) {
+func consumeNewline(buf parsec.Buffer[rune, strings.Position]) {
 	if _, err := cNewline(buf); err != nil {
 		return
 	}
 }
 
 // lineC - one table line: word, mnemonic, format, annotations, EOL.
-var lineC = func() common.Combinator[rune, strings.Position, Entry] {
-	return func(buf common.Buffer[rune, strings.Position]) (Entry, common.Error[strings.Position]) {
+var lineC = func() parsec.Combinator[rune, strings.Position, Entry] {
+	return func(buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
 		word, err := cHexWord(buf)
 		if err != nil {
 			return Entry{}, err
@@ -231,11 +231,11 @@ var lineC = func() common.Combinator[rune, strings.Position, Entry] {
 // cBlankLine - a whitespace-only line (horizontal spaces and/or one
 // newline; never zero-width), as the zero Entry (Name == ""), which Parse
 // drops.
-var cBlankLine = strings.Try(func() common.Combinator[rune, strings.Position, Entry] {
-	return func(buf common.Buffer[rune, strings.Position]) (Entry, common.Error[strings.Position]) {
+var cBlankLine = strings.Try(func() parsec.Combinator[rune, strings.Position, Entry] {
+	return func(buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
 		if _, err := cHSpace(buf); err != nil {
 			if _, err := cNewline(buf); err != nil {
-				return Entry{}, common.NewParseError(buf.Position(), "expected a blank line")
+				return Entry{}, parsec.NewParseError(buf.Position(), "expected a blank line")
 			}
 
 			return Entry{}, nil
@@ -257,14 +257,14 @@ var fileLine = strings.Choice("unrecognized line",
 // Parse parses one loongarch-opcodes table in file order. Every non-blank
 // line must be a full entry: unlike encoding.h there are no comments, so
 // a line matching neither form is corrupt data and an error.
-func Parse(data []rune) ([]Entry, common.Error[strings.Position]) {
+func Parse(data []rune) ([]Entry, parsec.Error[strings.Position]) {
 	buf := strings.Buffer(data)
 
 	out := make([]Entry, 0, 64)
 	for !buf.IsEOF() {
 		e, err := fileLine(buf)
 		if err != nil {
-			return nil, common.NewParseError(buf.Position(), "corrupt line", err)
+			return nil, parsec.NewParseError(buf.Position(), "corrupt line", err)
 		}
 
 		if e.Name == "" {

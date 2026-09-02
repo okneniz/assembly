@@ -10,16 +10,16 @@ import (
 
 func TestLlWCtor(t *testing.T) {
 	// llvm-mc-verified: ll.w $t0, $t1, 8.
-	off, err := NewImm14(8)
+	off, err := New().Imm14(8)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x200009ac),
-		ctorWord(t, NewLlW(lreg(t, 12), lreg(t, 13), off)),
+		ctorWord(t, New().LlW(lreg(t, 12), lreg(t, 13), off)),
 	)
 
-	in := NewLlW(lreg(t, 1), lreg(t, 2), off)
+	in := New().LlW(lreg(t, 1), lreg(t, 2), off)
 	_, ok := in.(LlW)
 	require.True(t, ok, "type = %T, want LlW", in)
 }

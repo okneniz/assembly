@@ -16,8 +16,8 @@ type StptrW struct {
 	off    imm
 }
 
-// NewStptrW - stptr.w rd, rj, offs (the byte offset).
-func NewStptrW(rd, rj Reg, off Imm14) Instr {
+// StptrW - stptr.w rd, rj, offs (the byte offset).
+func (Builder) StptrW(rd, rj Reg, off Imm14) Instr {
 	return StptrW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

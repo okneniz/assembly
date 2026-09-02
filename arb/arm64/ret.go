@@ -1,6 +1,6 @@
 package arm64
 
-// Generator for ret — one generator, one type, one constructor (arm64.NewRet).
+// Generator for ret — one generator, one type, one constructor (Ret).
 
 import (
 	"iter"
@@ -24,7 +24,7 @@ func NewRetParams(rn arm64.Reg) RetParams {
 }
 
 func (p RetParams) Instr() arm64.Instr {
-	in, err := arm64.NewRet(p.Rn)
+	in, err := arm64.New().Ret(p.Rn)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}

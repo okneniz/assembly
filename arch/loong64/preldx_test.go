@@ -11,10 +11,10 @@ import (
 func TestPreldxCtor(t *testing.T) {
 	// llvm-mc-verified: preldx 5, $t1, $t2 (the manual prints the hint
 	// first - llvm-mc rejects the rj-first operand order).
-	h, err := NewUImm5(5)
+	h, err := New().UImm5(5)
 	require.NoError(t, err)
 
-	in := NewPreldx(h, lreg(t, 13), lreg(t, 14))
+	in := New().Preldx(h, lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x382c39a5), ctorWord(t, in))
 
 	_, ok := in.(Preldx)

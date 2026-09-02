@@ -9,20 +9,20 @@ import (
 )
 
 func TestCacopCtor(t *testing.T) {
-	op, err := NewUImm5(5)
+	op, err := New().UImm5(5)
 	require.NoError(t, err)
 
-	off, err := NewImm12(8)
+	off, err := New().Imm12(8)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: cacop 5, $t1, 8 (op, rj, si12).
 	require.Equal(
 		t,
 		uint32(0x060021a5),
-		ctorWord(t, NewCacop(op, lreg(t, 13), off)),
+		ctorWord(t, New().Cacop(op, lreg(t, 13), off)),
 	)
 
-	in := NewCacop(op, lreg(t, 13), off)
+	in := New().Cacop(op, lreg(t, 13), off)
 	_, ok := in.(Cacop)
 	require.True(t, ok, "type = %T, want Cacop", in)
 }

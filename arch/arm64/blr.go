@@ -16,6 +16,22 @@ type Blr struct {
 
 const blrMatch = 0xD63F0000
 
+// Blr — blr rn (indirect call). Only x registers (X/XZR).
+func (Builder) Blr(rn Reg) (Instr, error) {
+	if err := requireClass(
+		rn,
+		"Blr",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Blr{rn: rn.name()}, nil
+}
+
 func decodeBlr(w uint32, addr uint64) Instr {
 	return Blr{
 		base: newBase(addr, w),

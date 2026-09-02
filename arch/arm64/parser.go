@@ -3,8 +3,8 @@ package arm64
 import (
 	"encoding/binary"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 
 	"github.com/okneniz/assembly/dtree"
 )
@@ -84,16 +84,16 @@ func decodeOne(word uint32, addr uint64) Instr {
 	return decodeUnknown(word, addr)
 }
 
-// Parse - constructor of a combinator that decodes ARM64 machine code
+// Parse — constructor of a combinator that decodes ARM64 machine code
 // (fixed 32-bit width, little-endian) from a parsec buffer into []Instr.
 // The word sub-combinator is built once per assembly; Try rolls the
 // position back on a truncated tail (<4 bytes), Many swallows its error
 // and drives the loop to the end of the buffer. Every 32-bit word reaches
 // the output: unrecognized encodings become a .word instruction so the
 // total line count matches objdump.
-func Parse(baseAddr uint64) common.Combinator[byte, int, []Instr] {
+func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
 	word := bytes.ReadAs[uint32](4, "arm64: word", binary.LittleEndian)
-	instr := func(buf common.Buffer[byte, int]) (Instr, common.Error[int]) {
+	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
 		addr := baseAddr + uint64(buf.Position())
 
 		w, err := word(buf)
@@ -104,5 +104,5 @@ func Parse(baseAddr uint64) common.Combinator[byte, int, []Instr] {
 		return decodeOne(w, addr), nil
 	}
 
-	return common.Many(0, bytes.Try(instr))
+	return parsec.Many(0, bytes.Try(instr))
 }

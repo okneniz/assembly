@@ -10,13 +10,13 @@ import (
 
 func TestSlliDCtor(t *testing.T) {
 	// llvm-mc-verified: slli.d $t0, $t1, 3.
-	v, err := NewUImm6(3)
+	v, err := New().UImm6(3)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x00410dac),
-		ctorWord(t, NewSlliD(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().SlliD(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

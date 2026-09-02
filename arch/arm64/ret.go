@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Ret - ret [xn] (defaults to x30).
+// Ret — ret [xn] (defaults to x30).
 type Ret struct {
 	base
 
@@ -16,8 +16,8 @@ type Ret struct {
 
 const retMatch = 0xD65F0000
 
-// NewRet - ret rn (ret without an operand is NewRet with the x30 register: X(30)).
-func NewRet(rn Reg) (Instr, error) {
+// Ret — ret rn (ret without an operand is Ret with the x30 register: X(30)).
+func (Builder) Ret(rn Reg) (Instr, error) {
 	if err := requireClass(
 		rn,
 		"Ret",

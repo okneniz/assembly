@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Mulh — mulh rd, rs1, rs2.
+// Mulh - mulh rd, rs1, rs2.
 type Mulh struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Mulh - mulh rd, rs1, rs2.
+func (Builder) Mulh(rd, rs1, rs2 Reg) Instr {
+	return Mulh{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeMulh(w uint32, addr uint64) Instr {

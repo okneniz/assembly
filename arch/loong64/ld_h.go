@@ -16,8 +16,8 @@ type LdH struct {
 	imm    imm
 }
 
-// NewLdH - ld.h rd, rj, si12.
-func NewLdH(rd, rj Reg, v Imm12) Instr {
+// LdH - ld.h rd, rj, si12.
+func (Builder) LdH(rd, rj Reg, v Imm12) Instr {
 	return LdH{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

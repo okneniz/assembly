@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmmaxDbWu - ammax_db.wu rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): unsigned fetch-max with a built-in barrier, old value to rd.
+// AmmaxDbWu - ammax_db.wu rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = max(MEM[rj], rk), unsigned. A built-in barrier.
 type AmmaxDbWu struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmmaxDbWu - ammax_db.wu rd, rk, rj (the operand order the assembler writes).
-func NewAmmaxDbWu(rd, rk, rj Reg) Instr {
+// AmmaxDbWu - ammax_db.wu rd, rk, rj.
+func (Builder) AmmaxDbWu(rd, rk, rj Reg) Instr {
 	return AmmaxDbWu{
 		rd: rd.Num(),
 		rk: rk.Num(),

@@ -17,6 +17,14 @@ type Jal struct {
 	target imm // absolute target address
 }
 
+// Jal - jal rd, target (absolute target address).
+func (Builder) Jal(rd Reg, target int64) Instr {
+	return Jal{
+		rd:     rd.name(),
+		target: immNum(target),
+	}
+}
+
 func decodeJal(w uint32, addr uint64) Instr {
 	return Jal{
 		base:   newBase(addr, w),

@@ -15,8 +15,8 @@ type Lu52iD struct {
 	imm    imm
 }
 
-// NewLu52iD - lu52i.d rd, rj, si12.
-func NewLu52iD(rd, rj Reg, v Imm12) Instr {
+// Lu52iD - lu52i.d rd, rj, si12.
+func (Builder) Lu52iD(rd, rj Reg, v Imm12) Instr {
 	return Lu52iD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

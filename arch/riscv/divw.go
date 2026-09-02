@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Divw — divw rd, rs1, rs2.
+// Divw - divw rd, rs1, rs2.
 type Divw struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Divw - divw rd, rs1, rs2.
+func (Builder) Divw(rd, rs1, rs2 Reg) Instr {
+	return Divw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeDivw(w uint32, addr uint64) Instr {

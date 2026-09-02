@@ -16,8 +16,8 @@ type LdB struct {
 	imm    imm
 }
 
-// NewLdB - ld.b rd, rj, si12.
-func NewLdB(rd, rj Reg, v Imm12) Instr {
+// LdB - ld.b rd, rj, si12.
+func (Builder) LdB(rd, rj Reg, v Imm12) Instr {
 	return LdB{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

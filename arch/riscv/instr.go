@@ -141,7 +141,7 @@ type Unknown struct {
 	base
 }
 
-func NewUnknown(base_ base) Unknown {
+func newUnknown(base_ base) Unknown {
 	return Unknown{base: base_}
 }
 

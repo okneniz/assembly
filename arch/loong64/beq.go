@@ -17,8 +17,8 @@ type Beq struct {
 	off    imm
 }
 
-// NewBeq - beq rj, rd, offs (the pc-relative byte offset).
-func NewBeq(rj, rd Reg, off int64) Instr {
+// Beq - beq rj, rd, offs (the pc-relative byte offset).
+func (Builder) Beq(rj, rd Reg, off int64) Instr {
 	return Beq{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

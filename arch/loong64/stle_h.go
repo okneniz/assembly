@@ -15,8 +15,8 @@ type StleH struct {
 	rd, rj, rk uint8
 }
 
-// NewStleH - stle.h rd, rj, rk.
-func NewStleH(rd, rj, rk Reg) Instr {
+// StleH - stle.h rd, rj, rk.
+func (Builder) StleH(rd, rj, rk Reg) Instr {
 	return StleH{
 		rd: rd.Num(),
 		rj: rj.Num(),

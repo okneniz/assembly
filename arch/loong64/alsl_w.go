@@ -16,8 +16,8 @@ type AlslW struct {
 	shift      imm
 }
 
-// NewAlslW - alsl.w rd, rj, rk, shift.
-func NewAlslW(rd, rj, rk Reg, shift Shift3) Instr {
+// AlslW - alsl.w rd, rj, rk, shift.
+func (Builder) AlslW(rd, rj, rk Reg, shift Shift3) Instr {
 	return AlslW{
 		rd:    rd.Num(),
 		rj:    rj.Num(),

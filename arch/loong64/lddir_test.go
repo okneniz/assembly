@@ -9,17 +9,17 @@ import (
 )
 
 func TestLddirCtor(t *testing.T) {
-	v, err := NewUImm8(1)
+	v, err := New().UImm8(1)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: lddir $t0, $t1, 1.
 	require.Equal(
 		t,
 		uint32(0x064005ac),
-		ctorWord(t, NewLddir(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().Lddir(lreg(t, 12), lreg(t, 13), v)),
 	)
 
-	in := NewLddir(lreg(t, 12), lreg(t, 13), v)
+	in := New().Lddir(lreg(t, 12), lreg(t, 13), v)
 	_, ok := in.(Lddir)
 	require.True(t, ok, "type = %T, want Lddir", in)
 }

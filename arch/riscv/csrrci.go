@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Csrrci — csrrci rd, csr, zimm.
+// Csrrci - csrrci rd, csr, zimm.
 type Csrrci struct {
 	base
 	csrOp
 
 	zimm imm
+}
+
+// Csrrci - csrrci rd, csr, zimm; csr is a 12-bit CSR number
+// 0..4095, zimm a 5-bit immediate 0..31.
+func (Builder) Csrrci(rd Reg, csr uint16, zimm uint8) Instr {
+	return Csrrci{
+		csrOp: newCsrOp(rd.name(), int64(csr)),
+		zimm:  immNum(int64(zimm)),
+	}
 }
 
 func decodeCsrrci(w uint32, addr uint64) Instr {

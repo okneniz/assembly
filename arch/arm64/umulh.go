@@ -16,6 +16,49 @@ type Umulh struct {
 
 const UmulhX uint32 = 0x9BC07C00
 
+// Umulh — umulh rd, rn, rm. Only the 64-bit form (the architecture
+// has no 32-bit umulh); register 31 reads as zr (use XZR).
+func (Builder) Umulh(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Umulh",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Umulh",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rm,
+		"Umulh",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Umulh{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeUmulh(w uint32, addr uint64) Instr {
 	return Umulh{
 		base: newBase(addr, w),

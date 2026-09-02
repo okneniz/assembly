@@ -14,8 +14,8 @@ type DivD struct {
 	rd, rj, rk uint8
 }
 
-// NewDivD - div.d rd, rj, rk.
-func NewDivD(rd, rj, rk Reg) Instr {
+// DivD - div.d rd, rj, rk.
+func (Builder) DivD(rd, rj, rk Reg) Instr {
 	return DivD{
 		rd: rd.Num(),
 		rj: rj.Num(),

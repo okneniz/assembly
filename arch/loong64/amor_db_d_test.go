@@ -13,10 +13,10 @@ func TestAmorDbDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x386cb5cc),
-		ctorWord(t, NewAmorDbD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmorDbD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmorDbD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmorDbD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmorDbD)
 	require.True(t, ok, "type = %T, want AmorDbD", in)
 }

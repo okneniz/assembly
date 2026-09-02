@@ -1,4 +1,4 @@
-// A minimal loader for assembly-asm binaries: mmaps the whole file and
+// A minimal loader for assembly binaries: mmaps the whole file and
 // transfers control to its start. The code in hello-*.s is
 // position-independent (adr pc-relative), so any address will do.
 //

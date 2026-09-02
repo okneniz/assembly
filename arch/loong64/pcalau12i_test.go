@@ -10,10 +10,10 @@ import (
 
 func TestPcalau12iCtor(t *testing.T) {
 	// llvm-mc-verified: pcalau12i $t0, 5.
-	v, err := NewImm20(5)
+	v, err := New().Imm20(5)
 	require.NoError(t, err)
 
-	in := NewPcalau12i(lreg(t, 12), v)
+	in := New().Pcalau12i(lreg(t, 12), v)
 	require.Equal(t, uint32(0x1a0000ac), ctorWord(t, in))
 
 	_, ok := in.(Pcalau12i)

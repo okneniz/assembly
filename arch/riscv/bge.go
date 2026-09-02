@@ -15,6 +15,15 @@ type Bge struct {
 	target   imm // absolute target address
 }
 
+// Bge - bge rs1, rs2, target (absolute target address).
+func (Builder) Bge(rs1, rs2 Reg, target int64) Instr {
+	return Bge{
+		rs1:    rs1.name(),
+		rs2:    rs2.name(),
+		target: immNum(target),
+	}
+}
+
 func decodeBge(w uint32, addr uint64) Instr {
 	return Bge{
 		base:   newBase(addr, w),

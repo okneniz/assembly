@@ -15,8 +15,8 @@ type StleD struct {
 	rd, rj, rk uint8
 }
 
-// NewStleD - stle.d rd, rj, rk.
-func NewStleD(rd, rj, rk Reg) Instr {
+// StleD - stle.d rd, rj, rk.
+func (Builder) StleD(rd, rj, rk Reg) Instr {
 	return StleD{
 		rd: rd.Num(),
 		rj: rj.Num(),

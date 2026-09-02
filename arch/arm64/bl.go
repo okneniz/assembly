@@ -16,6 +16,12 @@ type Bl struct {
 
 const blMatch = 0x94000000
 
+// Bl — bl target: target — the absolute address of the call
+// destination (the ±128MB imm26 range is checked at encode time, from pc).
+func (Builder) Bl(target int64) Instr {
+	return Bl{target: immNum(target)}
+}
+
 func decodeBl(w uint32, addr uint64) Instr {
 	return Bl{
 		base:   newBase(addr, w),

@@ -16,7 +16,7 @@ import (
 	"strconv"
 	"unicode"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 )
 
@@ -97,7 +97,7 @@ var cNumber = parsecstrings.Choice("number",
 
 // numPrefixed is a literal with a prefix ("0x", "0b") and >=1 digit of the
 // corresponding base → int64.
-func numPrefixed(prefix string, base int) common.Combinator[rune, parsecstrings.Position, *Expr] {
+func numPrefixed(prefix string, base int) parsec.Combinator[rune, parsecstrings.Position, *Expr] {
 	digits := cHexDigit
 	if base == 2 {
 		digits = cBinDigit
@@ -120,7 +120,7 @@ func numPrefixed(prefix string, base int) common.Combinator[rune, parsecstrings.
 }
 
 // octalC is '0' and >=1 octal digit ("010" = 8).
-func octalC() common.Combinator[rune, parsecstrings.Position, *Expr] {
+func octalC() parsec.Combinator[rune, parsecstrings.Position, *Expr] {
 	return parsecstrings.Cast(
 		parsecstrings.Concat(
 			2,
@@ -174,7 +174,7 @@ var decimalC = parsecstrings.Cast(
 // character: "0b1010" is a binary literal (cNumber), not the reference "0b"
 // with a tail. Builds a Sym with the full name; the assembler resolver
 // distinguishes such names by the suffix.
-var cLocalRef = func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, common.Error[parsecstrings.Position]) {
+var cLocalRef = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 	save := buf.Position()
 
 	var digits []rune
@@ -202,14 +202,14 @@ var cLocalRef = func(buf common.Buffer[rune, parsecstrings.Position]) (*Expr, co
 // rewindOrError rewinds the buffer to the saved position; a Seek error
 // becomes a parse error (as in Rewind).
 func rewindOrError(
-	buf common.Buffer[rune, parsecstrings.Position],
+	buf parsec.Buffer[rune, parsecstrings.Position],
 	save parsecstrings.Position,
-) common.Error[parsecstrings.Position] {
+) parsec.Error[parsecstrings.Position] {
 	if err := buf.Seek(save); err != nil {
-		return common.NewParseError(save, "rewind: "+err.Error())
+		return parsec.NewParseError(save, "rewind: "+err.Error())
 	}
 
-	return common.NewParseError(save, "local label reference expected")
+	return parsec.NewParseError(save, "local label reference expected")
 }
 
 // cCharLit is a character literal 'a' / '\n' / '\\' / '\0' → int64.
@@ -226,11 +226,11 @@ var cCharLit = parsecstrings.Cast(
 
 // escapeOrAny is one character: either an escape sequence (returns the
 // character itself) or an arbitrary one.
-func escapeOrAny() common.Combinator[rune, parsecstrings.Position, []rune] {
+func escapeOrAny() parsec.Combinator[rune, parsecstrings.Position, []rune] {
 	return parsecstrings.Choice(
 		"character",
-		parsecstrings.Try(func() common.Combinator[rune, parsecstrings.Position, []rune] {
-			return func(buf common.Buffer[rune, parsecstrings.Position]) ([]rune, common.Error[parsecstrings.Position]) {
+		parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, []rune] {
+			return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 				if _, err := cEsc(buf); err != nil {
 					return nil, err
 				}
@@ -254,7 +254,7 @@ func escapeOrAny() common.Combinator[rune, parsecstrings.Position, []rune] {
 					return []rune{r}, nil
 				}
 
-				return nil, common.NewParseError(pos, "unknown escape \\"+string(r))
+				return nil, parsec.NewParseError(pos, "unknown escape \\"+string(r))
 			}
 		}()),
 		parsecstrings.Cast(
@@ -267,7 +267,7 @@ func escapeOrAny() common.Combinator[rune, parsecstrings.Position, []rune] {
 }
 
 // skipWS consumes spaces (including \r and \t).
-func skipWS(buf common.Buffer[rune, parsecstrings.Position]) {
+func skipWS(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	for {
 		if _, err := cSpace(buf); err != nil {
 			return
@@ -276,7 +276,7 @@ func skipWS(buf common.Buffer[rune, parsecstrings.Position]) {
 }
 
 // peekRune returns the next rune without consuming it; ok=false at EOF.
-func peekRune(buf common.Buffer[rune, parsecstrings.Position]) (rune, bool) {
+func peekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 	if buf.IsEOF() {
 		return 0, false
 	}
@@ -293,11 +293,11 @@ func peekRune(buf common.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 // the grammar (from buf.Position()). A Seek error is also a parse error, as
 // in parsec.Try.
 func Rewind(
-	buf common.Buffer[rune, parsecstrings.Position],
+	buf parsec.Buffer[rune, parsecstrings.Position],
 	save parsecstrings.Position,
-) common.Error[parsecstrings.Position] {
+) parsec.Error[parsecstrings.Position] {
 	if err := buf.Seek(save); err != nil {
-		return common.NewParseError(save, "rewind: "+err.Error())
+		return parsec.NewParseError(save, "rewind: "+err.Error())
 	}
 
 	return nil
@@ -306,10 +306,10 @@ func Rewind(
 // ConsumeRune consumes a rune just peeked by PeekRune. A read error after a
 // successful peek is impossible; if it happens anyway - a parse error.
 func ConsumeRune(
-	buf common.Buffer[rune, parsecstrings.Position],
-) common.Error[parsecstrings.Position] {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) parsec.Error[parsecstrings.Position] {
 	if _, err := buf.Read(true); err != nil {
-		return common.NewParseError(buf.Position(), "read: "+err.Error())
+		return parsec.NewParseError(buf.Position(), "read: "+err.Error())
 	}
 
 	return nil
@@ -323,30 +323,30 @@ var (
 )
 
 // CDecDigit is a decimal digit (backend numeric literals).
-func CDecDigit() common.Combinator[rune, parsecstrings.Position, rune] {
+func CDecDigit() parsec.Combinator[rune, parsecstrings.Position, rune] {
 	return cDecDigit
 }
 
 // SkipSpaces consumes spaces (except newline).
-func SkipSpaces(buf common.Buffer[rune, parsecstrings.Position]) {
+func SkipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	skipWS(buf)
 }
 
 // PeekRune returns the next rune without consuming it; ok=false at EOF.
-func PeekRune(buf common.Buffer[rune, parsecstrings.Position]) (rune, bool) {
+func PeekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 	return peekRune(buf)
 }
 
 // SkipHash consumes a single '#' (the objdump/GAS immediate prefix) if
 // present. A Try error only means "'#' is absent" - that is allowed.
-func SkipHash(buf common.Buffer[rune, parsecstrings.Position]) {
+func SkipHash(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	if _, err := parsecstrings.Try(parsecstrings.Eq("'#'", '#'))(buf); err != nil {
 		return
 	}
 }
 
 // AtEOL is true when the end of line follows (newline or EOF).
-func AtEOL(buf common.Buffer[rune, parsecstrings.Position]) bool {
+func AtEOL(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
 	r, ok := PeekRune(buf)
 	return !ok || r == '\n'
 }

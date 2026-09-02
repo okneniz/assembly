@@ -15,6 +15,15 @@ type Andi struct {
 	imm     imm
 }
 
+// Andi - andi rd, rs1, imm (imm = 0xff is printed as zext.b).
+func (Builder) Andi(rd, rs1 Reg, imm Imm12) Instr {
+	return Andi{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		imm: immNum(imm.v),
+	}
+}
+
 func decodeAndi(w uint32, addr uint64) Instr {
 	return Andi{
 		base: newBase(addr, w),

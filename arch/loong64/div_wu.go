@@ -14,8 +14,8 @@ type DivWu struct {
 	rd, rj, rk uint8
 }
 
-// NewDivWu - div.wu rd, rj, rk.
-func NewDivWu(rd, rj, rk Reg) Instr {
+// DivWu - div.wu rd, rj, rk.
+func (Builder) DivWu(rd, rj, rk Reg) Instr {
 	return DivWu{
 		rd: rd.Num(),
 		rj: rj.Num(),

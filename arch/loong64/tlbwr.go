@@ -12,8 +12,8 @@ type Tlbwr struct {
 	base
 }
 
-// NewTlbwr - tlbwr (no operands).
-func NewTlbwr() Instr {
+// Tlbwr - tlbwr (no operands).
+func (Builder) Tlbwr() Instr {
 	return Tlbwr{}
 }
 

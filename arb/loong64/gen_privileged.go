@@ -17,8 +17,8 @@ import (
 
 // csrRW — the "reg, ui14" CSR family: csrrd/csrwr (2 ctors).
 var csrRW = []r1RoleEntry[arch.UImm14]{
-	{name: "csrrd", ctor: arch.NewCsrrd},
-	{name: "csrwr", ctor: arch.NewCsrwr},
+	{name: "csrrd", ctor: arch.New().Csrrd},
+	{name: "csrwr", ctor: arch.New().Csrwr},
 }
 
 // CsrRW — an arbitrary csrrd/csrwr instruction.
@@ -28,7 +28,7 @@ func CsrRW(rnd *rand.Rand) ohsnap.Arbitrary[R1RoleParams[arch.UImm14]] {
 
 // csrXchg — the "reg, reg, ui14" CSR family: csrxchg (1 ctor).
 var csrXchg = []r2RoleEntry[arch.UImm14]{
-	{name: "csrxchg", ctor: arch.NewCsrxchg},
+	{name: "csrxchg", ctor: arch.New().Csrxchg},
 }
 
 // CsrXchg — an arbitrary csrxchg instruction.
@@ -38,14 +38,14 @@ func CsrXchg(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
 
 // ioCsr — the iocsr 2R family (8 ctors).
 var ioCsr = []r2Entry{
-	{name: "iocsrrd.b", ctor: arch.NewIocsrrdB},
-	{name: "iocsrrd.h", ctor: arch.NewIocsrrdH},
-	{name: "iocsrrd.w", ctor: arch.NewIocsrrdW},
-	{name: "iocsrrd.d", ctor: arch.NewIocsrrdD},
-	{name: "iocsrwr.b", ctor: arch.NewIocsrwrB},
-	{name: "iocsrwr.h", ctor: arch.NewIocsrwrH},
-	{name: "iocsrwr.w", ctor: arch.NewIocsrwrW},
-	{name: "iocsrwr.d", ctor: arch.NewIocsrwrD},
+	{name: "iocsrrd.b", ctor: arch.New().IocsrrdB},
+	{name: "iocsrrd.h", ctor: arch.New().IocsrrdH},
+	{name: "iocsrrd.w", ctor: arch.New().IocsrrdW},
+	{name: "iocsrrd.d", ctor: arch.New().IocsrrdD},
+	{name: "iocsrwr.b", ctor: arch.New().IocsrwrB},
+	{name: "iocsrwr.h", ctor: arch.New().IocsrwrH},
+	{name: "iocsrwr.w", ctor: arch.New().IocsrwrW},
+	{name: "iocsrwr.d", ctor: arch.New().IocsrwrD},
 }
 
 // IoCsr — an arbitrary iocsrrd/iocsrwr instruction.
@@ -55,7 +55,7 @@ func IoCsr(rnd *rand.Rand) ohsnap.Arbitrary[R2Params] {
 
 // lddir — the page-directory walk family: lddir "rd, rj, ui8" (1 ctor).
 var lddir = []r2RoleEntry[arch.UImm8]{
-	{name: "lddir", ctor: arch.NewLddir},
+	{name: "lddir", ctor: arch.New().Lddir},
 }
 
 // Lddir — an arbitrary lddir instruction.
@@ -65,7 +65,7 @@ func Lddir(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm8]] {
 
 // ldpte — the page-table entry family: ldpte "rj, ui8" (1 ctor).
 var ldpte = []r1RoleEntry[arch.UImm8]{
-	{name: "ldpte", ctor: arch.NewLdpte},
+	{name: "ldpte", ctor: arch.New().Ldpte},
 }
 
 // Ldpte — an arbitrary ldpte instruction.
@@ -76,7 +76,7 @@ func Ldpte(rnd *rand.Rand) ohsnap.Arbitrary[R1RoleParams[arch.UImm8]] {
 // invtlb — the TLB invalidate family over the "ui5, reg, reg" shape
 // (1 ctor).
 var invtlb = []u5rrentry{
-	{name: "invtlb", ctor: arch.NewInvtlb},
+	{name: "invtlb", ctor: arch.New().Invtlb},
 }
 
 // Invtlb — an arbitrary invtlb instruction.

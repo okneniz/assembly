@@ -14,8 +14,8 @@ type Nor struct {
 	rd, rj, rk uint8
 }
 
-// NewNor - nor rd, rj, rk.
-func NewNor(rd, rj, rk Reg) Instr {
+// Nor - nor rd, rj, rk.
+func (Builder) Nor(rd, rj, rk Reg) Instr {
 	return Nor{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -13,10 +13,10 @@ func TestDivWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x002039ac),
-		ctorWord(t, NewDivW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().DivW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewDivW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().DivW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(DivW)
 	require.True(t, ok, "type = %T, want DivW", in)
 }

@@ -1,7 +1,7 @@
 package arm64
 
 // Generator for sub (immediate) — one generator, one type, one constructor
-// (arm64.NewSubImm).
+// (SubImm).
 
 import (
 	"iter"
@@ -33,7 +33,7 @@ func NewSubImmParams(rd arm64.Reg, rn arm64.Reg, imm arm64.Imm12, sh arm64.Sh12)
 }
 
 func (p SubImmParams) Instr() arm64.Instr {
-	in, err := arm64.NewSubImm(p.Rd, p.Rn, p.Imm, p.Sh)
+	in, err := arm64.New().SubImm(p.Rd, p.Rn, p.Imm, p.Sh)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -87,7 +87,7 @@ func (g subImmGen) Shrink(p SubImmParams) iter.Seq[SubImmParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm12(d)
+		imm, err := arm64.New().Imm12(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm12 is always in 0..4095
 		}

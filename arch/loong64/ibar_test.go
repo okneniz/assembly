@@ -9,11 +9,11 @@ import (
 )
 
 func TestIbarCtor(t *testing.T) {
-	c0, err := NewCode15(0)
+	c0, err := New().Code15(0)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: ibar 0.
-	require.Equal(t, uint32(0x38728000), ctorWord(t, NewIbar(c0)))
+	require.Equal(t, uint32(0x38728000), ctorWord(t, New().Ibar(c0)))
 }
 
 func TestIbarDecodeEncode(t *testing.T) {

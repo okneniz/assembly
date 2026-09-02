@@ -6,7 +6,9 @@
 /bin/
 
 # compiled binaries
+/assembly
 /assembly-server
+/cmd/assembly/assembly
 /cmd/assembly-server/assembly-server
 *.exe
 

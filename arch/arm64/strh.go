@@ -7,10 +7,42 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Strh - strh ... (see lsBase for addressing kinds).
+// Strh — strh ... (see lsBase for addressing kinds).
 type Strh struct {
 	base
 	lsBase
+}
+
+const strhEnc uint32 = 0x79000000 // strh wt, [xn, #imm12<<1]
+
+// Strh — strh rt, [rn, #off]: halfword access, rt — w register
+// only (register 31 reads as wzr), rn — x register or SP (register 31
+// in the base reads as sp); the offset is an imm12 scaled by 2
+// (0..0x1ffe, alignment 2).
+func (Builder) Strh(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Strh", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Strh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireOff("Strh", off, 1); err != nil {
+		return nil, err
+	}
+
+	return Strh{
+		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strhEnc, "", "", 0),
+	}, nil
 }
 
 func (i Strh) ObjDump(_ disasm.ViewCtx) string {

@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Srliw — srliw rd, rs1, shamt (shamt5).
+// Srliw - srliw rd, rs1, shamt (shamt5).
 type Srliw struct {
 	base
 
 	rd, rs1 string
 	shamt   imm
+}
+
+// Srliw - srliw rd, rs1, shamt (shamt5).
+func (Builder) Srliw(rd, rs1 Reg, shamt Imm12) Instr {
+	return Srliw{
+		rd:    rd.name(),
+		rs1:   rs1.name(),
+		shamt: immNum(shamt.v),
+	}
 }
 
 func decodeSrliw(w uint32, addr uint64) Instr {

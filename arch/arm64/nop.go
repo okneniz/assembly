@@ -6,12 +6,17 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Nop - nop (no operands).
+// Nop — nop (no operands).
 type Nop struct {
 	base
 }
 
 const nopMatch = 0xD503201F
+
+// Nop — nop (no operands, fixed encoding).
+func (Builder) Nop() Instr {
+	return Nop{}
+}
 
 func decodeNop(w uint32, addr uint64) Instr {
 	return Nop{base: newBase(addr, w)}

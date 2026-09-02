@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strconv"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/strings"
 )
 
@@ -82,8 +82,8 @@ var (
 	)
 
 	// cSegment - one index-width piece: 'k' + 12 -> {10, 12}.
-	cSegment = func() common.Combinator[rune, strings.Position, Field] {
-		return func(buf common.Buffer[rune, strings.Position]) (Field, common.Error[strings.Position]) {
+	cSegment = func() parsec.Combinator[rune, strings.Position, Field] {
+		return func(buf parsec.Buffer[rune, strings.Position]) (Field, parsec.Error[strings.Position]) {
 			index, err := cSegIndex(buf)
 			if err != nil {
 				return Field{}, err
@@ -100,8 +100,8 @@ var (
 
 	// cImm - one immediate slot: the signedness letter plus one or more
 	// segments.
-	cImm = strings.Try(func() common.Combinator[rune, strings.Position, Imm] {
-		return func(buf common.Buffer[rune, strings.Position]) (Imm, common.Error[strings.Position]) {
+	cImm = strings.Try(func() parsec.Combinator[rune, strings.Position, Imm] {
+		return func(buf parsec.Buffer[rune, strings.Position]) (Imm, parsec.Error[strings.Position]) {
 			sign, err := cImmSign(buf)
 			if err != nil {
 				return Imm{}, err

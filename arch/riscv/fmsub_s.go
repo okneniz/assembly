@@ -7,12 +7,25 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// FmsubS — fmsub.s fd, fs1, fs2, fs3.
+// FmsubS - fmsub.s fd, fs1, fs2, fs3.
 type FmsubS struct {
 	base
 
 	rd, rs1, rs2, rs3 string
 	rm                imm
+}
+
+// FmsubS - fmsub.s fd, fs1, fs2, fs3; the registers are FP registers taken
+// by number (Reg 0..31 is printed ft0/fa0/...); rm is the rounding mode
+// 0..7 (0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM, 7 DYN).
+func (Builder) FmsubS(rd, rs1, rs2, rs3 Reg, rm uint8) Instr {
+	return FmsubS{
+		rd:  fpName(rd),
+		rs1: fpName(rs1),
+		rs2: fpName(rs2),
+		rs3: fpName(rs3),
+		rm:  immNum(int64(rm)),
+	}
 }
 
 func decodeFmsubS(w uint32, addr uint64) Instr {

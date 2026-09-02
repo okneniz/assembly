@@ -19,17 +19,17 @@ import (
 
 // ldSt — the si12-offset load/store family (11 ctors).
 var ldSt = []r2RoleEntry[arch.Imm12]{
-	{name: "ld.b", ctor: arch.NewLdB},
-	{name: "ld.h", ctor: arch.NewLdH},
-	{name: "ld.w", ctor: arch.NewLdW},
-	{name: "ld.wu", ctor: arch.NewLdWu},
-	{name: "ld.bu", ctor: arch.NewLdBu},
-	{name: "ld.hu", ctor: arch.NewLdHu},
-	{name: "ld.d", ctor: arch.NewLdD},
-	{name: "st.b", ctor: arch.NewStB},
-	{name: "st.h", ctor: arch.NewStH},
-	{name: "st.w", ctor: arch.NewStW},
-	{name: "st.d", ctor: arch.NewStD},
+	{name: "ld.b", ctor: arch.New().LdB},
+	{name: "ld.h", ctor: arch.New().LdH},
+	{name: "ld.w", ctor: arch.New().LdW},
+	{name: "ld.wu", ctor: arch.New().LdWu},
+	{name: "ld.bu", ctor: arch.New().LdBu},
+	{name: "ld.hu", ctor: arch.New().LdHu},
+	{name: "ld.d", ctor: arch.New().LdD},
+	{name: "st.b", ctor: arch.New().StB},
+	{name: "st.h", ctor: arch.New().StH},
+	{name: "st.w", ctor: arch.New().StW},
+	{name: "st.d", ctor: arch.New().StD},
 }
 
 // LdSt — an arbitrary si12-offset load/store instruction.
@@ -39,14 +39,14 @@ func LdSt(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
 
 // ldptr — the si14-offset group: ldptr/stptr and ll/sc (8 ctors).
 var ldptr = []r2RoleEntry[arch.Imm14]{
-	{name: "ldptr.w", ctor: arch.NewLdptrW},
-	{name: "ldptr.d", ctor: arch.NewLdptrD},
-	{name: "stptr.w", ctor: arch.NewStptrW},
-	{name: "stptr.d", ctor: arch.NewStptrD},
-	{name: "ll.w", ctor: arch.NewLlW},
-	{name: "ll.d", ctor: arch.NewLlD},
-	{name: "sc.w", ctor: arch.NewScW},
-	{name: "sc.d", ctor: arch.NewScD},
+	{name: "ldptr.w", ctor: arch.New().LdptrW},
+	{name: "ldptr.d", ctor: arch.New().LdptrD},
+	{name: "stptr.w", ctor: arch.New().StptrW},
+	{name: "stptr.d", ctor: arch.New().StptrD},
+	{name: "ll.w", ctor: arch.New().LlW},
+	{name: "ll.d", ctor: arch.New().LlD},
+	{name: "sc.w", ctor: arch.New().ScW},
+	{name: "sc.d", ctor: arch.New().ScD},
 }
 
 // Ldptr — an arbitrary si14-offset (ldptr/stptr/ll/sc) instruction.
@@ -56,33 +56,33 @@ func Ldptr(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.Imm14]] {
 
 // ldxStx — the 3R indexed and bounds accesses (28 ctors).
 var ldxStx = []r3Entry{
-	{name: "ldx.b", ctor: arch.NewLdxB},
-	{name: "ldx.h", ctor: arch.NewLdxH},
-	{name: "ldx.w", ctor: arch.NewLdxW},
-	{name: "ldx.wu", ctor: arch.NewLdxWu},
-	{name: "ldx.bu", ctor: arch.NewLdxBu},
-	{name: "ldx.hu", ctor: arch.NewLdxHu},
-	{name: "ldx.d", ctor: arch.NewLdxD},
-	{name: "stx.b", ctor: arch.NewStxB},
-	{name: "stx.h", ctor: arch.NewStxH},
-	{name: "stx.w", ctor: arch.NewStxW},
-	{name: "stx.d", ctor: arch.NewStxD},
-	{name: "ldgt.b", ctor: arch.NewLdgtB},
-	{name: "ldgt.h", ctor: arch.NewLdgtH},
-	{name: "ldgt.w", ctor: arch.NewLdgtW},
-	{name: "ldgt.d", ctor: arch.NewLdgtD},
-	{name: "ldle.b", ctor: arch.NewLdleB},
-	{name: "ldle.h", ctor: arch.NewLdleH},
-	{name: "ldle.w", ctor: arch.NewLdleW},
-	{name: "ldle.d", ctor: arch.NewLdleD},
-	{name: "stgt.b", ctor: arch.NewStgtB},
-	{name: "stgt.h", ctor: arch.NewStgtH},
-	{name: "stgt.w", ctor: arch.NewStgtW},
-	{name: "stgt.d", ctor: arch.NewStgtD},
-	{name: "stle.b", ctor: arch.NewStleB},
-	{name: "stle.h", ctor: arch.NewStleH},
-	{name: "stle.w", ctor: arch.NewStleW},
-	{name: "stle.d", ctor: arch.NewStleD},
+	{name: "ldx.b", ctor: arch.New().LdxB},
+	{name: "ldx.h", ctor: arch.New().LdxH},
+	{name: "ldx.w", ctor: arch.New().LdxW},
+	{name: "ldx.wu", ctor: arch.New().LdxWu},
+	{name: "ldx.bu", ctor: arch.New().LdxBu},
+	{name: "ldx.hu", ctor: arch.New().LdxHu},
+	{name: "ldx.d", ctor: arch.New().LdxD},
+	{name: "stx.b", ctor: arch.New().StxB},
+	{name: "stx.h", ctor: arch.New().StxH},
+	{name: "stx.w", ctor: arch.New().StxW},
+	{name: "stx.d", ctor: arch.New().StxD},
+	{name: "ldgt.b", ctor: arch.New().LdgtB},
+	{name: "ldgt.h", ctor: arch.New().LdgtH},
+	{name: "ldgt.w", ctor: arch.New().LdgtW},
+	{name: "ldgt.d", ctor: arch.New().LdgtD},
+	{name: "ldle.b", ctor: arch.New().LdleB},
+	{name: "ldle.h", ctor: arch.New().LdleH},
+	{name: "ldle.w", ctor: arch.New().LdleW},
+	{name: "ldle.d", ctor: arch.New().LdleD},
+	{name: "stgt.b", ctor: arch.New().StgtB},
+	{name: "stgt.h", ctor: arch.New().StgtH},
+	{name: "stgt.w", ctor: arch.New().StgtW},
+	{name: "stgt.d", ctor: arch.New().StgtD},
+	{name: "stle.b", ctor: arch.New().StleB},
+	{name: "stle.h", ctor: arch.New().StleH},
+	{name: "stle.w", ctor: arch.New().StleW},
+	{name: "stle.d", ctor: arch.New().StleD},
 }
 
 // LdxStx — an arbitrary 3R indexed/bounds load/store instruction.
@@ -92,10 +92,10 @@ func LdxStx(rnd *rand.Rand) ohsnap.Arbitrary[R3Params] {
 
 // ldAcq — the acquire/release 2R family (4 ctors).
 var ldAcq = []r2Entry{
-	{name: "llacq.w", ctor: arch.NewLlacqW},
-	{name: "llacq.d", ctor: arch.NewLlacqD},
-	{name: "screl.w", ctor: arch.NewScrelW},
-	{name: "screl.d", ctor: arch.NewScrelD},
+	{name: "llacq.w", ctor: arch.New().LlacqW},
+	{name: "llacq.d", ctor: arch.New().LlacqD},
+	{name: "screl.w", ctor: arch.New().ScrelW},
+	{name: "screl.d", ctor: arch.New().ScrelD},
 }
 
 // LdAcq — an arbitrary acquire-load/release-store instruction.
@@ -167,9 +167,9 @@ func (g u5ri12Gen) Generate() iter.Seq[U5RI12Params] {
 }
 
 func (g u5ri12Gen) Shrink(p U5RI12Params) iter.Seq[U5RI12Params] {
-	ops := immShrunk(p.Op, arch.NewUImm5, halvingOnly)
+	ops := immShrunk(p.Op, arch.New().UImm5, halvingOnly)
 	rjs := regShrunk(p.Rj)
-	offs := immShrunk(p.Off, arch.NewImm12, halvingOnly)
+	offs := immShrunk(p.Off, arch.New().Imm12, halvingOnly)
 	out := make([]U5RI12Params, 0, len(ops)+len(rjs)+len(offs))
 	for _, v := range ops {
 		out = append(out, NewU5RI12Params(v, p.Rj, p.Off, p.Ctor))
@@ -188,8 +188,8 @@ func (g u5ri12Gen) Shrink(p U5RI12Params) iter.Seq[U5RI12Params] {
 
 // hints — the "ui5, reg, si12" memory-hint family (2 ctors).
 var hints = []u5ri12Entry{
-	{name: "preld", ctor: arch.NewPreld},
-	{name: "cacop", ctor: arch.NewCacop},
+	{name: "preld", ctor: arch.New().Preld},
+	{name: "cacop", ctor: arch.New().Cacop},
 }
 
 // Hints — an arbitrary preld/cacop instruction.
@@ -253,7 +253,7 @@ func (g u5rrGen) Generate() iter.Seq[U5RRParams] {
 }
 
 func (g u5rrGen) Shrink(p U5RRParams) iter.Seq[U5RRParams] {
-	ops := immShrunk(p.Op, arch.NewUImm5, halvingOnly)
+	ops := immShrunk(p.Op, arch.New().UImm5, halvingOnly)
 	rj, rk := regShrunk(p.Rj), regShrunk(p.Rk)
 	out := make([]U5RRParams, 0, len(ops)+len(rj)+len(rk))
 	for _, v := range ops {
@@ -274,7 +274,7 @@ func (g u5rrGen) Shrink(p U5RRParams) iter.Seq[U5RRParams] {
 // preldx — the "ui5, reg, reg" hint family (1 ctor; invtlb of the same
 // shape lives in gen_privileged.go — semantics, not shape, split them).
 var preldx = []u5rrentry{
-	{name: "preldx", ctor: arch.NewPreldx},
+	{name: "preldx", ctor: arch.New().Preldx},
 }
 
 // Preldx — an arbitrary preldx instruction.

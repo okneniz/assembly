@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Lui — lui rd, imm.
+// Lui - lui rd, imm.
 type Lui struct {
 	base
 
@@ -16,8 +16,8 @@ type Lui struct {
 	imm imm
 }
 
-// NewLui — lui rd, imm20.
-func NewLui(rd Reg, imm Imm20) Instr {
+// Lui - lui rd, imm20.
+func (Builder) Lui(rd Reg, imm Imm20) Instr {
 	return Lui{
 		rd:  rd.name(),
 		imm: immNum(imm.v),

@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Srlw — srlw rd, rs1, rs2.
+// Srlw - srlw rd, rs1, rs2.
 type Srlw struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Srlw - srlw rd, rs1, rs2.
+func (Builder) Srlw(rd, rs1, rs2 Reg) Instr {
+	return Srlw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeSrlw(w uint32, addr uint64) Instr {

@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Mulw — mulw rd, rs1, rs2.
+// Mulw - mulw rd, rs1, rs2.
 type Mulw struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Mulw - mulw rd, rs1, rs2.
+func (Builder) Mulw(rd, rs1, rs2 Reg) Instr {
+	return Mulw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeMulw(w uint32, addr uint64) Instr {

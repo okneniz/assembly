@@ -3,7 +3,7 @@
 // termination is writing 0x5555 (FINISHER_PASS) to the sifive_test test
 // device (@ 0x100000), after which qemu powers off the virtual machine.
 //
-// Build: assembly-asm -arch riscv64 -base 0x80000000 -format elf
+// Build: assembly -arch riscv64 -base 0x80000000 -format elf
 // Run: qemu-system-riscv64 -machine virt -bios none -nographic -kernel ...
 
 start:

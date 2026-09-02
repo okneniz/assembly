@@ -13,6 +13,38 @@ type Ldurh struct {
 	lsBase
 }
 
+const ldurhEnc uint32 = 0x78400000 // ldurh wt, [xn, #±imm9]
+
+// Ldurh — ldurh rt, [rn, #off]: the unscaled form, halfword
+// access, rt — w register only (register 31 reads as wzr), rn — x
+// register or SP (register 31 in the base reads as sp); the offset is a
+// signed imm9 (-0x100..0xff, any alignment).
+func (Builder) Ldurh(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Ldurh", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Ldurh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireUnscaledOff("Ldurh", off); err != nil {
+		return nil, err
+	}
+
+	return Ldurh{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurhEnc, "", "", 0),
+	}, nil
+}
+
 func (i Ldurh) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldurh %s, %s", i.rt, i.lsText())
 }

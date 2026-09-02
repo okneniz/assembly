@@ -16,6 +16,38 @@ type Rev struct {
 
 const RevX uint32 = 0xDAC00C00
 
+// Rev — rev rd, rn. Only the 64-bit form: the package's Encode
+// does not emit the 32-bit rev word (that encoding decodes as rev w,
+// see the schemas).
+func (Builder) Rev(rd, rn Reg) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Rev",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Rev",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Rev{
+		rd: rd.name(),
+		rn: rn.name(),
+	}, nil
+}
+
 func decodeRev(w uint32, addr uint64) Instr {
 	return Rev{
 		base: newBase(addr, w),

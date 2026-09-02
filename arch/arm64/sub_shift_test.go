@@ -22,14 +22,21 @@ func TestSubShiftCtor(t *testing.T) {
 		{
 			"subshift sp",
 			func() error {
-				_, err := NewSubShift(xreg(t, 0), xreg(t, 1), SP, imm6(t, 1), LSL)
+				_, err := New().SubShift(xreg(t, 0), xreg(t, 1), SP, imm6(t, 1), LSL)
+				return err
+			},
+		},
+		{
+			"subshift x+w",
+			func() error {
+				_, err := New().SubShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
 				return err
 			},
 		},
 		{
 			"subshift w + imm6=32",
 			func() error {
-				_, err := NewSubShift(wreg(t, 0), wreg(t, 1), wreg(t, 2), imm6(t, 32), LSL)
+				_, err := New().SubShift(wreg(t, 0), wreg(t, 1), wreg(t, 2), imm6(t, 32), LSL)
 				return err
 			},
 		},

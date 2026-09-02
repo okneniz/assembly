@@ -13,10 +13,10 @@ func TestAmxorDbWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x386d35cc),
-		ctorWord(t, NewAmxorDbW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmxorDbW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmxorDbW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmxorDbW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmxorDbW)
 	require.True(t, ok, "type = %T, want AmxorDbW", in)
 }

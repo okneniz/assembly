@@ -38,14 +38,14 @@ func TestRetCtor(t *testing.T) {
 		{
 			"ret sp",
 			func() error {
-				_, err := NewRet(SP)
+				_, err := New().Ret(SP)
 				return err
 			},
 		},
 		{
 			"ret w0",
 			func() error {
-				_, err := NewRet(wreg(t, 0))
+				_, err := New().Ret(wreg(t, 0))
 				return err
 			},
 		},

@@ -191,16 +191,30 @@ func TestDiffSymbols(t *testing.T) {
 	}
 }
 
-// TestDiffRelocs compares the relocations with the output of readelf -rW
-// (binutils): offset and the full r_info layout (symbol index + type).
-func TestDiffRelocs(t *testing.T) {
-	readelf, err := exec.LookPath("readelf")
-	if err != nil {
-		readelf = "/opt/homebrew/opt/binutils/bin/readelf"
-		if _, serr := os.Stat(readelf); serr != nil {
-			t.Skip("readelf is unavailable")
+// llvmReadelf - the path of llvm-readelf (the oracle for the diff tests
+// below); the test is skipped when the tool is unavailable.
+func llvmReadelf(t *testing.T) string {
+	t.Helper()
+	for _, c := range []string{
+		"/opt/homebrew/opt/llvm/bin/llvm-readelf",
+		"/opt/homebrew/bin/llvm-readelf",
+		"/usr/local/opt/llvm/bin/llvm-readelf",
+		"/usr/local/bin/llvm-readelf",
+		"llvm-readelf",
+	} {
+		if _, err := exec.LookPath(c); err == nil {
+			return c
 		}
 	}
+
+	t.Skip("llvm-readelf is unavailable")
+	return ""
+}
+
+// TestDiffRelocs compares the relocations with the output of llvm-readelf
+// -rW: offset and the full r_info layout (symbol index + type).
+func TestDiffRelocs(t *testing.T) {
+	readelf := llvmReadelf(t)
 
 	for _, path := range corpus(t) {
 		out, err := exec.CommandContext(context.Background(), readelf, "-rW", path).Output()
@@ -215,7 +229,7 @@ func TestDiffRelocs(t *testing.T) {
 
 			// readelf: a "Offset Info Type ..." line (fixed-width hex fields).
 			want := map[uint64][2]uint64{}
-			for _, line := range strings.Split(string(out), "\n") {
+			for line := range strings.SplitSeq(string(out), "\n") {
 				f := strings.Fields(line)
 				if len(f) < 2 || !isHex(f[0]) || !isHex(f[1]) {
 					continue
@@ -272,7 +286,7 @@ func isHex(s string) bool {
 }
 
 // TestRelocNames checks the type names against the expected ones (the numbers
-// verified with binutils).
+// verified with llvm-readelf).
 func TestRelocNames(t *testing.T) {
 	f, err := elf.Open("testdata/relocs-aarch64.o")
 	if err != nil {
@@ -367,15 +381,10 @@ func TestOpenNotElf(t *testing.T) {
 	require.Error(t, err, "not an ELF file")
 }
 
-// TestDiffDynamic compares .dynamic with the output of readelf -dW (tag + hex value).
+// TestDiffDynamic compares .dynamic with the output of llvm-readelf -dW
+// (tag + hex value).
 func TestDiffDynamic(t *testing.T) {
-	readelf, err := exec.LookPath("readelf")
-	if err != nil {
-		readelf = "/opt/homebrew/opt/binutils/bin/readelf"
-		if _, serr := os.Stat(readelf); serr != nil {
-			t.Skip("readelf is unavailable")
-		}
-	}
+	readelf := llvmReadelf(t)
 
 	for _, path := range corpus(t) {
 		out, err := exec.CommandContext(context.Background(), readelf, "-dW", path).Output()
@@ -395,7 +404,7 @@ func TestDiffDynamic(t *testing.T) {
 				tag, val uint64
 			}
 			want := []tv{}
-			for _, line := range strings.Split(string(out), "\n") {
+			for line := range strings.SplitSeq(string(out), "\n") {
 				f := strings.Fields(line)
 				if len(f) < 3 || !strings.HasPrefix(f[0], "0x") || !strings.HasPrefix(f[1], "(") {
 					continue

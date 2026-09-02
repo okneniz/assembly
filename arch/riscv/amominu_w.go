@@ -8,11 +8,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmominuW — amominu.w rd, rs2, (rs1).
+// AmominuW - amominu.w rd, rs2, (rs1).
 type AmominuW struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// AmominuW - amominu.w rd, rs2, (rs1).
+func (Builder) AmominuW(rd, rs1, rs2 Reg) Instr {
+	return AmominuW{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeAmominuW(w uint32, addr uint64) Instr {

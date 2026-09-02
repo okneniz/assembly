@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// SimdShift - op.Arr vd, vn, #shift (immh:immb; ushr/sshr/sri invert it).
+// SimdShift — op.Arr vd, vn, #shift (immh:immb; ushr/sshr/sri invert it).
 type SimdShift struct {
 	base
 

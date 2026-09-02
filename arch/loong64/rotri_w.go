@@ -15,8 +15,8 @@ type RotriW struct {
 	imm    imm
 }
 
-// NewRotriW - rotri.w rd, rj, ui5.
-func NewRotriW(rd, rj Reg, v UImm5) Instr {
+// RotriW - rotri.w rd, rj, ui5.
+func (Builder) RotriW(rd, rj Reg, v UImm5) Instr {
 	return RotriW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

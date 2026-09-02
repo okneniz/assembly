@@ -15,6 +15,15 @@ type Xori struct {
 	imm     imm
 }
 
+// Xori - xori rd, rs1, imm (imm = -1 is printed as not).
+func (Builder) Xori(rd, rs1 Reg, imm Imm12) Instr {
+	return Xori{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		imm: immNum(imm.v),
+	}
+}
+
 func decodeXori(w uint32, addr uint64) Instr {
 	return Xori{
 		base: newBase(addr, w),

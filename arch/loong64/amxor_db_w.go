@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmxorDbW - amxor_db.w rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): fetch-xor with a built-in barrier, old value to rd.
+// AmxorDbW - amxor_db.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] ^= rk. A built-in barrier.
 type AmxorDbW struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmxorDbW - amxor_db.w rd, rk, rj (the operand order the assembler writes).
-func NewAmxorDbW(rd, rk, rj Reg) Instr {
+// AmxorDbW - amxor_db.w rd, rk, rj.
+func (Builder) AmxorDbW(rd, rk, rj Reg) Instr {
 	return AmxorDbW{
 		rd: rd.Num(),
 		rk: rk.Num(),

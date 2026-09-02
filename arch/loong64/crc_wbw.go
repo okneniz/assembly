@@ -15,8 +15,8 @@ type CrcWBW struct {
 	rd, rj, rk uint8
 }
 
-// NewCrcWBW - crc.w.b.w rd, rj, rk.
-func NewCrcWBW(rd, rj, rk Reg) Instr {
+// CrcWBW - crc.w.b.w rd, rj, rk.
+func (Builder) CrcWBW(rd, rj, rk Reg) Instr {
 	return CrcWBW{
 		rd: rd.Num(),
 		rj: rj.Num(),

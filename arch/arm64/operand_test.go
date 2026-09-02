@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// TestRegNameRoundTrip - a name built from a number is parsed back into the
+// TestRegNameRoundTrip — a name built from a number is parsed back into the
 // same number (register name generators are the basic parameter layer).
 func TestRegNameRoundTrip(t *testing.T) {
 	for n := range uint32(31) {
@@ -42,7 +42,7 @@ func TestRegNameRoundTrip(t *testing.T) {
 	}
 }
 
-// TestRegValidation - X/W out of range return an error.
+// TestRegValidation — X/W out of range return an error.
 func TestRegValidation(t *testing.T) {
 	for _, bad := range []int{-1, 31, 100} {
 		for _, f := range []func(int) (Reg, error){X, W} {
@@ -60,7 +60,7 @@ func TestRegValidation(t *testing.T) {
 	}
 }
 
-// TestRegNames - String() of all classes.
+// TestRegNames — String() of all classes.
 func TestRegNames(t *testing.T) {
 	cases := []struct {
 		r    Reg
@@ -120,37 +120,37 @@ func TestRegNames(t *testing.T) {
 	}
 }
 
-// TestImmValidation - immediate constructors validate the range.
+// TestImmValidation — immediate constructors validate the range.
 func TestImmValidation(t *testing.T) {
 	for _, c := range []struct {
 		name string
 		call func() error
 	}{
 		{
-			"NewImm12(-1)",
+			"New().Imm12(-1)",
 			func() error {
-				_, err := NewImm12(-1)
+				_, err := New().Imm12(-1)
 				return err
 			},
 		},
 		{
-			"NewImm12(4096)",
+			"New().Imm12(4096)",
 			func() error {
-				_, err := NewImm12(4096)
+				_, err := New().Imm12(4096)
 				return err
 			},
 		},
 		{
-			"NewImm16(65536)",
+			"New().Imm16(65536)",
 			func() error {
-				_, err := NewImm16(65536)
+				_, err := New().Imm16(65536)
 				return err
 			},
 		},
 		{
-			"NewImm6(64)",
+			"New().Imm6(64)",
 			func() error {
-				_, err := NewImm6(64)
+				_, err := New().Imm6(64)
 				return err
 			},
 		},
@@ -170,7 +170,7 @@ func TestImmValidation(t *testing.T) {
 	imm6(t, 63)
 }
 
-// TestEnumString - string representations of enums.
+// TestEnumString — string representations of enums.
 func TestEnumString(t *testing.T) {
 	require.Equal(t, "lsl", LSL.String(), "Shift.String()")
 	require.Equal(t, "ror", ROR.String(), "Shift.String()")

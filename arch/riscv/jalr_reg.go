@@ -14,6 +14,13 @@ type JalrReg struct {
 	rs1 string
 }
 
+// JalrReg - jalr rs (indirect call: the fixed 32-bit form jalr ra, 0(rs)).
+func (Builder) JalrReg(rs1 Reg) Instr {
+	return JalrReg{
+		rs1: rs1.name(),
+	}
+}
+
 func (i JalrReg) ObjDump(_ disasm.ViewCtx) string {
 	return "jalr " + i.rs1
 }

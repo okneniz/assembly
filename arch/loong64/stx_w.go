@@ -14,8 +14,8 @@ type StxW struct {
 	rd, rj, rk uint8
 }
 
-// NewStxW - stx.w rd, rj, rk.
-func NewStxW(rd, rj, rk Reg) Instr {
+// StxW - stx.w rd, rj, rk.
+func (Builder) StxW(rd, rj, rk Reg) Instr {
 	return StxW{
 		rd: rd.Num(),
 		rj: rj.Num(),

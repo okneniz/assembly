@@ -14,8 +14,8 @@ type ScrelD struct {
 	rd, rj uint8
 }
 
-// NewScrelD - screl.d rd, rj.
-func NewScrelD(rd, rj Reg) Instr {
+// ScrelD - screl.d rd, rj.
+func (Builder) ScrelD(rd, rj Reg) Instr {
 	return ScrelD{
 		rd: rd.Num(),
 		rj: rj.Num(),

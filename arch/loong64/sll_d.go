@@ -14,8 +14,8 @@ type SllD struct {
 	rd, rj, rk uint8
 }
 
-// NewSllD - sll.d rd, rj, rk.
-func NewSllD(rd, rj, rk Reg) Instr {
+// SllD - sll.d rd, rj, rk.
+func (Builder) SllD(rd, rj, rk Reg) Instr {
 	return SllD{
 		rd: rd.Num(),
 		rj: rj.Num(),

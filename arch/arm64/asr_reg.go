@@ -16,6 +16,35 @@ type AsrReg struct {
 
 const AsrRegX uint32 = 0x9A002800
 
+// AsrReg — asr rd, rn, rm. Register 31 reads as zr (SP/WSP are
+// not allowed — use XZR/WZR); the width is shared by all three registers.
+func (Builder) AsrReg(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(rd, "AsrReg", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "AsrReg", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "AsrReg", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("AsrReg", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return AsrReg{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeAsrReg(w uint32, addr uint64) Instr {
 	return AsrReg{
 		base: newBase(addr, w),

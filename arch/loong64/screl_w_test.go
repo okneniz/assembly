@@ -13,10 +13,10 @@ func TestScrelWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x385785ac),
-		ctorWord(t, NewScrelW(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().ScrelW(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewScrelW(lreg(t, 1), lreg(t, 2))
+	in := New().ScrelW(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(ScrelW)
 	require.True(t, ok, "type = %T, want ScrelW", in)
 }

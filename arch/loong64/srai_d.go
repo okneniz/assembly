@@ -15,8 +15,8 @@ type SraiD struct {
 	imm    imm
 }
 
-// NewSraiD - srai.d rd, rj, ui6.
-func NewSraiD(rd, rj Reg, v UImm6) Instr {
+// SraiD - srai.d rd, rj, ui6.
+func (Builder) SraiD(rd, rj Reg, v UImm6) Instr {
 	return SraiD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

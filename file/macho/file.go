@@ -3,8 +3,8 @@ package macho
 import (
 	"encoding/binary"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 )
 
 // Header is a full mach_header{,_64} with normalized fields.
@@ -36,7 +36,7 @@ const (
 // and sections are read eagerly; the symbol tables, relocations, and dyld
 // streams lazily.
 type File struct {
-	buf      common.Buffer[byte, int]
+	buf      parsec.Buffer[byte, int]
 	base     int
 	is64     bool
 	order    binary.ByteOrder
@@ -50,7 +50,7 @@ type File struct {
 	symtabDone bool
 }
 
-func NewFile(buf common.Buffer[byte, int], base int, is64 bool, order binary.ByteOrder) *File {
+func NewFile(buf parsec.Buffer[byte, int], base int, is64 bool, order binary.ByteOrder) *File {
 	return &File{
 		buf:   buf,
 		base:  base,
@@ -117,7 +117,7 @@ func Open(path string) (*File, error) {
 }
 
 // openAt parses a Mach-O object located at offset base in the buffer.
-func openAt(buf common.Buffer[byte, int], base int) (*File, error) {
+func openAt(buf parsec.Buffer[byte, int], base int) (*File, error) {
 	magic, err := readU32At(buf, binary.LittleEndian, base)
 	if err != nil {
 		return nil, err
@@ -218,7 +218,7 @@ func isFAT(magic uint32) bool {
 // and returns its offset in the file. FAT header: magic(4) nfat_arch(4);
 // fat_arch is 20 bytes (fat_arch_64 is 32): cputype cpusubtype offset size
 // align.
-func findFATSlice(buf common.Buffer[byte, int], magicLE uint32, cpu int32) (int, error) {
+func findFATSlice(buf parsec.Buffer[byte, int], magicLE uint32, cpu int32) (int, error) {
 	// magicLE is the magic read as LE: a standard BE archive (CA FE BA BE)
 	// yields FAT_CIGAM -> the header fields are read as BigEndian, and vice
 	// versa.

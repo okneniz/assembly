@@ -10,11 +10,11 @@ import (
 
 func TestBnezCtor(t *testing.T) {
 	// llvm-mc-verified: bnez $t1, 8 (at pc 0).
-	in := NewBnez(lreg(t, 13), 8)
+	in := New().Bnez(lreg(t, 13), 8)
 	require.Equal(t, uint32(0x440009a0), ctorWord(t, in))
 
 	// llvm-mc-verified: bnez $t1, -8 (at pc 0).
-	neg := NewBnez(lreg(t, 13), -8)
+	neg := New().Bnez(lreg(t, 13), -8)
 	require.Equal(t, uint32(0x47fff9bf), ctorWord(t, neg))
 }
 

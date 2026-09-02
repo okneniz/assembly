@@ -13,10 +13,10 @@ func TestStleHCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x387eb9ac),
-		ctorWord(t, NewStleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().StleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewStleH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().StleH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(StleH)
 	require.True(t, ok, "type = %T, want StleH", in)
 }

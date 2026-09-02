@@ -11,12 +11,12 @@ import (
 func TestPreldCtor(t *testing.T) {
 	// llvm-mc-verified: preld 5, $t1, 8 (the manual prints the hint
 	// first).
-	h, err := NewUImm5(5)
+	h, err := New().UImm5(5)
 	require.NoError(t, err)
-	off, err := NewImm12(8)
+	off, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	in := NewPreld(h, lreg(t, 13), off)
+	in := New().Preld(h, lreg(t, 13), off)
 	require.Equal(t, uint32(0x2ac021a5), ctorWord(t, in))
 
 	_, ok := in.(Preld)

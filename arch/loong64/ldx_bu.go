@@ -14,8 +14,8 @@ type LdxBu struct {
 	rd, rj, rk uint8
 }
 
-// NewLdxBu - ldx.bu rd, rj, rk.
-func NewLdxBu(rd, rj, rk Reg) Instr {
+// LdxBu - ldx.bu rd, rj, rk.
+func (Builder) LdxBu(rd, rj, rk Reg) Instr {
 	return LdxBu{
 		rd: rd.Num(),
 		rj: rj.Num(),

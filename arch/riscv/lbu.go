@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Lbu — lbu rd, off(rs1).
+// Lbu - lbu rd, off(rs1).
 type Lbu struct {
 	base
 
 	rd, rs1 string
 	off     imm
+}
+
+// Lbu - lbu rd, off(rs1).
+func (Builder) Lbu(rd, rs1 Reg, off Off) Instr {
+	return Lbu{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		off: immNum(off.v),
+	}
 }
 
 func decodeLbu(w uint32, addr uint64) Instr {

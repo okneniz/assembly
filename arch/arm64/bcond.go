@@ -15,6 +15,18 @@ type Bcond struct {
 	target imm
 }
 
+// Bcond — b.cond target: target — the absolute address of the
+// branch destination (the ±1MB imm19 range is checked at encode time,
+// from pc); cond — the standard condition names (eq/ne/.../nv, see
+// condNum).
+func (Builder) Bcond(cond string, target int64) (Instr, error) {
+	if _, err := condNum(cond); err != nil {
+		return nil, fmt.Errorf("arm64.NewBcond: operand cond: %w", err)
+	}
+
+	return Bcond{cond: cond, target: immNum(target)}, nil
+}
+
 func decodeBcondOf(cond string) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		return Bcond{
@@ -42,7 +54,7 @@ func (i Bcond) Encode(w io.Writer, pc uint64) (int64, error) {
 		return 0, fmt.Errorf("b.%s: %w", i.cond, err)
 	}
 
-	return writeWord(w, 0x54000000|c|bits)
+	return writeWord(w, 0x54000000|c|bits<<5)
 }
 
 func (i Bcond) MarshalJSON() ([]byte, error) {

@@ -15,8 +15,8 @@ type LdgtH struct {
 	rd, rj, rk uint8
 }
 
-// NewLdgtH - ldgt.h rd, rj, rk.
-func NewLdgtH(rd, rj, rk Reg) Instr {
+// LdgtH - ldgt.h rd, rj, rk.
+func (Builder) LdgtH(rd, rj, rk Reg) Instr {
 	return LdgtH{
 		rd: rd.Num(),
 		rj: rj.Num(),

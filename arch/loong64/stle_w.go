@@ -15,8 +15,8 @@ type StleW struct {
 	rd, rj, rk uint8
 }
 
-// NewStleW - stle.w rd, rj, rk.
-func NewStleW(rd, rj, rk Reg) Instr {
+// StleW - stle.w rd, rj, rk.
+func (Builder) StleW(rd, rj, rk Reg) Instr {
 	return StleW{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Lwu — lwu rd, off(rs1).
+// Lwu - lwu rd, off(rs1).
 type Lwu struct {
 	base
 
 	rd, rs1 string
 	off     imm
+}
+
+// Lwu - lwu rd, off(rs1).
+func (Builder) Lwu(rd, rs1 Reg, off Off) Instr {
+	return Lwu{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		off: immNum(off.v),
+	}
 }
 
 func decodeLwu(w uint32, addr uint64) Instr {

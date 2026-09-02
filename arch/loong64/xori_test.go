@@ -10,13 +10,13 @@ import (
 
 func TestXoriCtor(t *testing.T) {
 	// llvm-mc-verified: xori $t0, $t1, 3855.
-	v, err := NewUImm12(3855)
+	v, err := New().UImm12(3855)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x03fc3dac),
-		ctorWord(t, NewXori(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().Xori(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

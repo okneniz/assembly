@@ -11,7 +11,7 @@ import (
 func uimm2v(t *testing.T, v int64) UImm2 {
 	t.Helper()
 
-	i, err := NewUImm2(v)
+	i, err := New().UImm2(v)
 	require.NoError(t, err)
 
 	return i
@@ -21,7 +21,7 @@ func uimm2v(t *testing.T, v int64) UImm2 {
 func uimm3v(t *testing.T, v int64) UImm3 {
 	t.Helper()
 
-	i, err := NewUImm3(v)
+	i, err := New().UImm3(v)
 	require.NoError(t, err)
 
 	return i
@@ -31,7 +31,7 @@ func uimm3v(t *testing.T, v int64) UImm3 {
 func uimm5v(t *testing.T, v int64) UImm5 {
 	t.Helper()
 
-	i, err := NewUImm5(v)
+	i, err := New().UImm5(v)
 	require.NoError(t, err)
 
 	return i
@@ -41,7 +41,7 @@ func uimm5v(t *testing.T, v int64) UImm5 {
 func uimm6v(t *testing.T, v int64) UImm6 {
 	t.Helper()
 
-	i, err := NewUImm6(v)
+	i, err := New().UImm6(v)
 	require.NoError(t, err)
 
 	return i
@@ -51,7 +51,7 @@ func uimm6v(t *testing.T, v int64) UImm6 {
 func shift3v(t *testing.T, v int64) Shift3 {
 	t.Helper()
 
-	s, err := NewShift3(v)
+	s, err := New().Shift3(v)
 	require.NoError(t, err)
 
 	return s
@@ -65,41 +65,41 @@ func TestBitopsBoundJSONEncodeError(t *testing.T) {
 		mnem string
 		in   Instr
 	}{
-		{"bstrins.w", NewBstrinsW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))},
-		{"bstrpick.w", NewBstrpickW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))},
-		{"bstrins.d", NewBstrinsD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))},
-		{"bstrpick.d", NewBstrpickD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))},
-		{"alsl.w", NewAlslW(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
-		{"alsl.wu", NewAlslWu(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
-		{"alsl.d", NewAlslD(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
-		{"bytepick.w", NewBytepickW(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm2v(t, 3))},
-		{"bytepick.d", NewBytepickD(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm3v(t, 3))},
-		{"crc.w.b.w", NewCrcWBW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crc.w.h.w", NewCrcWHW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crc.w.w.w", NewCrcWWW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crc.w.d.w", NewCrcWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crcc.w.b.w", NewCrccWBW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crcc.w.h.w", NewCrccWHW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crcc.w.w.w", NewCrccWWW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"crcc.w.d.w", NewCrccWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"asrtle.d", NewAsrtleD(lreg(t, 13), lreg(t, 14))},
-		{"asrtgt.d", NewAsrtgtD(lreg(t, 13), lreg(t, 14))},
-		{"ldgt.b", NewLdgtB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldgt.h", NewLdgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldgt.w", NewLdgtW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldgt.d", NewLdgtD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldle.b", NewLdleB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldle.h", NewLdleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldle.w", NewLdleW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldle.d", NewLdleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stgt.b", NewStgtB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stgt.h", NewStgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stgt.w", NewStgtW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stgt.d", NewStgtD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stle.b", NewStleB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stle.h", NewStleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stle.w", NewStleW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"stle.d", NewStleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"bstrins.w", New().BstrinsW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))},
+		{"bstrpick.w", New().BstrpickW(lreg(t, 12), lreg(t, 13), uimm5v(t, 5), uimm5v(t, 3))},
+		{"bstrins.d", New().BstrinsD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))},
+		{"bstrpick.d", New().BstrpickD(lreg(t, 12), lreg(t, 13), uimm6v(t, 5), uimm6v(t, 3))},
+		{"alsl.w", New().AlslW(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
+		{"alsl.wu", New().AlslWu(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
+		{"alsl.d", New().AlslD(lreg(t, 12), lreg(t, 13), lreg(t, 14), shift3v(t, 3))},
+		{"bytepick.w", New().BytepickW(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm2v(t, 3))},
+		{"bytepick.d", New().BytepickD(lreg(t, 12), lreg(t, 13), lreg(t, 14), uimm3v(t, 3))},
+		{"crc.w.b.w", New().CrcWBW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crc.w.h.w", New().CrcWHW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crc.w.w.w", New().CrcWWW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crc.w.d.w", New().CrcWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crcc.w.b.w", New().CrccWBW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crcc.w.h.w", New().CrccWHW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crcc.w.w.w", New().CrccWWW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"crcc.w.d.w", New().CrccWDW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"asrtle.d", New().AsrtleD(lreg(t, 13), lreg(t, 14))},
+		{"asrtgt.d", New().AsrtgtD(lreg(t, 13), lreg(t, 14))},
+		{"ldgt.b", New().LdgtB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldgt.h", New().LdgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldgt.w", New().LdgtW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldgt.d", New().LdgtD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldle.b", New().LdleB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldle.h", New().LdleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldle.w", New().LdleW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldle.d", New().LdleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stgt.b", New().StgtB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stgt.h", New().StgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stgt.w", New().StgtW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stgt.d", New().StgtD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stle.b", New().StleB(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stle.h", New().StleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stle.w", New().StleW(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"stle.d", New().StleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
 	}
 
 	for _, f := range family {

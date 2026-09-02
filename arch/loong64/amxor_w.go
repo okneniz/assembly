@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmxorW - amxor.w rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): fetch-xor, old value to rd.
+// AmxorW - amxor.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] ^= rk.
 type AmxorW struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmxorW - amxor.w rd, rk, rj (the operand order the assembler writes).
-func NewAmxorW(rd, rk, rj Reg) Instr {
+// AmxorW - amxor.w rd, rk, rj.
+func (Builder) AmxorW(rd, rk, rj Reg) Instr {
 	return AmxorW{
 		rd: rd.Num(),
 		rk: rk.Num(),

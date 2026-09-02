@@ -13,10 +13,10 @@ func TestRevbit8BCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x00004dac),
-		ctorWord(t, NewRevbit8B(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().Revbit8B(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewRevbit8B(lreg(t, 1), lreg(t, 2))
+	in := New().Revbit8B(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(Revbit8B)
 	require.True(t, ok, "type = %T, want Revbit8B", in)
 }

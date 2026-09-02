@@ -1,7 +1,7 @@
 .PHONY: fmt fmt-check vet lint tests build tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data
 
 # GOLANGCI_LINT_VERSION pins the project-local linter (see bin/golangci-lint).
-GOLANGCI_LINT_VERSION ?= v2.12.2
+GOLANGCI_LINT_VERSION ?= v2.13.2
 
 # fmt formats all Go sources via the project-local linter — gofmt (-s),
 # goimports, gci (std/external/own-module groups), golines: the formatters
@@ -36,8 +36,9 @@ fmt-check:
 vet:
 	go vet ./...
 
-# tests — the full run of all test gates in one command: rebuild the test
-# binaries → all go tests → round-trip corpus → VM matrix.
+# tests — the full run of all test gates in one command: the toolchain
+# gates in the docker container (colima: examples → go tests → round-trip
+# corpus) → the VM matrix on the host (qemu).
 # Targets — tests/Makefile, layout and external dependencies — tests/README.md;
 # individually: make -C tests <target>.
 tests:
@@ -59,11 +60,12 @@ gen-sysregs:
 generate: gen-sysregs gen-riscv-csr gen-riscv-instr gen-arm-instr gen-loongarch-instr
 
 # bin/golangci-lint installs the pinned golangci-lint into ./bin (GOBIN), so
-# the project doesn't depend on whatever golangci-lint is on PATH. The
-# -w -s ldflags keep the binary small and dodge a darwin/arm64 internal
+# the project doesn't depend on whatever golangci-lint is on PATH. The -w -s ldflags keep the binary small and dodge a darwin/arm64 internal
 # linker failure ("no room to add dwarf info") on this large binary.
+# CGO_ENABLED=0 — the linter is pure Go, and prebuilt go1.26+ toolchains
+# request a MacOSX26.sdk sysroot older CommandLineTools installs don't have.
 bin/golangci-lint:
-	GOBIN=$(CURDIR)/bin go install -ldflags='-w -s' \
+	GOBIN=$(CURDIR)/bin CGO_ENABLED=0 go install -ldflags='-w -s' \
 		github.com/golangci/golangci-lint/v2/cmd/golangci-lint@$(GOLANGCI_LINT_VERSION)
 
 # lint runs the non-modifying checks used in CI (format + vet + errcheck).

@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/okneniz/assembly/disasm"
 	"github.com/okneniz/assembly/text"
@@ -99,7 +100,7 @@ type Unknown struct {
 	base
 }
 
-func NewUnknown(base_ base) Unknown {
+func newUnknown(base_ base) Unknown {
 	return Unknown{base: base_}
 }
 
@@ -113,4 +114,23 @@ func (i Unknown) Encode(w io.Writer, _ uint64) (int64, error) {
 
 func (i Unknown) MarshalJSON() ([]byte, error) {
 	return i.marshalDTO(".word", i.ObjDump(disasm.DefaultViewCtx()), "", nil)
+}
+
+// imm - the value of an immediate operand: a concrete number. Symbolic
+// slots are evaluated by the syntax layer (asm/loong64) BEFORE the
+// structure is built - a computed instruction contains no holes. Branch
+// and jump targets are absolute addresses.
+type imm struct {
+	val int64
+}
+
+// immNum - a concrete value (decoding and construction).
+func immNum(v int64) imm {
+	return imm{val: v}
+}
+
+// text - the %d output (for ObjDump of decoded instructions: LoongArch
+// objdump prints immediates and branch targets in decimal).
+func (m imm) text() string {
+	return strconv.FormatInt(m.val, 10)
 }

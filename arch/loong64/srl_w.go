@@ -14,8 +14,8 @@ type SrlW struct {
 	rd, rj, rk uint8
 }
 
-// NewSrlW - srl.w rd, rj, rk.
-func NewSrlW(rd, rj, rk Reg) Instr {
+// SrlW - srl.w rd, rj, rk.
+func (Builder) SrlW(rd, rj, rk Reg) Instr {
 	return SrlW{
 		rd: rd.Num(),
 		rj: rj.Num(),

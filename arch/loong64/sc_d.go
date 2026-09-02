@@ -8,8 +8,7 @@ import (
 )
 
 // ScD - sc.d rd, rj, offs (DJSk14): MEM[rj + offs] = rd conditionally,
-// rd = success (store-conditional 64 bits; offs is word-scaled like
-// ll.d).
+// rd = success (store-conditional 64 bits; offs - a byte offset like ll.d).
 type ScD struct {
 	base
 
@@ -17,8 +16,8 @@ type ScD struct {
 	off    imm
 }
 
-// NewScD - sc.d rd, rj, offs (the byte offset from rj).
-func NewScD(rd, rj Reg, off Imm14) Instr {
+// ScD - sc.d rd, rj, offs (the byte offset from rj).
+func (Builder) ScD(rd, rj Reg, off Imm14) Instr {
 	return ScD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

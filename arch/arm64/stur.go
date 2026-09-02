@@ -7,10 +7,39 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Stur - stur ... (see lsBase for addressing kinds).
+// Stur — stur ... (see lsBase for addressing kinds).
 type Stur struct {
 	base
 	lsBase
+}
+
+// Encodings of the 64/32-bit forms: the access size is set by rt.
+const (
+	sturXEnc uint32 = 0xF8000000 // stur xt, [xn, #±imm9]
+	sturWEnc uint32 = 0xB8000000 // stur wt, [xn, #±imm9]
+)
+
+// Stur — stur rt, [rn, #off]: the unscaled form, rt — x/w register
+// (register 31 reads as zr), rn — x register or SP (register 31 in the
+// base reads as sp); the offset is a signed imm9 (-0x100..0xff, any
+// alignment).
+func (Builder) Stur(rt, rn Reg, off Off) (Instr, error) {
+	if err := lsOperand(rt, rn, "Stur"); err != nil {
+		return nil, err
+	}
+
+	enc := sturWEnc
+	if rt.Is64() {
+		enc = sturXEnc
+	}
+
+	if err := requireUnscaledOff("Stur", off); err != nil {
+		return nil, err
+	}
+
+	return Stur{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
+	}, nil
 }
 
 func (i Stur) ObjDump(_ disasm.ViewCtx) string {

@@ -18,6 +18,32 @@ const (
 	orrImmW uint32 = 0x32000000
 )
 
+// OrrImm — orr rd, rn, #bitmask (mov when Rn = zr). Register 31
+// reads as zr (SP/WSP are not allowed — use XZR/WZR); the mask must be
+// encodable as a logical immediate (see encodeBitMasks).
+func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
+	if err := requireClass(rd, "OrrImm", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "OrrImm", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("OrrImm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
+	if !ok {
+		return nil, fmt.Errorf("arm64.NewOrrImm: operand imm: %#x not encodable as bitmask", imm)
+	}
+
+	return OrrImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
+}
+
 func decodeOrrImm(w uint32, addr uint64) Instr {
 	return OrrImm{
 		newBase(addr, w),
@@ -47,7 +73,7 @@ func movnRep(v uint64, bits int) bool {
 	return movzRep(^v&all, bits)
 }
 
-// ObjDump - orr rd, rn, #bitmask. With Rn = ZR LLVM objdump prints the mov
+// ObjDump — orr rd, rn, #bitmask. With Rn = ZR LLVM objdump prints the mov
 // alias, but ONLY if the immediate is not representable by a single
 // MOVZ/MOVN (otherwise the text is ambiguous on reassembly:
 // mov x, #0x20 canonically = the MOVZ encoding).

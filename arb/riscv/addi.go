@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for addi — one generator, one type, one constructor
-// (riscv.NewAddi).
+// (Addi).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewAddiParams(rd riscv.Reg, rs1 riscv.Reg, imm riscv.Imm12) AddiParams {
 }
 
 func (p AddiParams) Instr() riscv.Instr {
-	return riscv.NewAddi(p.Rd, p.Rs1, p.Imm)
+	return riscv.New().Addi(p.Rd, p.Rs1, p.Imm)
 }
 func (p AddiParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -58,7 +58,7 @@ func (g addiGen) Generate() iter.Seq[AddiParams] {
 
 func (g addiGen) Shrink(p AddiParams) iter.Seq[AddiParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
-	imms := immShrunk(p.Imm, riscv.NewImm12, si12Shrink)
+	imms := immShrunk(p.Imm, riscv.New().Imm12, si12Shrink)
 	out := make([]AddiParams, 0, len(rd)+len(rs1)+len(imms))
 	for _, r := range rd {
 		out = append(out, NewAddiParams(r, p.Rs1, p.Imm))

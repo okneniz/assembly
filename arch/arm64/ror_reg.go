@@ -16,6 +16,50 @@ type RorReg struct {
 
 const RorRegX uint32 = 0x9A002C00
 
+// RorReg — ror rd, rn, rm. Only the 64-bit form (the package's
+// decode/Encode cover the x register form). Register 31 reads as zr
+// (SP/WSP are not allowed — use XZR).
+func (Builder) RorReg(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"RorReg",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"RorReg",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rm,
+		"RorReg",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return RorReg{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeRorReg(w uint32, addr uint64) Instr {
 	return RorReg{
 		base: newBase(addr, w),

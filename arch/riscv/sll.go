@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sll — sll rd, rs1, rs2.
+// Sll - sll rd, rs1, rs2.
 type Sll struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Sll - sll rd, rs1, rs2.
+func (Builder) Sll(rd, rs1, rs2 Reg) Instr {
+	return Sll{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeSll(w uint32, addr uint64) Instr {

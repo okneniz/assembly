@@ -13,7 +13,7 @@ func TestLdxBuCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x382039ac),
-		ctorWord(t, NewLdxBu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().LdxBu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 }
 

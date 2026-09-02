@@ -16,8 +16,8 @@ type Addu16iD struct {
 	imm    imm
 }
 
-// NewAddu16iD - addu16i.d rd, rj, si16.
-func NewAddu16iD(rd, rj Reg, v Imm16) Instr {
+// Addu16iD - addu16i.d rd, rj, si16.
+func (Builder) Addu16iD(rd, rj Reg, v Imm16) Instr {
 	return Addu16iD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

@@ -21,9 +21,9 @@ type Movk struct {
 	imm16, hw uint32
 }
 
-// NewMovk - movk rd, #imm16, lsl #hw*16. The 32-bit form allows only
+// Movk — movk rd, #imm16, lsl #hw*16. The 32-bit form allows only
 // Hw0/Hw1 (shift up to #16).
-func NewMovk(rd Reg, imm Imm16, hw Hw) (Instr, error) {
+func (Builder) Movk(rd Reg, imm Imm16, hw Hw) (Instr, error) {
 	if err := requireClass(
 		rd,
 		"Movk",

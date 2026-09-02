@@ -4,12 +4,120 @@ Low-level toolkit to work at the lowest level.
 
 Data driven - the authoritative decode data is generated, not hardcoded: match/mask tables come from each architecture's machine-readable source (the ARM A64 ISA XML, Spike's `encoding.h`, the `loongarch-opcodes` tables) via `gen/cmd/*` generators; what cannot be machine-generated (operand formats, aliases) is hand-written and joins the generated tables by mnemonic.
 
-## Motivation
+## Install 
 
-- interested in low-level stuff or just system programming
-- interested in AI / agentic development (all code has been written by GLM (z.ai))
-- interested in spec-driven development (A64 ISA XML + RISC-V header file + loongarch-opcodes tables)
-- want to build something complex straight to machine code - without C or asm
+Install the CLI (Go puts the `assembly` binary on PATH):
+
+```bash
+go install github.com/okneniz/assembly/cmd/assembly@latest
+```
+
+Or as package:
+
+```bash
+go get github.com/okneniz/assembly/assembly@latest
+```
+
+## How to use
+
+Just build executable files!
+
+### Assembler
+
+```
+cat tests/examples/hello-asm/hello-macos.s
+start:
+    mov     x0, #1                  // write(fd=stdout, ...)
+    adr     x1, msg                 // ... buf - string address (pc-relative)
+    mov     x2, #12                 // ... len = 12
+    movz    x16, #0x200, lsl #16    // x16 = 0x2000000 | ...
+    movk    x16, #0x4               // ... 0x4 = write
+    svc     #0x80
+
+    mov     x0, #0                  // exit(return code = 0)
+    movz    x16, #0x200, lsl #16    // x16 = 0x2000000 | ...
+    movk    x16, #0x1               // ... 0x1 = exit
+    svc     #0x80
+
+msg:
+    .ascii "hello world\n"
+```
+
+Assemble it into an executable and run it — from the repository root, on any arm64 Mac, with nothing but the CLI:
+
+```bash
+assembly -arch arm64 -format macho -o hello tests/examples/hello-asm/hello-macos.s
+./hello                  # prints "hello world"
+```
+
+### DSL for low level programming
+
+The `prog` package is the Go twin of an `.s` file: every chain method is a source line, a macro is an ordinary Go function returning `*Program`, labels and branch targets resolve at assembly time. This is `tests/examples/hello-go/macos/main.go` (imports: `prog/arm64`, `arch/arm64`):
+
+```go
+p := prog.New().
+    Label("start").
+    Mov(prog.X0, fdStdout).                     // write(fd=stdout, ...)
+    Adr(prog.X1, "msg").                        // ... buf = the string
+    Mov(prog.X2, int64(len(msg))).              // ... len
+    Movz(prog.X16, sysClassUnix>>16, arch.Hw1). // x16 = 0x2000000 | ...
+    Movk(prog.X16, sysWrite, arch.Hw0).         // ... sysWrite
+    Svc(trapMach).
+    Mov(prog.X0, 0). // exit(0)
+    Movz(prog.X16, sysClassUnix>>16, arch.Hw1).
+    Movk(prog.X16, sysExit, arch.Hw0).
+    Svc(trapMach).
+    Label("msg").
+    Ascii(msg).
+    Entry("start")
+
+bin, _ := p.Build()
+code, syms, errs := bin.Assemble(0x1000) // == hello.bin, byte for byte
+```
+
+No parser and no expression evaluator: the program is a chain of Go calls, and everything around it (constants, lengths, immediate math) is ordinary Go.
+
+### Disassembler
+
+`assembly -arch arm64 --disasm hello` reads the executable back (the tool recognizes its own container):
+
+```
+100000000: 20 00 80 d2  mov x0, #0x1
+100000004: 21 01 00 10  adr x1, #36
+100000008: 82 01 80 d2  mov x2, #0xc
+10000000c: 10 40 a0 d2  mov x16, #0x2000000
+100000010: 90 00 80 f2  movk x16, #0x4
+100000014: 01 10 00 d4  svc #0x80
+100000018: 00 00 80 d2  mov x0, #0x0
+10000001c: 10 40 a0 d2  mov x16, #0x2000000
+100000020: 30 00 80 f2  movk x16, #0x1
+100000024: 01 10 00 d4  svc #0x80
+100000028: 68 65 6c 6c  ldnp opc=0x1 imm7=0x58 Rt2=0x19 Rn=0xb Rt=0x8
+10000002c: 6f 20 77 6f  umlal2.4s v15, v3, v7[3]
+100000030: 72 6c 64 0a  bic w18, w3, w4, lsr #27
+```
+
+Read it against the source: the same instructions in the same order.
+
+The independent check - the same executable through **llvm-objdump** (Apple LLVM 17) - agrees instruction for instruction, and even resolves `_main` from the symbol table the writer emitted:
+
+```console
+$ objdump -d hello
+00000001000002b8 <_main>:
+1000002b8: d2800020    	mov  x0, #0x1                ; =1
+1000002bc: 10000121    	adr  x1, 0x1000002e0 <_main+0x28>
+1000002c0: d2800182    	mov  x2, #0xc                ; =12
+1000002c4: d2a04010    	mov  x16, #0x2000000         ; =33554432
+1000002c8: f2800090    	movk x16, #0x4
+1000002cc: d4001001    	svc  #0x80
+1000002d0: d2800000    	mov  x0, #0x0                ; =0
+1000002d4: d2a04010    	mov  x16, #0x2000000         ; =33554432
+1000002d8: f2800030    	movk x16, #0x1
+1000002dc: d4001001    	svc  #0x80
+1000002e0: 6c6c6568    	ldnp d8, d25, [x11, #-0x140]
+1000002e4: 6f77206f    	umlal2.4s v15, v3, v7[3]
+1000002e8: 0a646c72    	bic  w18, w3, w4, lsr #27
+```
 
 ## Architectures
 
@@ -19,22 +127,22 @@ Three ISA backends, fully separated (no shared line between them):
 - **RISC-V** (RV64GC) — decode + assemble with RVC compression; encodings from Spike's `encoding.h`
 - **LoongArch** (LA64) — decode + assemble, the full scalar integer set (248 instructions); encodings from the `loongarch-opcodes` tables
 
+## Motivation
+
+- interested in low-level stuff or just system programming
+- interested in AI / agentic development (all code has been written by GLM (z.ai))
+- interested in spec-driven development (A64 ISA XML + RISC-V header file + loongarch-opcodes tables)
+- want to build something complex straight to machine code - without C or asm
+
 ## Status
 
-- **99.97% byte-for-byte match** with `llvm-objdump` on a real Go Mach-O binary (155,576 of 155,625 instructions); RISC-V example matches 100%
-- **LoongArch** — the third backend: the full scalar integer set (248 instructions), 100% against `llvm-objdump` in a per-word differential over the whole table
-- **Assembler with round-trip oracle** — GNU-as compatible syntax subset plus assembly's own `Text()` output:
-  - ARM64: **99.86%** byte-exact round-trip over the 155k-instruction example (the rest are decode-equivalent encodings of ambiguous aliases)
-  - RISC-V: 89/93 byte-exact + 4 FP-rounding (lossy in objdump-style text) on the example; 400/400 on a synthetic corpus
-  - LoongArch: byte-exact on the example; `li.w`/`li.d` ladders and `la` pairs match `llvm-mc` byte-for-byte
-  - RVC compressor: 32-bit forms compress to 16-bit exactly like GNU as
-- **Data-driven schemas (ARM64)** — each ARM64 instruction is a `Schema{Mask, Value, Fields, Formatter}` with string-keyed transforms/formatters (no closures); RISC-V and LoongArch join generated `{match, mask}` tables to hand-written decode tables
-- **Self-contained binary parsers** — full ELF and Mach-O container parsers in `file/elf` and `file/macho`, fully separated like `arch/arm64`, `arch/riscv` and `arch/loong64` (not a single shared line), all via parsec:
-  - **ELF**, 32/64 LE/BE: program headers, section headers (incl. extended numbering), symtab/dynsym, RELA/REL with all `R_AARCH64_*`/`R_RISCV_*`, dynamic + `DT_*`, notes/build-id, verneed/verdef, `.gnu.hash`/`.hash`
-  - **Mach-O**, incl. FAT/Universal: all ~50 load commands, nlist + stabs, dysymtab + indirect, section relocations, dyld_info rebase/bind/lazy/weak opcode streams, exports trie, chained fixups, function starts, data-in-code, thread states, code-signature superblob
-  - zero runtime dependency on `debug/macho` or `debug/elf` (stdlib only as the diff oracle in tests)
-- **Interactive web UI** — drag-and-drop disassembly with syntax highlighting and virtual scrolling, plus an assembler panel (POST /api/v1/asm)
-- **Diff tool** — `assembly-diff` compares output against objdump for iterative coverage development
+- **Disassembler** — ARM64, RISC-V (RV64GC + RVC), LoongArch; diffed against llvm-objdump on real binaries
+- **Assembler** — GNU-as compatible syntax; assembles back into the same bytes
+- **Executable writer** — minimal ELF64 (Linux, qemu) and Mach-O (arm64 macOS, ad-hoc signed)
+- **Container parsers** — ELF and Mach-O, self-contained, no `debug/elf`/`debug/macho`
+- **Generated decode tables** — from the ARM A64 XML, Spike's `encoding.h`, `loongarch-opcodes`
+- **Web UI** — disassembly viewer + assembler panel
+- **assembly-diff** — objdump coverage gate
 
 ## Economics
 
@@ -70,16 +178,26 @@ make -C tests/examples/hello-asm compare  # same program, three ISAs side by sid
 ## Usage
 
 ```bash
+# The CLI is assembly - install it from a clone with go install ./cmd/assembly,
+# globally with
+#   go install github.com/okneniz/assembly/cmd/assembly@latest
+# or as a pinned tool of your own module with
+#   go get -tool github.com/okneniz/assembly/cmd/assembly   # then: go tool assembly
+
 # Assemble (raw binary out, hex dump to stdout, symbol table)
-go run ./cmd/assembly-asm -arch riscv64 -base 0x1000 -o prog.bin --sym prog.sym --hex prog.s
+assembly -arch riscv64 -base 0x1000 -o prog.bin --sym prog.sym --hex prog.s
 
 # Assemble into a minimal static ELF64 — runs natively on Linux arm64/riscv64/loong64,
 # under qemu on any host, no system assembler/linker needed
-go run ./cmd/assembly-asm -arch arm64 -base 0x40100000 -format elf -o prog.elf prog.s
+assembly -arch arm64 -base 0x40100000 -format elf -o prog.elf prog.s
+
+# Assemble into a Mach-O executable — runs as-is on arm64 macOS,
+# no linker, no codesign (the writer ad-hoc signs the image itself)
+assembly -arch arm64 -format macho -o prog prog.s
 
 # Disassemble a raw binary (the reverse direction of the same tool;
 # our own ELF layout is recognized automatically)
-go run ./cmd/assembly-asm -arch arm64 --disasm prog.bin
+assembly -arch arm64 --disasm prog.bin
 
 # Interactive web UI: disassembly viewer + assembler panel
 go run ./cmd/assembly-server        # → http://127.0.0.1:8080
@@ -94,12 +212,6 @@ make -C tests/examples/hello-asm            # native: "hello world"
 make -C tests/examples/hello-asm vm         # qemu-system riscv64 + arm64 + loong64 VMs
 make -C tests/examples/hello-asm compare    # same program across three ISAs
 ```
-
-Syntax: GNU-as compatible subset plus assembly's own `Text()` output
-(objdump-style absolute branch targets, aliases) — the latter gives the
-round-trip oracle `assemble(Text(instr)) == instr`. v1 limits: no
-relocations/.o output, no `.macro`, no relaxation (documented in
-`.agent/README.md`, kept locally).
 
 ## How it's tested
 

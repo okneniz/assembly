@@ -16,6 +16,22 @@ type Br struct {
 
 const brMatch = 0xD61F0000
 
+// Br — br xn (indirect branch). Only x registers (X/XZR).
+func (Builder) Br(rn Reg) (Instr, error) {
+	if err := requireClass(
+		rn,
+		"Br",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Br{rn: rn.name()}, nil
+}
+
 func decodeBr(w uint32, addr uint64) Instr {
 	return Br{
 		base: newBase(addr, w),

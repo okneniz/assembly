@@ -13,10 +13,10 @@ func TestStleDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x387fb9ac),
-		ctorWord(t, NewStleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().StleD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewStleD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().StleD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(StleD)
 	require.True(t, ok, "type = %T, want StleD", in)
 }

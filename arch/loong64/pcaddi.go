@@ -16,8 +16,8 @@ type Pcaddi struct {
 	imm imm
 }
 
-// NewPcaddi - pcaddi rd, si20.
-func NewPcaddi(rd Reg, v Imm20) Instr {
+// Pcaddi - pcaddi rd, si20.
+func (Builder) Pcaddi(rd Reg, v Imm20) Instr {
 	return Pcaddi{
 		rd:  rd.Num(),
 		imm: immNum(v.Val()),

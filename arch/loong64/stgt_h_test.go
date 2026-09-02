@@ -13,10 +13,10 @@ func TestStgtHCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x387cb9ac),
-		ctorWord(t, NewStgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().StgtH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewStgtH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().StgtH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(StgtH)
 	require.True(t, ok, "type = %T, want StgtH", in)
 }

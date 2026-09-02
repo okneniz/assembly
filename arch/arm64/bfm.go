@@ -21,6 +21,42 @@ const (
 	bfmW uint32 = 0x33000000
 )
 
+// Bfm — bfm rd, rn, #immr, #imms. Register 31 reads as zr (SP/WSP
+// are not allowed — use XZR/WZR); the width is shared by both registers;
+// immr/imms — 0..63 (the top half of the range is unpredictable in the
+// 32-bit form, as in the architecture).
+func (Builder) Bfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
+	if err := requireClass(rd, "Bfm", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Bfm", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("Bfm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	if immr > 63 || imms > 63 {
+		return nil, fmt.Errorf(
+			"arm64.NewBfm: operands immr/imms: %d/%d are out of 0..63",
+			immr,
+			imms,
+		)
+	}
+
+	return Bfm{
+		rd:   rd.name(),
+		rn:   rn.name(),
+		immr: immr,
+		imms: imms,
+		isf:  rd.Is64(),
+	}, nil
+}
+
 func decodeBfmInstr(w uint32, addr uint64) Instr {
 	return Bfm{
 		base: newBase(addr, w),

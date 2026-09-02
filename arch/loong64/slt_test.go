@@ -13,10 +13,10 @@ func TestSltCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001239ac),
-		ctorWord(t, NewSlt(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().Slt(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewSlt(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().Slt(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(Slt)
 	require.True(t, ok, "type = %T, want Slt", in)
 }

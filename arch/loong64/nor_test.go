@@ -13,10 +13,10 @@ func TestNorCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001439ac),
-		ctorWord(t, NewNor(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().Nor(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewNor(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().Nor(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(Nor)
 	require.True(t, ok, "type = %T, want Nor", in)
 }

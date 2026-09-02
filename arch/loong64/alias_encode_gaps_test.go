@@ -13,7 +13,7 @@ import (
 func code15v(t *testing.T, v int64) Code15 {
 	t.Helper()
 
-	c, err := NewCode15(v)
+	c, err := New().Code15(v)
 	require.NoError(t, err)
 
 	return c
@@ -26,13 +26,13 @@ func TestBranchScaledOffsetErrors(t *testing.T) {
 		mnem string
 		in   Instr
 	}{
-		{"bne", NewBne(lreg(t, 13), lreg(t, 12), 1<<18)},
-		{"blt", NewBlt(lreg(t, 13), lreg(t, 12), 1<<18)},
-		{"bge", NewBge(lreg(t, 13), lreg(t, 12), 1<<18)},
-		{"bltu", NewBltu(lreg(t, 13), lreg(t, 12), 1<<18)},
-		{"bgeu", NewBgeu(lreg(t, 13), lreg(t, 12), 1<<18)},
-		{"bnez", NewBnez(lreg(t, 13), 1<<23)},
-		{"bl", NewBl(1 << 28)},
+		{"bne", New().Bne(lreg(t, 13), lreg(t, 12), 1<<18)},
+		{"blt", New().Blt(lreg(t, 13), lreg(t, 12), 1<<18)},
+		{"bge", New().Bge(lreg(t, 13), lreg(t, 12), 1<<18)},
+		{"bltu", New().Bltu(lreg(t, 13), lreg(t, 12), 1<<18)},
+		{"bgeu", New().Bgeu(lreg(t, 13), lreg(t, 12), 1<<18)},
+		{"bnez", New().Bnez(lreg(t, 13), 1<<23)},
+		{"bl", New().Bl(1 << 28)},
 	}
 	// The branch offsets are raw byte offsets now: a span beyond the
 	// field width does not fit (the ldptr/stptr/ll/sc rows are absent -
@@ -44,7 +44,7 @@ func TestBranchScaledOffsetErrors(t *testing.T) {
 
 	// jirl's offset is rj-relative: the raw constructor takes any int64,
 	// the range check is genuinely dynamic.
-	_, err := NewJirl(lreg(t, 12), lreg(t, 13), 1<<18).Encode(errWriter{}, 0)
+	_, err := New().Jirl(lreg(t, 12), lreg(t, 13), 1<<18).Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "does not fit")
 }
 
@@ -91,11 +91,11 @@ func TestLateFilesJSONEncodeError(t *testing.T) {
 		mnem string
 		in   Instr
 	}{
-		{"ld.bu", NewLdBu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))},
-		{"ld.hu", NewLdHu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))},
-		{"ldx.bu", NewLdxBu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"ldx.hu", NewLdxHu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
-		{"dbcl", NewDbcl(code15v(t, 1))},
+		{"ld.bu", New().LdBu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))},
+		{"ld.hu", New().LdHu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))},
+		{"ldx.bu", New().LdxBu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"ldx.hu", New().LdxHu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
+		{"dbcl", New().Dbcl(code15v(t, 1))},
 	} {
 		b, err := tc.in.MarshalJSON()
 		require.NoError(t, err, tc.mnem)

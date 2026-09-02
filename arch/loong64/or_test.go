@@ -13,10 +13,10 @@ func TestOrCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001539ac),
-		ctorWord(t, NewOr(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().Or(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewOr(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().Or(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(Or)
 	require.True(t, ok, "type = %T, want Or", in)
 }

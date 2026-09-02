@@ -10,13 +10,13 @@ import (
 
 func TestRotriDCtor(t *testing.T) {
 	// llvm-mc-verified: rotri.d $t0, $t1, 3.
-	v, err := NewUImm6(3)
+	v, err := New().UImm6(3)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x004d0dac),
-		ctorWord(t, NewRotriD(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().RotriD(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

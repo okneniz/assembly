@@ -10,16 +10,16 @@ import (
 
 func TestScWCtor(t *testing.T) {
 	// llvm-mc-verified: sc.w $t0, $t1, 8.
-	off, err := NewImm14(8)
+	off, err := New().Imm14(8)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x210009ac),
-		ctorWord(t, NewScW(lreg(t, 12), lreg(t, 13), off)),
+		ctorWord(t, New().ScW(lreg(t, 12), lreg(t, 13), off)),
 	)
 
-	in := NewScW(lreg(t, 1), lreg(t, 2), off)
+	in := New().ScW(lreg(t, 1), lreg(t, 2), off)
 	_, ok := in.(ScW)
 	require.True(t, ok, "type = %T, want ScW", in)
 }

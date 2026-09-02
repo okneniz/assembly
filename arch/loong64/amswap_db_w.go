@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmswapDbW - amswap_db.w rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): swap with a built-in barrier, old value to rd.
+// AmswapDbW - amswap_db.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = rk. A built-in barrier.
 type AmswapDbW struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmswapDbW - amswap_db.w rd, rk, rj (the operand order the assembler writes).
-func NewAmswapDbW(rd, rk, rj Reg) Instr {
+// AmswapDbW - amswap_db.w rd, rk, rj.
+func (Builder) AmswapDbW(rd, rk, rj Reg) Instr {
 	return AmswapDbW{
 		rd: rd.Num(),
 		rk: rk.Num(),

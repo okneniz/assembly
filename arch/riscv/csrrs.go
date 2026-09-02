@@ -16,6 +16,15 @@ type Csrrs struct {
 	rs1 string
 }
 
+// Csrrs - csrrs rd, csr, rs1; csr is a 12-bit CSR number 0..4095
+// (the canonical name is resolved for display when known).
+func (Builder) Csrrs(rd Reg, csr uint16, rs1 Reg) Instr {
+	return Csrrs{
+		csrOp: newCsrOp(rd.name(), int64(csr)),
+		rs1:   rs1.name(),
+	}
+}
+
 func decodeCsrrs(w uint32, addr uint64) Instr {
 	return Csrrs{
 		base:  newBase(addr, w),

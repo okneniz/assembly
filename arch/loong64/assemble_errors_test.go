@@ -68,7 +68,7 @@ func TestShapeKindErrors(t *testing.T) {
 // TestAPIWrappers - MarshalDTO and WriteWord (the pseudo layer's pair
 // primitives).
 func TestAPIWrappers(t *testing.T) {
-	in := NewUnknown(newBase(0x10, 0x1c000000))
+	in := newUnknown(newBase(0x10, 0x1c000000))
 
 	b, err := MarshalDTO(in.base, ".word", "<unknown>", "", nil)
 	require.NoError(t, err)
@@ -86,18 +86,18 @@ func TestAPIWrappers(t *testing.T) {
 
 // TestNarrowRoles - the bytepick role bounds (2 and 3 bits).
 func TestNarrowRoles(t *testing.T) {
-	v, err := NewUImm2(3)
+	v, err := New().UImm2(3)
 	require.NoError(t, err)
 	require.Equal(t, int64(3), v.Val())
 
-	_, err = NewUImm2(4)
+	_, err = New().UImm2(4)
 	require.ErrorContains(t, err, "outside")
 
-	v3, err := NewUImm3(7)
+	v3, err := New().UImm3(7)
 	require.NoError(t, err)
 	require.Equal(t, int64(7), v3.Val())
 
-	_, err = NewUImm3(8)
+	_, err = New().UImm3(8)
 	require.ErrorContains(t, err, "outside")
 }
 

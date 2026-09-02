@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for lui — one generator, one type, one constructor
-// (riscv.NewLui).
+// (Lui).
 
 import (
 	"iter"
@@ -29,7 +29,7 @@ func NewLuiParams(rd riscv.Reg, imm riscv.Imm20) LuiParams {
 }
 
 func (p LuiParams) Instr() riscv.Instr {
-	return riscv.NewLui(p.Rd, p.Imm)
+	return riscv.New().Lui(p.Rd, p.Imm)
 }
 func (p LuiParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -57,7 +57,7 @@ func (g luiGen) Generate() iter.Seq[LuiParams] {
 
 func (g luiGen) Shrink(p LuiParams) iter.Seq[LuiParams] {
 	rd := regShrunk(p.Rd)
-	imms := immShrunk(p.Imm, riscv.NewImm20, imm20Shrink)
+	imms := immShrunk(p.Imm, riscv.New().Imm20, imm20Shrink)
 	out := make([]LuiParams, 0, len(rd)+len(imms))
 	for _, r := range rd {
 		out = append(out, NewLuiParams(r, p.Imm))

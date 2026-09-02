@@ -16,8 +16,8 @@ type Lddir struct {
 	imm    imm
 }
 
-// NewLddir - lddir rd, rj, ui8.
-func NewLddir(rd, rj Reg, v UImm8) Instr {
+// Lddir - lddir rd, rj, ui8.
+func (Builder) Lddir(rd, rj Reg, v UImm8) Instr {
 	return Lddir{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

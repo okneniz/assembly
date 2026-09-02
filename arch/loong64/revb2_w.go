@@ -14,8 +14,8 @@ type Revb2W struct {
 	rd, rj uint8
 }
 
-// NewRevb2W - revb.2w rd, rj.
-func NewRevb2W(rd, rj Reg) Instr {
+// Revb2W - revb.2w rd, rj.
+func (Builder) Revb2W(rd, rj Reg) Instr {
 	return Revb2W{
 		rd: rd.Num(),
 		rj: rj.Num(),

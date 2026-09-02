@@ -114,7 +114,7 @@ var armAliasMap = map[string][][2]string{
 // candidatesFor — candidate schemas for a mnemonic.
 func candidatesFor(mnem string) []*Schema {
 	schemas := getSchemas()
-	base := strings.SplitN(mnem, ".", 2)[0] // b.eq → b
+	base, _, _ := strings.Cut(mnem, ".") // b.eq → b
 
 	type key struct {
 		name, formatter string

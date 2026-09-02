@@ -14,8 +14,8 @@ type Xor struct {
 	rd, rj, rk uint8
 }
 
-// NewXor - xor rd, rj, rk.
-func NewXor(rd, rj, rk Reg) Instr {
+// Xor - xor rd, rj, rk.
+func (Builder) Xor(rd, rj, rk Reg) Instr {
 	return Xor{
 		rd: rd.Num(),
 		rj: rj.Num(),

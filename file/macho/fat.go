@@ -3,8 +3,8 @@ package macho
 import (
 	"encoding/binary"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 )
 
 // FatArch is a single slice of a FAT/Universal archive: architecture
@@ -16,11 +16,11 @@ type FatArch struct {
 	Size       uint64
 	Align      uint32 // log2
 
-	buf  common.Buffer[byte, int] // buffer of the archive
+	buf  parsec.Buffer[byte, int] // buffer of the archive
 	file *File
 }
 
-func NewFatArch(buf common.Buffer[byte, int]) *FatArch {
+func NewFatArch(buf parsec.Buffer[byte, int]) *FatArch {
 	return &FatArch{buf: buf}
 }
 
@@ -41,11 +41,11 @@ func (a *FatArch) Open() (*File, error) {
 
 // Fat is a whole FAT/Universal archive: all slices.
 type Fat struct {
-	buf    common.Buffer[byte, int]
+	buf    parsec.Buffer[byte, int]
 	Arches []*FatArch
 }
 
-func NewFat(buf common.Buffer[byte, int]) *Fat {
+func NewFat(buf parsec.Buffer[byte, int]) *Fat {
 	return &Fat{buf: buf}
 }
 

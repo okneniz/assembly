@@ -14,8 +14,8 @@ type AsrtgtD struct {
 	rj, rk uint8
 }
 
-// NewAsrtgtD - asrtgt.d rj, rk.
-func NewAsrtgtD(rj, rk Reg) Instr {
+// AsrtgtD - asrtgt.d rj, rk.
+func (Builder) AsrtgtD(rj, rk Reg) Instr {
 	return AsrtgtD{
 		rj: rj.Num(),
 		rk: rk.Num(),

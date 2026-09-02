@@ -11,11 +11,11 @@ import (
 func TestBltCtor(t *testing.T) {
 	// llvm-mc-verified: blt $t1, $t0, 8 (at pc 0; the manual order prints
 	// rj first). The constructor takes (rj, rd, target).
-	in := NewBlt(lreg(t, 13), lreg(t, 12), 8)
+	in := New().Blt(lreg(t, 13), lreg(t, 12), 8)
 	require.Equal(t, uint32(0x600009ac), ctorWord(t, in))
 
 	// llvm-mc-verified: blt $t1, $t0, -8 (at pc 0).
-	neg := NewBlt(lreg(t, 13), lreg(t, 12), -8)
+	neg := New().Blt(lreg(t, 13), lreg(t, 12), -8)
 	require.Equal(t, uint32(0x63fff9ac), ctorWord(t, neg))
 }
 

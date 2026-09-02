@@ -13,10 +13,10 @@ func TestMulDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001db9ac),
-		ctorWord(t, NewMulD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().MulD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewMulD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().MulD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(MulD)
 	require.True(t, ok, "type = %T, want MulD", in)
 }

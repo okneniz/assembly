@@ -15,8 +15,8 @@ type AddiD struct {
 	imm    imm
 }
 
-// NewAddiD - addi.d rd, rj, si12.
-func NewAddiD(rd, rj Reg, v Imm12) Instr {
+// AddiD - addi.d rd, rj, si12.
+func (Builder) AddiD(rd, rj Reg, v Imm12) Instr {
 	return AddiD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

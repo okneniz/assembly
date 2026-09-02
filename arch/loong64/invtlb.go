@@ -16,8 +16,8 @@ type Invtlb struct {
 	op     imm
 }
 
-// NewInvtlb - invtlb op, rj, rk (the assembly operand order).
-func NewInvtlb(op UImm5, rj, rk Reg) Instr {
+// Invtlb - invtlb op, rj, rk (the assembly operand order).
+func (Builder) Invtlb(op UImm5, rj, rk Reg) Instr {
 	return Invtlb{
 		rj: rj.Num(),
 		rk: rk.Num(),

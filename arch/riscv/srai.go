@@ -15,6 +15,15 @@ type Srai struct {
 	shamt   imm
 }
 
+// Srai - srai rd, rs1, shamt (shamt5/6 is checked at encoding).
+func (Builder) Srai(rd, rs1 Reg, shamt Imm12) Instr {
+	return Srai{
+		rd:    rd.name(),
+		rs1:   rs1.name(),
+		shamt: immNum(shamt.v),
+	}
+}
+
 func decodeSrai(w uint32, addr uint64) Instr {
 	return Srai{
 		base:  newBase(addr, w),

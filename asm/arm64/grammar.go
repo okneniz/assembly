@@ -11,7 +11,7 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	asm "github.com/okneniz/assembly/asm"
@@ -52,13 +52,13 @@ func isRegisterName(s string) bool {
 
 // cArmReg parses a register (letter prefix + digits + an optional
 // .arr), or a named one (sp/xzr/wzr/wsp/lr/fp).
-var cArmReg = func() common.Combinator[rune, parsecstrings.Position, armOp] {
+var cArmReg = func() parsec.Combinator[rune, parsecstrings.Position, armOp] {
 	letter := parsecstrings.Try(parsecstrings.Satisfy("letter", true, func(r rune) bool {
 		return r >= 'a' && r <= 'z'
 	}))
 	digit := expr.CDecDigit()
 	dot := parsecstrings.Try(parsecstrings.Eq("dot", '.'))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (armOp, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		var rs []rune
 		first, err := letter(buf)
 		if err != nil {
@@ -116,7 +116,7 @@ var cArmReg = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 		if !isRegisterName(name) {
 			// the position did not move - no rewind needed, the error
 			// goes to the caller's Try
-			return armOp{}, common.NewParseError(
+			return armOp{}, parsec.NewParseError(
 				buf.Position(),
 				fmt.Sprintf("not a register: %q", name),
 			)
@@ -134,8 +134,8 @@ var cArmReg = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 // cArmImm parses '#' + expression or a bare expression.
 var cArmImm = parsecstrings.Cast(
 	parsecstrings.SkipMany(expr.CSpace,
-		parsecstrings.Try(func() common.Combinator[rune, parsecstrings.Position, *expr.Expr] {
-			return func(buf common.Buffer[rune, parsecstrings.Position]) (*expr.Expr, common.Error[parsecstrings.Position]) {
+		parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, *expr.Expr] {
+			return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*expr.Expr, parsec.Error[parsecstrings.Position]) {
 				// an optional '#' before the immediate (objdump style)
 				expr.SkipHash(buf)
 				return expr.CExpr()(buf)
@@ -164,8 +164,8 @@ var cArmFloat = parsecstrings.Cast(
 )
 
 // floatRun parses a decimal float: digits [. digits] ([eE]...).
-func floatRun() common.Combinator[rune, parsecstrings.Position, []rune] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) ([]rune, common.Error[parsecstrings.Position]) {
+func floatRun() parsec.Combinator[rune, parsecstrings.Position, []rune] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
 		digits := func() bool {
 			n := 0
@@ -186,7 +186,7 @@ func floatRun() common.Combinator[rune, parsecstrings.Position, []rune] {
 			return n > 0
 		}
 		if !digits() {
-			return nil, common.NewParseError(buf.Position(), "float expected")
+			return nil, parsec.NewParseError(buf.Position(), "float expected")
 		}
 
 		if r, ok := expr.PeekRune(buf); ok && r == '.' {
@@ -222,7 +222,7 @@ func floatRun() common.Combinator[rune, parsecstrings.Position, []rune] {
 		}
 
 		if !strings.ContainsAny(string(out), ".eE") {
-			return nil, common.NewParseError(buf.Position(), "float expected")
+			return nil, parsec.NewParseError(buf.Position(), "float expected")
 		}
 
 		return out, nil
@@ -230,11 +230,11 @@ func floatRun() common.Combinator[rune, parsecstrings.Position, []rune] {
 }
 
 // cArmShift parses lsl/lsr/asr/ror #imm (a modifier operand).
-var cArmShift = func() common.Combinator[rune, parsecstrings.Position, armOp] {
+var cArmShift = func() parsec.Combinator[rune, parsecstrings.Position, armOp] {
 	kw := parsecstrings.Try(parsecstrings.MapStrings("shift", map[string]string{
 		"lsl": "lsl", "lsr": "lsr", "asr": "asr", "ror": "ror",
 	}))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (armOp, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		name, err := kw(buf)
 		if err != nil {
 			return armOp{}, err
@@ -254,12 +254,12 @@ var cArmShift = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 		}
 
 		if len(digits) == 0 {
-			return armOp{}, common.NewParseError(buf.Position(), "shift amount expected")
+			return armOp{}, parsec.NewParseError(buf.Position(), "shift amount expected")
 		}
 
 		amt, aerr := strconv.ParseInt(string(digits), 10, 32)
 		if aerr != nil {
-			return armOp{}, common.NewParseError(buf.Position(), "shift amount: "+aerr.Error())
+			return armOp{}, parsec.NewParseError(buf.Position(), "shift amount: "+aerr.Error())
 		}
 
 		return newShiftOp(name, expr.Num(amt)), nil
@@ -267,13 +267,13 @@ var cArmShift = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 }()
 
 // cArmExtend parses an extension (uxtw/sxtw/...) with an optional #imm.
-var cArmExtend = func() common.Combinator[rune, parsecstrings.Position, armOp] {
+var cArmExtend = func() parsec.Combinator[rune, parsecstrings.Position, armOp] {
 	kw := parsecstrings.Try(parsecstrings.MapStrings("extend", map[string]string{
 		"uxtb": "uxtb", "uxth": "uxth", "uxtw": "uxtw", "uxtx": "uxtx",
 		"sxtb": "sxtb", "sxth": "sxth", "sxtw": "sxtw", "sxtx": "sxtx",
 		"lsl": "lsl",
 	}))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (armOp, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		name, err := kw(buf)
 		if err != nil {
 			return armOp{}, err
@@ -297,7 +297,7 @@ var cArmExtend = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 			if len(digits) > 0 {
 				amt, aerr := strconv.ParseInt(string(digits), 10, 32)
 				if aerr != nil {
-					return armOp{}, common.NewParseError(
+					return armOp{}, parsec.NewParseError(
 						buf.Position(),
 						"extend amount: "+aerr.Error(),
 					)
@@ -317,12 +317,12 @@ var cArmExtend = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 
 // cArmMem parses the addressing forms: [x0] / [x0, #imm] / [x0, #imm]!
 // / [x0], #imm / [x0, x1] / [x0, x1, lsl #3] / [x0, x1, uxtw].
-var cArmMem = func() common.Combinator[rune, parsecstrings.Position, armOp] {
+var cArmMem = func() parsec.Combinator[rune, parsecstrings.Position, armOp] {
 	lb := parsecstrings.Try(parsecstrings.Eq("'['", '['))
 	rb := parsecstrings.Try(parsecstrings.Eq("']'", ']'))
 	bang := parsecstrings.Try(parsecstrings.Eq("'!'", '!'))
 	comma := parsecstrings.Try(parsecstrings.Eq("comma", ','))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (armOp, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		m := &armMem{}
 		if _, err := lb(buf); err != nil {
 			return armOp{}, err
@@ -354,7 +354,7 @@ var cArmMem = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 		}
 
 		if _, err := comma(buf); err != nil {
-			return armOp{}, common.NewParseError(buf.Position(), "expected ']' or ','")
+			return armOp{}, parsec.NewParseError(buf.Position(), "expected ']' or ','")
 		}
 
 		expr.SkipSpaces(buf)
@@ -406,11 +406,11 @@ var cArmMem = func() common.Combinator[rune, parsecstrings.Position, armOp] {
 
 // cArmList parses { v0.16b, v1.16b } / { x0, x1 } with an optional
 // index [n].
-var cArmList = func() common.Combinator[rune, parsecstrings.Position, armOp] {
+var cArmList = func() parsec.Combinator[rune, parsecstrings.Position, armOp] {
 	lb := parsecstrings.Try(parsecstrings.Eq("'{'", '{'))
 	rb := parsecstrings.Try(parsecstrings.Eq("'}'", '}'))
 	comma := parsecstrings.Try(parsecstrings.Eq("comma", ','))
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (armOp, common.Error[parsecstrings.Position]) {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		if _, err := lb(buf); err != nil {
 			return armOp{}, err
 		}
@@ -483,8 +483,8 @@ var cArmMnemonic = parsecstrings.Cast(
 )
 
 // Instruction is the grammar "mnemonic comma-separated operands".
-func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, common.Error[parsecstrings.Position]) {
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		expr.SkipSpaces(buf)
 		mnem, err := cArmMnemonic(buf)
@@ -493,7 +493,7 @@ func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, 
 		}
 
 		if r, ok := expr.PeekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' {
-			return nil, common.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", mnem))
+			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", mnem))
 		}
 
 		in := newArmAsmInstr(mnem, b.extraCtors)
@@ -545,9 +545,9 @@ func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, 
 // suffix is optional: its absence is not an error, only a failed
 // rewind is.
 func parseRegIndex(
-	buf common.Buffer[rune, parsecstrings.Position],
+	buf parsec.Buffer[rune, parsecstrings.Position],
 	op *armOp,
-) common.Error[parsecstrings.Position] {
+) parsec.Error[parsecstrings.Position] {
 	if op.kind != armOpReg {
 		return nil
 	}
@@ -580,7 +580,7 @@ func parseRegIndex(
 
 	idx, err := strconv.ParseInt(string(digits), 10, 32)
 	if err != nil {
-		return common.NewParseError(buf.Position(), "register index: "+err.Error())
+		return parsec.NewParseError(buf.Position(), "register index: "+err.Error())
 	}
 
 	op.expr = expr.Num(idx)
@@ -589,7 +589,7 @@ func parseRegIndex(
 
 // Comment parses ';' and '//' to the end of the line ('#' is NOT a
 // comment - it is the imm prefix!).
-func (b *Backend) Comment() common.Combinator[rune, parsecstrings.Position, string] {
+func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
 	body := parsecstrings.Many(4, expr.CNotNL)
 	semi := parsecstrings.Cast(
 		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", ';')), body),

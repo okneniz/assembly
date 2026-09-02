@@ -8,7 +8,7 @@ package loong64
 import (
 	"fmt"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -60,8 +60,8 @@ var cRegOperand = parsecstrings.Cast(
 // cOperand parses an operand: a register or an expression.
 var cOperand = parsecstrings.Choice("operand",
 	parsecstrings.Try(cRegOperand),
-	parsecstrings.Try(func() common.Combinator[rune, parsecstrings.Position, Op] {
-		return func(buf common.Buffer[rune, parsecstrings.Position]) (Op, common.Error[parsecstrings.Position]) {
+	parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, Op] {
+		return func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
 			e, err := expr.CExpr()(buf)
 			if err != nil {
 				return Op{}, err
@@ -73,20 +73,20 @@ var cOperand = parsecstrings.Choice("operand",
 )
 
 // skipSpaces consumes spaces (except the newline).
-func skipSpaces(buf common.Buffer[rune, parsecstrings.Position]) {
+func skipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
 }
 
 // peekRune returns the next rune without consuming it; ok=false at EOF.
-func peekRune(buf common.Buffer[rune, parsecstrings.Position]) (rune, bool) {
+func peekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 	return expr.PeekRune(buf)
 }
 
 // ParseOps parses the operand list after the mnemonic (to the end of
 // the line, comma-separated) - the assembler's operand grammar.
 func ParseOps(
-	buf common.Buffer[rune, parsecstrings.Position],
-) ([]Op, common.Error[parsecstrings.Position]) {
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) ([]Op, parsec.Error[parsecstrings.Position]) {
 	var ops []Op
 
 	expr.SkipSpaces(buf)

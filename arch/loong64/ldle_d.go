@@ -15,8 +15,8 @@ type LdleD struct {
 	rd, rj, rk uint8
 }
 
-// NewLdleD - ldle.d rd, rj, rk.
-func NewLdleD(rd, rj, rk Reg) Instr {
+// LdleD - ldle.d rd, rj, rk.
+func (Builder) LdleD(rd, rj, rk Reg) Instr {
 	return LdleD{
 		rd: rd.Num(),
 		rj: rj.Num(),

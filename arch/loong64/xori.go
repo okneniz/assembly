@@ -15,8 +15,8 @@ type Xori struct {
 	imm    imm
 }
 
-// NewXori - xori rd, rj, ui12.
-func NewXori(rd, rj Reg, v UImm12) Instr {
+// Xori - xori rd, rj, ui12.
+func (Builder) Xori(rd, rj Reg, v UImm12) Instr {
 	return Xori{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

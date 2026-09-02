@@ -13,10 +13,10 @@ func TestAmminWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x386635cc),
-		ctorWord(t, NewAmminW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmminW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmminW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmminW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmminW)
 	require.True(t, ok, "type = %T, want AmminW", in)
 }

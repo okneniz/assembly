@@ -1,6 +1,7 @@
 // Package loong64 — per-instruction LoongArch (LA64) structs: word
-// decoders, formatters (objdump notation) and assembler constructors,
-// with the encoding bits joined from the generated loongEncodings table.
+// decoders, formatters (objdump notation) and instruction constructors
+// (the Builder methods, the exact inverse of decode), with the encoding
+// bits joined from the generated loongEncodings table.
 package loong64
 
 import (
@@ -17,8 +18,8 @@ type AddW struct {
 	rd, rj, rk uint8
 }
 
-// NewAddW - add.w rd, rj, rk.
-func NewAddW(rd, rj, rk Reg) Instr {
+// AddW - add.w rd, rj, rk.
+func (Builder) AddW(rd, rj, rk Reg) Instr {
 	return AddW{
 		rd: rd.Num(),
 		rj: rj.Num(),

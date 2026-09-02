@@ -14,8 +14,8 @@ type SraD struct {
 	rd, rj, rk uint8
 }
 
-// NewSraD - sra.d rd, rj, rk.
-func NewSraD(rd, rj, rk Reg) Instr {
+// SraD - sra.d rd, rj, rk.
+func (Builder) SraD(rd, rj, rk Reg) Instr {
 	return SraD{
 		rd: rd.Num(),
 		rj: rj.Num(),

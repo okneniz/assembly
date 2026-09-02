@@ -13,10 +13,10 @@ func TestAmminDbWuCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x387135cc),
-		ctorWord(t, NewAmminDbWu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AmminDbWu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAmminDbWu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().AmminDbWu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(AmminDbWu)
 	require.True(t, ok, "type = %T, want AmminDbWu", in)
 }

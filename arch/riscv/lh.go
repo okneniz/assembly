@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Lh — lh rd, off(rs1).
+// Lh - lh rd, off(rs1).
 type Lh struct {
 	base
 
 	rd, rs1 string
 	off     imm
+}
+
+// Lh - lh rd, off(rs1).
+func (Builder) Lh(rd, rs1 Reg, off Off) Instr {
+	return Lh{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		off: immNum(off.v),
+	}
 }
 
 func decodeLh(w uint32, addr uint64) Instr {

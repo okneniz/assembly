@@ -13,7 +13,7 @@ func TestAddiDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x02ffc1ac),
-		ctorWord(t, NewAddiD(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
+		ctorWord(t, New().AddiD(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
 	)
 }
 

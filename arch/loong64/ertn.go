@@ -11,8 +11,8 @@ type Ertn struct {
 	base
 }
 
-// NewErtn - ertn (no operands).
-func NewErtn() Instr {
+// Ertn - ertn (no operands).
+func (Builder) Ertn() Instr {
 	return Ertn{}
 }
 

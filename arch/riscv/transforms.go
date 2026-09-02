@@ -1,5 +1,6 @@
 // Package riscv - per-instruction RISC-V structures: decoders, formatters
-// (objdump notation), and assembler constructors.
+// (objdump notation), and instruction constructors — the Builder methods
+// (Addi, Lw, ...), the exact inverse of decode.
 //
 // RISC-V register names in ABI notation (as objdump prints them): integer
 // and floating; used by the decode constructors of per-instruction

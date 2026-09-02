@@ -17,8 +17,20 @@ type Csneg struct {
 	Csel
 }
 
-func NewCsneg(csel Csel) Csneg {
-	return Csneg{Csel: csel}
+// Csneg — csneg rd, rn, rm, cond (cneg pseudo); the operand
+// constraints are those of Csel.
+func (Builder) Csneg(rd, rn, rm Reg, cond string) (Instr, error) {
+	base, err := New().Csel(rd, rn, rm, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	c, ok := base.(Csel)
+	if !ok {
+		return nil, fmt.Errorf("csneg: internal: want Csel, got %T", base)
+	}
+
+	return Csneg{Csel: c}, nil
 }
 
 func decodeCsneg(w uint32, addr uint64) Instr {

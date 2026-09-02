@@ -14,8 +14,8 @@ type LlacqD struct {
 	rd, rj uint8
 }
 
-// NewLlacqD - llacq.d rd, rj.
-func NewLlacqD(rd, rj Reg) Instr {
+// LlacqD - llacq.d rd, rj.
+func (Builder) LlacqD(rd, rj Reg) Instr {
 	return LlacqD{
 		rd: rd.Num(),
 		rj: rj.Num(),

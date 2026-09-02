@@ -13,7 +13,7 @@ func TestSltuiCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x027fc1ac),
-		ctorWord(t, NewSltui(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
+		ctorWord(t, New().Sltui(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
 	)
 }
 

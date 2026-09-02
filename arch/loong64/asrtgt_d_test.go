@@ -14,10 +14,10 @@ func TestAsrtgtDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x0001b9a0),
-		ctorWord(t, NewAsrtgtD(lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().AsrtgtD(lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewAsrtgtD(lreg(t, 1), lreg(t, 2))
+	in := New().AsrtgtD(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(AsrtgtD)
 	require.True(t, ok, "type = %T, want AsrtgtD", in)
 }

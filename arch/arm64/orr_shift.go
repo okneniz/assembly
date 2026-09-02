@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// OrrShift - orr rd, rn, rm[, shift #imm6]; pseudo: mov (Rn = zr).
+// OrrShift — orr rd, rn, rm[, shift #imm6]; pseudo: mov (Rn = zr).
 type OrrShift struct {
 	base
 
@@ -22,6 +22,39 @@ const (
 	OrrShiftX uint32 = 0xAA000000
 	OrrShiftW uint32 = 0x2A000000
 )
+
+// OrrShift — orr rd, rn, rm[, shift #imm6] (mov when Rn = zr).
+// Register 31 reads as zr (SP/WSP are not allowed — use XZR/WZR);
+// shift — lsl/lsr/asr/ror.
+func (Builder) OrrShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+	if err := requireClass(rd, "OrrShift", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "OrrShift", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "OrrShift", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("OrrShift", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return OrrShift{
+		rd:    rd.name(),
+		rn:    rn.name(),
+		rm:    rm.name(),
+		imm6:  imm.v,
+		shift: sh.String(),
+		isf:   rd.Is64(),
+	}, nil
+}
 
 func decodeOrrShift(w uint32, addr uint64) Instr {
 	return OrrShift{

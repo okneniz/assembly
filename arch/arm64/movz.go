@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Movz - movz rd, #(imm16 << hw*16); displayed as mov.
+// Movz — movz rd, #(imm16 << hw*16); displayed as mov.
 type Movz struct {
 	base
 
@@ -21,9 +21,9 @@ const (
 	movzW uint32 = 0x52800000
 )
 
-// NewMovz - movz rd, #imm16, lsl #hw*16 (displayed as mov).
+// Movz — movz rd, #imm16, lsl #hw*16 (displayed as mov).
 // The 32-bit form allows only Hw0/Hw1 (shift up to #16).
-func NewMovz(rd Reg, imm Imm16, hw Hw) (Instr, error) {
+func (Builder) Movz(rd Reg, imm Imm16, hw Hw) (Instr, error) {
 	if err := requireClass(
 		rd,
 		"Movz",

@@ -2,7 +2,7 @@
 // No OS: output is byte writes to the PL011 UART (@ 0x09000000, MMIO),
 // termination is PSCI SYSTEM_OFF via HVC (qemu virt provides PSCI without firmware).
 //
-// Build: assembly-asm -arch arm64 -base 0x40100000 -format elf
+// Build: assembly -arch arm64 -base 0x40100000 -format elf
 // Run: qemu-system-aarch64 -machine virt -cpu cortex-a53 -nographic
 //         -device loader,file=...,cpu-num=0
 

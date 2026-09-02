@@ -15,8 +15,8 @@ type SlliD struct {
 	imm    imm
 }
 
-// NewSlliD - slli.d rd, rj, ui6.
-func NewSlliD(rd, rj Reg, v UImm6) Instr {
+// SlliD - slli.d rd, rj, ui6.
+func (Builder) SlliD(rd, rj Reg, v UImm6) Instr {
 	return SlliD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

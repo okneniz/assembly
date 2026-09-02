@@ -48,14 +48,14 @@ func TestMovzCtor(t *testing.T) {
 		{
 			"movz sp",
 			func() error {
-				_, err := NewMovz(SP, imm16(t, 1), Hw0)
+				_, err := New().Movz(SP, imm16(t, 1), Hw0)
 				return err
 			},
 		},
 		{
 			"movz w0,hw2",
 			func() error {
-				_, err := NewMovz(wreg(t, 0), imm16(t, 1), Hw2)
+				_, err := New().Movz(wreg(t, 0), imm16(t, 1), Hw2)
 				return err
 			},
 		},

@@ -4,7 +4,7 @@
 # (/matrix/orig) with the ones rebuilt by our ELF writer (/matrix/rt):
 # the commands' stdout/stderr/exit codes and the server's HTTP responses must
 # match byte for byte. __ARCH__ is substituted at image build time
-# (arm64|riscv64).
+# (arm64|riscv64|loong64).
 
 ARCH=__ARCH__
 
@@ -26,9 +26,9 @@ dump_pair() { # log file name prefix
 	diff "/tmp/$1-orig.log" "/tmp/$1-rt.log" 2>&1 | head -20
 }
 
-# --- assembly-asm: assembling the example, usage exit, disasm of the blob ---
+# --- assembly: assembling the example, usage exit, disasm of the blob ---
 for side in orig rt; do
-	BIN=/matrix/$side/assembly-asm
+	BIN=/matrix/$side/assembly
 	{
 		echo "=== asm:hex ==="
 		"$BIN" -arch "$ARCH" -base 0 --hex /matrix/in/hello.s

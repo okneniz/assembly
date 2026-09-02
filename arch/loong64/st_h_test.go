@@ -10,10 +10,10 @@ import (
 
 func TestStHCtor(t *testing.T) {
 	// llvm-mc-verified: st.h $t0, $t1, 8.
-	v, err := NewImm12(8)
+	v, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	in := NewStH(lreg(t, 12), lreg(t, 13), v)
+	in := New().StH(lreg(t, 12), lreg(t, 13), v)
 	require.Equal(t, uint32(0x294021ac), ctorWord(t, in))
 
 	_, ok := in.(StH)

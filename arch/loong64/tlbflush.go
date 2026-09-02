@@ -11,8 +11,8 @@ type Tlbflush struct {
 	base
 }
 
-// NewTlbflush - tlbflush (no operands).
-func NewTlbflush() Instr {
+// Tlbflush - tlbflush (no operands).
+func (Builder) Tlbflush() Instr {
 	return Tlbflush{}
 }
 

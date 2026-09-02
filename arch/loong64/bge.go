@@ -17,8 +17,8 @@ type Bge struct {
 	off    imm
 }
 
-// NewBge - bge rj, rd, offs (the pc-relative byte offset).
-func NewBge(rj, rd Reg, off int64) Instr {
+// Bge - bge rj, rd, offs (the pc-relative byte offset).
+func (Builder) Bge(rj, rd Reg, off int64) Instr {
 	return Bge{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

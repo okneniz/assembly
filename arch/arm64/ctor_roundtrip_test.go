@@ -14,8 +14,8 @@ import (
 func TestCtorDecodeRoundTripUnit(t *testing.T) {
 	ins := []Instr{
 		ctorRet(t, xreg(t, 30)),
-		NewSvc(imm16(t, 0x80)),
-		NewBrk(imm16(t, 0)),
+		New().Svc(imm16(t, 0x80)),
+		New().Brk(imm16(t, 0)),
 		ctorMovz(t, xreg(t, 9), imm16(t, 0xbeef), Hw1),
 		ctorMovk(t, wreg(t, 4), imm16(t, 0x1234), Hw0),
 		ctorAddImm(t, SP, SP, imm12(t, 0x20), NoSh12),

@@ -9,17 +9,17 @@ import (
 )
 
 func TestLdpteCtor(t *testing.T) {
-	v, err := NewUImm8(1)
+	v, err := New().UImm8(1)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: ldpte $t1, 1.
 	require.Equal(
 		t,
 		uint32(0x064405a0),
-		ctorWord(t, NewLdpte(lreg(t, 13), v)),
+		ctorWord(t, New().Ldpte(lreg(t, 13), v)),
 	)
 
-	in := NewLdpte(lreg(t, 13), v)
+	in := New().Ldpte(lreg(t, 13), v)
 	_, ok := in.(Ldpte)
 	require.True(t, ok, "type = %T, want Ldpte", in)
 }

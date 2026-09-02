@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Slti — slti rd, rs1, imm.
+// Slti - slti rd, rs1, imm.
 type Slti struct {
 	base
 
 	rd, rs1 string
 	imm     imm
+}
+
+// Slti - slti rd, rs1, imm.
+func (Builder) Slti(rd, rs1 Reg, imm Imm12) Instr {
+	return Slti{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		imm: immNum(imm.v),
+	}
 }
 
 func decodeSlti(w uint32, addr uint64) Instr {

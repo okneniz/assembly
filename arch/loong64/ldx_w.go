@@ -14,8 +14,8 @@ type LdxW struct {
 	rd, rj, rk uint8
 }
 
-// NewLdxW - ldx.w rd, rj, rk.
-func NewLdxW(rd, rj, rk Reg) Instr {
+// LdxW - ldx.w rd, rj, rk.
+func (Builder) LdxW(rd, rj, rk Reg) Instr {
 	return LdxW{
 		rd: rd.Num(),
 		rj: rj.Num(),

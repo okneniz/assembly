@@ -15,6 +15,15 @@ type Blt struct {
 	target   imm // absolute target address
 }
 
+// Blt - blt rs1, rs2, target (absolute target address).
+func (Builder) Blt(rs1, rs2 Reg, target int64) Instr {
+	return Blt{
+		rs1:    rs1.name(),
+		rs2:    rs2.name(),
+		target: immNum(target),
+	}
+}
+
 func decodeBlt(w uint32, addr uint64) Instr {
 	return Blt{
 		base:   newBase(addr, w),

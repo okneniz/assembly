@@ -11,24 +11,24 @@ import (
 // of every branch/trap instruction of this family (the rest is covered by
 // the per-file tests).
 func TestBranchMiscFamilyJSONEncodeError(t *testing.T) {
-	code0, err := NewCode15(0)
+	code0, err := New().Code15(0)
 	require.NoError(t, err)
 
 	family := []struct {
 		mnem string
 		in   Instr
 	}{
-		{"bne", NewBne(lreg(t, 13), lreg(t, 12), 8)},
-		{"blt", NewBlt(lreg(t, 13), lreg(t, 12), 8)},
-		{"bge", NewBge(lreg(t, 13), lreg(t, 12), 8)},
-		{"bltu", NewBltu(lreg(t, 13), lreg(t, 12), 8)},
-		{"bgeu", NewBgeu(lreg(t, 13), lreg(t, 12), 8)},
-		{"bnez", NewBnez(lreg(t, 13), 8)},
-		{"bl", NewBl(8)},
-		{"break", NewBreak(code0)},
-		{"syscall", NewSyscall(code0)},
-		{"dbar", NewDbar(code0)},
-		{"ibar", NewIbar(code0)},
+		{"bne", New().Bne(lreg(t, 13), lreg(t, 12), 8)},
+		{"blt", New().Blt(lreg(t, 13), lreg(t, 12), 8)},
+		{"bge", New().Bge(lreg(t, 13), lreg(t, 12), 8)},
+		{"bltu", New().Bltu(lreg(t, 13), lreg(t, 12), 8)},
+		{"bgeu", New().Bgeu(lreg(t, 13), lreg(t, 12), 8)},
+		{"bnez", New().Bnez(lreg(t, 13), 8)},
+		{"bl", New().Bl(8)},
+		{"break", New().Break(code0)},
+		{"syscall", New().Syscall(code0)},
+		{"dbar", New().Dbar(code0)},
+		{"ibar", New().Ibar(code0)},
 	}
 
 	for _, f := range family {

@@ -10,11 +10,11 @@ import (
 
 func TestBlCtor(t *testing.T) {
 	// llvm-mc-verified: bl 8 (at pc 0).
-	in := NewBl(8)
+	in := New().Bl(8)
 	require.Equal(t, uint32(0x54000800), ctorWord(t, in))
 
 	// llvm-mc-verified: bl -8 (at pc 0).
-	neg := NewBl(-8)
+	neg := New().Bl(-8)
 	require.Equal(t, uint32(0x57fffbff), ctorWord(t, neg))
 }
 

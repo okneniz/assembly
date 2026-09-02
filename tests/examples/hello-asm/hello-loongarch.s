@@ -1,7 +1,7 @@
 # hello-loongarch.s - bare-metal LoongArch64 hello for the QEMU virt
 # machine: one string through the 16550A UART, then an idle loop.
 #
-# Build: assembly-asm -arch loong64 -base 0x1c000000 -format bin
+# Build: assembly -arch loong64 -base 0x1c000000 -format bin
 # Run:   qemu-system-loongarch64 -machine virt -nographic \
 #          -device loader,file=hello-loongarch.bin,addr=0x1c000000,cpu-num=0
 #

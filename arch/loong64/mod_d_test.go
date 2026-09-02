@@ -13,10 +13,10 @@ func TestModDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x0022b9ac),
-		ctorWord(t, NewModD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().ModD(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewModD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().ModD(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(ModD)
 	require.True(t, ok, "type = %T, want ModD", in)
 }

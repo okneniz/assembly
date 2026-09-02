@@ -14,8 +14,8 @@ type MulhW struct {
 	rd, rj, rk uint8
 }
 
-// NewMulhW - mulh.w rd, rj, rk.
-func NewMulhW(rd, rj, rk Reg) Instr {
+// MulhW - mulh.w rd, rj, rk.
+func (Builder) MulhW(rd, rj, rk Reg) Instr {
 	return MulhW{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -1,6 +1,6 @@
 package arm64
 
-// Generator for movk — one generator, one type, one constructor (arm64.NewMovk).
+// Generator for movk — one generator, one type, one constructor (Movk).
 
 import (
 	"iter"
@@ -31,7 +31,7 @@ func NewMovkParams(rd arm64.Reg, imm arm64.Imm16, hw arm64.Hw) MovkParams {
 }
 
 func (p MovkParams) Instr() arm64.Instr {
-	in, err := arm64.NewMovk(p.Rd, p.Imm, p.Hw)
+	in, err := arm64.New().Movk(p.Rd, p.Imm, p.Hw)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}
@@ -78,7 +78,7 @@ func (g movkGen) Shrink(p MovkParams) iter.Seq[MovkParams] {
 	}
 
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm16(d)
+		imm, err := arm64.New().Imm16(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm16 is always in 0..65535
 		}

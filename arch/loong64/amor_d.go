@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmorD - amor.d rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): fetch-or, old value to rd.
+// AmorD - amor.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] |= rk.
 type AmorD struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmorD - amor.d rd, rk, rj (the operand order the assembler writes).
-func NewAmorD(rd, rk, rj Reg) Instr {
+// AmorD - amor.d rd, rk, rj.
+func (Builder) AmorD(rd, rk, rj Reg) Instr {
 	return AmorD{
 		rd: rd.Num(),
 		rk: rk.Num(),

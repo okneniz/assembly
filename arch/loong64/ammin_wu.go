@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmminWu - ammin.wu rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): unsigned fetch-min, old value to rd.
+// AmminWu - ammin.wu rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = min(MEM[rj], rk), unsigned.
 type AmminWu struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmminWu - ammin.wu rd, rk, rj (the operand order the assembler writes).
-func NewAmminWu(rd, rk, rj Reg) Instr {
+// AmminWu - ammin.wu rd, rk, rj.
+func (Builder) AmminWu(rd, rk, rj Reg) Instr {
 	return AmminWu{
 		rd: rd.Num(),
 		rk: rk.Num(),

@@ -1,7 +1,7 @@
 package arm64
 
 // Generator for str (unsigned offset) — one generator, one type, one
-// constructor (arm64.NewStr).
+// constructor (Str).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewStrParams(rt arm64.Reg, rn arm64.Reg, off arm64.Off) StrParams {
 }
 
 func (p StrParams) Instr() arm64.Instr {
-	in, err := arm64.NewStr(p.Rt, p.Rn, p.Off)
+	in, err := arm64.New().Str(p.Rt, p.Rn, p.Off)
 	if err != nil {
 		return nil // unreachable: fields are produced by a valid generator/shrink
 	}

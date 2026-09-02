@@ -13,10 +13,10 @@ func TestMulWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x001c39ac),
-		ctorWord(t, NewMulW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().MulW(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewMulW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().MulW(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(MulW)
 	require.True(t, ok, "type = %T, want MulW", in)
 }

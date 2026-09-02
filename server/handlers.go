@@ -89,10 +89,9 @@ func (s *Server) handleDisasm(w http.ResponseWriter, r *http.Request) {
 	if err := r.ParseMultipartForm(maxMem); err != nil {
 		// Exceeding the MaxBytesReader body limit is a 413,
 		// not a generic bad request.
-		var mbErr *http.MaxBytesError
-		if errors.As(err, &mbErr) {
+		if mbErr, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			writeError(w, http.StatusRequestEntityTooLarge,
-				"upload too large (limit "+humanBytes(s.maxBytes)+")")
+				"upload too large (limit "+humanBytes(mbErr.Limit)+")")
 			return
 		}
 
@@ -133,10 +132,9 @@ func (s *Server) handleDisasm(w http.ResponseWriter, r *http.Request) {
 			log.Printf("assembly/server: close temp file after failed copy: %v", cerr)
 		}
 
-		var mbErr *http.MaxBytesError
-		if errors.As(err, &mbErr) {
+		if mbErr, ok := errors.AsType[*http.MaxBytesError](err); ok {
 			writeError(w, http.StatusRequestEntityTooLarge,
-				"upload too large (limit "+humanBytes(s.maxBytes)+")")
+				"upload too large (limit "+humanBytes(mbErr.Limit)+")")
 			return
 		}
 

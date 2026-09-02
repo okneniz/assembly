@@ -14,8 +14,8 @@ type SraW struct {
 	rd, rj, rk uint8
 }
 
-// NewSraW - sra.w rd, rj, rk.
-func NewSraW(rd, rj, rk Reg) Instr {
+// SraW - sra.w rd, rj, rk.
+func (Builder) SraW(rd, rj, rk Reg) Instr {
 	return SraW{
 		rd: rd.Num(),
 		rj: rj.Num(),

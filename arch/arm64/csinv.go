@@ -17,8 +17,20 @@ type Csinv struct {
 	Csel
 }
 
-func NewCsinv(csel Csel) Csinv {
-	return Csinv{Csel: csel}
+// Csinv — csinv rd, rn, rm, cond (csetm/cinv pseudos); the operand
+// constraints are those of Csel.
+func (Builder) Csinv(rd, rn, rm Reg, cond string) (Instr, error) {
+	base, err := New().Csel(rd, rn, rm, cond)
+	if err != nil {
+		return nil, err
+	}
+
+	c, ok := base.(Csel)
+	if !ok {
+		return nil, fmt.Errorf("csinv: internal: want Csel, got %T", base)
+	}
+
+	return Csinv{Csel: c}, nil
 }
 
 func decodeCsinv(w uint32, addr uint64) Instr {

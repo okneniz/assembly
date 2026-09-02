@@ -15,8 +15,8 @@ type RotriD struct {
 	imm    imm
 }
 
-// NewRotriD - rotri.d rd, rj, ui6.
-func NewRotriD(rd, rj Reg, v UImm6) Instr {
+// RotriD - rotri.d rd, rj, ui6.
+func (Builder) RotriD(rd, rj Reg, v UImm6) Instr {
 	return RotriD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

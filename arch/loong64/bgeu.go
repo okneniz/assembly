@@ -17,8 +17,8 @@ type Bgeu struct {
 	off    imm
 }
 
-// NewBgeu - bgeu rj, rd, offs (the pc-relative byte offset).
-func NewBgeu(rj, rd Reg, off int64) Instr {
+// Bgeu - bgeu rj, rd, offs (the pc-relative byte offset).
+func (Builder) Bgeu(rj, rd Reg, off int64) Instr {
 	return Bgeu{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

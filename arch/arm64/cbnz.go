@@ -15,6 +15,18 @@ type Cbnz struct {
 	target imm
 }
 
+// Cbnz — cbnz rt, target: target — the absolute address of the
+// branch destination (the ±1MB imm19 range is checked at encode time,
+// from pc). rt — x/w register (register 31 reads as zr — use XZR/WZR).
+func (Builder) Cbnz(rt Reg, target int64) (Instr, error) {
+	if err := requireClass(rt, "Cbnz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	return Cbnz{rt: rt.name(), target: immNum(target)}, nil
+}
+
 func decodeCbnz(w uint32, addr uint64) Instr {
 	return Cbnz{
 		base:   newBase(addr, w),
@@ -45,7 +57,7 @@ func (i Cbnz) Encode(w io.Writer, pc uint64) (int64, error) {
 		match = 0xB5000000
 	}
 
-	return writeWord(w, match|bits|num)
+	return writeWord(w, match|bits<<5|num)
 }
 
 func (i Cbnz) MarshalJSON() ([]byte, error) {

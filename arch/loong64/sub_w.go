@@ -14,8 +14,8 @@ type SubW struct {
 	rd, rj, rk uint8
 }
 
-// NewSubW - sub.w rd, rj, rk.
-func NewSubW(rd, rj, rk Reg) Instr {
+// SubW - sub.w rd, rj, rk.
+func (Builder) SubW(rd, rj, rk Reg) Instr {
 	return SubW{
 		rd: rd.Num(),
 		rj: rj.Num(),

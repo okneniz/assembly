@@ -7,8 +7,8 @@
 package file
 
 import (
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 
 	"github.com/okneniz/assembly/file/elf"
 	"github.com/okneniz/assembly/file/macho"
@@ -70,7 +70,7 @@ func readMagic(path string) ([4]byte, error) {
 		return [4]byte{}, err
 	}
 
-	raw, err := common.Count(4, "file: expected 4 magic bytes", bytes.Any())(buf)
+	raw, err := parsec.Count(4, "file: expected 4 magic bytes", bytes.Any())(buf)
 	if err != nil {
 		return [4]byte{}, err
 	}

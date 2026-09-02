@@ -16,8 +16,8 @@ type LdW struct {
 	imm    imm
 }
 
-// NewLdW - ld.w rd, rj, si12.
-func NewLdW(rd, rj Reg, v Imm12) Instr {
+// LdW - ld.w rd, rj, si12.
+func (Builder) LdW(rd, rj Reg, v Imm12) Instr {
 	return LdW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

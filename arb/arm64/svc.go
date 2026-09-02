@@ -1,6 +1,6 @@
 package arm64
 
-// Generator for svc — one generator, one type, one constructor (arm64.NewSvc).
+// Generator for svc — one generator, one type, one constructor (Svc).
 
 import (
 	"iter"
@@ -25,7 +25,7 @@ func NewSvcParams(imm arm64.Imm16) SvcParams {
 }
 
 func (p SvcParams) Instr() arm64.Instr {
-	return arm64.NewSvc(p.Imm)
+	return arm64.New().Svc(p.Imm)
 }
 func (p SvcParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -59,7 +59,7 @@ func (g svcGen) Shrink(p SvcParams) iter.Seq[SvcParams] {
 
 	var out []SvcParams
 	for d := range shrink.Halving[int64](0)(v) {
-		imm, err := arm64.NewImm16(d)
+		imm, err := arm64.New().Imm16(d)
 		if err != nil {
 			continue // unreachable: half of a valid imm16 is always in 0..65535
 		}

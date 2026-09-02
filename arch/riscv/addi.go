@@ -16,8 +16,8 @@ type Addi struct {
 	imm     imm
 }
 
-// NewAddi - addi rd, rs1, imm (rs1 = zero is printed as li, imm = 0 - mv).
-func NewAddi(rd, rs1 Reg, imm Imm12) Instr {
+// Addi - addi rd, rs1, imm (rs1 = zero is printed as li, imm = 0 - mv).
+func (Builder) Addi(rd, rs1 Reg, imm Imm12) Instr {
 	return Addi{
 		rd:  rd.name(),
 		rs1: rs1.name(),

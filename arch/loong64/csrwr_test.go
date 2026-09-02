@@ -9,17 +9,17 @@ import (
 )
 
 func TestCsrwrCtor(t *testing.T) {
-	csr, err := NewUImm14(5)
+	csr, err := New().UImm14(5)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: csrwr $t0, 5.
 	require.Equal(
 		t,
 		uint32(0x0400142c),
-		ctorWord(t, NewCsrwr(lreg(t, 12), csr)),
+		ctorWord(t, New().Csrwr(lreg(t, 12), csr)),
 	)
 
-	in := NewCsrwr(lreg(t, 12), csr)
+	in := New().Csrwr(lreg(t, 12), csr)
 	_, ok := in.(Csrwr)
 	require.True(t, ok, "type = %T, want Csrwr", in)
 }

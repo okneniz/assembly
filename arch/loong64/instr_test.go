@@ -20,7 +20,7 @@ func (errWriter) Write(p []byte) (int, error) {
 }
 
 func TestUnknown(t *testing.T) {
-	in := NewUnknown(newBase(0x90000010, 0xdeadbeef))
+	in := newUnknown(newBase(0x90000010, 0xdeadbeef))
 	require.Equal(t, uint64(0x90000010), in.Addr())
 	require.Equal(t, 4, in.Len())
 	require.Equal(t, "<unknown>", in.ObjDump(disasm.DefaultViewCtx()))
@@ -33,14 +33,14 @@ func TestUnknown(t *testing.T) {
 }
 
 func TestUnknownEncodeError(t *testing.T) {
-	in := NewUnknown(newBase(0, 0x1c000000))
+	in := newUnknown(newBase(0, 0x1c000000))
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "write failed")
 }
 
 func TestUnknownMarshalJSON(t *testing.T) {
-	in := NewUnknown(newBase(0x90000010, 0x1c000000))
+	in := newUnknown(newBase(0x90000010, 0x1c000000))
 
 	b, err := in.MarshalJSON()
 	require.NoError(t, err)

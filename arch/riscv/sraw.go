@@ -7,11 +7,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sraw — sraw rd, rs1, rs2.
+// Sraw - sraw rd, rs1, rs2.
 type Sraw struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// Sraw - sraw rd, rs1, rs2.
+func (Builder) Sraw(rd, rs1, rs2 Reg) Instr {
+	return Sraw{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeSraw(w uint32, addr uint64) Instr {

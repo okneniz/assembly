@@ -14,8 +14,8 @@ type Idle struct {
 	code imm
 }
 
-// NewIdle - idle code.
-func NewIdle(code Code15) Instr {
+// Idle - idle code.
+func (Builder) Idle(code Code15) Instr {
 	return Idle{
 		code: immNum(code.Val()),
 	}

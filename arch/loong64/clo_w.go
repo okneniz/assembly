@@ -14,8 +14,8 @@ type CloW struct {
 	rd, rj uint8
 }
 
-// NewCloW - clo.w rd, rj.
-func NewCloW(rd, rj Reg) Instr {
+// CloW - clo.w rd, rj.
+func (Builder) CloW(rd, rj Reg) Instr {
 	return CloW{
 		rd: rd.Num(),
 		rj: rj.Num(),

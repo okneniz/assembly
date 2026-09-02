@@ -15,8 +15,8 @@ type StgtH struct {
 	rd, rj, rk uint8
 }
 
-// NewStgtH - stgt.h rd, rj, rk.
-func NewStgtH(rd, rj, rk Reg) Instr {
+// StgtH - stgt.h rd, rj, rk.
+func (Builder) StgtH(rd, rj, rk Reg) Instr {
 	return StgtH{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -17,8 +17,8 @@ type Jirl struct {
 	off    imm
 }
 
-// NewJirl - jirl rd, rj, offs (the byte offset from rj).
-func NewJirl(rd, rj Reg, off int64) Instr {
+// Jirl - jirl rd, rj, offs (the byte offset from rj).
+func (Builder) Jirl(rd, rj Reg, off int64) Instr {
 	return Jirl{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

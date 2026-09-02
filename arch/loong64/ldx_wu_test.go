@@ -10,7 +10,7 @@ import (
 
 func TestLdxWuCtor(t *testing.T) {
 	// llvm-mc-verified: ldx.wu $t0, $t1, $t2.
-	in := NewLdxWu(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().LdxWu(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x382839ac), ctorWord(t, in))
 
 	_, ok := in.(LdxWu)

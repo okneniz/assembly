@@ -10,10 +10,10 @@ import (
 
 func TestLu32iDCtor(t *testing.T) {
 	// llvm-mc-verified: lu32i.d $t0, 5.
-	v, err := NewImm20(5)
+	v, err := New().Imm20(5)
 	require.NoError(t, err)
 
-	in := NewLu32iD(lreg(t, 12), v)
+	in := New().Lu32iD(lreg(t, 12), v)
 	require.Equal(t, uint32(0x160000ac), ctorWord(t, in))
 
 	_, ok := in.(Lu32iD)

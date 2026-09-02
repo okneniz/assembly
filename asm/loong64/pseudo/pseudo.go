@@ -18,7 +18,7 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	"github.com/okneniz/assembly/asm"
@@ -90,8 +90,8 @@ func buildPseudoMnemonics() map[string]string {
 // Instruction is the grammar "mnemonic operands": a pseudo-mnemonic
 // from its own trie (with the same boundary check), otherwise the
 // syntax layer's inner grammar.
-func (s source) Instruction() common.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, common.Error[parsecstrings.Position]) {
+func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		expr.SkipSpaces(buf)
 		if name, err := cPseudoMnemonic(buf); err == nil {
@@ -117,7 +117,7 @@ func (s source) Instruction() common.Combinator[rune, parsecstrings.Position, as
 
 // Comment parses a comment ('#' and '//' to the end of the line), as
 // in the syntax layer.
-func (s source) Comment() common.Combinator[rune, parsecstrings.Position, string] {
+func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
 	return s.be.Comment()
 }
 

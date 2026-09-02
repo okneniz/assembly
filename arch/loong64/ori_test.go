@@ -10,13 +10,13 @@ import (
 
 func TestOriCtor(t *testing.T) {
 	// llvm-mc-verified: ori $t0, $t1, 3855.
-	v, err := NewUImm12(3855)
+	v, err := New().UImm12(3855)
 	require.NoError(t, err)
 
 	require.Equal(
 		t,
 		uint32(0x03bc3dac),
-		ctorWord(t, NewOri(lreg(t, 12), lreg(t, 13), v)),
+		ctorWord(t, New().Ori(lreg(t, 12), lreg(t, 13), v)),
 	)
 }
 

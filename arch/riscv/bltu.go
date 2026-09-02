@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Bltu — bltu rs1, rs2, target.
+// Bltu - bltu rs1, rs2, target.
 type Bltu struct {
 	base
 
 	rs1, rs2 string
 	target   imm // absolute target address
+}
+
+// Bltu - bltu rs1, rs2, target (absolute target address).
+func (Builder) Bltu(rs1, rs2 Reg, target int64) Instr {
+	return Bltu{
+		rs1:    rs1.name(),
+		rs2:    rs2.name(),
+		target: immNum(target),
+	}
 }
 
 func decodeBltu(w uint32, addr uint64) Instr {

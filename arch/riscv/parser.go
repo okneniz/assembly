@@ -3,8 +3,8 @@ package riscv
 import (
 	"encoding/binary"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
-	"github.com/okneniz/parsec/common"
 
 	"github.com/okneniz/assembly/dtree"
 )
@@ -15,9 +15,9 @@ import (
 // Try rolls the position back on a truncated tail (a halfword shorter than
 // 2 bytes or the cut-off high halfword of a 32-bit instruction), Many
 // swallows its error and drives the loop to the end of the buffer.
-func Parse(baseAddr uint64) common.Combinator[byte, int, []Instr] {
+func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
 	half := bytes.ReadAs[uint16](2, "riscv: halfword", binary.LittleEndian)
-	instr := func(buf common.Buffer[byte, int]) (Instr, common.Error[int]) {
+	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
 		addr := baseAddr + uint64(buf.Position())
 
 		lo, err := half(buf)
@@ -37,7 +37,7 @@ func Parse(baseAddr uint64) common.Combinator[byte, int, []Instr] {
 		return decodeOne(uint32(lo)|uint32(hi)<<16, addr), nil
 	}
 
-	return common.Many(0, bytes.Try(instr))
+	return parsec.Many(0, bytes.Try(instr))
 }
 
 // decodeCtor - the constructor of a table entry (the decision-tree payload).

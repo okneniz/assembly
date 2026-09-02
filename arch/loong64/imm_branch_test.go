@@ -13,7 +13,7 @@ import (
 func imm12v(t *testing.T, v int64) Imm12 {
 	t.Helper()
 
-	i, err := NewImm12(v)
+	i, err := New().Imm12(v)
 	require.NoError(t, err)
 
 	return i
@@ -23,7 +23,7 @@ func imm12v(t *testing.T, v int64) Imm12 {
 func imm20v(t *testing.T, v int64) Imm20 {
 	t.Helper()
 
-	i, err := NewImm20(v)
+	i, err := New().Imm20(v)
 	require.NoError(t, err)
 
 	return i
@@ -34,7 +34,7 @@ func TestAddiWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x02bfc1ac),
-		ctorWord(t, NewAddiW(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
+		ctorWord(t, New().AddiW(lreg(t, 12), lreg(t, 13), imm12v(t, -16))),
 	)
 }
 
@@ -51,7 +51,7 @@ func TestAddiWDecodeEncode(t *testing.T) {
 
 func TestLu12iWCtorDecode(t *testing.T) {
 	// llvm-mc-verified: lu12i.w $t0, -1.
-	in := NewLu12iW(lreg(t, 12), imm20v(t, -1))
+	in := New().Lu12iW(lreg(t, 12), imm20v(t, -1))
 	require.Equal(t, uint32(0x15ffffec), ctorWord(t, in))
 
 	x, ok := decodeOne(0x15ffffec, 0).(Lu12iW)
@@ -63,7 +63,7 @@ func TestLu12iWCtorDecode(t *testing.T) {
 func TestBeqCtorDecode(t *testing.T) {
 	// llvm-mc-verified: beq $t1, $t0, 8 (at pc 0; the manual order prints
 	// rj first). The constructor takes (rj, rd, target).
-	in := NewBeq(lreg(t, 13), lreg(t, 12), 8)
+	in := New().Beq(lreg(t, 13), lreg(t, 12), 8)
 	require.Equal(t, uint32(0x580009ac), ctorWord(t, in))
 
 	x, ok := decodeOne(0x580009ac, 0).(Beq)
@@ -80,20 +80,20 @@ func TestBeqCtorDecode(t *testing.T) {
 }
 
 func TestBeqEncodeErrors(t *testing.T) {
-	in := NewBeq(lreg(t, 13), lreg(t, 12), 6)
+	in := New().Beq(lreg(t, 13), lreg(t, 12), 6)
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "not word-aligned")
 
 	// The signed 16-bit word range is +-128 KiB.
-	in = NewBeq(lreg(t, 13), lreg(t, 12), 1<<18)
+	in = New().Beq(lreg(t, 13), lreg(t, 12), 1<<18)
 	_, err = in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "does not fit")
 }
 
 func TestBeqzCtorDecode(t *testing.T) {
 	// llvm-mc-verified: beqz $t1, 8.
-	in := NewBeqz(lreg(t, 13), 8)
+	in := New().Beqz(lreg(t, 13), 8)
 	require.Equal(t, uint32(0x400009a0), ctorWord(t, in))
 
 	x, ok := decodeOne(0x400009a0, 0).(Beqz)
@@ -111,8 +111,8 @@ func TestBeqzCtorDecode(t *testing.T) {
 
 func TestBCtorDecode(t *testing.T) {
 	// llvm-mc-verified: b 8 and b -8 (at pc 0).
-	require.Equal(t, uint32(0x50000800), ctorWord(t, NewB(8)))
-	require.Equal(t, uint32(0x53fffbff), ctorWord(t, NewB(-8)))
+	require.Equal(t, uint32(0x50000800), ctorWord(t, New().B(8)))
+	require.Equal(t, uint32(0x53fffbff), ctorWord(t, New().B(-8)))
 
 	x, ok := decodeOne(0x53fffbff, 0).(B)
 	require.True(t, ok, "type = %T, want B", x)
@@ -122,7 +122,7 @@ func TestBCtorDecode(t *testing.T) {
 
 func TestJirlCtorDecode(t *testing.T) {
 	// llvm-mc-verified: jirl $t0, $t1, 4.
-	in := NewJirl(lreg(t, 12), lreg(t, 13), 4)
+	in := New().Jirl(lreg(t, 12), lreg(t, 13), 4)
 	require.Equal(t, uint32(0x4c0005ac), ctorWord(t, in))
 
 	x, ok := decodeOne(0x4c0005ac, 0).(Jirl)
@@ -130,7 +130,7 @@ func TestJirlCtorDecode(t *testing.T) {
 	require.Equal(t, "jirl $t0, $t1, 4", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(4), x.off.val)
 
-	_, err := NewJirl(lreg(t, 0), lreg(t, 1), 3).Encode(errWriter{}, 0)
+	_, err := New().Jirl(lreg(t, 0), lreg(t, 1), 3).Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "not word-aligned")
 }
 
@@ -139,12 +139,12 @@ func TestTemplatesJSONEncodeError(t *testing.T) {
 		mnem string
 		in   Instr
 	}{
-		{"addi.w", NewAddiW(lreg(t, 12), lreg(t, 13), imm12v(t, -16))},
-		{"lu12i.w", NewLu12iW(lreg(t, 12), imm20v(t, -1))},
-		{"beq", NewBeq(lreg(t, 13), lreg(t, 12), 8)},
-		{"beqz", NewBeqz(lreg(t, 13), 8)},
-		{"b", NewB(8)},
-		{"jirl", NewJirl(lreg(t, 12), lreg(t, 13), 4)},
+		{"addi.w", New().AddiW(lreg(t, 12), lreg(t, 13), imm12v(t, -16))},
+		{"lu12i.w", New().Lu12iW(lreg(t, 12), imm20v(t, -1))},
+		{"beq", New().Beq(lreg(t, 13), lreg(t, 12), 8)},
+		{"beqz", New().Beqz(lreg(t, 13), 8)},
+		{"b", New().B(8)},
+		{"jirl", New().Jirl(lreg(t, 12), lreg(t, 13), 4)},
 	} {
 		b, err := tc.in.MarshalJSON()
 		require.NoError(t, err, tc.mnem)

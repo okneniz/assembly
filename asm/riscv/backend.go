@@ -12,7 +12,7 @@ package riscv
 import (
 	"fmt"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	asm "github.com/okneniz/assembly/asm"
@@ -66,8 +66,8 @@ func (b *Backend) ResetOptions() {
 
 // Instruction is the grammar "mnemonic operands" (comma-separated
 // operands).
-func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf common.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, common.Error[parsecstrings.Position]) {
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		skipSpaces(buf)
 		name, err := cMnemonic(buf)
@@ -77,7 +77,7 @@ func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, 
 
 		// mnemonic boundary: followed by a space/comma/end of line
 		if r, ok := peekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' {
-			return nil, common.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", name))
+			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", name))
 		}
 
 		ops, err := ParseOps(buf)
@@ -90,7 +90,7 @@ func (b *Backend) Instruction() common.Combinator[rune, parsecstrings.Position, 
 }
 
 // Comment parses '#' and '//' to the end of the line.
-func (b *Backend) Comment() common.Combinator[rune, parsecstrings.Position, string] {
+func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
 	body := parsecstrings.Many(4, expr.CNotNL)
 	hash := parsecstrings.Cast(
 		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", '#')), body),

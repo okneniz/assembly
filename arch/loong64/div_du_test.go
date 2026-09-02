@@ -13,10 +13,10 @@ func TestDivDuCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x002339ac),
-		ctorWord(t, NewDivDu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().DivDu(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewDivDu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().DivDu(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(DivDu)
 	require.True(t, ok, "type = %T, want DivDu", in)
 }

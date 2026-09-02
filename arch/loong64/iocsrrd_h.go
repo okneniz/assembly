@@ -14,8 +14,8 @@ type IocsrrdH struct {
 	rd, rj uint8
 }
 
-// NewIocsrrdH - iocsrrd.h rd, rj.
-func NewIocsrrdH(rd, rj Reg) Instr {
+// IocsrrdH - iocsrrd.h rd, rj.
+func (Builder) IocsrrdH(rd, rj Reg) Instr {
 	return IocsrrdH{
 		rd: rd.Num(),
 		rj: rj.Num(),

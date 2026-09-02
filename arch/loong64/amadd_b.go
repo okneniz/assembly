@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmaddB - amadd.b rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): fetch-add, old value to rd.
+// AmaddB - amadd.b rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] += rk.
 type AmaddB struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmaddB - amadd.b rd, rk, rj (the operand order the assembler writes).
-func NewAmaddB(rd, rk, rj Reg) Instr {
+// AmaddB - amadd.b rd, rk, rj.
+func (Builder) AmaddB(rd, rk, rj Reg) Instr {
 	return AmaddB{
 		rd: rd.Num(),
 		rk: rk.Num(),

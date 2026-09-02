@@ -68,6 +68,14 @@ type Fence struct {
 	fm imm
 }
 
+// Fence - fence fm; fm is a 4-bit fence modifier 0..15
+// (fm 0 is printed as the bare "fence").
+func (Builder) Fence(fm uint8) Instr {
+	return Fence{
+		fm: immNum(int64(fm)),
+	}
+}
+
 func decodeFence(w uint32, addr uint64) Instr {
 	return Fence{
 		base: newBase(addr, w),

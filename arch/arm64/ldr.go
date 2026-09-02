@@ -20,9 +20,9 @@ const (
 	ldrWEnc uint32 = 0xB9400000 // ldr wt, [xn, #imm12<<2]
 )
 
-// NewLdr — ldr rt, [rn, #off]: byte offset, scaling to the access size is
+// Ldr — ldr rt, [rn, #off]: byte offset, scaling to the access size is
 // hidden here.
-func NewLdr(rt, rn Reg, off Off) (Instr, error) {
+func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
 	if err := lsOperand(rt, rn, "Ldr"); err != nil {
 		return nil, err
 	}

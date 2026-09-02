@@ -16,8 +16,8 @@ type Ldpte struct {
 	imm imm
 }
 
-// NewLdpte - ldpte rj, ui8.
-func NewLdpte(rj Reg, v UImm8) Instr {
+// Ldpte - ldpte rj, ui8.
+func (Builder) Ldpte(rj Reg, v UImm8) Instr {
 	return Ldpte{
 		rj:  rj.Num(),
 		imm: immNum(v.Val()),

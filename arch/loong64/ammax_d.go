@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmmaxD - ammax.d rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): signed fetch-max, old value to rd.
+// AmmaxD - ammax.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = max(MEM[rj], rk), signed.
 type AmmaxD struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmmaxD - ammax.d rd, rk, rj (the operand order the assembler writes).
-func NewAmmaxD(rd, rk, rj Reg) Instr {
+// AmmaxD - ammax.d rd, rk, rj.
+func (Builder) AmmaxD(rd, rk, rj Reg) Instr {
 	return AmmaxD{
 		rd: rd.Num(),
 		rk: rk.Num(),

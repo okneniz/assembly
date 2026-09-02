@@ -14,8 +14,8 @@ type Andn struct {
 	rd, rj, rk uint8
 }
 
-// NewAndn - andn rd, rj, rk.
-func NewAndn(rd, rj, rk Reg) Instr {
+// Andn - andn rd, rj, rk.
+func (Builder) Andn(rd, rj, rk Reg) Instr {
 	return Andn{
 		rd: rd.Num(),
 		rj: rj.Num(),

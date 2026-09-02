@@ -1,7 +1,7 @@
 package riscv
 
 // Generator for ld — one generator, one type, one constructor
-// (riscv.NewLd).
+// (Ld).
 
 import (
 	"iter"
@@ -30,7 +30,7 @@ func NewLdParams(rd riscv.Reg, rs1 riscv.Reg, off riscv.Off) LdParams {
 }
 
 func (p LdParams) Instr() riscv.Instr {
-	return riscv.NewLd(p.Rd, p.Rs1, p.Off)
+	return riscv.New().Ld(p.Rd, p.Rs1, p.Off)
 }
 func (p LdParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
@@ -58,7 +58,7 @@ func (g ldGen) Generate() iter.Seq[LdParams] {
 
 func (g ldGen) Shrink(p LdParams) iter.Seq[LdParams] {
 	rd, rs1 := regShrunk(p.Rd), regShrunk(p.Rs1)
-	offs := immShrunk(p.Off, riscv.NewOff, si12Shrink)
+	offs := immShrunk(p.Off, riscv.New().Off, si12Shrink)
 	out := make([]LdParams, 0, len(rd)+len(rs1)+len(offs))
 	for _, r := range rd {
 		out = append(out, NewLdParams(r, p.Rs1, p.Off))

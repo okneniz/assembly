@@ -10,10 +10,10 @@ import (
 
 func TestStBCtor(t *testing.T) {
 	// llvm-mc-verified: st.b $t0, $t1, 8.
-	v, err := NewImm12(8)
+	v, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	in := NewStB(lreg(t, 12), lreg(t, 13), v)
+	in := New().StB(lreg(t, 12), lreg(t, 13), v)
 	require.Equal(t, uint32(0x290021ac), ctorWord(t, in))
 
 	_, ok := in.(StB)

@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Str - str ... (see lsBase for addressing kinds).
+// Str — str ... (see lsBase for addressing kinds).
 type Str struct {
 	base
 	lsBase
@@ -20,9 +20,9 @@ const (
 	strWEnc uint32 = 0xB9000000 // str wt, [xn, #imm12<<2]
 )
 
-// NewStr - str rt, [rn, #off]: byte offset, scaling to the access size is
+// Str — str rt, [rn, #off]: byte offset, scaling to the access size is
 // hidden here.
-func NewStr(rt, rn Reg, off Off) (Instr, error) {
+func (Builder) Str(rt, rn Reg, off Off) (Instr, error) {
 	if err := lsOperand(rt, rn, "Str"); err != nil {
 		return nil, err
 	}

@@ -10,7 +10,7 @@ import (
 
 func TestStxBCtor(t *testing.T) {
 	// llvm-mc-verified: stx.b $t0, $t1, $t2.
-	in := NewStxB(lreg(t, 12), lreg(t, 13), lreg(t, 14))
+	in := New().StxB(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 	require.Equal(t, uint32(0x381039ac), ctorWord(t, in))
 
 	_, ok := in.(StxB)

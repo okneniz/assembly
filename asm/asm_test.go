@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/okneniz/parsec/common"
+	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 	"github.com/stretchr/testify/require"
 
@@ -50,7 +50,7 @@ func (failInstr) Resolve(Ctx) (Resolved, error) {
 // mockBackend - a minimal Syntax for core tests.
 type mockBackend struct{}
 
-func (mockBackend) Instruction() common.Combinator[rune, parsecstrings.Position, Unresolved] {
+func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position, Unresolved] {
 	pad := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.String("pad", "pad"),
@@ -128,7 +128,7 @@ func (m mockPoolInstr) PoolReq() (*expr.Expr, int, bool) {
 	return m.v, 8, true
 }
 
-func (mockBackend) Comment() common.Combinator[rune, parsecstrings.Position, string] {
+func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
 	hash := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.Try(parsecstrings.Eq("comment", '#')),

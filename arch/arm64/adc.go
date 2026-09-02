@@ -1,5 +1,6 @@
 // Package arm64 — per-instruction ARM64 structs: word decoders, formatters
-// (objdump notation) and assembler constructors driven by ISA schemas.
+// (objdump notation) and instruction constructors — the Builder methods
+// (AddImm, Ldr, ...), the exact inverse of decode.
 package arm64
 
 import (
@@ -9,7 +10,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Adc — adc rd, rn, rm (only the 64-bit form is in the table).
+// Adc — adc rd, rn, rm (only the 64-bit form is decoded).
 type Adc struct {
 	base
 
@@ -17,6 +18,31 @@ type Adc struct {
 }
 
 const adcX uint32 = 0x9A000000
+
+// Adc — adc rd, rn, rm. Only the 64-bit form; register 31 reads
+// as zr (SP/WSP are not allowed — use XZR).
+func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(rd, "Adc", "rd",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Adc", "rn",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Adc", "rm",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	return Adc{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
 
 func decodeAdc(w uint32, addr uint64) Instr {
 	return Adc{

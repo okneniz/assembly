@@ -85,12 +85,12 @@ const branch2Span = int64(0x1fc00)
 
 // branch2 — the compare-and-branch family (6 ctors).
 var branch2 = []branch2Entry{
-	{name: "beq", ctor: arch.NewBeq},
-	{name: "bne", ctor: arch.NewBne},
-	{name: "blt", ctor: arch.NewBlt},
-	{name: "bge", ctor: arch.NewBge},
-	{name: "bltu", ctor: arch.NewBltu},
-	{name: "bgeu", ctor: arch.NewBgeu},
+	{name: "beq", ctor: arch.New().Beq},
+	{name: "bne", ctor: arch.New().Bne},
+	{name: "blt", ctor: arch.New().Blt},
+	{name: "bge", ctor: arch.New().Bge},
+	{name: "bltu", ctor: arch.New().Bltu},
+	{name: "bgeu", ctor: arch.New().Bgeu},
 }
 
 // branch2Gen — generator over the compare-and-branch family.
@@ -171,8 +171,8 @@ const branch1Span = int64(0x80000)
 
 // branch1 — the compare-with-zero family (2 ctors).
 var branch1 = []branch1Entry{
-	{name: "beqz", ctor: arch.NewBeqz},
-	{name: "bnez", ctor: arch.NewBnez},
+	{name: "beqz", ctor: arch.New().Beqz},
+	{name: "bnez", ctor: arch.New().Bnez},
 }
 
 // branch1Gen — generator over the compare-with-zero family.
@@ -247,8 +247,8 @@ const jumpSpan = int64(0x400000)
 
 // jump — the unconditional family (2 ctors).
 var jump = []jumpEntry{
-	{name: "b", ctor: arch.NewB},
-	{name: "bl", ctor: arch.NewBl},
+	{name: "b", ctor: arch.New().B},
+	{name: "bl", ctor: arch.New().Bl},
 }
 
 // jumpGen — generator over the unconditional family.
@@ -287,7 +287,7 @@ func (g jumpGen) Shrink(p JumpParams) iter.Seq[JumpParams] {
 // but the role bounds it exactly like a branch target field).
 var jirl = []r2RoleEntry[arch.Off16]{
 	{name: "jirl", ctor: func(rd, rj arch.Reg, v arch.Off16) arch.Instr {
-		return arch.NewJirl(rd, rj, v.Val())
+		return arch.New().Jirl(rd, rj, v.Val())
 	}},
 }
 

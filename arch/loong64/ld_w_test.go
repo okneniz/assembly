@@ -10,10 +10,10 @@ import (
 
 func TestLdWCtor(t *testing.T) {
 	// llvm-mc-verified: ld.w $t0, $t1, 8.
-	v, err := NewImm12(8)
+	v, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	in := NewLdW(lreg(t, 12), lreg(t, 13), v)
+	in := New().LdW(lreg(t, 12), lreg(t, 13), v)
 	require.Equal(t, uint32(0x288021ac), ctorWord(t, in))
 
 	_, ok := in.(LdW)

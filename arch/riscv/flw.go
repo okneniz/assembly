@@ -15,6 +15,16 @@ type Flw struct {
 	off     imm
 }
 
+// Flw - flw rd, off(rs1); rd is an FP register taken by number
+// (Reg 0..31 is printed ft0/fa0/...).
+func (Builder) Flw(rd, rs1 Reg, off Off) Instr {
+	return Flw{
+		rd:  fpName(rd),
+		rs1: rs1.name(),
+		off: immNum(off.v),
+	}
+}
+
 func decodeFlw(w uint32, addr uint64) Instr {
 	return Flw{
 		base: newBase(addr, w),

@@ -7,8 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// BstrinsD - bstrins.d rd, rj, msb, lsb (DJUk6Um6): insert the rj[msb:lsb]
-// field into rd[msb:lsb] (msb at [21:16], lsb at [15:10]).
+// BstrinsD - bstrins.d rd, rj, msb, lsb (DJUk6Um6): insert the rj[msb:lsb] field into rd[msb:lsb].
 type BstrinsD struct {
 	base
 
@@ -17,8 +16,8 @@ type BstrinsD struct {
 	lsb    imm
 }
 
-// NewBstrinsD - bstrins.d rd, rj, msb, lsb.
-func NewBstrinsD(rd, rj Reg, msb, lsb UImm6) Instr {
+// BstrinsD - bstrins.d rd, rj, msb, lsb.
+func (Builder) BstrinsD(rd, rj Reg, msb, lsb UImm6) Instr {
 	return BstrinsD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

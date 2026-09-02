@@ -14,8 +14,8 @@ type ModD struct {
 	rd, rj, rk uint8
 }
 
-// NewModD - mod.d rd, rj, rk.
-func NewModD(rd, rj, rk Reg) Instr {
+// ModD - mod.d rd, rj, rk.
+func (Builder) ModD(rd, rj, rk Reg) Instr {
 	return ModD{
 		rd: rd.Num(),
 		rj: rj.Num(),

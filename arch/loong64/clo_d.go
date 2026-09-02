@@ -14,8 +14,8 @@ type CloD struct {
 	rd, rj uint8
 }
 
-// NewCloD - clo.d rd, rj.
-func NewCloD(rd, rj Reg) Instr {
+// CloD - clo.d rd, rj.
+func (Builder) CloD(rd, rj Reg) Instr {
 	return CloD{
 		rd: rd.Num(),
 		rj: rj.Num(),

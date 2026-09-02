@@ -16,6 +16,49 @@ type Smulh struct {
 
 const SmulhX uint32 = 0x9B407C00
 
+// Smulh — smulh rd, rn, rm. Only the 64-bit form (the architecture
+// has no 32-bit smulh); register 31 reads as zr (use XZR).
+func (Builder) Smulh(rd, rn, rm Reg) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Smulh",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Smulh",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rm,
+		"Smulh",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	); err != nil {
+		return nil, err
+	}
+
+	return Smulh{
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+	}, nil
+}
+
 func decodeSmulh(w uint32, addr uint64) Instr {
 	return Smulh{
 		base: newBase(addr, w),

@@ -15,8 +15,8 @@ type SrliW struct {
 	imm    imm
 }
 
-// NewSrliW - srli.w rd, rj, ui5.
-func NewSrliW(rd, rj Reg, v UImm5) Instr {
+// SrliW - srli.w rd, rj, ui5.
+func (Builder) SrliW(rd, rj Reg, v UImm5) Instr {
 	return SrliW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

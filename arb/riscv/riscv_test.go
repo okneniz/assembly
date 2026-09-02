@@ -86,7 +86,7 @@ func TestImmGenProperty(t *testing.T) {
 
 		return n >= -2048 && n <= 2047
 	})
-	lo, err := riscv.NewImm12(-2048)
+	lo, err := riscv.New().Imm12(-2048)
 	require.NoError(t, err)
 	for s := range Imm12(rnd).Shrink(lo) {
 		n, err := immValue(s)
@@ -97,7 +97,7 @@ func TestImmGenProperty(t *testing.T) {
 
 	// The range boundaries come first (shrink.Boundaries), halving toward
 	// zero follows and ends with zero.
-	mid, err := riscv.NewImm12(100)
+	mid, err := riscv.New().Imm12(100)
 	require.NoError(t, err)
 	cs := slices.Collect(Imm12(rnd).Shrink(mid))
 	require.NotEmpty(t, cs)
@@ -114,12 +114,12 @@ func TestImmGenProperty(t *testing.T) {
 
 // TestImmValue — parsing String() (hex without #, negatives with a minus).
 func TestImmValue(t *testing.T) {
-	neg, err := riscv.NewImm12(-4)
+	neg, err := riscv.New().Imm12(-4)
 	require.NoError(t, err)
 	n, err := immValue(neg)
 	require.NoError(t, err)
 	require.Equal(t, int64(-4), n)
-	big, err := riscv.NewImm20(0x12345)
+	big, err := riscv.New().Imm20(0x12345)
 	require.NoError(t, err)
 	n, err = immValue(big)
 	require.NoError(t, err)

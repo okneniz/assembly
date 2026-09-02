@@ -14,8 +14,8 @@ type ModDu struct {
 	rd, rj, rk uint8
 }
 
-// NewModDu - mod.du rd, rj, rk.
-func NewModDu(rd, rj, rk Reg) Instr {
+// ModDu - mod.du rd, rj, rk.
+func (Builder) ModDu(rd, rj, rk Reg) Instr {
 	return ModDu{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -13,10 +13,10 @@ func TestCtzWCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x00001dac),
-		ctorWord(t, NewCtzW(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().CtzW(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewCtzW(lreg(t, 1), lreg(t, 2))
+	in := New().CtzW(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(CtzW)
 	require.True(t, ok, "type = %T, want CtzW", in)
 }

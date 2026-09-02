@@ -14,8 +14,8 @@ type AddD struct {
 	rd, rj, rk uint8
 }
 
-// NewAddD - add.d rd, rj, rk.
-func NewAddD(rd, rj, rk Reg) Instr {
+// AddD - add.d rd, rj, rk.
+func (Builder) AddD(rd, rj, rk Reg) Instr {
 	return AddD{
 		rd: rd.Num(),
 		rj: rj.Num(),

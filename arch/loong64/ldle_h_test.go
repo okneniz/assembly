@@ -13,10 +13,10 @@ func TestLdleHCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x387ab9ac),
-		ctorWord(t, NewLdleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
+		ctorWord(t, New().LdleH(lreg(t, 12), lreg(t, 13), lreg(t, 14))),
 	)
 
-	in := NewLdleH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
+	in := New().LdleH(lreg(t, 1), lreg(t, 2), lreg(t, 3))
 	_, ok := in.(LdleH)
 	require.True(t, ok, "type = %T, want LdleH", in)
 }

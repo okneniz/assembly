@@ -6,16 +6,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Dbar - dbar hint (Ud15): the data barrier hint (serializes data
-// accesses), the hint code occupies the [14:0] field.
+// Dbar - dbar hint (Ud15): the data barrier hint (serializes data accesses).
 type Dbar struct {
 	base
 
 	code imm
 }
 
-// NewDbar - dbar hint (a 15-bit code).
-func NewDbar(code Code15) Instr {
+// Dbar - dbar hint (a 15-bit code).
+func (Builder) Dbar(code Code15) Instr {
 	return Dbar{
 		code: immNum(code.Val()),
 	}

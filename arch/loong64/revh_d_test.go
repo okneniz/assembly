@@ -13,10 +13,10 @@ func TestRevhDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000045ac),
-		ctorWord(t, NewRevhD(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().RevhD(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewRevhD(lreg(t, 1), lreg(t, 2))
+	in := New().RevhD(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(RevhD)
 	require.True(t, ok, "type = %T, want RevhD", in)
 }

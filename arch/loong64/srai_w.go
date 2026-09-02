@@ -15,8 +15,8 @@ type SraiW struct {
 	imm    imm
 }
 
-// NewSraiW - srai.w rd, rj, ui5.
-func NewSraiW(rd, rj Reg, v UImm5) Instr {
+// SraiW - srai.w rd, rj, ui5.
+func (Builder) SraiW(rd, rj Reg, v UImm5) Instr {
 	return SraiW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

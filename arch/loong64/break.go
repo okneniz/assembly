@@ -6,16 +6,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Break - break code (Ud15): the debugger breakpoint trap, the code
-// occupies the [14:0] field.
+// Break - break code (Ud15): the debugger breakpoint trap.
 type Break struct {
 	base
 
 	code imm
 }
 
-// NewBreak - break code (a 15-bit code).
-func NewBreak(code Code15) Instr {
+// Break - break code (a 15-bit code).
+func (Builder) Break(code Code15) Instr {
 	return Break{
 		code: immNum(code.Val()),
 	}

@@ -14,8 +14,8 @@ type Maskeqz struct {
 	rd, rj, rk uint8
 }
 
-// NewMaskeqz - maskeqz rd, rj, rk.
-func NewMaskeqz(rd, rj, rk Reg) Instr {
+// Maskeqz - maskeqz rd, rj, rk.
+func (Builder) Maskeqz(rd, rj, rk Reg) Instr {
 	return Maskeqz{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -14,8 +14,8 @@ type ExtWH struct {
 	rd, rj uint8
 }
 
-// NewExtWH - ext.w.h rd, rj.
-func NewExtWH(rd, rj Reg) Instr {
+// ExtWH - ext.w.h rd, rj.
+func (Builder) ExtWH(rd, rj Reg) Instr {
 	return ExtWH{
 		rd: rd.Num(),
 		rj: rj.Num(),

@@ -13,8 +13,8 @@ type Dbcl struct {
 	code imm
 }
 
-// NewDbcl - dbcl code.
-func NewDbcl(code Code15) Instr {
+// Dbcl - dbcl code.
+func (Builder) Dbcl(code Code15) Instr {
 	return Dbcl{
 		code: immNum(code.Val()),
 	}

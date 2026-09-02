@@ -9,14 +9,14 @@ import (
 )
 
 func TestBreakCtor(t *testing.T) {
-	c0, err := NewCode15(0)
+	c0, err := New().Code15(0)
 	require.NoError(t, err)
-	c1, err := NewCode15(1)
+	c1, err := New().Code15(1)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: break 0 and break 1.
-	require.Equal(t, uint32(0x002a0000), ctorWord(t, NewBreak(c0)))
-	require.Equal(t, uint32(0x002a0001), ctorWord(t, NewBreak(c1)))
+	require.Equal(t, uint32(0x002a0000), ctorWord(t, New().Break(c0)))
+	require.Equal(t, uint32(0x002a0001), ctorWord(t, New().Break(c1)))
 }
 
 func TestBreakDecodeEncode(t *testing.T) {

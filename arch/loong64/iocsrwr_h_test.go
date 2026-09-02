@@ -13,10 +13,10 @@ func TestIocsrwrHCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x064815ac),
-		ctorWord(t, NewIocsrwrH(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().IocsrwrH(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewIocsrwrH(lreg(t, 12), lreg(t, 13))
+	in := New().IocsrwrH(lreg(t, 12), lreg(t, 13))
 	_, ok := in.(IocsrwrH)
 	require.True(t, ok, "type = %T, want IocsrwrH", in)
 }

@@ -14,8 +14,8 @@ type CtoD struct {
 	rd, rj uint8
 }
 
-// NewCtoD - cto.d rd, rj.
-func NewCtoD(rd, rj Reg) Instr {
+// CtoD - cto.d rd, rj.
+func (Builder) CtoD(rd, rj Reg) Instr {
 	return CtoD{
 		rd: rd.Num(),
 		rj: rj.Num(),

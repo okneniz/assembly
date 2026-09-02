@@ -13,10 +13,10 @@ func TestCloDCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x000021ac),
-		ctorWord(t, NewCloD(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().CloD(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewCloD(lreg(t, 1), lreg(t, 2))
+	in := New().CloD(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(CloD)
 	require.True(t, ok, "type = %T, want CloD", in)
 }

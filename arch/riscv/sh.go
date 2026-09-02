@@ -7,12 +7,21 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Sh — sh rs2, off(rs1).
+// Sh - sh rs2, off(rs1).
 type Sh struct {
 	base
 
 	rs1, rs2 string
 	off      imm
+}
+
+// Sh - sh rs2, off(rs1).
+func (Builder) Sh(rs2, rs1 Reg, off Off) Instr {
+	return Sh{
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+		off: immNum(off.v),
+	}
 }
 
 func decodeSh(w uint32, addr uint64) Instr {

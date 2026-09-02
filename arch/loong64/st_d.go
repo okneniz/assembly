@@ -16,8 +16,8 @@ type StD struct {
 	imm    imm
 }
 
-// NewStD - st.d rd, rj, si12.
-func NewStD(rd, rj Reg, v Imm12) Instr {
+// StD - st.d rd, rj, si12.
+func (Builder) StD(rd, rj Reg, v Imm12) Instr {
 	return StD{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

@@ -13,7 +13,7 @@ func TestLdHuCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x2a4021ac),
-		ctorWord(t, NewLdHu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))),
+		ctorWord(t, New().LdHu(lreg(t, 12), lreg(t, 13), imm12v(t, 8))),
 	)
 }
 

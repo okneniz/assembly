@@ -15,6 +15,15 @@ type Bne struct {
 	target   imm // absolute target address
 }
 
+// Bne - bne rs1, rs2, target (absolute target address).
+func (Builder) Bne(rs1, rs2 Reg, target int64) Instr {
+	return Bne{
+		rs1:    rs1.name(),
+		rs2:    rs2.name(),
+		target: immNum(target),
+	}
+}
+
 func decodeBne(w uint32, addr uint64) Instr {
 	return Bne{
 		base:   newBase(addr, w),

@@ -10,9 +10,9 @@ import (
 
 func TestDbclCtor(t *testing.T) {
 	// llvm-mc-verified: dbcl 1.
-	v, err := NewCode15(1)
+	v, err := New().Code15(1)
 	require.NoError(t, err)
-	require.Equal(t, uint32(0x002a8001), ctorWord(t, NewDbcl(v)))
+	require.Equal(t, uint32(0x002a8001), ctorWord(t, New().Dbcl(v)))
 }
 
 func TestDbclDecodeEncode(t *testing.T) {

@@ -15,8 +15,8 @@ type AddiW struct {
 	imm    imm
 }
 
-// NewAddiW - addi.w rd, rj, si12.
-func NewAddiW(rd, rj Reg, v Imm12) Instr {
+// AddiW - addi.w rd, rj, si12.
+func (Builder) AddiW(rd, rj Reg, v Imm12) Instr {
 	return AddiW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

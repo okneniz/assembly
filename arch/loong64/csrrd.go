@@ -15,8 +15,8 @@ type Csrrd struct {
 	csr imm
 }
 
-// NewCsrrd - csrrd rd, csr.
-func NewCsrrd(rd Reg, csr UImm14) Instr {
+// Csrrd - csrrd rd, csr.
+func (Builder) Csrrd(rd Reg, csr UImm14) Instr {
 	return Csrrd{
 		rd:  rd.Num(),
 		csr: immNum(csr.Val()),

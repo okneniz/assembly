@@ -7,17 +7,15 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmaddDbW - amadd_db.w rd, rk, rj (DJK, @orig_fmt=DKJ - the second assembly
-// operand packs the K field [14:10], the third the J field [9:5]):
-// rd = AMO(MEM[rj], rk): fetch-add with a built-in barrier, old value to rd.
+// AmaddDbW - amadd_db.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] += rk. A built-in barrier.
 type AmaddDbW struct {
 	base
 
 	rd, rk, rj uint8
 }
 
-// NewAmaddDbW - amadd_db.w rd, rk, rj (the operand order the assembler writes).
-func NewAmaddDbW(rd, rk, rj Reg) Instr {
+// AmaddDbW - amadd_db.w rd, rk, rj.
+func (Builder) AmaddDbW(rd, rk, rj Reg) Instr {
 	return AmaddDbW{
 		rd: rd.Num(),
 		rk: rk.Num(),

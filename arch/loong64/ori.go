@@ -15,8 +15,8 @@ type Ori struct {
 	imm    imm
 }
 
-// NewOri - ori rd, rj, ui12.
-func NewOri(rd, rj Reg, v UImm12) Instr {
+// Ori - ori rd, rj, ui12.
+func (Builder) Ori(rd, rj Reg, v UImm12) Instr {
 	return Ori{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

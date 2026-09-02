@@ -9,17 +9,17 @@ import (
 )
 
 func TestIdleCtor(t *testing.T) {
-	code, err := NewCode15(0)
+	code, err := New().Code15(0)
 	require.NoError(t, err)
 
 	// llvm-mc-verified: idle 0.
 	require.Equal(
 		t,
 		uint32(0x06488000),
-		ctorWord(t, NewIdle(code)),
+		ctorWord(t, New().Idle(code)),
 	)
 
-	in := NewIdle(code)
+	in := New().Idle(code)
 	_, ok := in.(Idle)
 	require.True(t, ok, "type = %T, want Idle", in)
 }

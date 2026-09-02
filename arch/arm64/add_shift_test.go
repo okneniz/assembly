@@ -43,28 +43,28 @@ func TestAddShiftCtor(t *testing.T) {
 		{
 			"add x+w",
 			func() error {
-				_, err := NewAddShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
+				_, err := New().AddShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
 				return err
 			},
 		},
 		{
 			"addshift sp",
 			func() error {
-				_, err := NewAddShift(SP, xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
+				_, err := New().AddShift(SP, xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
 				return err
 			},
 		},
 		{
 			"add ror",
 			func() error {
-				_, err := NewAddShift(xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 1), ROR)
+				_, err := New().AddShift(xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 1), ROR)
 				return err
 			},
 		},
 		{
 			"add w + imm6=32",
 			func() error {
-				_, err := NewAddShift(wreg(t, 0), wreg(t, 1), wreg(t, 2), imm6(t, 32), LSL)
+				_, err := New().AddShift(wreg(t, 0), wreg(t, 1), wreg(t, 2), imm6(t, 32), LSL)
 				return err
 			},
 		},

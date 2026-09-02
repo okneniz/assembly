@@ -226,7 +226,7 @@ func (g codeGen) Generate() iter.Seq[CodeParams] {
 }
 
 func (g codeGen) Shrink(p CodeParams) iter.Seq[CodeParams] {
-	cs := immShrunk(p.Code, arch.NewCode15, halvingOnly)
+	cs := immShrunk(p.Code, arch.New().Code15, halvingOnly)
 	out := make([]CodeParams, 0, len(cs))
 	for _, c := range cs {
 		out = append(out, NewCodeParams(c, p.Ctor))
@@ -237,11 +237,11 @@ func (g codeGen) Shrink(p CodeParams) iter.Seq[CodeParams] {
 
 // aluImm12 — the si12 ALU immediate family (5 ctors).
 var aluImm12 = []r2RoleEntry[arch.Imm12]{
-	{name: "addi.w", ctor: arch.NewAddiW},
-	{name: "addi.d", ctor: arch.NewAddiD},
-	{name: "slti", ctor: arch.NewSlti},
-	{name: "sltui", ctor: arch.NewSltui},
-	{name: "lu52i.d", ctor: arch.NewLu52iD},
+	{name: "addi.w", ctor: arch.New().AddiW},
+	{name: "addi.d", ctor: arch.New().AddiD},
+	{name: "slti", ctor: arch.New().Slti},
+	{name: "sltui", ctor: arch.New().Sltui},
+	{name: "lu52i.d", ctor: arch.New().Lu52iD},
 }
 
 // AluImm12 — an arbitrary si12 ALU immediate instruction.
@@ -251,9 +251,9 @@ func AluImm12(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
 
 // aluUImm12 — the ui12 logic immediate family (3 ctors).
 var aluUImm12 = []r2RoleEntry[arch.UImm12]{
-	{name: "andi", ctor: arch.NewAndi},
-	{name: "ori", ctor: arch.NewOri},
-	{name: "xori", ctor: arch.NewXori},
+	{name: "andi", ctor: arch.New().Andi},
+	{name: "ori", ctor: arch.New().Ori},
+	{name: "xori", ctor: arch.New().Xori},
 }
 
 // AluUImm12 — an arbitrary ui12 logic immediate instruction.
@@ -263,7 +263,7 @@ func AluUImm12(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm12]] {
 
 // aluImm16 — the si16 family (addu16i.d).
 var aluImm16 = []r2RoleEntry[arch.Imm16]{
-	{name: "addu16i.d", ctor: arch.NewAddu16iD},
+	{name: "addu16i.d", ctor: arch.New().Addu16iD},
 }
 
 // AluImm16 — an arbitrary si16 (addu16i.d) instruction.
@@ -273,12 +273,12 @@ func AluImm16(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.Imm16]] {
 
 // imm20 — the si20 family: lu12i.w/lu32i.d and the pcaddi group (6 ctors).
 var imm20 = []r1RoleEntry[arch.Imm20]{
-	{name: "lu12i.w", ctor: arch.NewLu12iW},
-	{name: "lu32i.d", ctor: arch.NewLu32iD},
-	{name: "pcaddi", ctor: arch.NewPcaddi},
-	{name: "pcalau12i", ctor: arch.NewPcalau12i},
-	{name: "pcaddu12i", ctor: arch.NewPcaddu12i},
-	{name: "pcaddu18i", ctor: arch.NewPcaddu18i},
+	{name: "lu12i.w", ctor: arch.New().Lu12iW},
+	{name: "lu32i.d", ctor: arch.New().Lu32iD},
+	{name: "pcaddi", ctor: arch.New().Pcaddi},
+	{name: "pcalau12i", ctor: arch.New().Pcalau12i},
+	{name: "pcaddu12i", ctor: arch.New().Pcaddu12i},
+	{name: "pcaddu18i", ctor: arch.New().Pcaddu18i},
 }
 
 // Imm20Instr — an arbitrary si20 (lu12i.w/lu32i.d/pcaddi family)
@@ -291,12 +291,12 @@ func Imm20Instr(rnd *rand.Rand) ohsnap.Arbitrary[R1RoleParams[arch.Imm20]] {
 // code15 — the ui15 code family (6 ctors; idle belongs here by shape —
 // its privileged group is a decode/JSON concern, not a generator one).
 var code15 = []codeEntry{
-	{name: "break", ctor: arch.NewBreak},
-	{name: "syscall", ctor: arch.NewSyscall},
-	{name: "dbcl", ctor: arch.NewDbcl},
-	{name: "dbar", ctor: arch.NewDbar},
-	{name: "ibar", ctor: arch.NewIbar},
-	{name: "idle", ctor: arch.NewIdle},
+	{name: "break", ctor: arch.New().Break},
+	{name: "syscall", ctor: arch.New().Syscall},
+	{name: "dbcl", ctor: arch.New().Dbcl},
+	{name: "dbar", ctor: arch.New().Dbar},
+	{name: "ibar", ctor: arch.New().Ibar},
+	{name: "idle", ctor: arch.New().Idle},
 }
 
 // Code15Instr — an arbitrary ui15 code instruction. The name avoids the

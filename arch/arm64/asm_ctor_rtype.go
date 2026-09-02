@@ -344,7 +344,12 @@ func msub3(ops []vOp, name string) (Instr, error) {
 		return nil, err
 	}
 
-	return NewMsub(NewMadd(rd, rn, rm, zeroReg(rd))), nil
+	return Msub{Madd: Madd{
+		rd: rd,
+		rn: rn,
+		rm: rm,
+		ra: zeroReg(rd),
+	}}, nil
 }
 
 func makeMaddCtor(ops []vOp, name string) (Instr, error) {
@@ -430,14 +435,14 @@ func csFam(ops []vOp, name string) (Instr, error) {
 
 // csOf — assemble a family struct by the base encoding name.
 func csOf(base string, rd, rn, rm, cond string) (Instr, error) {
-	c := NewCsel(rd, rn, rm, cond)
+	c := newCsel(rd, rn, rm, cond)
 	switch base {
 	case "csinc":
-		return NewCsinc(c), nil
+		return Csinc{Csel: c}, nil
 	case "csinv":
-		return NewCsinv(c), nil
+		return Csinv{Csel: c}, nil
 	case "csneg":
-		return NewCsneg(c), nil
+		return Csneg{Csel: c}, nil
 	}
 
 	return c, nil

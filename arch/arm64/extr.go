@@ -17,6 +17,33 @@ type Extr struct {
 
 const extrX uint32 = 0x93000000
 
+// Extr — extr rd, rn, rm, #lsb (ror when Rn == Rm). Only the
+// 64-bit form; register 31 reads as zr (SP/WSP are not allowed — use XZR);
+// lsb — 0..63.
+func (Builder) Extr(rd, rn, rm Reg, lsb Imm6) (Instr, error) {
+	if err := requireClass(rd, "Extr", "rd",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Extr", "rn",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Extr", "rm",
+		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	return Extr{
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		lsb: lsb.v,
+	}, nil
+}
+
 func decodeExtr(w uint32, addr uint64) Instr {
 	return Extr{
 		base: newBase(addr, w),

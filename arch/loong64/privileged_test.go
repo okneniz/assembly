@@ -11,48 +11,48 @@ import (
 // every privileged instruction (the rest is covered by the per-file
 // tests).
 func TestPrivilegedJSONEncodeError(t *testing.T) {
-	csr, err := NewUImm14(5)
+	csr, err := New().UImm14(5)
 	require.NoError(t, err)
 
-	op5, err := NewUImm5(5)
+	op5, err := New().UImm5(5)
 	require.NoError(t, err)
 
-	off, err := NewImm12(8)
+	off, err := New().Imm12(8)
 	require.NoError(t, err)
 
-	lvl, err := NewUImm8(1)
+	lvl, err := New().UImm8(1)
 	require.NoError(t, err)
 
-	code, err := NewCode15(1)
+	code, err := New().Code15(1)
 	require.NoError(t, err)
 
 	family := []struct {
 		mnem string
 		ctor func() Instr
 	}{
-		{"csrrd", func() Instr { return NewCsrrd(lreg(t, 12), csr) }},
-		{"csrwr", func() Instr { return NewCsrwr(lreg(t, 12), csr) }},
-		{"csrxchg", func() Instr { return NewCsrxchg(lreg(t, 12), lreg(t, 13), csr) }},
-		{"cacop", func() Instr { return NewCacop(op5, lreg(t, 13), off) }},
-		{"lddir", func() Instr { return NewLddir(lreg(t, 12), lreg(t, 13), lvl) }},
-		{"ldpte", func() Instr { return NewLdpte(lreg(t, 13), lvl) }},
-		{"iocsrrd.b", func() Instr { return NewIocsrrdB(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrrd.h", func() Instr { return NewIocsrrdH(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrrd.w", func() Instr { return NewIocsrrdW(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrrd.d", func() Instr { return NewIocsrrdD(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrwr.b", func() Instr { return NewIocsrwrB(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrwr.h", func() Instr { return NewIocsrwrH(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrwr.w", func() Instr { return NewIocsrwrW(lreg(t, 12), lreg(t, 13)) }},
-		{"iocsrwr.d", func() Instr { return NewIocsrwrD(lreg(t, 12), lreg(t, 13)) }},
-		{"tlbclr", NewTlbclr},
-		{"tlbflush", NewTlbflush},
-		{"tlbsrch", NewTlbsrch},
-		{"tlbrd", NewTlbrd},
-		{"tlbwr", NewTlbwr},
-		{"tlbfill", NewTlbfill},
-		{"ertn", NewErtn},
-		{"idle", func() Instr { return NewIdle(code) }},
-		{"invtlb", func() Instr { return NewInvtlb(op5, lreg(t, 13), lreg(t, 14)) }},
+		{"csrrd", func() Instr { return New().Csrrd(lreg(t, 12), csr) }},
+		{"csrwr", func() Instr { return New().Csrwr(lreg(t, 12), csr) }},
+		{"csrxchg", func() Instr { return New().Csrxchg(lreg(t, 12), lreg(t, 13), csr) }},
+		{"cacop", func() Instr { return New().Cacop(op5, lreg(t, 13), off) }},
+		{"lddir", func() Instr { return New().Lddir(lreg(t, 12), lreg(t, 13), lvl) }},
+		{"ldpte", func() Instr { return New().Ldpte(lreg(t, 13), lvl) }},
+		{"iocsrrd.b", func() Instr { return New().IocsrrdB(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrrd.h", func() Instr { return New().IocsrrdH(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrrd.w", func() Instr { return New().IocsrrdW(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrrd.d", func() Instr { return New().IocsrrdD(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrwr.b", func() Instr { return New().IocsrwrB(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrwr.h", func() Instr { return New().IocsrwrH(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrwr.w", func() Instr { return New().IocsrwrW(lreg(t, 12), lreg(t, 13)) }},
+		{"iocsrwr.d", func() Instr { return New().IocsrwrD(lreg(t, 12), lreg(t, 13)) }},
+		{"tlbclr", New().Tlbclr},
+		{"tlbflush", New().Tlbflush},
+		{"tlbsrch", New().Tlbsrch},
+		{"tlbrd", New().Tlbrd},
+		{"tlbwr", New().Tlbwr},
+		{"tlbfill", New().Tlbfill},
+		{"ertn", New().Ertn},
+		{"idle", func() Instr { return New().Idle(code) }},
+		{"invtlb", func() Instr { return New().Invtlb(op5, lreg(t, 13), lreg(t, 14)) }},
 	}
 
 	for _, f := range family {

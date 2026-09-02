@@ -8,8 +8,8 @@ import (
 )
 
 // ScW - sc.w rd, rj, offs (DJSk14): MEM[rj + offs] = low32(rd)
-// conditionally, rd = success (store-conditional 32 bits; offs is
-// word-scaled like ll.w).
+// conditionally, rd = success (store-conditional 32 bits; offs - a byte
+// offset like ll.w).
 type ScW struct {
 	base
 
@@ -17,8 +17,8 @@ type ScW struct {
 	off    imm
 }
 
-// NewScW - sc.w rd, rj, offs (the byte offset from rj).
-func NewScW(rd, rj Reg, off Imm14) Instr {
+// ScW - sc.w rd, rj, offs (the byte offset from rj).
+func (Builder) ScW(rd, rj Reg, off Imm14) Instr {
 	return ScW{
 		rd:  rd.Num(),
 		rj:  rj.Num(),

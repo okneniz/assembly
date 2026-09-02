@@ -13,10 +13,10 @@ func TestCpucfgCtor(t *testing.T) {
 	require.Equal(
 		t,
 		uint32(0x00006dac),
-		ctorWord(t, NewCpucfg(lreg(t, 12), lreg(t, 13))),
+		ctorWord(t, New().Cpucfg(lreg(t, 12), lreg(t, 13))),
 	)
 
-	in := NewCpucfg(lreg(t, 1), lreg(t, 2))
+	in := New().Cpucfg(lreg(t, 1), lreg(t, 2))
 	_, ok := in.(Cpucfg)
 	require.True(t, ok, "type = %T, want Cpucfg", in)
 }

@@ -11,11 +11,11 @@ import (
 func TestBltuCtor(t *testing.T) {
 	// llvm-mc-verified: bltu $t1, $t0, 8 (at pc 0; the manual order prints
 	// rj first). The constructor takes (rj, rd, target).
-	in := NewBltu(lreg(t, 13), lreg(t, 12), 8)
+	in := New().Bltu(lreg(t, 13), lreg(t, 12), 8)
 	require.Equal(t, uint32(0x680009ac), ctorWord(t, in))
 
 	// llvm-mc-verified: bltu $t1, $t0, -8 (at pc 0).
-	neg := NewBltu(lreg(t, 13), lreg(t, 12), -8)
+	neg := New().Bltu(lreg(t, 13), lreg(t, 12), -8)
 	require.Equal(t, uint32(0x6bfff9ac), ctorWord(t, neg))
 }
 

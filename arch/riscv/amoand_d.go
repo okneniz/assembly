@@ -8,11 +8,20 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// AmoandD — amoand.d rd, rs2, (rs1).
+// AmoandD - amoand.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] &= rs2.
 type AmoandD struct {
 	base
 
 	rd, rs1, rs2 string
+}
+
+// AmoandD - amoand.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] &= rs2.
+func (Builder) AmoandD(rd, rs1, rs2 Reg) Instr {
+	return AmoandD{
+		rd:  rd.name(),
+		rs1: rs1.name(),
+		rs2: rs2.name(),
+	}
 }
 
 func decodeAmoandD(w uint32, addr uint64) Instr {

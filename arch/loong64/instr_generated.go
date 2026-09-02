@@ -3,7 +3,7 @@
 // LoongArch (LA64) instruction encodings, parsed from the vendored
 // loongarch-opcodes tables (arch/loong64/data/la-*.txt - the scalar integer
 // subsets). Keyed by the official ISA mnemonic (the upstream tables' renames
-// are restored via @orig_name; csrrd/csrwr, merged into csrxchg upstream, are
+// are restored via orig_name annotations; csrrd/csrwr, merged into csrxchg upstream, are
 // derived back); value is {match, mask} - the authoritative decode data. The
 // hand-written decodeTable (decode.go) joins by mnemonic to supply
 // operand/format config; only that subset is matched at decode time.
