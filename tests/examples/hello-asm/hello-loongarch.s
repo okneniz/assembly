@@ -19,7 +19,9 @@ start:
 	ori	$t0, $t0, 0x1e0
 
 	# $t1 = the message cursor.
-	la	$t1, msg
+	# la.pcrel (pcalau12i+addi.d): the standalone form - llvm-mc's plain
+	# la is GOT-indirect (pcalau12i+ld.d) and needs a linker-built GOT.
+	la.pcrel	$t1, msg
 
 	# for (; *p; p++) *uart = *p;
 1:

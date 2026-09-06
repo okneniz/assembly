@@ -4,10 +4,12 @@ package asm
 // label offsets, .set, globals), then finalization - the subsections of each
 // section are concatenated in ascending number order (GAS), the sections get
 // consecutive addresses from base, and pass 2 encodes instructions at the
-// final addresses with full symbol resolution. The walks must produce an
-// identical layout: all sizes are deterministic without symbol values (see
-// finalizeLayout for the single deliberate exception - RVC boundaries when
-// returning between subsections).
+// final addresses with full symbol resolution. Instruction sizes may depend
+// on symbol VALUES (riscv RVC: a label jump compresses only when the
+// distance fits), so the layout walk is relaxed to a fixpoint: it repeats
+// with the symbol table frozen from the previous iteration until two
+// consecutive walks agree on every size (see walkLayout). Pass 2 encodes
+// exactly the reserved sizes; the encode length check is the guard.
 
 import (
 	"bytes"
@@ -43,13 +45,8 @@ func Assemble(src string, base uint64, be Syntax) (*Result, []AsmError) {
 		}
 	}
 
-	// pass 1: layout (subsection counters; addresses are "live", see pass1Addr)
-	a.walk(stmts, false)
-
-	// finalization: the subsections of each section get base offsets in
-	// ascending number order (GAS concatenation), the sections get
-	// consecutive addresses from base
-	a.finalizeLayout()
+	// pass 1: layout, relaxed to a fixpoint (see walkLayout)
+	a.walkLayout(stmts)
 
 	// pass 2: encoding at the final addresses
 	a.walk(stmts, true)
@@ -71,7 +68,7 @@ func Assemble(src string, base uint64, be Syntax) (*Result, []AsmError) {
 		}
 	}
 
-	resolve := a.resolver(-1, base) // no position - numeric references do not resolve
+	resolve := a.resolver(-1, base, nil) // no position - numeric references do not resolve
 	for name, lr := range a.labels {
 		res.Symbols[name] = a.labelAddr(lr)
 	}
@@ -202,6 +199,13 @@ type assembler struct {
 	incbins   map[string][]byte       // .incbin cache: both passes read the same bytes
 	pools     map[*subBuf][]poolEntry // literal pools of subsections (order of appearance)
 	poolAddr  map[string]uint64       // slot addresses (after finalizeLayout)
+
+	// relaxation state (walkLayout): the symbol table frozen from the
+	// previous layout iteration (nil during the first, placeholder walk)
+	// and the per-statement sizes reserved by the final layout walk (the
+	// pass 2 length contract).
+	frozen     *frozenSyms
+	layoutSize map[int]int
 }
 
 func newAssembler(
@@ -220,6 +224,8 @@ func newAssembler(
 		incbins:   map[string][]byte{},
 		pools:     map[*subBuf][]poolEntry{},
 		poolAddr:  map[string]uint64{},
+
+		layoutSize: map[int]int{},
 	}
 }
 
@@ -303,15 +309,14 @@ func (a *assembler) walk(stmts []statement, pass2 bool) {
 	}
 }
 
-// finalizeLayout assigns the layout after pass 1: the subsections of each
-// section get base offsets in ascending number order (GAS concatenation:
-// all subsections of a section are concatenated by number, the write order
-// within a subsection is preserved), the sections get consecutive addresses
-// from base without gaps. Pass 2 encodes at these FINAL addresses; if, when
-// returning to an early subsection, a literal PC-relative target lands on an
-// RVC range boundary, the size from the final address may diverge from the
-// computed one - this is an explicit encoding error (got N bytes, layout
-// pass reported M), not a silent bug.
+// finalizeLayout assigns the layout after a layout walk: the subsections
+// of each section get base offsets in ascending number order (GAS
+// concatenation: all subsections of a section are concatenated by number,
+// the write order within a subsection is preserved), the sections get
+// consecutive addresses from base without gaps. The walk is then repeated
+// with these addresses frozen (see walkLayout); when the sizes stabilize,
+// pass 2 encodes at exactly these FINAL addresses, and the encode length
+// check is the guard that the reservation matches.
 func (a *assembler) finalizeLayout() {
 	a.secAddr = make([]uint64, len(a.secs))
 	next := a.base
@@ -339,6 +344,164 @@ func (a *assembler) finalizeLayout() {
 	}
 }
 
+// maxLayoutIterations bounds the layout relaxation: consecutive walks must
+// agree on the sizes well before this (sizes stabilize once the value-driven
+// decisions stop flipping); a layout that still changes is an oscillation
+// bug, reported instead of looping forever.
+const maxLayoutIterations = 16
+
+// walkLayout is pass 1: the layout walk, relaxed to a fixpoint. Sizes may
+// depend on symbol values (riscv RVC: a label jump compresses only when the
+// distance fits), so the walk repeats with the symbol table frozen from the
+// previous iteration until two consecutive walks produce identical sizes.
+// The first walk runs under the placeholder environment (all offsets zero -
+// the most compressible seed); the following ones resolve through the chain
+// "symbols of the walk so far" → frozen table → placeholder (see
+// sizingResolve). Sizes only grow from the seed (larger sizes only increase
+// pc-relative distances, so a "fits" decision can only flip to "does not
+// fit"), which makes the iteration monotone and terminating; for sizes that
+// do not depend on values - everything except symbolic compressibles - the
+// second walk is a no-op, so such assemblies behave exactly as before.
+// Errors are kept only from the final walk: earlier iterations may size
+// optimistically under stale assumptions.
+func (a *assembler) walkLayout(stmts []statement) {
+	var lastSizes []int
+	for iter := 0; ; iter++ {
+		savedErrs := a.errs
+		a.errs = nil // per-iteration errors: only the final walk's are kept
+		a.resetLayout()
+		a.walk(stmts, false)
+		sizes := a.sizesVector()
+		a.finalizeLayout()
+
+		if slices.Equal(sizes, lastSizes) {
+			a.errs = append(savedErrs, a.errs...)
+			return
+		}
+
+		a.errs = savedErrs
+		lastSizes = sizes
+		a.frozen = a.snapshotSyms()
+		if iter == maxLayoutIterations {
+			a.errs = append(a.errs, NewAsmError(0, 0,
+				fmt.Sprintf("layout did not converge after %d iterations", iter+1)))
+			return
+		}
+	}
+}
+
+// resetLayout returns the layout state to the start of pass 1: subsection
+// counters, symbol tables, globals, literal pools, and the reserved sizes -
+// everything the walk itself rebuilds. Sections/subsections, .set values,
+// the frozen relaxation table, and the .incbin cache survive.
+func (a *assembler) resetLayout() {
+	for _, s := range a.secs {
+		for _, sub := range s.subs {
+			sub.size = 0
+		}
+	}
+
+	a.labels = map[string]labelRef{}
+	a.numLabels = map[string][]numLabelDef{}
+	a.globals = nil
+	a.pools = map[*subBuf][]poolEntry{}
+	a.poolAddr = map[string]uint64{}
+	a.layoutSize = map[int]int{}
+}
+
+// sizesVector is the deterministic fingerprint of the layout: the subsection
+// sizes in section/subsection order. Equal vectors across two walks mean
+// equal addresses of every label, i.e. a fixpoint.
+func (a *assembler) sizesVector() []int {
+	out := make([]int, 0, len(a.secs))
+	for _, s := range a.secs {
+		for _, sub := range s.sortedSubs() {
+			out = append(out, sub.size)
+		}
+	}
+
+	return out
+}
+
+// frozenSyms is the symbol table snapshot of a finished layout iteration -
+// the sizing seed of the next one: named labels and .set values by name,
+// numeric label definitions by base name in source order. Values are the
+// addresses of the ITERATION THAT SNAPPED (stale for forward references of
+// the next walk; exact once the sizes stop changing).
+type frozenSyms struct {
+	named map[string]uint64
+	local map[string][]frozenLocal
+}
+
+// frozenLocal is one definition of a numeric local label in a snapshot.
+type frozenLocal struct {
+	stmtIdx int
+	addr    uint64
+}
+
+// lookup resolves a symbol name against the snapshot; numeric local
+// references pick the nearest definition relative to statement refIdx (as
+// resolveLocal does against the live table).
+func (f *frozenSyms) lookup(name string, refIdx int) (uint64, bool) {
+	if f == nil {
+		return 0, false
+	}
+
+	if isLocalRef(name) {
+		defs := f.local[name[:len(name)-1]]
+		if name[len(name)-1] == 'b' {
+			for _, d := range slices.Backward(defs) {
+				if d.stmtIdx <= refIdx {
+					return d.addr, true
+				}
+			}
+		} else {
+			for i := range defs {
+				if defs[i].stmtIdx > refIdx {
+					return defs[i].addr, true
+				}
+			}
+		}
+
+		return 0, false
+	}
+
+	v, ok := f.named[name]
+	return v, ok
+}
+
+// snapshotSyms materializes the frozen table after finalizeLayout: label
+// and numeric-local addresses plus the evaluated .set values (a set may
+// reference labels; unresolvable ones are skipped - they stay on the
+// placeholder during sizing).
+func (a *assembler) snapshotSyms() *frozenSyms {
+	f := &frozenSyms{
+		named: map[string]uint64{},
+		local: map[string][]frozenLocal{},
+	}
+
+	for n, lr := range a.labels {
+		f.named[n] = a.labelAddr(lr)
+	}
+
+	resolve := a.resolver(-1, a.base, nil) // no position: numeric refs do not resolve
+	for n, e := range a.sets {
+		if v, err := e.Eval(resolve); err == nil {
+			f.named[n] = uint64(v)
+		}
+	}
+
+	for n, defs := range a.numLabels {
+		lst := make([]frozenLocal, len(defs))
+		for i, d := range defs {
+			lst[i] = frozenLocal{stmtIdx: d.stmtIdx, addr: a.labelAddr(d.ref)}
+		}
+		f.local[n] = lst
+	}
+
+	return f
+}
+
 // poolAdd registers a literal pool slot of the current subsection (dedup by
 // auto-name: PoolName(slot, ExprKey)); the order is first appearance.
 func (a *assembler) poolAdd(val *expr.Expr, slot int) {
@@ -362,7 +525,7 @@ func (a *assembler) emitPoolRecords() {
 		for _, sub := range s.sortedSubs() {
 			for _, e := range a.pools[sub] {
 				addr := a.poolAddr[e.name]
-				v, err := e.expr.Eval(a.resolver(-1, addr))
+				v, err := e.expr.Eval(a.resolver(-1, addr, nil))
 				if err != nil {
 					v = 0
 				}
@@ -405,7 +568,7 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 
 	// Pool: the address of its OWN slot - via the reserved name PoolSelf
 	// (the slot naming scheme does not leave the core)
-	resolve := a.resolver(idx, addr)
+	resolve := a.resolver(idx, addr, nil)
 	if pu, ok := st.instr.(PoolUser); ok {
 		if e, slot, ok2 := pu.PoolReq(); ok2 {
 			if pa, found := a.poolAddr[poolName(slot, expr.ExprKey(e))]; found {
@@ -421,22 +584,26 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 		}
 	}
 
-	// Size = a trial Resolve with a placeholder environment, written to the
-	// counter; deterministic across passes (see sizeOf), so in pass 2 we
-	// repeat it without reporting the error - it was already recorded in
-	// pass 1.
-	size, err := sizeOf(st.instr, newCtx(addr, placeholderResolve(addr)))
-	if err != nil {
-		if !pass2 {
+	// Sizing. Layout walks resolve symbols through the relaxation chain
+	// (see sizingResolve) and record the size per statement into the
+	// subsection counter. Pass 2 does not re-derive it: it uses the size
+	// reserved by the final layout walk, so the encode length check below
+	// is exactly "the encoding matches the reservation".
+	if !pass2 {
+		size, err := sizeOf(st.instr, newCtx(addr, a.sizingResolve(idx, addr)))
+		if err != nil {
 			a.errf(st.pos, "size: %v", err)
+			return
 		}
 
+		a.layoutSize[idx] = size
+		a.curSub.size += size
 		return
 	}
 
-	if !pass2 {
-		a.curSub.size += size
-		return
+	size, ok := a.layoutSize[idx]
+	if !ok {
+		return // the final layout walk could not size it (error already recorded)
 	}
 
 	var buf bytes.Buffer
@@ -543,7 +710,7 @@ func (a *assembler) doDirective(st *statement, idx int, pass2 bool) {
 		}
 
 		addr := a.secAddr[a.curIdx] + uint64(a.curSub.base+len(a.curSub.data))
-		resolve := a.resolver(idx, addr)
+		resolve := a.resolver(idx, addr, nil)
 		for _, arg := range d.args {
 			v, err := arg.expr.Eval(resolve)
 			if err != nil {
@@ -764,12 +931,40 @@ func (a *assembler) subsecNum(st *statement, d *directive, pass2 bool) (int, boo
 	return int(n), true
 }
 
+// sizingResolve is the symbol environment of instruction sizing in layout
+// walks. The first walk runs under the placeholder (every symbol = the
+// instruction's own address: all pc-relative offsets are zero, the most
+// compressible seed). Relaxation walks (a.frozen != nil) first consult the
+// symbols of the walk so far (exact for backward references), then the
+// frozen table of the previous iteration (stale for forward references),
+// then the placeholder; the chain never misses, so sizing never fails on an
+// unknown name - genuine misses are reported by pass 2 encoding.
+func (a *assembler) sizingResolve(idx int, addr uint64) func(string) (uint64, bool) {
+	if a.frozen == nil {
+		return placeholderResolve(addr)
+	}
+
+	frozen := a.frozen
+	return a.resolver(idx, addr, func(name string) (uint64, bool) {
+		if v, ok := frozen.lookup(name, idx); ok {
+			return v, true
+		}
+
+		return addr, true // placeholder
+	})
+}
+
 // resolver is the symbol resolution function for statement idx at address
 // addr: named labels, "." → addr, .set lazily, with memoization and cycle
 // protection; numeric locals "Nb"/"Nf" - the nearest definition relative to
 // idx (see resolveLocal). refIdx < 0 is a context without a position
-// (filling Symbols): numeric references do not resolve.
-func (a *assembler) resolver(refIdx int, addr uint64) func(string) (uint64, bool) {
+// (filling Symbols): numeric references do not resolve. fallback, when not
+// nil, is consulted after every miss (the relaxation sizing chain).
+func (a *assembler) resolver(
+	refIdx int,
+	addr uint64,
+	fallback func(string) (uint64, bool),
+) func(string) (uint64, bool) {
 	memo := map[string]uint64{}
 	visiting := map[string]bool{}
 	var res func(string) (uint64, bool)
@@ -782,49 +977,52 @@ func (a *assembler) resolver(refIdx int, addr uint64) func(string) (uint64, bool
 			return addr, true
 		}
 
-		if isPoolName(name) {
-			if v, ok := a.poolAddr[name]; ok {
-				return v, true
-			}
-
-			return 0, false
-		}
-
-		if isLocalRef(name) && refIdx >= 0 {
-			v, ok := a.resolveLocal(name, refIdx)
-			if !ok {
-				return 0, false
-			}
-
+		if v, ok := a.lookupSymbol(name, refIdx); ok {
 			memo[name] = v
 			return v, true
 		}
 
-		if lr, ok := a.labels[name]; ok {
-			v := a.labelAddr(lr)
-			memo[name] = v
-			return v, true
-		}
-
-		if e, ok := a.sets[name]; ok {
-			if visiting[name] {
-				return 0, false // cyclic definition
-			}
-
+		if e, ok := a.sets[name]; ok && !visiting[name] {
 			visiting[name] = true
 			v, err := e.Eval(res)
 			delete(visiting, name)
-			if err != nil {
-				return 0, false
+			if err == nil {
+				memo[name] = uint64(v)
+				return uint64(v), true
 			}
+		}
 
-			memo[name] = uint64(v)
-			return uint64(v), true
+		if fallback != nil {
+			if v, ok := fallback(name); ok {
+				memo[name] = v
+				return v, true
+			}
 		}
 
 		return 0, false
 	}
 	return res
+}
+
+// lookupSymbol is one symbol lookup: literal pool slots, numeric locals
+// (relative to statement refIdx), then named labels. .set values and the
+// relaxation fallback are layered on top by the caller (they need the
+// recursive resolver / the sizing chain).
+func (a *assembler) lookupSymbol(name string, refIdx int) (uint64, bool) {
+	if isPoolName(name) {
+		v, ok := a.poolAddr[name]
+		return v, ok
+	}
+
+	if isLocalRef(name) && refIdx >= 0 {
+		return a.resolveLocal(name, refIdx)
+	}
+
+	if lr, ok := a.labels[name]; ok {
+		return a.labelAddr(lr), true
+	}
+
+	return 0, false
 }
 
 // resolveLocal is the numeric local reference "Nb"/"Nf": the nearest

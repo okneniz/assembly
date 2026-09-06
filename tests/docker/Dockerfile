@@ -8,7 +8,9 @@
 FROM golang:1.26-trixie
 
 # clang - the assembler and fixtures compiler (one multi-target binary);
-# llvm  - llvm-mc, llvm-objdump, llvm-readelf (the test oracles).
+# llvm  - llvm-mc, llvm-objdump, llvm-readelf (the test oracles);
+# lld   - the linker of the encoding-parity gates (llvm-mc leaves la/pcala
+#         fixups as relocations; lld resolves them, objcopy dumps the image).
 RUN apt-get update \
-	&& apt-get install -y --no-install-recommends clang llvm \
+	&& apt-get install -y --no-install-recommends clang llvm lld \
 	&& rm -rf /var/lib/apt/lists/*

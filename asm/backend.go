@@ -15,7 +15,9 @@
 // assemble(ObjDump(instr)) == instr.
 //
 // v1 limitations: no relocations and no .o writing (la/call/tail resolve to
-// absolute addresses), no .macro, no relaxation.
+// absolute addresses), no .macro; value-driven size decisions (RVC
+// compression of label targets) are handled by the layout relaxation (see
+// walkLayout), not left to the caller.
 package asm
 
 import (
@@ -48,11 +50,12 @@ func isPoolName(name string) bool {
 // slot naming scheme does not cross the layer boundary.
 const PoolSelf = "\x00pool/self"
 
-// placeholderResolve is the layout pass resolver: every symbol equals the
-// address of the instruction itself, so all relative offsets are zero and
-// pass the range checks. Instructions must build their decisions (compression,
-// pseudo-expansion) not on symbol values but on their presence - then both
-// passes converge (see RISC-V: symbol targets are not compressed).
+// placeholderResolve is the first layout walk resolver: every symbol equals
+// the address of the instruction itself, so all relative offsets are zero
+// and pass the range checks - the most compressible seed. The walk is then
+// relaxed with real symbol values (walkLayout + sizingResolve), so size
+// decisions MAY depend on values, as long as they converge (sizes only grow
+// from this seed).
 func placeholderResolve(addr uint64) func(string) (uint64, bool) {
 	return func(string) (uint64, bool) {
 		return addr, true

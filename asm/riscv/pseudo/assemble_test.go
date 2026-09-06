@@ -117,13 +117,14 @@ func TestAssemblePseudo(t *testing.T) {
 }
 
 func TestAssembleLiLarge(t *testing.T) {
-	// li a0, 0x12345678 → lui a0, 0x12345 + addi a0, a0, 0x678
+	// li a0, 0x12345678 → lui a0, 0x12345 + addiw a0, a0, 0x678 (the
+	// sign-extending low word, as llvm-mc)
 	got := assembleOne(t, "li a0, 0x12345678", 0)
 	require.Len(t, got, 8, "li large")
 	hi := binary.LittleEndian.Uint32(got[0:4])
 	lo := binary.LittleEndian.Uint32(got[4:8])
 	require.Equal(t, uint32(0x12345537), hi)
-	require.Equal(t, uint32(0x67850513), lo)
+	require.Equal(t, uint32(0x6785051B), lo)
 }
 
 func TestLabelsAndCalls(t *testing.T) {
@@ -140,15 +141,18 @@ func:
 	require.Empty(t, errs, "errors: %v", errs)
 	d := res.Sections[0].Data
 	// li a0, 0x123: imm in [32..2047] -> addi without c.li -> 4; la =
-	// auipc+addi = 8; call = auipc+jalr = 8; j start -> c.j = 2; ret ->
-	// c.jr = 2. func @ +24.
-	require.Equal(t, uint64(0x1000+24), res.Symbols["func"], "func")
-	require.Len(t, d, 26, "total: % x", d)
+	// auipc+addi = 8; call = auipc+jalr = 8; j start -> c.j = 2 (in-range
+	// label jumps compress - the layout relaxation); ret -> c.jr = 2.
+	// func @ +22.
+	require.Equal(t, uint64(0x1000+22), res.Symbols["func"], "func")
+	require.Len(t, d, 24, "total: % x", d)
 	// la a1, start @0x1004: rel = -4 → hi=0, lo=-4: auipc a1, 0 + addi a1, a1, -4
 	laHi := binary.LittleEndian.Uint32(d[4:8])
 	laLo := binary.LittleEndian.Uint32(d[8:12])
 	require.Equal(t, uint32(0x00000597), laHi, "la") // auipc a1,0
 	require.Equal(t, uint32(0xffc58593), laLo, "la") // addi a1,a1,-4
+	// j start @0x1014: off -20 -> c.j
+	require.Equal(t, uint16(0xB7F5), binary.LittleEndian.Uint16(d[20:22]), "c.j -20")
 }
 
 // TestRiscvNumericLabels tests the GAS numeric local labels: beq/j via
@@ -164,23 +168,25 @@ func TestRiscvNumericLabels(t *testing.T) {
 	res, errs := asm.Assemble(src, 0x1000, NewASMBackend())
 	require.Empty(t, errs, "errors: %v", errs)
 	d := res.Sections[0].Data
-	// branches to symbols (including numeric labels) are not compressed
-	// into RVC - deterministic sizes between passes; beq 4 + two jal, 4
-	// each
-	require.Len(t, d, 12, "total: % x", d)
-	// beq a0, a1, +8 @0x1000 → 1: @0x1008
-	require.Equal(t, uint32(0x00B50463), binary.LittleEndian.Uint32(d[0:4]), "beq +8")
-	// jal x0, -4 @0x1004 → 1: @0x1000
-	require.Equal(t, uint32(0xFFDFF06F), binary.LittleEndian.Uint32(d[4:8]), "jal -4")
-	// jal x0, 0 @0x1008 -> 1: @0x1008 (the label before the instruction)
-	require.Equal(t, uint32(0x0000006F), binary.LittleEndian.Uint32(d[8:12]), "jal 0")
+	// label/numeric-label jumps compress when the RESOLVED distance fits
+	// (layout relaxation): beq stays 4 (rs2 = a1, no c.beqz form), the two
+	// j's -> c.j. Layout: beq @0x1000 (+6), c.j @0x1004 (-4), c.j @0x1006
+	// (0). Total 8.
+	require.Len(t, d, 8, "total: % x", d)
+	// beq a0, a1, +6 @0x1000 → 1: @0x1006
+	require.Equal(t, uint32(0x00B50363), binary.LittleEndian.Uint32(d[0:4]), "beq +6")
+	// jal x0, -4 @0x1004 → 1: @0x1000 → c.j -4
+	require.Equal(t, uint16(0xBFF5), binary.LittleEndian.Uint16(d[4:6]), "c.j -4")
+	// jal x0, 0 @0x1006 -> 1: @0x1006 (the label before the instruction) → c.j 0
+	require.Equal(t, uint16(0xA001), binary.LittleEndian.Uint16(d[6:8]), "c.j 0")
 	require.NotContains(t, res.Symbols, "1", "numeric label must not be a symbol")
 }
 
 // TestOptionNorvc checks that .option norvc forbids RVC auto-compression
 // (literal close targets stay uncompressed); rvc/pop restore it;
-// out-of-model values (norelax/pic) are harmlessly ignored. Symbolic
-// targets are always uncompressed - hence the literal targets here.
+// out-of-model values (norelax/pic) are harmlessly ignored. The targets
+// are literal so that the expectations do not depend on the sizes of the
+// j's themselves.
 func TestOptionNorvc(t *testing.T) {
 	src := `
   j 0x1000
@@ -273,6 +279,125 @@ func TestRVCPseudoCompression(t *testing.T) {
 			c.twoLen,
 		)
 	}
+}
+
+// TestSymbolicJumpRelaxation covers the layout relaxation of label jumps:
+// an in-range j (forward over data and backward) compresses to c.j, an
+// out-of-range one stays a 4-byte jal - including the case where the
+// optimistic first layout (offset 0) compresses it and the final layout
+// must widen it back.
+func TestSymbolicJumpRelaxation(t *testing.T) {
+	t.Run("near", func(t *testing.T) {
+		src := `
+loop:
+  addi a1, a1, 1
+  j loop
+hang:
+  j hang
+msg:
+  .ascii "hi"
+`
+		res, errs := asm.Assemble(src, 0x80000000, NewASMBackend())
+		require.Empty(t, errs, "errors: %v", errs)
+		d := res.Sections[0].Data
+		// c.addi 2 + c.j -2 2 + c.j 0 2 + "hi" 2 (.ascii adds no NUL) = 8
+		require.Len(t, d, 8, "total: % x", d)
+		require.Equal(t, uint16(0xBFFD), binary.LittleEndian.Uint16(d[2:4]), "c.j -2")
+		require.Equal(t, uint16(0xA001), binary.LittleEndian.Uint16(d[4:6]), "c.j 0")
+	})
+
+	t.Run("far-forward", func(t *testing.T) {
+		src := `
+  j target
+  .space 4096
+target:
+  nop
+`
+		res, errs := asm.Assemble(src, 0x1000, NewASMBackend())
+		require.Empty(t, errs, "errors: %v", errs)
+		d := res.Sections[0].Data
+		// distance 4+4096 > 2046: the optimistic seed compresses (offset
+		// 0), the relaxed layout widens back to jal
+		require.Len(t, d, 4+4096+2, "total")
+		insts, err := arch.Parse(0x1000)(parsecbytes.Buffer(d))
+		require.NoError(t, err)
+		require.Equal(t, "j 0x2004", insts[0].ObjDump(disasm.DefaultViewCtx()), "jal +4100 (relaxed)")
+		require.Equal(t, 4, insts[0].Len(), "32-bit form")
+	})
+
+	t.Run("boundary", func(t *testing.T) {
+		// c.j range is [-2048, 2046]; the distance includes the jump
+		// itself: .space 2044 → c.j at +2046 (last compressible), .space
+		// 2046 → jal at +2050.
+		for _, tc := range []struct {
+			space int
+			half  bool
+		}{{2044, true}, {2046, false}} {
+			src := fmt.Sprintf("\n  j target\n  .space %d\ntarget:\n  nop\n", tc.space)
+			res, errs := asm.Assemble(src, 0x1000, NewASMBackend())
+			require.Empty(t, errs, "errors: %v", errs)
+			d := res.Sections[0].Data
+			want := 4 + tc.space + 2
+			if tc.half {
+				want = 2 + tc.space + 2
+			}
+			require.Len(t, d, want, "space %d: total: % x", tc.space, d)
+		}
+	})
+
+	t.Run("far-backward", func(t *testing.T) {
+		src := `
+back:
+  .space 4096
+  j back
+`
+		res, errs := asm.Assemble(src, 0x1000, NewASMBackend())
+		require.Empty(t, errs, "errors: %v", errs)
+		d := res.Sections[0].Data
+		require.Len(t, d, 4096+4, "total")
+		insts, err := arch.Parse(0x1000)(parsecbytes.Buffer(d))
+		require.NoError(t, err)
+		last := insts[len(insts)-1] // the .space bytes decode as junk before it
+		require.Equal(t, "j 0x1000", last.ObjDump(disasm.DefaultViewCtx()), "jal -4096")
+		require.Equal(t, 4, last.Len(), "32-bit form")
+	})
+}
+
+// TestRelaxedDeterminism: assembling the same source twice gives
+// identical bytes and symbols (the relaxation is a deterministic
+// fixpoint, not a last-iteration artifact).
+func TestRelaxedDeterminism(t *testing.T) {
+	src := `
+start:
+  li a0, 0x10000000
+  la a1, msg
+  la a2, end
+loop:
+  bgeu a1, a2, done
+  lb a5, 0(a1)
+  sb a5, 0(a0)
+  addi a1, a1, 1
+  j loop
+done:
+  li a5, 0x100000
+  li a6, 0x5555
+  sw a6, 0(a5)
+hang:
+  j hang
+msg:
+  .ascii "hello world\n"
+end:
+`
+	r1, errs := asm.Assemble(src, 0x80000000, NewASMBackend())
+	require.Empty(t, errs, "errors: %v", errs)
+	r2, errs := asm.Assemble(src, 0x80000000, NewASMBackend())
+	require.Empty(t, errs, "errors: %v", errs)
+	require.Equal(t, r1.Sections[0].Data, r2.Sections[0].Data, "deterministic bytes")
+	require.Equal(t, r1.Symbols, r2.Symbols, "deterministic symbols")
+
+	// the relaxed layout: both j's are c.j, so the section is 4 bytes
+	// shorter than the all-uncompressed one (64 bytes total, as llvm-mc)
+	require.Len(t, r1.Sections[0].Data, 64, "total: % x", r1.Sections[0].Data)
 }
 
 // TestRoundTripExample is a byte-exact round-trip test of the test

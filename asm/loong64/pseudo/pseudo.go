@@ -62,9 +62,13 @@ func newPInstr(mnem string, ops []loong64.Op, be *loong64.Backend) pInstr {
 }
 
 // ctors are the evaluators of the multi-word pseudo-instructions
-// (their own fixed-length forms).
+// (their own fixed-length forms). la = la.pcrel (llvm-mc's plain la is
+// the GOT form, which needs a linker); la.got is rejected explicitly.
 var ctors = map[string]func(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error){
-	"la": resolveLa,
+	"la":       resolveLa,
+	"la.pcrel": resolveLa,
+	"la.abs":   resolveLaAbs,
+	"la.got":   resolveLaGot,
 }
 
 // cPseudoMnemonic is the trie of pseudo-mnemonics (longest-match).

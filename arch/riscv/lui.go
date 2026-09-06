@@ -63,14 +63,18 @@ func (i Lui) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-// compressLui — c.lui: nzimm6 ≠ 0, rd ∉ {x0, sp}.
+// compressLui — c.lui: nzimm6 ≠ 0, rd ∉ {x0, sp}. The immediate is the
+// sign-extended low 20 bits of v (lui's field): the 0xffff8 and -8
+// spellings of the same value compress identically (negative pages,
+// e.g. li rd, -0x8000 → c.lui rd, -8).
 func compressLui(rd string, v int64) (uint16, bool) {
 	r := r5(rd)
-	if r == 0 || r == 2 || v == 0 || !fits6(v) {
+	sv := int64(int32(uint32(v)<<12)) >> 12 // sext(v[19:0])
+	if r == 0 || r == 2 || sv == 0 || !fits6(sv) {
 		return 0, false
 	}
 
-	return 0x6001 | r<<7 | ciBits(v), true
+	return 0x6001 | r<<7 | ciBits(sv), true
 }
 
 func (i Lui) MarshalJSON() ([]byte, error) {

@@ -47,11 +47,14 @@ type Syntax interface {
 }
 
 // Unresolved is an unresolved instruction: value slots are still
-// expressions. Resolve must be stable under the placeholder environment of
-// the layout pass (all symbols = the instruction's own address): the size of
-// the encoded result does not depend on the VALUES of symbols, only on their
-// presence - an implementation obligation (riscv: symbol targets are not
-// compressed).
+// expressions. Resolve is first called under the placeholder environment of
+// the layout pass (all symbols = the instruction's own address: pc-relative
+// offsets are zero); the layout is then RELAXED - the walk repeats with the
+// frozen symbol table of the previous iteration until the sizes stabilize
+// (see walkLayout). Size decisions may therefore depend on symbol values,
+// with one obligation: sizes may only GROW from the placeholder seed (the
+// relaxation is monotone and terminates); anything else is an
+// encoding-vs-reservation error in pass 2.
 type Unresolved interface {
 	// Resolve evaluates the expressions via ctx and builds the resolved
 	// instruction.
@@ -109,10 +112,11 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 	return len(p), nil
 }
 
-// sizeOf determines the instruction size by a trial Resolve with a
-// placeholder environment and a count of the written bytes. Deterministic
-// across passes - the same call in code generation gives the same length
-// (see Unresolved on placeholder stability).
+// sizeOf determines the instruction size by a trial Resolve with the
+// sizing environment (placeholder on the first layout walk, the relaxation
+// chain afterwards) and a count of the written bytes. The sizes of the
+// FINAL layout walk are what pass 2 encodes against (see Unresolved on the
+// relaxation).
 func sizeOf(in Unresolved, ctx Ctx) (int, error) {
 	res, err := in.Resolve(ctx)
 	if err != nil {

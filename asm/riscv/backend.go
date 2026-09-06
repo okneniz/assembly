@@ -109,8 +109,8 @@ func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, stri
 
 // instr is an unevaluated instruction (mnemonic + operand slots); it
 // implements Unresolved: Resolve evaluates the expressions and builds
-// the evaluated form (expr -> numbers -> arch.BuildInstr, the
-// symbolic flag is absorbed into EncOpts.NoRVC - see resolve.go).
+// the evaluated form (expr -> numbers -> arch.BuildInstr; compression
+// is value-driven - see resolve.go).
 type instr struct {
 	mnem string
 	ops  []Op
@@ -118,9 +118,8 @@ type instr struct {
 }
 
 // Resolve evaluates the expressions and builds the evaluated
-// instruction; the "slot was symbolic" flag + the current .option
-// norvc -> NoRVC (symbolic targets are not compressed - so that pass
-// sizes converge).
+// instruction; the current .option norvc mode -> NoRVC (compression
+// itself is value-driven, the core relaxes the layout).
 func (in instr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
 	return in.resolve(ctx, in.be != nil && in.be.noRVC)
 }

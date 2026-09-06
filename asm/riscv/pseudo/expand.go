@@ -276,7 +276,9 @@ func expandLi(p pInstr) ([]form, error) {
 
 	return []form{
 		newForm("lui", []riscv.Op{rd, riscv.OpNum(hi & 0xfffff)}),
-		newForm("addi", []riscv.Op{rd, rd, riscv.OpNum(lo)}),
+		// addiw, not addi: the sign-extending low word of the ladder, as
+		// llvm-mc emits it on RV64 (byte parity)
+		newForm("addiw", []riscv.Op{rd, rd, riscv.OpNum(lo)}),
 	}, nil
 }
 
