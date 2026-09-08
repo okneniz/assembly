@@ -174,7 +174,7 @@ func newAes(op string, enc uint32) func([]vOp) (Instr, error) {
 	}
 }
 
-// newDupArm — dup.Arr vd, wn.
+// newDupArm — dup.Arr vd, wn | dup.Arr vd, vn[idx].
 func newDupArm(ops []vOp) (Instr, error) {
 	if len(ops) != 2 {
 		return nil, errors.New("dup: want vd, wn")
@@ -194,17 +194,143 @@ func newDupArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
+	rdN, err := armRegNum(rd)
+	if err != nil {
+		return nil, fmt.Errorf("dup: %w", err)
+	}
+
+	// DUP (element): the source is a lane of a vector register
+	if ops[1].Kind() == arch.ArmOpReg && ops[1].Reg() != "" && ops[1].Reg()[0] == 'v' {
+		idx := ops[1].Num()
+		if !ops[1].LaneIdx() || idx < 0 || idx >= 16>>size {
+			return nil, fmt.Errorf("dup: want vd.Arr, vn[idx] (lane 0..%d)",
+				(16>>size)-1)
+		}
+
+		rn, err := wantV(ops[1], "dup")
+		if err != nil {
+			return nil, err
+		}
+
+		rnN, err := armRegNum(rn)
+		if err != nil {
+			return nil, fmt.Errorf("dup: %w", err)
+		}
+
+		return Builder{}.DupElem("dup", size, uint32(idx), 0, q, rd, rn, rdN, rnN), nil
+	}
+
 	rn, err := wantAReg(ops[1], "dup")
 	if err != nil {
 		return nil, err
 	}
 
-	rdN, rnN, err := regNums2(rd, rn)
+	rnN, err := armRegNum(rn)
 	if err != nil {
 		return nil, fmt.Errorf("dup: %w", err)
 	}
 
 	return Builder{}.SimdCopyGPR("dup", rd, rn, size, 0, q, rdN, rnN, false), nil
+}
+
+// newInsElemArm — INS (element): ins.sz vd[idx], vn[idx]. (The GPR-source
+// form has no spelling here: llvm prints it as the mov alias, so the
+// canonical input is mov.sz vd[idx], wn — newMovInsArm.)
+func newInsElemArm(size uint32) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 2 || !ops[0].LaneIdx() || !ops[1].LaneIdx() {
+			return nil, errors.New("ins: want vd[idx], vn[idx]")
+		}
+
+		maxIdx := int64(16 >> size)
+		if ops[0].Num() < 0 || ops[0].Num() >= maxIdx ||
+			ops[1].Num() < 0 || ops[1].Num() >= maxIdx {
+			return nil, fmt.Errorf("ins: lane index out of range (0..%d)", maxIdx-1)
+		}
+
+		rd, err := wantV(ops[0], "ins")
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := wantV(ops[1], "ins")
+		if err != nil {
+			return nil, err
+		}
+
+		rdN, err := armRegNum(rd)
+		if err != nil {
+			return nil, fmt.Errorf("ins: %w", err)
+		}
+
+		rnN, err := armRegNum(rn)
+		if err != nil {
+			return nil, fmt.Errorf("ins: %w", err)
+		}
+
+		return Builder{}.DupElem("ins", size,
+			uint32(ops[0].Num()), uint32(ops[1].Num()), 0, rd, rn, rdN, rnN), nil
+	}
+}
+
+// newSmovUmovArm — SMOV/UMOV: op wd, vn.sz[idx] (the element size is the
+// source suffix; an x destination sets Q).
+func newSmovUmovArm(op string) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 2 || ops[1].Kind() != arch.ArmOpReg || !ops[1].LaneIdx() {
+			return nil, fmt.Errorf("%s: want wd, vn.sz[idx]", op)
+		}
+
+		var size uint32
+		switch ops[1].Arr() {
+		case "b":
+			size = 0
+		case "h":
+			size = 1
+		case "s":
+			size = 2
+		case "d":
+			size = 3
+		default:
+			return nil, fmt.Errorf("%s: element size suffix (b/h/s/d) expected", op)
+		}
+
+		maxIdx := int64(16 >> size)
+		if ops[1].Num() < 0 || ops[1].Num() >= maxIdx {
+			return nil, fmt.Errorf("%s: lane index out of range (0..%d)", op, maxIdx-1)
+		}
+
+		gpr, err := wantAReg(ops[0], op)
+		if err != nil {
+			return nil, err
+		}
+
+		vd, err := wantV(ops[1], op)
+		if err != nil {
+			return nil, err
+		}
+
+		gprN, err := armRegNum(gpr)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		vdN, err := armRegNum(vd)
+		if err != nil {
+			return nil, fmt.Errorf("%s: %w", op, err)
+		}
+
+		var q uint32
+		if gpr[0] == 'x' {
+			q = 1
+		}
+
+		if op == "smov" && size == 3 {
+			return nil, errors.New("smov: .d elements are not allowed")
+		}
+
+		return Builder{}.SimdCopyGPR(op, vd, gpr, size, uint32(ops[1].Num()), q, vdN, gprN, true), nil
+	}
 }
 
 // newTblArm — tbl.16b vd, { vn }, vm.
@@ -421,11 +547,40 @@ func newSimdWidenArm(op string, enc uint32) func([]vOp) (Instr, error) {
 	}
 }
 
-// newMovInsArm — mov.sz vd[idx], rn (INS general: inserting a GPR into a lane).
-// The size arrives with the registration key (mov.b/h/s/d); the index — in
+// newMovInsArm — mov.sz vd[idx], rn (INS general: inserting a GPR into a lane)
+// and the scalar DUP alias mov.sz vd, vn (llvm prints mov.d/mov.s). The size
+// arrives with the registration key (mov.b/h/s/d); the index — in
 // ops[0].Num() (the laneIdx flag).
 func newMovInsArm(size uint32) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
+		// the scalar DUP alias: mov.sz vd, vn (no lane index anywhere;
+		// llvm prints these as mov.d/mov.s)
+		if len(ops) == 2 && ops[0].Kind() == arch.ArmOpReg && !ops[0].LaneIdx() &&
+			ops[1].Kind() == arch.ArmOpReg && ops[1].Reg() != "" &&
+			ops[1].Reg()[0] == 'v' && !ops[1].LaneIdx() {
+			rd, err := wantV(ops[0], "mov")
+			if err != nil {
+				return nil, err
+			}
+
+			rn, err := wantV(ops[1], "mov")
+			if err != nil {
+				return nil, err
+			}
+
+			rdN, err := armRegNum(rd)
+			if err != nil {
+				return nil, fmt.Errorf("mov: %w", err)
+			}
+
+			rnN, err := armRegNum(rn)
+			if err != nil {
+				return nil, fmt.Errorf("mov: %w", err)
+			}
+
+			return Builder{}.DupElem("mov", size, 0, 0, 0, rd, rn, rdN, rnN), nil
+		}
+
 		if len(ops) != 2 || ops[0].Kind() != arch.ArmOpReg {
 			return nil, errors.New("mov: want vd[idx], rn")
 		}

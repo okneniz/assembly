@@ -1204,7 +1204,7 @@ var arm64Schemas = []Schema{
 		NewField("Rm", 16, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
-	}, NewMeta("cmeq", "SIMD"), "simd3", true, decodeSimd3Of("cmeq", 0x0E208C00)),
+	}, NewMeta("cmtst", "SIMD"), "simd3", true, decodeSimd3Of("cmtst", 0x0E208C00)),
 	NewSchema(0xBF20FC00, 0x0E20BC00, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
@@ -1218,7 +1218,14 @@ var arm64Schemas = []Schema{
 		NewField("Rm", 16, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
-	}, NewMeta("sqrshl", "SIMD"), "simd3", true, decodeSimd3Of("sqrshl", 0x0E203C00)),
+	}, NewMeta("cmge", "SIMD"), "simd3", true, decodeSimd3Of("cmge", 0x0E203C00)),
+	NewSchema(0xBF20FC00, 0x0E205C00, []Field{
+		NewField("Rd", 0, 5, "regV"),
+		NewField("Rn", 5, 5, "regV"),
+		NewField("Rm", 16, 5, "regV"),
+		NewField("Q", 30, 1),
+		NewField("size", 22, 2),
+	}, NewMeta("sqrshl", "SIMD"), "simd3", true, decodeSimd3Of("sqrshl", 0x0E205C00)),
 	NewSchema(0xBF20FC00, 0x2E201C00, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
@@ -1251,12 +1258,12 @@ var arm64Schemas = []Schema{
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
 	}, NewMeta("not", "SIMD"), "simd2", true, decodeSimd2Of("not", 0x2E205800)),
-	NewSchema(0xBFB0FC00, 0x0E20C000, []Field{
+	NewSchema(0xBF3FFC00, 0x0E20B800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
-	}, NewMeta("abs", "SIMD"), "simd2", true, decodeSimd2Of("abs", 0x0E20C000)),
+	}, NewMeta("abs", "SIMD"), "simd2", true, decodeSimd2Of("abs", 0x0E20B800)),
 	NewSchema(0xBFB0FC00, 0x2E205800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
@@ -1500,16 +1507,26 @@ var arm64Schemas = []Schema{
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
 	}, NewMeta("fdiv", "Float"), "op3", true, decodeFp3Of("fdiv", 0x1E201800, kS)),
-	NewSchema(0xFFE0FC00, 0x1E600C00, []Field{
+	NewSchema(0xFFE0FC00, 0x1E604800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmax", "Float"), "op3", true, decodeFp3Of("fmax", 0x1E600C00, kD)),
-	NewSchema(0xFFE0FC00, 0x1E601C00, []Field{
+	}, NewMeta("fmax", "Float"), "op3", true, decodeFp3Of("fmax", 0x1E604800, kD)),
+	NewSchema(0xFFE0FC00, 0x1E204800, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "fpRegS"),
+		NewField("Rm", 16, 5, "fpRegS"),
+	}, NewMeta("fmax", "Float"), "op3", true, decodeFp3Of("fmax", 0x1E204800, kS)),
+	NewSchema(0xFFE0FC00, 0x1E605800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmin", "Float"), "op3", true, decodeFp3Of("fmin", 0x1E601C00, kD)),
+	}, NewMeta("fmin", "Float"), "op3", true, decodeFp3Of("fmin", 0x1E605800, kD)),
+	NewSchema(0xFFE0FC00, 0x1E205800, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "fpRegS"),
+		NewField("Rm", 16, 5, "fpRegS"),
+	}, NewMeta("fmin", "Float"), "op3", true, decodeFp3Of("fmin", 0x1E205800, kS)),
 	NewSchema(0xFFFFFC00, 0x9E660000, []Field{
 		NewField("Rd", 0, 5, "intX"),
 		NewField("Rn", 5, 5, "fpRegD"),
@@ -1599,6 +1616,23 @@ var arm64Schemas = []Schema{
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Rd", 0, 5, "regV"),
 	}, NewMeta("usubw", "SIMD"), "simd3", true, decodeSimdWidenOf("usubw", 0x2E203000)),
+	NewSchema(0xBFE0FC00, 0x0E000400, []Field{
+		NewField("imm5", 16, 5),
+		NewField("Rn", 5, 5, "regV"),
+		NewField("Rd", 0, 5, "regV"),
+		NewField("Q", 30, 1),
+	}, NewMeta("dup", "SIMD copy"), "dupElem", true, decodeSimdDupElem),
+	NewSchema(0xFFE08400, 0x6E000400, []Field{
+		NewField("imm5", 16, 5),
+		NewField("imm4", 11, 4),
+		NewField("Rn", 5, 5, "regV"),
+		NewField("Rd", 0, 5, "regV"),
+	}, NewMeta("ins", "SIMD copy"), "dupElem", true, decodeSimdInsElem),
+	NewSchema(0xFFE0FC00, 0x5E000400, []Field{
+		NewField("imm5", 16, 5),
+		NewField("Rn", 5, 5, "regV"),
+		NewField("Rd", 0, 5, "regV"),
+	}, NewMeta("dup", "SIMD copy"), "dupElem", true, decodeSimdDupScalar),
 }
 
 func getSchemas() []Schema {

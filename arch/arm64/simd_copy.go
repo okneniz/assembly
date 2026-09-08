@@ -28,9 +28,12 @@ type SimdCopy struct {
 
 func decodeSimdCopy(w uint32, addr uint64) Instr {
 	imm5 := w >> 16 & 0x1f
-	// imm5 must be one-hot (1/2/4/8 - the b/h/s/d size); the schema mask
-	// does not express this, unencoded values go to the .word fallback.
-	if imm5 == 0 || imm5 > 8 || imm5&(imm5-1) != 0 {
+	// imm5 = the size one-hot plus the index bits above it (size = ctz,
+	// index = imm5 >> size+1). ins/smov/umov of a NONZERO lane is legal
+	// (imm5 not one-hot); DUP (general) has no index, so its imm5 must be
+	// one-hot. Unencodable sizes go to the .word fallback (the schema
+	// mask does not express any of this).
+	if imm5 == 0 || bitsCtz(imm5) > 3 || (w>>12&3 == 0 && imm5&(imm5-1) != 0) {
 		return decodeUnknown(w, addr)
 	}
 
@@ -120,6 +123,12 @@ func (i SimdCopy) Encode(w io.Writer, pc uint64) (int64, error) {
 	imm5 := uint32(1)<<i.size | i.idx<<(i.size+1)
 	// size is inside imm5 (there are no bits 23:22); 0xC00 is the family's
 	// fixed bits (b11=1, b10=1), absent from the ctors' enc
+	if i.isDest {
+		// smov/umov: the vector source sits in the Rn slot, the GPR
+		// destination in Rd (decodeSimdCopy swaps vdNum/gprNum; swap back)
+		return writeWord(w, i.enc|i.q<<30|0xC00|opBits<<12|imm5<<16|i.vdNum<<5|i.gprNum)
+	}
+
 	return writeWord(w, i.enc|i.q<<30|0xC00|opBits<<12|imm5<<16|i.gprNum<<5|i.vdNum)
 }
 

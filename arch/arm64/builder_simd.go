@@ -57,6 +57,17 @@ func (Builder) SimdCopyGPR(op, vd, gpr string, size, idx, q uint32, vdNum, gprNu
 	}
 }
 
+// DupElem — the vector-source Advanced SIMD copy (dup element/ins element/
+// scalar mov alias): registers as strings and numbers (the struct prints
+// from the strings, encodes from the numbers), idx the dup source / ins
+// destination lane, srcIdx the ins source lane.
+func (Builder) DupElem(op string, size, idx, srcIdx, q uint32, rd, rn string, rdN, rnN uint32) Instr {
+	return DupElem{
+		op: op, size: size, idx: idx, srcIdx: srcIdx, q: q,
+		rd: rd, rn: rn, rdN: rdN, rnN: rnN,
+	}
+}
+
 // Tbl — tbl.16b vd, { vn }, vm.
 func (Builder) Tbl(rd, rn, rm string) Instr {
 	return Tbl{rd: rd, rn: rn, rm: rm}
