@@ -26,8 +26,8 @@ func fpTypeBits(v uint32) fpKind {
 	return kS
 }
 
-func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32) Instr {
+	return func(w uint32) Instr {
 		// the sf convention for widenable families: operand types are read
 		// FROM THE WORD, not hard-coded by the ctor (fcvt/fcvtzs/fcvtzu —
 		// their XML entries free the type bits; see isa_map widenAcceptable)
@@ -52,7 +52,7 @@ func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32, uint64) In
 		}
 
 		return Fp2{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   fpReg(w&0x1f, rdK),
 			rn:   fpReg(w>>5&0x1f, rnK),
@@ -67,7 +67,7 @@ func (i Fp2) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s %s, %s", i.op, i.rd, i.rn)
 }
 
-func (i Fp2) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Fp2) Encode(w io.Writer) (int64, error) {
 	rd, err := armRegNum(i.rd)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

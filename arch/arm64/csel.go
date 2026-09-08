@@ -66,9 +66,9 @@ func (Builder) Csel(rd, rn, rm Reg, cond string) (Instr, error) {
 	}, nil
 }
 
-func decodeCsel(w uint32, addr uint64) Instr {
+func decodeCsel(w uint32) Instr {
 	return Csel{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -80,7 +80,7 @@ func (i Csel) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csel %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
 }
 
-func (i Csel) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Csel) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i, cselX, cselW, "csel")
 }
 

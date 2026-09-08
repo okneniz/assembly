@@ -16,34 +16,34 @@ func TestCbnzBuild(t *testing.T) {
 	}{
 		{
 			"cbnz x2,0x1008",
-			buildCbnz(t, xreg(t, 2), 0x1008),
+			buildCbnz(t, xreg(t, 2), 8),
 			0xb5000042,
 		},
 		{
 			"cbnz w0,0x1014",
-			buildCbnz(t, wreg(t, 0), 0x1014),
+			buildCbnz(t, wreg(t, 0), 20),
 			0x350000a0,
 		},
 		{
 			"cbnz wzr,0x1000",
-			buildCbnz(t, WZR, 0x1000),
+			buildCbnz(t, WZR, 0),
 			0x3500001f,
 		},
 		{
 			"cbnz x0,0x100ffc",
-			buildCbnz(t, xreg(t, 0), 0x100ffc),
+			buildCbnz(t, xreg(t, 0), 1048572),
 			0xb57fffe0,
 		},
 	}
 	for _, c := range cases {
 		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word, 0x1000)
+		back := decodeOne(c.word)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := buildCbnz(t, xreg(t, 2), 0x1008)
+	in := buildCbnz(t, xreg(t, 2), 8)
 	_, ok := in.(Cbnz)
 	require.True(t, ok, "type = %T, want Cbnz", in)
 	for _, c := range []struct {

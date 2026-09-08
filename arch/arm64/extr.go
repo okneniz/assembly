@@ -44,9 +44,9 @@ func (Builder) Extr(rd, rn, rm Reg, lsb Imm6) (Instr, error) {
 	}, nil
 }
 
-func decodeExtr(w uint32, addr uint64) Instr {
+func decodeExtr(w uint32) Instr {
 	return Extr{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -62,7 +62,7 @@ func (i Extr) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("extr %s, %s, %s, #0x%x", i.rd, i.rn, i.rm, i.lsb)
 }
 
-func (i Extr) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Extr) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("extr: %w", err)

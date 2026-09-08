@@ -22,11 +22,10 @@ func TestModDuCtor(t *testing.T) {
 }
 
 func TestModDuDecodeEncode(t *testing.T) {
-	in := decodeModDu(0x0023b9ac, 0x90000000)
+	in := decodeModDu(0x0023b9ac)
 
 	moddu, ok := in.(ModDu)
 	require.True(t, ok, "type = %T, want ModDu", in)
 	require.Equal(t, "mod.du $t0, $t1, $t2", moddu.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), moddu.Addr())
 	require.Equal(t, uint32(0x0023b9ac), ctorWord(t, moddu))
 }

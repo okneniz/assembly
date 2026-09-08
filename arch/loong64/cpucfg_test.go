@@ -22,11 +22,10 @@ func TestCpucfgCtor(t *testing.T) {
 }
 
 func TestCpucfgDecodeEncode(t *testing.T) {
-	in := decodeCpucfg(0x00006dac, 0x90000000)
+	in := decodeCpucfg(0x00006dac)
 
 	cpucfg, ok := in.(Cpucfg)
 	require.True(t, ok, "type = %T, want Cpucfg", in)
 	require.Equal(t, "cpucfg $t0, $t1", cpucfg.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), cpucfg.Addr())
 	require.Equal(t, uint32(0x00006dac), ctorWord(t, cpucfg))
 }

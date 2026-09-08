@@ -33,8 +33,8 @@ func (Builder) Msub(rd, rn, rm, ra Reg) (Instr, error) {
 	return Msub{Madd: m}, nil
 }
 
-func decodeMsub(w uint32, addr uint64) Instr {
-	m, ok := decodeMadd(w, addr).(Madd)
+func decodeMsub(w uint32) Instr {
+	m, ok := decodeMadd(w).(Madd)
 	if !ok {
 		// decodeMadd always returns Madd; this branch guards against schema desynchronization
 		return Msub{}
@@ -56,7 +56,7 @@ func (i Msub) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("msub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
 }
 
-func (i Msub) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Msub) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, msubX, msubW)
 	if err != nil {
 		return 0, fmt.Errorf("msub: %w", err)

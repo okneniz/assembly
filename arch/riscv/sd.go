@@ -24,9 +24,9 @@ func (Builder) Sd(rs2, rs1 Reg, off Off) Instr {
 	}
 }
 
-func decodeSd(w uint32, addr uint64) Instr {
+func decodeSd(w uint32) Instr {
 	return Sd{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rs1:  rvRegNames[w>>15&0x1f],
 		rs2:  rvRegNames[w>>20&0x1f],
 		off:  immNum(sImm(w)),
@@ -34,9 +34,9 @@ func decodeSd(w uint32, addr uint64) Instr {
 }
 
 // cSd - compressed forms (c.sd/c.sdsp): base - halfword, length 2.
-func cSd(h uint32, addr uint64, rs1, rs2 string, off int64) Sd {
+func cSd(h uint32, rs1, rs2 string, off int64) Sd {
 	return Sd{
-		base: newHalfBase(h, addr),
+		base: newHalfBase(h),
 		rs1:  rs1,
 		rs2:  rs2,
 		off:  immNum(off),
@@ -47,7 +47,7 @@ func (i Sd) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
-func (i Sd) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Sd) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
 	bits, err := encS(off)

@@ -37,9 +37,9 @@ func (Builder) Mrs(rd Reg, sysreg string) (Instr, error) {
 	return Mrs{rd: rd.name(), sysreg: sysreg}, nil
 }
 
-func decodeMrs(w uint32, addr uint64) Instr {
+func decodeMrs(w uint32) Instr {
 	return Mrs{
-		base:   newBase(addr, w),
+		base:   newBase(w),
 		rd:     regNameX(w & 0x1f),
 		sysreg: sysRegName(w >> 5 & 0x7fff),
 	}
@@ -49,6 +49,6 @@ func (i Mrs) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mrs %s, %s", i.rd, i.sysreg)
 }
 
-func (i Mrs) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Mrs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0xD5300000|regBitsX(i.rd)|invSysRegChecked(i.sysreg)<<5)
 }

@@ -27,8 +27,8 @@ type Ld1 struct {
 	isElem  bool
 }
 
-func decodeLd1Of(enc uint32) func(w uint32, addr uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeLd1Of(enc uint32) func(w uint32) Instr {
+	return func(w uint32) Instr {
 		opcode, size, q := w>>12&0xf, w>>10&3, w>>30&1
 		name, arr, count, isElem := ldStructDecode(opcode, size, q, w>>22&1)
 		rt := w & 0x1f
@@ -41,7 +41,7 @@ func decodeLd1Of(enc uint32) func(w uint32, addr uint64) Instr {
 		}
 
 		i := Ld1{
-			base:    newBase(addr, w),
+			base:    newBase(w),
 			regList: list,
 			rn:      regNameXSP(w >> 5 & 0x1f),
 			name:    name,
@@ -140,7 +140,7 @@ func (i Ld1) ObjDump(_ disasm.ViewCtx) string {
 	return s
 }
 
-func (i Ld1) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ld1) Encode(w io.Writer) (int64, error) {
 	rn, err := armRegNum(i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.name, err)

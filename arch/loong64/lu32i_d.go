@@ -24,9 +24,9 @@ func (Builder) Lu32iD(rd Reg, v Imm20) Instr {
 	}
 }
 
-func decodeLu32iD(w uint32, addr uint64) Instr {
+func decodeLu32iD(w uint32) Instr {
 	return Lu32iD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		imm:  immNum(sField(w, 5, 20)),
 	}
@@ -36,7 +36,7 @@ func (i Lu32iD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lu32i.d %s, %s", laRegName(i.rd), i.imm.text())
 }
 
-func (i Lu32iD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Lu32iD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["lu32i.d"][0] | uint32(i.rd) | scatterS(i.imm.val, 5, 20)
 
 	return writeWord(w, word)

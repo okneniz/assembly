@@ -12,40 +12,35 @@ import (
 const Name = "RISCV64"
 
 // Instr - a RISC-V instruction: it represents itself - encodes itself into
-// bytes (Encode, the computed form: operand values are already numbers, the
-// environment is just the address and modes) and into text (disasm.ObjDump,
-// for the disassembler). There is NO common type with other architectures;
-// each instruction is its own structure (Lui, Addi, Beq, ...).
+// bytes (Encode, the computed form: operand values are already numbers,
+// PC-relative ones are offsets; o is only the modes - there is no address
+// environment) and into text (disasm.ObjDump, for the disassembler;
+// absolute targets are computed from the address in the view context).
+// There is NO common type with other architectures; each instruction is
+// its own structure (Lui, Addi, Beq, ...).
 type Instr interface {
 	disasm.ObjDump
-	Addr() uint64
 
-	// Encode encodes the computed instruction: pc is the absolute address
-	// (PC-relative forms), o is the modes (NoRVC). There is no resolver -
-	// an exact inverse of decode.
-	Encode(w io.Writer, pc uint64, o EncOpts) (int64, error)
+	// Encode encodes the computed instruction; o is the modes (NoRVC).
+	// There is no resolver - an exact inverse of decode.
+	Encode(w io.Writer, o EncOpts) (int64, error)
 }
 
-// base - the bookkeeping fields of every instruction: address, raw word,
-// and length. This is not instruction semantics but a bookkeeping record
-// for Addr/Len.
+// base - the bookkeeping fields of every instruction: raw word and
+// length. This is not instruction semantics but a bookkeeping record
+// for Len.
 type base struct {
-	addr   uint64
 	raw    uint32
 	length int
 }
 
-func newBase(addr uint64, raw uint32) base {
+func newBase(raw uint32) base {
 	return base{
-		addr:   addr,
 		raw:    raw,
 		length: 4,
 	}
 }
 
-func (b base) Addr() uint64 {
-	return b.addr
-}
 func (b base) Len() int {
 	return b.length
 }
@@ -114,7 +109,7 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 	return "<unknown>"
 }
 
-func (i Unknown) Encode(w io.Writer, _ uint64, _ EncOpts) (int64, error) {
+func (i Unknown) Encode(w io.Writer, _ EncOpts) (int64, error) {
 	if i.length == 2 {
 		return writeHalf(w, uint16(i.raw))
 	}

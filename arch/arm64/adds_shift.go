@@ -60,9 +60,9 @@ func (Builder) AddsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeAddsShift(w uint32, addr uint64) Instr {
+func decodeAddsShift(w uint32) Instr {
 	return AddsShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -89,7 +89,7 @@ func (i AddsShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("adds %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i AddsShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AddsShift) Encode(w io.Writer) (int64, error) {
 	match := AddsShiftX
 	if !i.isf {
 		match = AddsShiftW

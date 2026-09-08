@@ -22,11 +22,10 @@ func TestRdtimehWCtor(t *testing.T) {
 }
 
 func TestRdtimehWDecodeEncode(t *testing.T) {
-	in := decodeRdtimehW(0x000065ac, 0x90000000)
+	in := decodeRdtimehW(0x000065ac)
 
 	rdtimehw, ok := in.(RdtimehW)
 	require.True(t, ok, "type = %T, want RdtimehW", in)
 	require.Equal(t, "rdtimeh.w $t0, $t1", rdtimehw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), rdtimehw.Addr())
 	require.Equal(t, uint32(0x000065ac), ctorWord(t, rdtimehw))
 }

@@ -40,7 +40,7 @@ func TestAdrpBuild(t *testing.T) {
 		// The absolute-page annotation of the decoded form is derived
 		// from the instruction address and is not stored by the ctor —
 		// compare the encoded fields, not the ObjDump text.
-		back, ok := decodeOne(c.word, 0x1000).(Adrp)
+		back, ok := decodeOne(c.word).(Adrp)
 		require.True(t, ok, "case %q: type = %T, want Adrp", c.name, back)
 		want, wok := c.in.(Adrp)
 		require.True(t, wok, "case %q: built %T, want Adrp", c.name, c.in)

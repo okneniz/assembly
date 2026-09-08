@@ -22,12 +22,11 @@ func TestStgtDCtor(t *testing.T) {
 }
 
 func TestStgtDDecodeEncode(t *testing.T) {
-	in := decodeStgtD(0x387db9ac, 0x90000000)
+	in := decodeStgtD(0x387db9ac)
 
 	x, ok := in.(StgtD)
 	require.True(t, ok, "type = %T, want StgtD", in)
 	require.Equal(t, "stgt.d $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x387db9ac), ctorWord(t, x))
 }

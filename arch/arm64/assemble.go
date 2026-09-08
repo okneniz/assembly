@@ -71,17 +71,16 @@ func isKeyword(sym string) bool {
 	return sym == "pldl1keep"
 }
 
-// brBits — the target's absolute address → signed imm bits shifted right by 2.
-func brBits(target, addr int64, bits int) (uint32, error) {
-	off := target - addr
+// offBits — a pc-relative byte offset → signed imm bits shifted right by 2.
+func offBits(off int64, bits int) (uint32, error) {
 	if off%4 != 0 {
-		return 0, fmt.Errorf("branch target %#x is not 4-byte aligned from %#x", target, addr)
+		return 0, fmt.Errorf("branch offset %#x is not 4-byte aligned", off)
 	}
 
 	off >>= 2
 	lim := int64(1) << uint(bits-1)
 	if off < -lim || off >= lim {
-		return 0, fmt.Errorf("branch target %#x out of ±%d range", target, lim*4)
+		return 0, fmt.Errorf("branch offset %#x out of ±%d range", off, lim*4)
 	}
 
 	return uint32(off) & ((1 << uint(bits)) - 1), nil

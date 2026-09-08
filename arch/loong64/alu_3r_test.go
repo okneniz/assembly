@@ -40,7 +40,7 @@ func TestALU3RFamilyJSONEncodeError(t *testing.T) {
 	for _, f := range family {
 		in := f.ctor(lreg(t, 12), lreg(t, 13), lreg(t, 14))
 
-		_, err := in.Encode(errWriter{}, 0)
+		_, err := in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", f.mnem)
 	}
 }

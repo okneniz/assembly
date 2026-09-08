@@ -37,7 +37,7 @@ func propText(in arm64.Instr) string {
 func bytesOf(t *testing.T, in arm64.Instr) ([]byte, bool) {
 	t.Helper()
 	var buf bytes.Buffer
-	if _, err := in.Encode(&buf, propAddr); err != nil {
+	if _, err := in.Encode(&buf); err != nil {
 		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
 		return nil, false
 	}
@@ -62,7 +62,7 @@ func a64EncodeAll(t *testing.T, ins []arm64.Instr) ([]byte, bool) {
 	var buf bytes.Buffer
 	addr := propAddr
 	for _, in := range ins {
-		n, err := in.Encode(&buf, uint64(addr))
+		n, err := in.Encode(&buf)
 		if err != nil {
 			t.Logf("encode: %v", err)
 			return nil, false
@@ -97,7 +97,7 @@ func propBytesRoundTrip(t *testing.T, in arm64.Instr) bool {
 			return bytesOf(t, x)
 		},
 		func(ctx a64Enc, b []byte) (arm64.Instr, bool) {
-			back, err := arm64.Parse(ctx.addr)(parsecbytes.Buffer(b))
+			back, err := arm64.Parse()(parsecbytes.Buffer(b))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -130,7 +130,7 @@ func propTextRoundTrip(t *testing.T, in arm64.Instr) bool {
 				return nil, false
 			}
 
-			back, err := arm64.Parse(propAddr)(parsecbytes.Buffer(data))
+			back, err := arm64.Parse()(parsecbytes.Buffer(data))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -323,7 +323,7 @@ func TestPropertyBytesRoundTripList(t *testing.T) {
 
 		buf := *bytes.NewBuffer(raw)
 
-		back, err := arm64.Parse(propAddr)(parsecbytes.Buffer(buf.Bytes()))
+		back, err := arm64.Parse()(parsecbytes.Buffer(buf.Bytes()))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -368,7 +368,7 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 			return false
 		}
 
-		back, err := arm64.Parse(propAddr)(parsecbytes.Buffer(data))
+		back, err := arm64.Parse()(parsecbytes.Buffer(data))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -406,7 +406,7 @@ func TestPropertyDecodeRobustness(t *testing.T) {
 				}
 			}()
 			data := binary.LittleEndian.AppendUint32(nil, w)
-			ins, err := arm64.Parse(propAddr)(parsecbytes.Buffer(data))
+			ins, err := arm64.Parse()(parsecbytes.Buffer(data))
 			if err != nil {
 				t.Errorf("parse %#08x: %v", w, err)
 				ok = false
@@ -467,7 +467,7 @@ func TestPropertyArm64VsObjdump(t *testing.T) {
 			continue
 		}
 
-		ours, err := arm64.Parse(addr)(parsecbytes.Buffer(code[off : off+4]))
+		ours, err := arm64.Parse()(parsecbytes.Buffer(code[off : off+4]))
 		if err != nil {
 			notInOurs++
 			continue

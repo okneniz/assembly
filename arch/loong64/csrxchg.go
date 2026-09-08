@@ -25,9 +25,9 @@ func (Builder) Csrxchg(rd, rj Reg, csr UImm14) Instr {
 	}
 }
 
-func decodeCsrxchg(w uint32, addr uint64) Instr {
+func decodeCsrxchg(w uint32) Instr {
 	return Csrxchg{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		csr:  immNum(int64(uField(w, 10, 14))),
@@ -38,7 +38,7 @@ func (i Csrxchg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrxchg %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.csr.text())
 }
 
-func (i Csrxchg) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Csrxchg) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["csrxchg"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.csr.val, 10, 14)
 

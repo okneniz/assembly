@@ -17,9 +17,9 @@ func (Builder) Tlbwr() Instr {
 	return Tlbwr{}
 }
 
-func decodeTlbwr(w uint32, addr uint64) Instr {
+func decodeTlbwr(w uint32) Instr {
 	return Tlbwr{
-		base: newBase(addr, w),
+		base: newBase(w),
 	}
 }
 
@@ -27,6 +27,6 @@ func (i Tlbwr) ObjDump(_ disasm.ViewCtx) string {
 	return "tlbwr"
 }
 
-func (i Tlbwr) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Tlbwr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, loongEncodings["tlbwr"][0])
 }

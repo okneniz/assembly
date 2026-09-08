@@ -22,9 +22,9 @@ func (Builder) ExtWB(rd, rj Reg) Instr {
 	}
 }
 
-func decodeExtWB(w uint32, addr uint64) Instr {
+func decodeExtWB(w uint32) Instr {
 	return ExtWB{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i ExtWB) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ext.w.b %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i ExtWB) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i ExtWB) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ext.w.b"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

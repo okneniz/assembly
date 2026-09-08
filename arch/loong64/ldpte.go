@@ -24,9 +24,9 @@ func (Builder) Ldpte(rj Reg, v UImm8) Instr {
 	}
 }
 
-func decodeLdpte(w uint32, addr uint64) Instr {
+func decodeLdpte(w uint32) Instr {
 	return Ldpte{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rj:   uint8(w >> 5 & 0x1f),
 		imm:  immNum(int64(uField(w, 10, 8))),
 	}
@@ -36,7 +36,7 @@ func (i Ldpte) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldpte %s, %s", laRegName(i.rj), i.imm.text())
 }
 
-func (i Ldpte) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Ldpte) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ldpte"][0] |
 		uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 8)
 

@@ -179,7 +179,7 @@ func TestInstrGenValid(t *testing.T) {
 		for range 300 {
 			buf.Reset()
 			in := c.gen()
-			_, err := in.Encode(&buf, 0x1000, riscv.EncOpts{})
+			_, err := in.Encode(&buf, riscv.EncOpts{})
 			require.NoError(t, err, "%s (%s)", c.name, in.ObjDump(disasm.DefaultViewCtx()))
 			require.Contains(
 				t,

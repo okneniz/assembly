@@ -23,9 +23,9 @@ func (Builder) AmandDbW(rd, rk, rj Reg) Instr {
 	}
 }
 
-func decodeAmandDbW(w uint32, addr uint64) Instr {
+func decodeAmandDbW(w uint32) Instr {
 	return AmandDbW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
@@ -36,7 +36,7 @@ func (i AmandDbW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amand_db.w %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }
 
-func (i AmandDbW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AmandDbW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["amand_db.w"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 

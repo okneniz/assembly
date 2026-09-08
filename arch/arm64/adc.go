@@ -44,9 +44,9 @@ func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeAdc(w uint32, addr uint64) Instr {
+func decodeAdc(w uint32) Instr {
 	return Adc{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -57,7 +57,7 @@ func (i Adc) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("adc %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i Adc) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Adc) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("adc: %w", err)

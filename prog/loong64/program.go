@@ -258,7 +258,7 @@ func (b *Binary) Assemble(base uint64) ([]byte, map[string]uint64, []error) {
 			}
 
 			for _, i := range pair {
-				if _, err := i.Encode(byteWriter{&code}, pc); err != nil {
+				if _, err := i.Encode(byteWriter{&code}); err != nil {
 					errs = append(errs, fmt.Errorf("%s: %w", l.source, err))
 				}
 
@@ -267,7 +267,7 @@ func (b *Binary) Assemble(base uint64) ([]byte, map[string]uint64, []error) {
 		default:
 			i, err := b.materialize(l, syms, pc)
 			if err == nil {
-				_, err = i.Encode(byteWriter{&code}, pc)
+				_, err = i.Encode(byteWriter{&code})
 			}
 
 			if err != nil {

@@ -24,18 +24,18 @@ func (Builder) Lui(rd Reg, imm Imm20) Instr {
 	}
 }
 
-func decodeLui(w uint32, addr uint64) Instr {
+func decodeLui(w uint32) Instr {
 	return Lui{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		imm:  immNum(int64(uImm(w))),
 	}
 }
 
 // cLui - compressed forms (c.lui): base - halfword, length 2.
-func cLui(h uint32, addr uint64, rd string, imm int64) Lui {
+func cLui(h uint32, rd string, imm int64) Lui {
 	return Lui{
-		base: newHalfBase(h, addr),
+		base: newHalfBase(h),
 		rd:   rd,
 		imm:  immNum(imm),
 	}
@@ -45,7 +45,7 @@ func (i Lui) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lui %s, %s", i.rd, i.imm.text())
 }
 
-func (i Lui) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Lui) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
 	bits, err := encU(v)

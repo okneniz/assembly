@@ -20,9 +20,9 @@ func (Builder) Syscall(code Code15) Instr {
 	}
 }
 
-func decodeSyscall(w uint32, addr uint64) Instr {
+func decodeSyscall(w uint32) Instr {
 	return Syscall{
-		base: newBase(addr, w),
+		base: newBase(w),
 		code: immNum(int64(uField(w, 0, 15))),
 	}
 }
@@ -31,7 +31,7 @@ func (i Syscall) ObjDump(_ disasm.ViewCtx) string {
 	return "syscall " + i.code.text()
 }
 
-func (i Syscall) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Syscall) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["syscall"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)

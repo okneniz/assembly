@@ -39,9 +39,9 @@ func (Builder) Rev16(rd, rn Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeRev16(w uint32, addr uint64) Instr {
+func decodeRev16(w uint32) Instr {
 	return Rev16{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 	}
@@ -51,7 +51,7 @@ func (i Rev16) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rev16 %s, %s", i.rd, i.rn)
 }
 
-func (i Rev16) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Rev16) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, Rev16X, 0x5AC00400)
 	if err != nil {
 		return 0, fmt.Errorf("rev16: %w", err)

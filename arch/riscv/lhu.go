@@ -24,9 +24,9 @@ func (Builder) Lhu(rd, rs1 Reg, off Off) Instr {
 	}
 }
 
-func decodeLhu(w uint32, addr uint64) Instr {
+func decodeLhu(w uint32) Instr {
 	return Lhu{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		off:  immNum(iImm(w)),
@@ -37,7 +37,7 @@ func (i Lhu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lhu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
-func (i Lhu) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Lhu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
 	bits, err := encI(off)

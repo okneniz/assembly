@@ -33,8 +33,8 @@ func (Builder) Csneg(rd, rn, rm Reg, cond string) (Instr, error) {
 	return Csneg{Csel: c}, nil
 }
 
-func decodeCsneg(w uint32, addr uint64) Instr {
-	c, ok := decodeCsel(w, addr).(Csel)
+func decodeCsneg(w uint32) Instr {
+	c, ok := decodeCsel(w).(Csel)
 	if !ok {
 		// decodeCsel always returns Csel; the branch guards against schema desynchronization
 		return Csneg{}
@@ -51,6 +51,6 @@ func (i Csneg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csneg %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
 }
 
-func (i Csneg) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Csneg) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i.Csel, csnegX, csnegW, "csneg")
 }

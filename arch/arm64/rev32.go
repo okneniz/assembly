@@ -47,9 +47,9 @@ func (Builder) Rev32(rd, rn Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeRev32(w uint32, addr uint64) Instr {
+func decodeRev32(w uint32) Instr {
 	return Rev32{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 	}
@@ -59,7 +59,7 @@ func (i Rev32) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rev32 %s, %s", i.rd, i.rn)
 }
 
-func (i Rev32) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Rev32) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, Rev32X, 0x5AC00800)
 	if err != nil {
 		return 0, fmt.Errorf("rev32: %w", err)

@@ -18,11 +18,10 @@ func TestLdBuCtor(t *testing.T) {
 }
 
 func TestLdBuDecodeEncode(t *testing.T) {
-	in := decodeLdBu(0x2a0021ac, 0x90000000)
+	in := decodeLdBu(0x2a0021ac)
 
 	x, ok := in.(LdBu)
 	require.True(t, ok, "type = %T, want LdBu", in)
 	require.Equal(t, "ld.bu $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x2a0021ac), ctorWord(t, x))
 }

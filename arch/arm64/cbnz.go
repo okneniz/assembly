@@ -7,42 +7,41 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Cbnz — cbnz rt, target.
+// Cbnz — cbnz rt, off.
 type Cbnz struct {
 	base
 
-	rt     string
-	target imm
+	rt  string
+	off imm // pc-relative byte offset
 }
 
 // Cbnz — cbnz rt, target: target — the absolute address of the
 // branch destination (the ±1MB imm19 range is checked at encode time,
 // from pc). rt — x/w register (register 31 reads as zr — use XZR/WZR).
-func (Builder) Cbnz(rt Reg, target int64) (Instr, error) {
+func (Builder) Cbnz(rt Reg, off int64) (Instr, error) {
 	if err := requireClass(rt, "Cbnz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
 		classX, classW, classXZR, classWZR); err != nil {
 		return nil, err
 	}
 
-	return Cbnz{rt: rt.name(), target: immNum(target)}, nil
+	return Cbnz{rt: rt.name(), off: immNum(off)}, nil
 }
 
-func decodeCbnz(w uint32, addr uint64) Instr {
+func decodeCbnz(w uint32) Instr {
 	return Cbnz{
-		base:   newBase(addr, w),
-		rt:     armRegName(w&0x1f, w>>31&1 == 1),
-		target: immNum(int64(addr) + signExtendN(w>>5&0x7ffff, 19)*4),
+		base: newBase(w),
+		rt:   armRegName(w&0x1f, w>>31&1 == 1),
+		off:  immNum(signExtendN(w>>5&0x7ffff, 19) * 4),
 	}
 }
 
-func (i Cbnz) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cbnz %s, %s", i.rt, i.target.textHex())
+func (i Cbnz) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("cbnz %s, %s", i.rt, target.textHex())
 }
 
-func (i Cbnz) Encode(w io.Writer, pc uint64) (int64, error) {
-	target := i.target.val
-
-	bits, err := brBits(target, int64(pc), 19)
+func (i Cbnz) Encode(w io.Writer) (int64, error) {
+	bits, err := offBits(i.off.val, 19)
 	if err != nil {
 		return 0, fmt.Errorf("cbnz: %w", err)
 	}

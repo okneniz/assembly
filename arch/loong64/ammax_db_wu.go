@@ -23,9 +23,9 @@ func (Builder) AmmaxDbWu(rd, rk, rj Reg) Instr {
 	}
 }
 
-func decodeAmmaxDbWu(w uint32, addr uint64) Instr {
+func decodeAmmaxDbWu(w uint32) Instr {
 	return AmmaxDbWu{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
@@ -36,7 +36,7 @@ func (i AmmaxDbWu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ammax_db.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }
 
-func (i AmmaxDbWu) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AmmaxDbWu) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ammax_db.wu"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 

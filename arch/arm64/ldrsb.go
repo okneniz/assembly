@@ -49,9 +49,9 @@ func (Builder) Ldrsb(rt, rn Reg, off Off) (Instr, error) {
 	}, nil
 }
 
-func decodeLdrsb(w uint32, addr uint64) Instr {
+func decodeLdrsb(w uint32) Instr {
 	return Ldrsb{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rt:   regNameX(w & 0x1f),
 		rn:   regNameXSP(w >> 5 & 0x1f),
 		off:  int64(w >> 10 & 0xfff),
@@ -66,6 +66,6 @@ func (i Ldrsb) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldrsb %s, [%s, #0x%x]", i.rt, i.rn, i.off)
 }
 
-func (i Ldrsb) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ldrsb) Encode(w io.Writer) (int64, error) {
 	return lsSignedWrite(w, ldrsbEnc, i.rt, i.rn, i.off, "ldrsb")
 }

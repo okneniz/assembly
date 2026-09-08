@@ -22,12 +22,11 @@ func TestAmmaxDbWCtor(t *testing.T) {
 }
 
 func TestAmmaxDbWDecodeEncode(t *testing.T) {
-	in := decodeAmmaxDbW(0x386e35cc, 0x90000000)
+	in := decodeAmmaxDbW(0x386e35cc)
 
 	ammaxdbw, ok := in.(AmmaxDbW)
 	require.True(t, ok, "type = %T, want AmmaxDbW", in)
 	require.Equal(t, "ammax_db.w $t0, $t1, $t2", ammaxdbw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), ammaxdbw.Addr())
 	require.Equal(t, 4, ammaxdbw.Len())
 	require.Equal(t, uint32(0x386e35cc), ctorWord(t, ammaxdbw))
 }

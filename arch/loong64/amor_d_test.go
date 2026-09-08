@@ -22,12 +22,11 @@ func TestAmorDCtor(t *testing.T) {
 }
 
 func TestAmorDDecodeEncode(t *testing.T) {
-	in := decodeAmorD(0x3863b5cc, 0x90000000)
+	in := decodeAmorD(0x3863b5cc)
 
 	amord, ok := in.(AmorD)
 	require.True(t, ok, "type = %T, want AmorD", in)
 	require.Equal(t, "amor.d $t0, $t1, $t2", amord.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), amord.Addr())
 	require.Equal(t, 4, amord.Len())
 	require.Equal(t, uint32(0x3863b5cc), ctorWord(t, amord))
 }

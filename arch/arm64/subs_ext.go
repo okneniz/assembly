@@ -60,9 +60,9 @@ func (Builder) SubsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
 	return SubsExt{extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64())}, nil
 }
 
-func decodeSubsExt(w uint32, addr uint64) Instr {
+func decodeSubsExt(w uint32) Instr {
 	return SubsExt{
-		base:    newBase(addr, w),
+		base:    newBase(w),
 		extBase: decodeExtBase(w),
 	}
 }
@@ -82,6 +82,6 @@ func (i SubsExt) ObjDump(_ disasm.ViewCtx) string {
 		addSubRegName(i.rnNum, i.isf, false), addSubRegName(i.rmNum, i.isf, false), i.extMod(false))
 }
 
-func (i SubsExt) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SubsExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, SubsExtX, SubsExtW, "subs")
 }

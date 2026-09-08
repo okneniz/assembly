@@ -45,9 +45,9 @@ func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeUdiv(w uint32, addr uint64) Instr {
+func decodeUdiv(w uint32) Instr {
 	return Udiv{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -58,7 +58,7 @@ func (i Udiv) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("udiv %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i Udiv) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Udiv) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, UdivX, 0x1AC00800)
 	if err != nil {
 		return 0, fmt.Errorf("udiv: %w", err)

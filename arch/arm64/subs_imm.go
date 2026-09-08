@@ -57,9 +57,9 @@ func (Builder) SubsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
 	}, nil
 }
 
-func decodeSubsImm(w uint32, addr uint64) Instr {
+func decodeSubsImm(w uint32) Instr {
 	return SubsImm{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rdNum: w & 0x1f,
 		rnNum: w >> 5 & 0x1f,
 		imm12: w >> 10 & 0xfff,
@@ -88,7 +88,7 @@ func (i SubsImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("subs %s, %s, %s", rd, rn, imm)
 }
 
-func (i SubsImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SubsImm) Encode(w io.Writer) (int64, error) {
 	match := SubsImmX
 	if !i.isf {
 		match = SubsImmW

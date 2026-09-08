@@ -20,9 +20,9 @@ func (Builder) Break(code Code15) Instr {
 	}
 }
 
-func decodeBreak(w uint32, addr uint64) Instr {
+func decodeBreak(w uint32) Instr {
 	return Break{
-		base: newBase(addr, w),
+		base: newBase(w),
 		code: immNum(int64(uField(w, 0, 15))),
 	}
 }
@@ -31,7 +31,7 @@ func (i Break) ObjDump(_ disasm.ViewCtx) string {
 	return "break " + i.code.text()
 }
 
-func (i Break) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Break) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["break"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)

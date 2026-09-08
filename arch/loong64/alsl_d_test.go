@@ -22,7 +22,7 @@ func TestAlslDCtor(t *testing.T) {
 }
 
 func TestAlslDDecodeEncode(t *testing.T) {
-	in := decodeAlslD(0x002d39ac, 0x90000000)
+	in := decodeAlslD(0x002d39ac)
 
 	x, ok := in.(AlslD)
 	require.True(t, ok, "type = %T, want AlslD", in)
@@ -30,13 +30,12 @@ func TestAlslDDecodeEncode(t *testing.T) {
 	// The raw ui2 field is 2; the decoded shift displays field + 1 = 3.
 	require.Equal(t, int64(3), x.shift.val)
 	require.Equal(t, "alsl.d $t0, $t1, $t2, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x002d39ac), ctorWord(t, x))
 
 	// llvm-mc-verified: alsl.d $t0, $t1, $t2, 4 (ui2 = 3) - the upper
 	// boundary of the shift-by-one.
-	y, ok2 := decodeAlslD(0x002db9ac, 0).(AlslD)
+	y, ok2 := decodeAlslD(0x002db9ac).(AlslD)
 	require.True(t, ok2, "type = %T, want AlslD", y)
 	require.Equal(t, int64(4), y.shift.val)
 	require.Equal(t, "alsl.d $t0, $t1, $t2, 4", y.ObjDump(disasm.DefaultViewCtx()))

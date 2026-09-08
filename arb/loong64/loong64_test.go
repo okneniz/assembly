@@ -296,7 +296,7 @@ func TestInstrGenValid(t *testing.T) {
 		for range 300 {
 			buf.Reset()
 			in, _ := c.sample()
-			_, err := in.Encode(&buf, 0)
+			_, err := in.Encode(&buf)
 			require.NoError(t, err, "%s (%s)", c.name, in.ObjDump(disasm.DefaultViewCtx()))
 			require.Equal(t, 4, buf.Len(), "%s: %d bytes", c.name, buf.Len())
 		}
@@ -328,7 +328,7 @@ func TestInstrGenShrinkValid(t *testing.T) {
 		for range 200 {
 			buf.Reset()
 			for _, in := range c.shrink() {
-				_, err := in.Encode(&buf, 0)
+				_, err := in.Encode(&buf)
 				require.NoError(t, err, "%s: shrink candidate %s", c.name,
 					in.ObjDump(disasm.DefaultViewCtx()))
 			}

@@ -18,11 +18,10 @@ func TestSltiCtor(t *testing.T) {
 }
 
 func TestSltiDecodeEncode(t *testing.T) {
-	x, ok := decodeSlti(0x023fc1ac, 0x90000000).(Slti)
+	x, ok := decodeSlti(0x023fc1ac).(Slti)
 	require.True(t, ok, "type = %T, want Slti", x)
 
 	require.Equal(t, "slti $t0, $t1, -16", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(-16), x.imm.val)
 
 	// The negative immediate round-trips through the sign-extended field.

@@ -26,7 +26,7 @@ type SimdCopy struct {
 	isDest  bool // gpr on the destination side (smov/umov)
 }
 
-func decodeSimdCopy(w uint32, addr uint64) Instr {
+func decodeSimdCopy(w uint32) Instr {
 	imm5 := w >> 16 & 0x1f
 	// imm5 = the size one-hot plus the index bits above it (size = ctz,
 	// index = imm5 >> size+1). ins/smov/umov of a NONZERO lane is legal
@@ -34,7 +34,7 @@ func decodeSimdCopy(w uint32, addr uint64) Instr {
 	// one-hot. Unencodable sizes go to the .word fallback (the schema
 	// mask does not express any of this).
 	if imm5 == 0 || bitsCtz(imm5) > 3 || (w>>12&3 == 0 && imm5&(imm5-1) != 0) {
-		return decodeUnknown(w, addr)
+		return decodeUnknown(w)
 	}
 
 	size := uint32(bitsCtz(imm5))
@@ -63,7 +63,7 @@ func decodeSimdCopy(w uint32, addr uint64) Instr {
 	vd := vReg(vdNum)
 	gpr := armRegName(gprNum, gpr64)
 	return SimdCopy{
-		base:   newBase(addr, w),
+		base:   newBase(w),
 		op:     op,
 		size:   size,
 		idx:    idx,
@@ -108,7 +108,7 @@ func (i SimdCopy) ObjDump(_ disasm.ViewCtx) string {
 	}
 }
 
-func (i SimdCopy) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SimdCopy) Encode(w io.Writer) (int64, error) {
 	var opBits uint32
 	switch i.op {
 	case "dup":

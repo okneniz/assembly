@@ -18,11 +18,10 @@ func TestLdHuCtor(t *testing.T) {
 }
 
 func TestLdHuDecodeEncode(t *testing.T) {
-	in := decodeLdHu(0x2a4021ac, 0x90000000)
+	in := decodeLdHu(0x2a4021ac)
 
 	x, ok := in.(LdHu)
 	require.True(t, ok, "type = %T, want LdHu", in)
 	require.Equal(t, "ld.hu $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x2a4021ac), ctorWord(t, x))
 }

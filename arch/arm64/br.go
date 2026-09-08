@@ -32,9 +32,9 @@ func (Builder) Br(rn Reg) (Instr, error) {
 	return Br{rn: rn.name()}, nil
 }
 
-func decodeBr(w uint32, addr uint64) Instr {
+func decodeBr(w uint32) Instr {
 	return Br{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rn:   regNameX(w >> 5 & 0x1f),
 	}
 }
@@ -43,7 +43,7 @@ func (i Br) ObjDump(_ disasm.ViewCtx) string {
 	return "br " + i.rn
 }
 
-func (i Br) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Br) Encode(w io.Writer) (int64, error) {
 	num, err := armRegNum(i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("br: %w", err)

@@ -19,22 +19,21 @@ func (errWriter) Write(p []byte) (int, error) {
 }
 
 func TestUnknown(t *testing.T) {
-	in := newUnknown(newBase(0x90000010, 0xdeadbeef))
-	require.Equal(t, uint64(0x90000010), in.Addr())
+	in := newUnknown(newBase(0xdeadbeef))
 	require.Equal(t, 4, in.Len())
 	require.Equal(t, "<unknown>", in.ObjDump(disasm.DefaultViewCtx()))
 
 	var buf bytes.Buffer
-	n, err := in.Encode(&buf, 0x90000010)
+	n, err := in.Encode(&buf)
 	require.NoError(t, err)
 	require.Equal(t, int64(4), n)
 	require.Equal(t, []byte{0xef, 0xbe, 0xad, 0xde}, buf.Bytes())
 }
 
 func TestUnknownEncodeError(t *testing.T) {
-	in := newUnknown(newBase(0, 0x1c000000))
+	in := newUnknown(newBase(0x1c000000))
 
-	_, err := in.Encode(errWriter{}, 0)
+	_, err := in.Encode(errWriter{})
 	require.ErrorContains(t, err, "write failed")
 }
 

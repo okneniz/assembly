@@ -21,19 +21,18 @@ func TestStptrWCtor(t *testing.T) {
 }
 
 func TestStptrWDecodeEncode(t *testing.T) {
-	in := decodeStptrW(0x250009ac, 0x90000000)
+	in := decodeStptrW(0x250009ac)
 
 	x, ok := in.(StptrW)
 	require.True(t, ok, "type = %T, want StptrW", in)
 	require.Equal(t, "stptr.w $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(8), x.off.val)
 	require.Equal(t, uint32(0x250009ac), ctorWord(t, x))
 
 	// llvm-mc-verified: stptr.w $t0, $t1, -8 (the byte offset is stored
 	// raw, the si14 word count -2 round-trips).
-	y, ok := decodeStptrW(0x25fff9ac, 0).(StptrW)
+	y, ok := decodeStptrW(0x25fff9ac).(StptrW)
 	require.True(t, ok, "type = %T, want StptrW", y)
 	require.Equal(t, "stptr.w $t0, $t1, -8", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), y.off.val)

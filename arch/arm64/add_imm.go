@@ -66,7 +66,7 @@ func (i AddImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("add %s, %s, %s", rd, rn, imm)
 }
 
-func (i AddImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AddImm) Encode(w io.Writer) (int64, error) {
 	match := AddImmX
 	if !i.isf {
 		match = AddImmW
@@ -84,9 +84,9 @@ func (i AddImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-func decodeAddImm(w uint32, addr uint64) Instr {
+func decodeAddImm(w uint32) Instr {
 	return AddImm{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rdNum: w & 0x1f,
 		rnNum: w >> 5 & 0x1f,
 		imm12: w >> 10 & 0xfff,

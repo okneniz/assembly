@@ -21,19 +21,18 @@ func TestLdptrWCtor(t *testing.T) {
 }
 
 func TestLdptrWDecodeEncode(t *testing.T) {
-	in := decodeLdptrW(0x240009ac, 0x90000000)
+	in := decodeLdptrW(0x240009ac)
 
 	x, ok := in.(LdptrW)
 	require.True(t, ok, "type = %T, want LdptrW", in)
 	require.Equal(t, "ldptr.w $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(8), x.off.val)
 	require.Equal(t, uint32(0x240009ac), ctorWord(t, x))
 
 	// llvm-mc-verified: ldptr.w $t0, $t1, -8 (the byte offset is stored
 	// raw, the si14 word count -2 round-trips).
-	y, ok := decodeLdptrW(0x24fff9ac, 0).(LdptrW)
+	y, ok := decodeLdptrW(0x24fff9ac).(LdptrW)
 	require.True(t, ok, "type = %T, want LdptrW", y)
 	require.Equal(t, "ldptr.w $t0, $t1, -8", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), y.off.val)

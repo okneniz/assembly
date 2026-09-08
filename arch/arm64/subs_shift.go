@@ -61,9 +61,9 @@ func (Builder) SubsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeSubsShift(w uint32, addr uint64) Instr {
+func decodeSubsShift(w uint32) Instr {
 	return SubsShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -98,7 +98,7 @@ func (i SubsShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("subs %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i SubsShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SubsShift) Encode(w io.Writer) (int64, error) {
 	match := SubsShiftX
 	if !i.isf {
 		match = SubsShiftW

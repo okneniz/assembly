@@ -23,9 +23,9 @@ func (Builder) MulhD(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeMulhD(w uint32, addr uint64) Instr {
+func decodeMulhD(w uint32) Instr {
 	return MulhD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -36,7 +36,7 @@ func (i MulhD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mulh.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i MulhD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i MulhD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["mulh.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

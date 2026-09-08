@@ -55,9 +55,9 @@ func (Builder) EonShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeEonShift(w uint32, addr uint64) Instr {
+func decodeEonShift(w uint32) Instr {
 	return EonShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -75,7 +75,7 @@ func (i EonShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("eon %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i EonShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i EonShift) Encode(w io.Writer) (int64, error) {
 	match := EonShiftX
 	if !i.isf {
 		match = EonShiftW

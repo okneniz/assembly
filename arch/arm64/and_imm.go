@@ -43,9 +43,9 @@ func (Builder) AndImm(rd, rn Reg, imm uint64) (Instr, error) {
 	return AndImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
 }
 
-func decodeAndImm(w uint32, addr uint64) Instr {
+func decodeAndImm(w uint32) Instr {
 	return AndImm{
-		newBase(addr, w),
+		newBase(w),
 		decodeLogImm(w),
 	}
 }
@@ -54,7 +54,7 @@ func (i AndImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("and %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }
 
-func (i AndImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AndImm) Encode(w io.Writer) (int64, error) {
 	match := andImmX
 	if !i.is64 {
 		match = andImmW

@@ -27,9 +27,9 @@ func (Builder) Preld(hint UImm5, rj Reg, off Imm12) Instr {
 	}
 }
 
-func decodePreld(w uint32, addr uint64) Instr {
+func decodePreld(w uint32) Instr {
 	return Preld{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rj:   uint8(w >> 5 & 0x1f),
 		hint: immNum(int64(uField(w, 0, 5))),
 		off:  immNum(sField(w, 10, 12)),
@@ -40,7 +40,7 @@ func (i Preld) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("preld %s, %s, %s", i.hint.text(), laRegName(i.rj), i.off.text())
 }
 
-func (i Preld) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Preld) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["preld"][0] |
 		uint32(i.rj)<<5 | scatterU(i.hint.val, 0, 5) | scatterS(i.off.val, 10, 12)
 

@@ -21,9 +21,9 @@ func (Builder) Idle(code Code15) Instr {
 	}
 }
 
-func decodeIdle(w uint32, addr uint64) Instr {
+func decodeIdle(w uint32) Instr {
 	return Idle{
-		base: newBase(addr, w),
+		base: newBase(w),
 		code: immNum(int64(uField(w, 0, 15))),
 	}
 }
@@ -32,7 +32,7 @@ func (i Idle) ObjDump(_ disasm.ViewCtx) string {
 	return "idle " + i.code.text()
 }
 
-func (i Idle) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Idle) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["idle"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)

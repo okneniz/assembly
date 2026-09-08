@@ -22,11 +22,10 @@ func TestSubWCtor(t *testing.T) {
 }
 
 func TestSubWDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001139ac, 0x90000000)
+	in := decodeOne(0x001139ac)
 
 	x, ok := in.(SubW)
 	require.True(t, ok, "type = %T, want SubW", in)
 	require.Equal(t, "sub.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001139ac), ctorWord(t, x))
 }

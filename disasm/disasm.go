@@ -27,27 +27,45 @@ type ObjDump interface {
 }
 
 // ViewCtx is the instruction representation context (view layer): text
-// rendering parameters. Today there is a single parameter - the machine-code
-// column style; future representation parameters are added here as methods
+// rendering parameters: the machine-code column style and the
+// instruction's own address (PC-relative forms print absolute targets
+// from it). Future representation parameters are added here as methods
 // (like EncOpts in riscv - encoding modes).
 type ViewCtx interface {
 	// Style is the machine-code column style: space-separated bytes (Mach-O)
 	// or a hex word (ELF); see text.StyleFor.
 	Style() text.CodeStyle
+
+	// Addr is the address of the instruction itself: PC-relative operands
+	// (branches, literal loads, adrp) render their absolute targets as
+	// ctx.Addr() + offset.
+	Addr() uint64
 }
 
 // viewCtx is the canonical implementation of ViewCtx.
 type viewCtx struct {
 	style text.CodeStyle
+	addr  uint64
 }
 
 func (c viewCtx) Style() text.CodeStyle {
 	return c.style
 }
 
-// DefaultViewCtx is the canonical representation context (byte style).
+func (c viewCtx) Addr() uint64 {
+	return c.addr
+}
+
+// DefaultViewCtx is the representation context without an address (zero):
+// PC-relative operands render relative to 0.
 func DefaultViewCtx() ViewCtx {
 	return viewCtx{style: text.CodeBytes}
+}
+
+// ViewCtxAt is the representation context of an instruction at addr
+// (byte style): PC-relative operands render absolute targets.
+func ViewCtxAt(addr uint64) ViewCtx {
+	return viewCtx{style: text.CodeBytes, addr: addr}
 }
 
 // Options is the output parameters (adapted into a ViewCtx in Line/Write).
@@ -61,9 +79,10 @@ func NewOptions(style text.CodeStyle) Options {
 	return Options{Style: style}
 }
 
-// ctx is the ViewCtx derived from the output parameters.
-func (o Options) ctx() ViewCtx {
-	return viewCtx{style: o.Style}
+// ctx is the ViewCtx derived from the output parameters and the
+// instruction's address.
+func (o Options) ctx(addr uint64) ViewCtx {
+	return viewCtx{style: o.Style, addr: addr}
 }
 
 // Line returns a single instruction's line: "<addr>:\t<code>\t<text>".
@@ -74,7 +93,7 @@ func Line(addr uint64, code []byte, in ObjDump, opts Options) string {
 		"%x:\t%s\t%s",
 		addr,
 		text.FormatCode(raw, n, opts.Style),
-		in.ObjDump(opts.ctx()),
+		in.ObjDump(opts.ctx(addr)),
 	)
 }
 

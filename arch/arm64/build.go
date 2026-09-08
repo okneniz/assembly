@@ -6,8 +6,8 @@ package arm64
 
 // DecodeWord — decode a single word (self-verify of encodeARM: the decoder
 // must reproduce the source text).
-func DecodeWord(w uint32, addr uint64) Instr {
-	return decodeOne(w, addr)
+func DecodeWord(w uint32) Instr {
+	return decodeOne(w)
 }
 
 // Schemas — the ordered decode table (first-match-wins; for testing

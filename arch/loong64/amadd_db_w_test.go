@@ -22,12 +22,11 @@ func TestAmaddDbWCtor(t *testing.T) {
 }
 
 func TestAmaddDbWDecodeEncode(t *testing.T) {
-	in := decodeAmaddDbW(0x386a35cc, 0x90000000)
+	in := decodeAmaddDbW(0x386a35cc)
 
 	amadddbw, ok := in.(AmaddDbW)
 	require.True(t, ok, "type = %T, want AmaddDbW", in)
 	require.Equal(t, "amadd_db.w $t0, $t1, $t2", amadddbw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), amadddbw.Addr())
 	require.Equal(t, 4, amadddbw.Len())
 	require.Equal(t, uint32(0x386a35cc), ctorWord(t, amadddbw))
 }

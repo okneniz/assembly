@@ -24,9 +24,9 @@ func (Builder) Sh(rs2, rs1 Reg, off Off) Instr {
 	}
 }
 
-func decodeSh(w uint32, addr uint64) Instr {
+func decodeSh(w uint32) Instr {
 	return Sh{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rs1:  rvRegNames[w>>15&0x1f],
 		rs2:  rvRegNames[w>>20&0x1f],
 		off:  immNum(sImm(w)),
@@ -37,7 +37,7 @@ func (i Sh) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sh %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
-func (i Sh) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Sh) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
 	bits, err := encS(off)

@@ -13,39 +13,33 @@ const Name = "LOONG64"
 
 // Instr - a LoongArch instruction: it represents itself - encodes itself
 // into bytes (Encode, the computed form: operand values are already
-// numbers, the environment is just the address), into text
-// (disasm.ObjDump, for the disassembler). There is NO common type with
-// other architectures; each instruction is its own structure
+// numbers, PC-relative ones are offsets - there is no environment), into
+// text (disasm.ObjDump, for the disassembler; absolute targets are
+// computed from the address in the view context). There is NO common
+// type with other architectures; each instruction is its own structure
 // (AddW, AddiW, Beq, ...).
 type Instr interface {
 	disasm.ObjDump
-	Addr() uint64
 
-	// Encode encodes the computed instruction: pc is the absolute address
-	// (PC-relative forms). There is no resolver - an exact inverse of
-	// decode, and no modes: LA64 words are fixed 32-bit, no compression.
-	Encode(w io.Writer, pc uint64) (int64, error)
+	// Encode encodes the computed instruction. There is no resolver and
+	// no environment - an exact inverse of decode, and no modes: LA64
+	// words are fixed 32-bit, no compression.
+	Encode(w io.Writer) (int64, error)
 }
 
-// base - the bookkeeping fields of every instruction: address, raw word,
-// and length. This is not instruction semantics but a bookkeeping record
-// for Addr/Len.
+// base - the bookkeeping fields of every instruction: raw word and
+// length. This is not instruction semantics but a bookkeeping record
+// for Len.
 type base struct {
-	addr   uint64
 	raw    uint32
 	length int
 }
 
-func newBase(addr uint64, raw uint32) base {
+func newBase(raw uint32) base {
 	return base{
-		addr:   addr,
 		raw:    raw,
 		length: 4,
 	}
-}
-
-func (b base) Addr() uint64 {
-	return b.addr
 }
 
 func (b base) Len() int {
@@ -73,7 +67,7 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 	return "<unknown>"
 }
 
-func (i Unknown) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Unknown) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.raw)
 }
 

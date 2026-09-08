@@ -45,9 +45,9 @@ func (Builder) LsrReg(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeLsrReg(w uint32, addr uint64) Instr {
+func decodeLsrReg(w uint32) Instr {
 	return LsrReg{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -58,7 +58,7 @@ func (i LsrReg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lsr %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i LsrReg) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i LsrReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, LsrRegX, 0x1A002400)
 	if err != nil {
 		return 0, fmt.Errorf("lsr: %w", err)

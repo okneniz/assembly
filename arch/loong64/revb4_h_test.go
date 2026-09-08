@@ -22,11 +22,10 @@ func TestRevb4HCtor(t *testing.T) {
 }
 
 func TestRevb4HDecodeEncode(t *testing.T) {
-	in := decodeRevb4H(0x000035ac, 0x90000000)
+	in := decodeRevb4H(0x000035ac)
 
 	revb4h, ok := in.(Revb4H)
 	require.True(t, ok, "type = %T, want Revb4H", in)
 	require.Equal(t, "revb.4h $t0, $t1", revb4h.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), revb4h.Addr())
 	require.Equal(t, uint32(0x000035ac), ctorWord(t, revb4h))
 }

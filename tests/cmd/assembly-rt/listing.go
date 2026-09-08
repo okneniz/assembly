@@ -68,31 +68,32 @@ func buildListing(
 	switch arch {
 	case file.ArchRISCV64:
 		textOf := firstInstrTextRISCV
-		insts, err := riscv.Parse(base)(parsecbytes.Buffer(data))
+		insts, err := riscv.Parse()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
 
 		for _, in := range insts {
 			n := in.Len()
-			line := cleanLine(in.ObjDump(disasm.DefaultViewCtx()))
+			addr := base + uint64(off)
+			line := cleanLine(in.ObjDump(disasm.ViewCtxAt(addr)))
 			if line == "" || line == "<unknown>" {
 				emitRaw(&sb, data[off:off+n])
-				st.addFiller("unknown-riscv", in.Addr(), line)
+				st.addFiller("unknown-riscv", addr, line)
 			} else {
-				switch classifyLine(assemble, line, in.Addr(), data[off:off+n], textOf) {
+				switch classifyLine(assemble, line, addr, data[off:off+n], textOf) {
 				case verOK:
 					fmt.Fprintln(&sb, line)
 					st.instrLines++
 				case verAsmErr:
 					emitRaw(&sb, data[off:off+n])
-					st.addFiller("asm-error", in.Addr(), line)
+					st.addFiller("asm-error", addr, line)
 				case verEquiv:
 					emitRaw(&sb, data[off:off+n])
-					st.addFiller("equiv-encoding", in.Addr(), line)
+					st.addFiller("equiv-encoding", addr, line)
 				case verMismatch:
 					emitRaw(&sb, data[off:off+n])
-					st.addFiller("hard-mismatch", in.Addr(), line)
+					st.addFiller("hard-mismatch", addr, line)
 				}
 			}
 
@@ -100,30 +101,31 @@ func buildListing(
 		}
 	case file.ArchLOONGARCH64:
 		textOf := firstInstrTextLOONG
-		insts, err := loong64.Parse(base)(parsecbytes.Buffer(data))
+		insts, err := loong64.Parse()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
 
 		for _, in := range insts {
-			line := cleanLine(in.ObjDump(disasm.DefaultViewCtx()))
+			addr := base + uint64(off)
+			line := cleanLine(in.ObjDump(disasm.ViewCtxAt(addr)))
 			if line == "" || line == "<unknown>" {
 				emitRaw(&sb, data[off:off+4])
-				st.addFiller("unknown-loong64", in.Addr(), line)
+				st.addFiller("unknown-loong64", addr, line)
 			} else {
-				switch classifyLine(assemble, line, in.Addr(), data[off:off+4], textOf) {
+				switch classifyLine(assemble, line, addr, data[off:off+4], textOf) {
 				case verOK:
 					fmt.Fprintln(&sb, line)
 					st.instrLines++
 				case verAsmErr:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("asm-error", in.Addr(), line)
+					st.addFiller("asm-error", addr, line)
 				case verEquiv:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("equiv-encoding", in.Addr(), line)
+					st.addFiller("equiv-encoding", addr, line)
 				case verMismatch:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("hard-mismatch", in.Addr(), line)
+					st.addFiller("hard-mismatch", addr, line)
 				}
 			}
 
@@ -131,30 +133,31 @@ func buildListing(
 		}
 	default:
 		textOf := firstInstrTextARM
-		insts, err := arm64.Parse(base)(parsecbytes.Buffer(data))
+		insts, err := arm64.Parse()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
 
 		for _, in := range insts {
-			line := cleanLine(in.ObjDump(disasm.DefaultViewCtx()))
+			addr := base + uint64(off)
+			line := cleanLine(in.ObjDump(disasm.ViewCtxAt(addr)))
 			if line == "" || isDecodeOnly(in) {
 				emitRaw(&sb, data[off:off+4])
-				st.addFiller("decode-only-arm64", in.Addr(), line)
+				st.addFiller("decode-only-arm64", addr, line)
 			} else {
-				switch classifyLine(assemble, line, in.Addr(), data[off:off+4], textOf) {
+				switch classifyLine(assemble, line, addr, data[off:off+4], textOf) {
 				case verOK:
 					fmt.Fprintln(&sb, line)
 					st.instrLines++
 				case verAsmErr:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("asm-error", in.Addr(), line)
+					st.addFiller("asm-error", addr, line)
 				case verEquiv:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("equiv-encoding", in.Addr(), line)
+					st.addFiller("equiv-encoding", addr, line)
 				case verMismatch:
 					emitRaw(&sb, data[off:off+4])
-					st.addFiller("hard-mismatch", in.Addr(), line)
+					st.addFiller("hard-mismatch", addr, line)
 				}
 			}
 
@@ -263,7 +266,7 @@ func classifyLine(
 // firstInstrTextARM - the normalized text of the first instruction of a
 // buffer (arm64).
 func firstInstrTextARM(b []byte, addr uint64) string {
-	insts, err := arm64.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := arm64.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -272,13 +275,13 @@ func firstInstrTextARM(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return cleanLine(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return cleanLine(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // firstInstrTextRISCV - the normalized text of the first instruction of a
 // buffer (riscv64, including compressed forms).
 func firstInstrTextRISCV(b []byte, addr uint64) string {
-	insts, err := riscv.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := riscv.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -287,13 +290,13 @@ func firstInstrTextRISCV(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return cleanLine(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return cleanLine(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // firstInstrTextLOONG - the first instruction's text of a loong64 word
 // buffer.
 func firstInstrTextLOONG(b []byte, addr uint64) string {
-	insts, err := loong64.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := loong64.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -302,7 +305,7 @@ func firstInstrTextLOONG(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return cleanLine(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return cleanLine(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // isDecodeOnly - arm64 instructions without assembly text (the Generic tail

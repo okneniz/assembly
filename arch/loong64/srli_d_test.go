@@ -21,11 +21,10 @@ func TestSrliDCtor(t *testing.T) {
 }
 
 func TestSrliDDecodeEncode(t *testing.T) {
-	x, ok := decodeSrliD(0x00450dac, 0x90000000).(SrliD)
+	x, ok := decodeSrliD(0x00450dac).(SrliD)
 	require.True(t, ok, "type = %T, want SrliD", x)
 
 	require.Equal(t, "srli.d $t0, $t1, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3), x.imm.val)
 	require.Equal(t, uint32(0x00450dac), ctorWord(t, x))
 }

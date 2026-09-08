@@ -80,7 +80,7 @@ func (i AddShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("add %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i AddShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AddShift) Encode(w io.Writer) (int64, error) {
 	match := AddShiftX
 	if !i.isf {
 		match = AddShiftW
@@ -103,9 +103,9 @@ func (i AddShift) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func decodeAddShift(w uint32, addr uint64) Instr {
+func decodeAddShift(w uint32) Instr {
 	return AddShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),

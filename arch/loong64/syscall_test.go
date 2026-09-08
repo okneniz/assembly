@@ -17,7 +17,7 @@ func TestSyscallCtor(t *testing.T) {
 }
 
 func TestSyscallDecodeEncode(t *testing.T) {
-	x, ok := decodeSyscall(0x002b0000, 0x90000000).(Syscall)
+	x, ok := decodeSyscall(0x002b0000).(Syscall)
 	require.True(t, ok, "type = %T, want Syscall", x)
 	require.Equal(t, "syscall 0", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(0), x.code.val)

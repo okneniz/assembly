@@ -21,11 +21,10 @@ func TestAndiCtor(t *testing.T) {
 }
 
 func TestAndiDecodeEncode(t *testing.T) {
-	x, ok := decodeAndi(0x037c3dac, 0x90000000).(Andi)
+	x, ok := decodeAndi(0x037c3dac).(Andi)
 	require.True(t, ok, "type = %T, want Andi", x)
 
 	require.Equal(t, "andi $t0, $t1, 3855", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3855), x.imm.val)
 	require.Equal(t, uint32(0x037c3dac), ctorWord(t, x))
 }

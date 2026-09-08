@@ -24,9 +24,9 @@ func (Builder) SrliD(rd, rj Reg, v UImm6) Instr {
 	}
 }
 
-func decodeSrliD(w uint32, addr uint64) Instr {
+func decodeSrliD(w uint32) Instr {
 	return SrliD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		imm:  immNum(int64(uField(w, 10, 6))),
@@ -37,7 +37,7 @@ func (i SrliD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srli.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }
 
-func (i SrliD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i SrliD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["srli.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 6)
 

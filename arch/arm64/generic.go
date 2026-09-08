@@ -22,9 +22,9 @@ type Generic struct {
 	word   uint32
 }
 
-func decodeGeneric(e *armISAEntry, w uint32, addr uint64) Instr {
+func decodeGeneric(e *armISAEntry, w uint32) Instr {
 	return Generic{
-		base:   newBase(addr, w),
+		base:   newBase(w),
 		name:   e.Name,
 		fields: e.Fields,
 		word:   w,
@@ -53,6 +53,6 @@ func (i Generic) ObjDump(_ disasm.ViewCtx) string {
 // The text→bytes round trip is undefined for them: the asm grammar does
 // not know this syntax, and silently emitting the raw word would be
 // dishonest.
-func (i Generic) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Generic) Encode(w io.Writer) (int64, error) {
 	return 0, fmt.Errorf("%s: generic instruction, assembly not supported", i.name)
 }

@@ -23,9 +23,9 @@ func (Builder) Sltu(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeSltu(w uint32, addr uint64) Instr {
+func decodeSltu(w uint32) Instr {
 	return Sltu{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -36,7 +36,7 @@ func (i Sltu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sltu %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i Sltu) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Sltu) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["sltu"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

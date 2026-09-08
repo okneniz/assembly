@@ -54,19 +54,18 @@ func TestISADirectMatch(t *testing.T) {
 		name        string
 		mask, value uint32
 	}
-	cur, err := Parse(ts.Addr)(bytes.Buffer(ts.Data))
+	cur, err := Parse()(bytes.Buffer(ts.Data))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}
 
 	hwByAddr := make(map[uint64]hw, len(cur))
-	off := uint64(0)
-	for _, in := range cur {
+	for off := uint64(0); off+4 <= uint64(len(ts.Data)); off += 4 {
 		w := ts.Data[off : off+4]
 		word := binary.LittleEndian.Uint32(w)
 		for _, sc := range getSchemas() {
 			if (word & sc.Mask) == sc.Value {
-				hwByAddr[in.Addr()] = hw{
+				hwByAddr[ts.Addr+off] = hw{
 					sc.Meta.Name,
 					sc.Mask,
 					sc.Value,

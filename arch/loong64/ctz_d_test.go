@@ -22,11 +22,10 @@ func TestCtzDCtor(t *testing.T) {
 }
 
 func TestCtzDDecodeEncode(t *testing.T) {
-	in := decodeCtzD(0x00002dac, 0x90000000)
+	in := decodeCtzD(0x00002dac)
 
 	ctzd, ok := in.(CtzD)
 	require.True(t, ok, "type = %T, want CtzD", in)
 	require.Equal(t, "ctz.d $t0, $t1", ctzd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), ctzd.Addr())
 	require.Equal(t, uint32(0x00002dac), ctorWord(t, ctzd))
 }

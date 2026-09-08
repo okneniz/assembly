@@ -16,9 +16,9 @@ func (Builder) Ertn() Instr {
 	return Ertn{}
 }
 
-func decodeErtn(w uint32, addr uint64) Instr {
+func decodeErtn(w uint32) Instr {
 	return Ertn{
-		base: newBase(addr, w),
+		base: newBase(w),
 	}
 }
 
@@ -26,6 +26,6 @@ func (i Ertn) ObjDump(_ disasm.ViewCtx) string {
 	return "ertn"
 }
 
-func (i Ertn) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Ertn) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, loongEncodings["ertn"][0])
 }

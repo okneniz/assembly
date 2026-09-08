@@ -48,9 +48,9 @@ func (Builder) Ccmp(rn, rm Reg, nzcv uint32, cond string) (Instr, error) {
 	}, nil
 }
 
-func decodeCcmp(w uint32, addr uint64) Instr {
+func decodeCcmp(w uint32) Instr {
 	return Ccmp{
-		base:   newBase(addr, w),
+		base:   newBase(w),
 		rn:     armRegName(w>>5&0x1f, true),
 		rm:     armRegName(w>>16&0x1f, true),
 		immVal: w & 0xf,
@@ -62,7 +62,7 @@ func (i Ccmp) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ccmp %s, %s, #0x%x, %s", i.rn, i.rm, i.immVal, i.cond)
 }
 
-func (i Ccmp) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ccmp) Encode(w io.Writer) (int64, error) {
 	rn, rm, err := regNums2(i.rn, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("ccmp: %w", err)

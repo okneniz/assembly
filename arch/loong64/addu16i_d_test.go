@@ -21,11 +21,10 @@ func TestAddu16iDCtor(t *testing.T) {
 }
 
 func TestAddu16iDDecodeEncode(t *testing.T) {
-	x, ok := decodeAddu16iD(0x13fffdac, 0x90000000).(Addu16iD)
+	x, ok := decodeAddu16iD(0x13fffdac).(Addu16iD)
 	require.True(t, ok, "type = %T, want Addu16iD", x)
 
 	require.Equal(t, "addu16i.d $t0, $t1, -1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(-1), x.imm.val)
 
 	// The negative immediate round-trips through the sign-extended field.

@@ -25,12 +25,11 @@ func TestScDCtor(t *testing.T) {
 }
 
 func TestScDDecodeEncode(t *testing.T) {
-	in := decodeScD(0x230009ac, 0x90000000)
+	in := decodeScD(0x230009ac)
 
 	scd, ok := in.(ScD)
 	require.True(t, ok, "type = %T, want ScD", in)
 	require.Equal(t, "sc.d $t0, $t1, 8", scd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), scd.Addr())
 	require.Equal(t, 4, scd.Len())
 	require.Equal(t, int64(8), scd.off.val)
 	require.Equal(t, uint32(0x230009ac), ctorWord(t, scd))

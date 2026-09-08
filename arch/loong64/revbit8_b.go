@@ -22,9 +22,9 @@ func (Builder) Revbit8B(rd, rj Reg) Instr {
 	}
 }
 
-func decodeRevbit8B(w uint32, addr uint64) Instr {
+func decodeRevbit8B(w uint32) Instr {
 	return Revbit8B{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i Revbit8B) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bitrev.8b %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i Revbit8B) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Revbit8B) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["bitrev.8b"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

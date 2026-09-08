@@ -22,12 +22,11 @@ func TestCrccWWWCtor(t *testing.T) {
 }
 
 func TestCrccWWWDecodeEncode(t *testing.T) {
-	in := decodeCrccWWW(0x002739ac, 0x90000000)
+	in := decodeCrccWWW(0x002739ac)
 
 	x, ok := in.(CrccWWW)
 	require.True(t, ok, "type = %T, want CrccWWW", in)
 	require.Equal(t, "crcc.w.w.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x002739ac), ctorWord(t, x))
 }

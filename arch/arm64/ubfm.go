@@ -58,9 +58,9 @@ func (Builder) Ubfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
 	}, nil
 }
 
-func decodeUbfm(w uint32, addr uint64) Instr {
+func decodeUbfm(w uint32) Instr {
 	return Ubfm{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		immr: w >> 16 & 0x3f,
@@ -86,6 +86,6 @@ func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ubfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
 }
 
-func (i Ubfm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ubfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }

@@ -18,12 +18,11 @@ func TestStxWCtor(t *testing.T) {
 }
 
 func TestStxWDecodeEncode(t *testing.T) {
-	in := decodeStxW(0x381839ac, 0x90000000)
+	in := decodeStxW(0x381839ac)
 
 	x, ok := in.(StxW)
 	require.True(t, ok, "type = %T, want StxW", in)
 	require.Equal(t, "stx.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x381839ac), ctorWord(t, x))
 }

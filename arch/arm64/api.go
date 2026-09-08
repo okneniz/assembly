@@ -237,4 +237,4 @@ func CondNames() [16]string { return condNames }
 func SysregNames() map[uint32]string { return sysregNames }
 
 // BrBits — the branch target to signed offset bits.
-func BrBits(target, addr int64, bits int) (uint32, error) { return brBits(target, addr, bits) }
+func OffBits(off int64, bits int) (uint32, error) { return offBits(off, bits) }

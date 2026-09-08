@@ -23,7 +23,7 @@ func (i MovSimd) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mov.%s %s, %s", i.arr, i.rd, i.rm)
 }
 
-func (i MovSimd) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i MovSimd) Encode(w io.Writer) (int64, error) {
 	rd, rm, err := regNums2(i.rd, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("mov: %w", err)

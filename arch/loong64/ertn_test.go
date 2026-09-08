@@ -19,12 +19,11 @@ func TestErtnCtor(t *testing.T) {
 
 func TestErtnDecodeEncode(t *testing.T) {
 	// llvm-mc-verified: ertn.
-	in := decodeErtn(0x06483800, 0x90000000)
+	in := decodeErtn(0x06483800)
 
 	x, ok := in.(Ertn)
 	require.True(t, ok, "type = %T, want Ertn", in)
 	require.Equal(t, "ertn", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x06483800), ctorWord(t, x))
 }

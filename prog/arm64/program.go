@@ -73,36 +73,36 @@ func (p *Program) Instr(i arch.Instr, src string) *Program {
 
 // B - branch to a label.
 func (p *Program) B(label string) *Program {
-	return p.branchLine("b", label, func(t, _ uint64) (arch.Instr, error) {
-		return p.b.B(int64(t)), nil
+	return p.branchLine("b", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.B(int64(t) - int64(pc)), nil
 	})
 }
 
 // Bl - branch with link to a label.
 func (p *Program) Bl(label string) *Program {
-	return p.branchLine("bl", label, func(t, _ uint64) (arch.Instr, error) {
-		return p.b.Bl(int64(t)), nil
+	return p.branchLine("bl", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Bl(int64(t) - int64(pc)), nil
 	})
 }
 
 // Bcond - conditional branch to a label.
 func (p *Program) Bcond(cond, label string) *Program {
-	return p.branchLine("b."+cond, label, func(t, _ uint64) (arch.Instr, error) {
-		return p.b.Bcond(cond, int64(t))
+	return p.branchLine("b."+cond, label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Bcond(cond, int64(t)-int64(pc))
 	})
 }
 
 // Cbz - branch to a label when the register is zero.
 func (p *Program) Cbz(rt arch.Reg, label string) *Program {
-	return p.branchLine("cbz", label, func(t, _ uint64) (arch.Instr, error) {
-		return p.b.Cbz(rt, int64(t))
+	return p.branchLine("cbz", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Cbz(rt, int64(t)-int64(pc))
 	})
 }
 
 // Cbnz - branch to a label when the register is not zero.
 func (p *Program) Cbnz(rt arch.Reg, label string) *Program {
-	return p.branchLine("cbnz", label, func(t, _ uint64) (arch.Instr, error) {
-		return p.b.Cbnz(rt, int64(t))
+	return p.branchLine("cbnz", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Cbnz(rt, int64(t)-int64(pc))
 	})
 }
 
@@ -208,7 +208,7 @@ func (b *Binary) Assemble(base uint64) ([]byte, map[string]uint64, []error) {
 		default:
 			i, err := b.materialize(l, syms, pc)
 			if err == nil {
-				_, err = i.Encode(byteWriter{&code}, pc)
+				_, err = i.Encode(byteWriter{&code})
 			}
 
 			if err != nil {

@@ -80,7 +80,7 @@ func laAssemblesTo(t *testing.T, src string) ([]byte, bool) {
 func laBytesOf(t *testing.T, in loong64.Instr) ([]byte, bool) {
 	t.Helper()
 	var buf bytes.Buffer
-	if _, err := in.Encode(&buf, propAddr); err != nil {
+	if _, err := in.Encode(&buf); err != nil {
 		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
 		return nil, false
 	}
@@ -103,7 +103,7 @@ func laEncodeAll(t *testing.T, ins []loong64.Instr) ([]byte, bool) {
 	var buf bytes.Buffer
 	addr := uint64(propAddr)
 	for _, in := range ins {
-		n, err := in.Encode(&buf, addr)
+		n, err := in.Encode(&buf)
 		if err != nil {
 			t.Logf("encode: %v", err)
 			return nil, false
@@ -126,7 +126,7 @@ func laBytesRoundTrip(t *testing.T, in loong64.Instr) bool {
 			return laBytesOf(t, x)
 		},
 		func(ctx laEnc, b []byte) (loong64.Instr, bool) {
-			back, err := loong64.Parse(ctx.addr)(parsecbytes.Buffer(b))
+			back, err := loong64.Parse()(parsecbytes.Buffer(b))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -155,7 +155,7 @@ func laTextRoundTrip(t *testing.T, in loong64.Instr) bool {
 		return false
 	}
 
-	d1, err := loong64.Parse(propAddr)(parsecbytes.Buffer(b))
+	d1, err := loong64.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		t.Logf("decode: %v", err)
 		return false
@@ -177,7 +177,7 @@ func laTextRoundTrip(t *testing.T, in loong64.Instr) bool {
 				return nil, false
 			}
 
-			d2, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data))
+			d2, err := loong64.Parse()(parsecbytes.Buffer(data))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -318,7 +318,7 @@ func TestPropertyLoongAliasRoundTrip(t *testing.T) {
 			require.Empty(t, errs, "assemble %q", tc.src)
 			data := res.Sections[0].Data
 
-			back, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data))
+			back, err := loong64.Parse()(parsecbytes.Buffer(data))
 			require.NoError(t, err)
 			require.Len(t, back, 1, "%q", tc.src)
 			require.Equal(t, tc.want, laText(back[0]), "%q", tc.src)
@@ -526,7 +526,7 @@ func TestPropertyLoongTextRoundTripList(t *testing.T) {
 			require.Empty(t, errs, "assemble %q", tc.src)
 			data := res.Sections[0].Data
 
-			back, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data))
+			back, err := loong64.Parse()(parsecbytes.Buffer(data))
 			require.NoError(t, err)
 			require.NotEmpty(t, back, tc.name)
 
@@ -539,7 +539,7 @@ func TestPropertyLoongTextRoundTripList(t *testing.T) {
 			require.True(t, ok, "%s: re-assemble %q", tc.name, texts)
 			require.Equal(t, data, again, "%s: bytes of %q", tc.name, texts)
 
-			back2, err := loong64.Parse(propAddr)(parsecbytes.Buffer(again))
+			back2, err := loong64.Parse()(parsecbytes.Buffer(again))
 			require.NoError(t, err)
 			require.Len(t, back2, len(texts), tc.name)
 			for i := range back2 {
@@ -562,7 +562,7 @@ func TestPropertyLoongSeqRoundTripList(t *testing.T) {
 			return false
 		}
 
-		back, err := loong64.Parse(propAddr)(parsecbytes.Buffer(raw))
+		back, err := loong64.Parse()(parsecbytes.Buffer(raw))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -602,7 +602,7 @@ func TestPropertyLoongDecodeRobustness(t *testing.T) {
 					}
 				}()
 				data := binary.LittleEndian.AppendUint32(nil, w)
-				ins, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data))
+				ins, err := loong64.Parse()(parsecbytes.Buffer(data))
 				if err != nil {
 					t.Errorf("parse %#08x: %v", w, err)
 					ok = false
@@ -633,13 +633,13 @@ func TestPropertyLoongDecodeRobustness(t *testing.T) {
 		for _, w := range []uint32{0x001039ac, 0x03400000, 0xffffffff, 0x4c000020} {
 			data := binary.LittleEndian.AppendUint32(nil, w)
 			for n := 1; n < 4; n++ {
-				ins, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data[:n]))
+				ins, err := loong64.Parse()(parsecbytes.Buffer(data[:n]))
 				require.NoError(t, err, "%#08x[:%d]", w, n)
 				require.Empty(t, ins, "%#08x[:%d]: a partial word is not an instruction", w, n)
 			}
 
 			for n := 5; n < 8; n++ {
-				ins, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data[:n]))
+				ins, err := loong64.Parse()(parsecbytes.Buffer(data[:n]))
 				require.NoError(t, err, "%#08x[:%d]", w, n)
 				require.Len(t, ins, 1, "%#08x[:%d]: the whole-word prefix", w, n)
 			}
@@ -756,7 +756,7 @@ func TestPropertyLoongVsObjdump(t *testing.T) {
 	var buf bytes.Buffer
 	for _, gen := range laPropFamilies(rnd) {
 		for range perFamily {
-			_, err := gen().Encode(&buf, propAddr)
+			_, err := gen().Encode(&buf)
 			require.NoError(t, err)
 		}
 	}
@@ -790,7 +790,7 @@ func TestPropertyLoongVsObjdump(t *testing.T) {
 			continue
 		}
 
-		ins, err := loong64.Parse(addr)(parsecbytes.Buffer(code[off:]))
+		ins, err := loong64.Parse()(parsecbytes.Buffer(code[off:]))
 		if err != nil || len(ins) == 0 {
 			notInOurs++
 			continue
@@ -1018,7 +1018,7 @@ func TestPropertyLoongLaSemantics(t *testing.T) {
 			data := res.Sections[0].Data
 			require.Len(t, data, 8, tc.name)
 
-			back, err := loong64.Parse(propAddr)(parsecbytes.Buffer(data))
+			back, err := loong64.Parse()(parsecbytes.Buffer(data))
 			require.NoError(t, err)
 			require.Len(t, back, 2, tc.name)
 			require.True(t, strings.HasPrefix(laText(back[0]), "pcalau12i $t0,"), tc.name)

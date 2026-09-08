@@ -24,9 +24,9 @@ func (Builder) Auipc(rd Reg, imm Imm20) Instr {
 	}
 }
 
-func decodeAuipc(w uint32, addr uint64) Instr {
+func decodeAuipc(w uint32) Instr {
 	return Auipc{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		imm:  immNum(int64(uImm(w))),
 	}
@@ -36,7 +36,7 @@ func (i Auipc) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("auipc %s, %s", i.rd, i.imm.text())
 }
 
-func (i Auipc) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Auipc) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
 	bits, err := encU(v)

@@ -30,10 +30,9 @@ func TestLoongEncodingsShape(t *testing.T) {
 func TestDecodeOneUnknown(t *testing.T) {
 	require.Len(t, decodeRules(), len(decodeTable))
 
-	in := decodeOne(0xffffffff, 0x90000000)
+	in := decodeOne(0xffffffff)
 	_, ok := in.(Unknown)
 	require.True(t, ok, "type = %T, want Unknown", in)
-	require.Equal(t, uint64(0x90000000), in.Addr())
 }
 
 // TestDecodeRulesSkipsUnlinked - a table row without a loongEncodings

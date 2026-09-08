@@ -21,11 +21,10 @@ func TestSlliDCtor(t *testing.T) {
 }
 
 func TestSlliDDecodeEncode(t *testing.T) {
-	x, ok := decodeSlliD(0x00410dac, 0x90000000).(SlliD)
+	x, ok := decodeSlliD(0x00410dac).(SlliD)
 	require.True(t, ok, "type = %T, want SlliD", x)
 
 	require.Equal(t, "slli.d $t0, $t1, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3), x.imm.val)
 	require.Equal(t, uint32(0x00410dac), ctorWord(t, x))
 }

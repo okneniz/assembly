@@ -18,11 +18,11 @@ type Simd2 struct {
 	q, size uint32
 }
 
-func decodeSimd2Of(op string, enc uint32) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSimd2Of(op string, enc uint32) func(uint32) Instr {
+	return func(w uint32) Instr {
 		q, size := w>>30&1, w>>22&3
 		return Simd2{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   vReg(w & 0x1f),
 			rn:   vReg(w >> 5 & 0x1f),
@@ -38,7 +38,7 @@ func (i Simd2) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s.%s %s, %s", i.op, i.arr, i.rd, i.rn)
 }
 
-func (i Simd2) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Simd2) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

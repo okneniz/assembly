@@ -63,7 +63,7 @@ func TestMul2RJSONEncodeError(t *testing.T) {
 	}
 
 	check := func(mnem string, in Instr) {
-		_, err := in.Encode(errWriter{}, 0)
+		_, err := in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", mnem)
 	}
 

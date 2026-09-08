@@ -22,9 +22,9 @@ func (Builder) IocsrwrD(rd, rj Reg) Instr {
 	}
 }
 
-func decodeIocsrwrD(w uint32, addr uint64) Instr {
+func decodeIocsrwrD(w uint32) Instr {
 	return IocsrwrD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i IocsrwrD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("iocsrwr.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i IocsrwrD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i IocsrwrD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["iocsrwr.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

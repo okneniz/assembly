@@ -22,11 +22,10 @@ func TestRotriWCtor(t *testing.T) {
 }
 
 func TestRotriWDecodeEncode(t *testing.T) {
-	x, ok := decodeRotriW(0x004c8dac, 0x90000000).(RotriW)
+	x, ok := decodeRotriW(0x004c8dac).(RotriW)
 	require.True(t, ok, "type = %T, want RotriW", x)
 
 	require.Equal(t, "rotri.w $t0, $t1, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3), x.imm.val)
 	require.Equal(t, uint32(0x004c8dac), ctorWord(t, x))
 }

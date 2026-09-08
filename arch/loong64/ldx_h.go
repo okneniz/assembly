@@ -23,9 +23,9 @@ func (Builder) LdxH(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeLdxH(w uint32, addr uint64) Instr {
+func decodeLdxH(w uint32) Instr {
 	return LdxH{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -36,7 +36,7 @@ func (i LdxH) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldx.h %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i LdxH) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i LdxH) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ldx.h"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

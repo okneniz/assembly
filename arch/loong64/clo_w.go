@@ -22,9 +22,9 @@ func (Builder) CloW(rd, rj Reg) Instr {
 	}
 }
 
-func decodeCloW(w uint32, addr uint64) Instr {
+func decodeCloW(w uint32) Instr {
 	return CloW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i CloW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("clo.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i CloW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i CloW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["clo.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

@@ -23,9 +23,9 @@ func (Builder) AmxorDbD(rd, rk, rj Reg) Instr {
 	}
 }
 
-func decodeAmxorDbD(w uint32, addr uint64) Instr {
+func decodeAmxorDbD(w uint32) Instr {
 	return AmxorDbD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
@@ -36,7 +36,7 @@ func (i AmxorDbD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amxor_db.d %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }
 
-func (i AmxorDbD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AmxorDbD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["amxor_db.d"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 

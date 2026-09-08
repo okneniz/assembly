@@ -39,9 +39,9 @@ func (Builder) Cls(rd, rn Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeCls(w uint32, addr uint64) Instr {
+func decodeCls(w uint32) Instr {
 	return Cls{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 	}
@@ -51,7 +51,7 @@ func (i Cls) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("cls %s, %s", i.rd, i.rn)
 }
 
-func (i Cls) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Cls) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, ClsX, 0x5AC01400)
 	if err != nil {
 		return 0, fmt.Errorf("cls: %w", err)

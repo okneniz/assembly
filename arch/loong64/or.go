@@ -23,9 +23,9 @@ func (Builder) Or(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeOr(w uint32, addr uint64) Instr {
+func decodeOr(w uint32) Instr {
 	return Or{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -40,7 +40,7 @@ func (i Or) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("or %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i Or) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Or) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["or"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

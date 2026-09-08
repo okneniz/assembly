@@ -48,9 +48,9 @@ func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
 	}, nil
 }
 
-func decodeMovn(w uint32, addr uint64) Instr {
+func decodeMovn(w uint32) Instr {
 	return Movn{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		imm16: w >> 5 & 0xffff,
 		hw:    w >> 21 & 0x3,
@@ -80,7 +80,7 @@ func (i Movn) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mov %s, #0x%x", i.rd, val)
 }
 
-func (i Movn) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Movn) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, movnX, movnW)
 	if err != nil {
 		return 0, fmt.Errorf("movn: %w", err)

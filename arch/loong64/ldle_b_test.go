@@ -22,12 +22,11 @@ func TestLdleBCtor(t *testing.T) {
 }
 
 func TestLdleBDecodeEncode(t *testing.T) {
-	in := decodeLdleB(0x387a39ac, 0x90000000)
+	in := decodeLdleB(0x387a39ac)
 
 	x, ok := in.(LdleB)
 	require.True(t, ok, "type = %T, want LdleB", in)
 	require.Equal(t, "ldle.b $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x387a39ac), ctorWord(t, x))
 }

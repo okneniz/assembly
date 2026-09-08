@@ -20,7 +20,7 @@ func TestBgeCtor(t *testing.T) {
 }
 
 func TestBgeDecodeEncode(t *testing.T) {
-	x, ok := decodeBge(0x640009ac, 0).(Bge)
+	x, ok := decodeBge(0x640009ac).(Bge)
 	require.True(t, ok, "type = %T, want Bge", x)
 	require.Equal(t, "bge $t1, $t0, 8", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(8), x.off.val)
@@ -28,13 +28,13 @@ func TestBgeDecodeEncode(t *testing.T) {
 
 	// The off field is the byte offset itself: the same word decodes
 	// identically at any pc, and Encode is pc-independent.
-	y, ok2 := decodeBge(0x640009ac, 0x90000000).(Bge)
+	y, ok2 := decodeBge(0x640009ac).(Bge)
 	require.True(t, ok2, "type = %T, want Bge", y)
 	require.Equal(t, int64(8), y.off.val)
 	require.Equal(t, uint32(0x640009ac), ctorWord(t, y))
 
 	// llvm-mc-verified: bge $t1, $t0, -8 - the negative target round-trips.
-	n, ok3 := decodeBge(0x67fff9ac, 0).(Bge)
+	n, ok3 := decodeBge(0x67fff9ac).(Bge)
 	require.True(t, ok3, "type = %T, want Bge", n)
 	require.Equal(t, "bge $t1, $t0, -8", n.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), n.off.val)

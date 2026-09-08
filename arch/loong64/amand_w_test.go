@@ -22,12 +22,11 @@ func TestAmandWCtor(t *testing.T) {
 }
 
 func TestAmandWDecodeEncode(t *testing.T) {
-	in := decodeAmandW(0x386235cc, 0x90000000)
+	in := decodeAmandW(0x386235cc)
 
 	amandw, ok := in.(AmandW)
 	require.True(t, ok, "type = %T, want AmandW", in)
 	require.Equal(t, "amand.w $t0, $t1, $t2", amandw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), amandw.Addr())
 	require.Equal(t, 4, amandw.Len())
 	require.Equal(t, uint32(0x386235cc), ctorWord(t, amandw))
 }

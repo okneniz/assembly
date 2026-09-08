@@ -39,7 +39,7 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	}
 
 	res := resolvedInstr{mnem: in.mnem, ops: ops}
-	rendered := renderInstr(res)
+	rendered := renderInstr(res, ctx.Addr)
 	loose := looseNormalize(rendered)
 
 	// LLVM print alias: UMOV whose element fills the destination register
@@ -111,7 +111,7 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		}
 
 		// verify: our decoder reproduces the source text
-		decText := instrTextOf(arch.DecodeWord(w, ctx.Addr))
+		decText := instrTextOf(arch.DecodeWord(w), ctx.Addr)
 		if decText != "" && looseNormalize(decText) == loose {
 			return w, nil
 		}
@@ -136,16 +136,18 @@ type resolvedInstr struct {
 }
 
 // verifyWord is encoding + self-verify (the SkipVerify marker is for
-// those without a decoding scheme or with a keyword operand).
+// those without a decoding scheme or with a keyword operand). addr is
+// the instruction's own address: the decoded text renders absolute
+// pc-relative targets from it.
 func verifyWord(st arch.Instr, addr uint64, loose string) (uint32, bool) {
 	var sbuf bytes.Buffer
-	if _, werr := st.Encode(&sbuf, addr); werr != nil || sbuf.Len() != 4 {
+	if _, werr := st.Encode(&sbuf); werr != nil || sbuf.Len() != 4 {
 		return 0, false
 	}
 
 	w := binary.LittleEndian.Uint32(sbuf.Bytes())
 	if _, skip := st.(interface{ SkipVerify() }); skip ||
-		looseNormalize(instrTextOf(arch.DecodeWord(w, addr))) == loose {
+		looseNormalize(instrTextOf(arch.DecodeWord(w), addr)) == loose {
 		return w, true
 	}
 
@@ -154,19 +156,32 @@ func verifyWord(st arch.Instr, addr uint64, loose string) (uint32, bool) {
 
 // instrTextOf returns the mnemonic+operands of the decoded instruction -
 // its own ObjDump text (compared with renderInstr via looseNormalize
-// during self-verify).
+// during self-verify). addr is the instruction's address (pc-relative
+// operands print absolute targets).
 
-func instrTextOf(inst arch.Instr) string {
-	return inst.ObjDump(disasm.DefaultViewCtx())
+func instrTextOf(inst arch.Instr, addr uint64) string {
+	return inst.ObjDump(disasm.ViewCtxAt(addr))
 }
 
 // renderInstr renders the evaluated operands for self-verify: values
-// are printed as numbers (the decoded text contains numbers).
-func renderInstr(in resolvedInstr) string {
+// are printed as numbers (the decoded text contains numbers). addr is
+// the instruction's address: a pc-relative target slot holds the OFFSET
+// (resolveOps) and prints its absolute value here (as the decoded text).
+func renderInstr(in resolvedInstr, addr uint64) string {
 	var b strings.Builder
 	b.WriteString(in.mnem)
-	for _, op := range in.ops {
+	for i, op := range in.ops {
 		b.WriteByte(' ')
+		if absTargetSlot(in.mnem) == i && (op.IsImm() || op.IsLit()) && op.Sym() == "" {
+			prefix := "#"
+			if op.IsLit() {
+				prefix = "="
+			}
+
+			b.WriteString(prefix + strconv.FormatInt(int64(addr)+op.Num(), 10))
+			continue
+		}
+
 		b.WriteString(renderVOp(op))
 	}
 

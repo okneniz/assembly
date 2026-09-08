@@ -46,15 +46,14 @@ var branchForms = map[string]bool{
 	"beqz": true, "bnez": true, "b": true, "bl": true,
 }
 
-// resolved is an evaluated instruction: the arch structure + the
-// captured address (pure encoding without an environment).
+// resolved is an evaluated instruction: the arch structure encodes
+// itself with no environment.
 type resolved struct {
 	in arch.Instr
-	pc uint64
 }
 
 func (r resolved) Encode(w io.Writer) (int64, error) {
-	return r.in.Encode(w, r.pc)
+	return r.in.Encode(w)
 }
 
 // resolve evaluates the expression slots via ctx and builds the
@@ -89,8 +88,5 @@ func (in instr) resolve(ctx asm.Ctx) (asm.Resolved, error) {
 		return nil, err
 	}
 
-	return resolved{
-		in: st,
-		pc: ctx.Addr(),
-	}, nil
+	return resolved{in: st}, nil
 }

@@ -22,9 +22,9 @@ func (Builder) Cpucfg(rd, rj Reg) Instr {
 	}
 }
 
-func decodeCpucfg(w uint32, addr uint64) Instr {
+func decodeCpucfg(w uint32) Instr {
 	return Cpucfg{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i Cpucfg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("cpucfg %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i Cpucfg) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Cpucfg) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["cpucfg"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

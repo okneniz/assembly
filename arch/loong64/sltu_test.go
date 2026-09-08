@@ -22,11 +22,10 @@ func TestSltuCtor(t *testing.T) {
 }
 
 func TestSltuDecodeEncode(t *testing.T) {
-	in := decodeOne(0x0012b9ac, 0x90000000)
+	in := decodeOne(0x0012b9ac)
 
 	x, ok := in.(Sltu)
 	require.True(t, ok, "type = %T, want Sltu", in)
 	require.Equal(t, "sltu $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x0012b9ac), ctorWord(t, x))
 }

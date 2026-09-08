@@ -45,9 +45,9 @@ func (Builder) AsrReg(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeAsrReg(w uint32, addr uint64) Instr {
+func decodeAsrReg(w uint32) Instr {
 	return AsrReg{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -58,7 +58,7 @@ func (i AsrReg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("asr %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i AsrReg) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AsrReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, AsrRegX, 0x1A002800)
 	if err != nil {
 		return 0, fmt.Errorf("asr: %w", err)

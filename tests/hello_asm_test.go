@@ -29,7 +29,7 @@ import (
 // instrText returns the normalized text of the first instruction of a binary
 // (for decode-equivalence comparison).
 func instrText(b []byte, addr uint64) string {
-	insts, err := arm64.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := arm64.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -38,12 +38,12 @@ func instrText(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return objdump.Normalize(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // loongInstrText - the same for LoongArch.
 func loongInstrText(b []byte, addr uint64) string {
-	insts, err := loong64.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := loong64.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -52,12 +52,12 @@ func loongInstrText(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return objdump.Normalize(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // riscvInstrText - the same for RISC-V.
 func riscvInstrText(b []byte, addr uint64) string {
-	insts, err := riscv.Parse(addr)(parsecbytes.Buffer(b))
+	insts, err := riscv.Parse()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -66,7 +66,7 @@ func riscvInstrText(b []byte, addr uint64) string {
 		return ""
 	}
 
-	return objdump.Normalize(insts[0].ObjDump(disasm.DefaultViewCtx()))
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
 }
 
 // fileSections converts sections of an assembly result into file-package
@@ -133,53 +133,63 @@ func TestHelloAsmExample(t *testing.T) {
 			var instrs []slot
 			switch {
 			case loongCase:
-				insts, err := loong64.Parse(c.base)(parsecbytes.Buffer(bin))
+				insts, err := loong64.Parse()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
+				off := uint64(0)
 				for _, in := range insts {
 					line := objdump.StripComments(
-						objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())),
+						objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(c.base + off))),
 					)
 					if line != "" && line != "<unknown>" {
 						instrs = append(instrs, slot{
-							in.Addr(),
+							c.base + off,
 							line,
 							in.Len(),
 						})
 					}
+
+					off += uint64(in.Len())
 				}
 			case riscvCase:
-				insts, err := riscv.Parse(c.base)(parsecbytes.Buffer(bin))
+				insts, err := riscv.Parse()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
+				off := uint64(0)
 				for _, in := range insts {
 					line := objdump.StripComments(
-						objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())),
+						objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(c.base + off))),
 					)
 					if line != "" && line != "<unknown>" {
 						instrs = append(instrs, slot{
-							in.Addr(),
+							c.base + off,
 							line,
 							in.Len(),
 						})
 					}
+
+					off += uint64(in.Len())
 				}
 			default:
-				insts, err := arm64.Parse(c.base)(parsecbytes.Buffer(bin))
+				insts, err := arm64.Parse()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
+				off := uint64(0)
 				for _, in := range insts {
 					if _, ok := in.(arm64.Generic); ok {
-						continue // decode-only (armISA tail): the text does not assemble
+						off += 4 // decode-only (armISA tail): the text does not assemble
+						continue
 					}
 
 					line := objdump.StripComments(
-						objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())),
+						objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(c.base + off))),
 					)
 					if line != "" {
 						instrs = append(instrs, slot{
-							in.Addr(),
+							c.base + off,
 							line,
 							4,
 						})
 					}
+
+					off += 4
 				}
 			}
 

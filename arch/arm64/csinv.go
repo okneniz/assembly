@@ -33,8 +33,8 @@ func (Builder) Csinv(rd, rn, rm Reg, cond string) (Instr, error) {
 	return Csinv{Csel: c}, nil
 }
 
-func decodeCsinv(w uint32, addr uint64) Instr {
-	c, ok := decodeCsel(w, addr).(Csel)
+func decodeCsinv(w uint32) Instr {
+	c, ok := decodeCsel(w).(Csel)
 	if !ok {
 		// decodeCsel always returns Csel; the branch guards against schema desynchronization
 		return Csinv{}
@@ -57,6 +57,6 @@ func (i Csinv) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csinv %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
 }
 
-func (i Csinv) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Csinv) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i.Csel, csinvX, csinvW, "csinv")
 }

@@ -16,10 +16,10 @@ type Fp4 struct {
 	enc            uint32
 }
 
-func decodeFp4Of(op string, enc uint32) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeFp4Of(op string, enc uint32) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return Fp4{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   fpReg(w&0x1f, kD),
 			rn:   fpReg(w>>5&0x1f, kD),
@@ -34,7 +34,7 @@ func (i Fp4) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s %s, %s, %s, %s", i.op, i.rd, i.rn, i.rm, i.ra)
 }
 
-func (i Fp4) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Fp4) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

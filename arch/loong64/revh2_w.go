@@ -22,9 +22,9 @@ func (Builder) Revh2W(rd, rj Reg) Instr {
 	}
 }
 
-func decodeRevh2W(w uint32, addr uint64) Instr {
+func decodeRevh2W(w uint32) Instr {
 	return Revh2W{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i Revh2W) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("revh.2w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i Revh2W) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Revh2W) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["revh.2w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

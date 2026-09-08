@@ -26,12 +26,11 @@ func TestInvtlbCtor(t *testing.T) {
 
 func TestInvtlbDecodeEncode(t *testing.T) {
 	// llvm-mc-verified: invtlb 3, $t1, $t2.
-	in := decodeInvtlb(0x0649b9a3, 0x90000000)
+	in := decodeInvtlb(0x0649b9a3)
 
 	x, ok := in.(Invtlb)
 	require.True(t, ok, "type = %T, want Invtlb", in)
 	require.Equal(t, "invtlb 3, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x0649b9a3), ctorWord(t, x))
 }

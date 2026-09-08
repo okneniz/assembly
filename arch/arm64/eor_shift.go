@@ -55,9 +55,9 @@ func (Builder) EorShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeEorShift(w uint32, addr uint64) Instr {
+func decodeEorShift(w uint32) Instr {
 	return EorShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -75,7 +75,7 @@ func (i EorShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("eor %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i EorShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i EorShift) Encode(w io.Writer) (int64, error) {
 	match := EorShiftX
 	if !i.isf {
 		match = EorShiftW

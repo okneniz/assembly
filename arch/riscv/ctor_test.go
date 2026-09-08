@@ -14,7 +14,7 @@ import (
 func ctorBytes(t *testing.T, in Instr) []byte {
 	t.Helper()
 	var buf bytes.Buffer
-	_, err := in.Encode(&buf, 0x1000, EncOpts{})
+	_, err := in.Encode(&buf, EncOpts{})
 	require.NoError(t, err, "Encode %s", in.ObjDump(disasm.DefaultViewCtx()))
 	require.Contains(
 		t,

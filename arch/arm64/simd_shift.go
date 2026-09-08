@@ -18,10 +18,10 @@ type SimdShift struct {
 	enc        uint32
 }
 
-func decodeSimdShiftOf(op string, enc uint32) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSimdShiftOf(op string, enc uint32) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return SimdShift{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   vReg(w & 0x1f),
 			rn:   vReg(w >> 5 & 0x1f),
@@ -39,7 +39,7 @@ func (i SimdShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s.%s %s, %s, #0x%x", i.op, arr, i.rd, i.rn, shift)
 }
 
-func (i SimdShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SimdShift) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

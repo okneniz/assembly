@@ -8,22 +8,23 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Tbz — tbz rt, #bit, target (b5 selects the x/w width of Rt).
+// Tbz — tbz rt, #bit, off (b5 selects the x/w width of Rt).
 type Tbz struct {
 	base
 
 	rt     string
 	bit    uint32
-	target imm
+	off    imm // pc-relative byte offset
 	isTbnz bool
 }
 
-// Tbz — tbz rt, #bit, target: target — the absolute address of the
-// branch destination (the ±32KB imm14 range is checked at encode time,
-// from pc). The register width is dictated by the bit number — the sf bit
+// Tbz — tbz rt, #bit, off: off — the pc-relative byte offset of the
+// branch destination (the ±32KB imm14 range is checked at encode time;
+// the absolute target is off + the instruction address). The register
+// width is dictated by the bit number — the sf bit
 // of the encoding is the bit's b5: bits 32..63 need an x register, bits
 // 0..31 — a w one (register 31 reads as zr — use XZR/WZR).
-func (Builder) Tbz(rt Reg, bit uint32, target int64) (Instr, error) {
+func (Builder) Tbz(rt Reg, bit uint32, off int64) (Instr, error) {
 	if err := requireClass(rt, "Tbz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
 		classX, classW, classXZR, classWZR); err != nil {
 		return nil, err
@@ -47,34 +48,33 @@ func (Builder) Tbz(rt Reg, bit uint32, target int64) (Instr, error) {
 		)
 	}
 
-	return Tbz{rt: rt.name(), bit: bit, target: immNum(target), isTbnz: false}, nil
+	return Tbz{rt: rt.name(), bit: bit, off: immNum(off), isTbnz: false}, nil
 }
 
-func decodeTbzOf(isTbnz bool) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeTbzOf(isTbnz bool) func(uint32) Instr {
+	return func(w uint32) Instr {
 		x64 := w>>31&1 == 1
 		return Tbz{
-			base:   newBase(addr, w),
+			base:   newBase(w),
 			rt:     armRegName(w&0x1f, x64),
 			bit:    w>>19&0x1f | w>>26&0x20,
-			target: immNum(int64(addr) + signExtendN(w>>5&0x3fff, 14)*4),
+			off:    immNum(signExtendN(w>>5&0x3fff, 14) * 4),
 			isTbnz: isTbnz,
 		}
 	}
 }
 
-func (i Tbz) ObjDump(_ disasm.ViewCtx) string {
+func (i Tbz) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
 	if i.isTbnz {
-		return fmt.Sprintf("tbnz %s, #0x%x, %s", i.rt, i.bit, i.target.textHex())
+		return fmt.Sprintf("tbnz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
 	}
 
-	return fmt.Sprintf("tbz %s, #0x%x, %s", i.rt, i.bit, i.target.textHex())
+	return fmt.Sprintf("tbz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
 }
 
-func (i Tbz) Encode(w io.Writer, pc uint64) (int64, error) {
-	target := i.target.val
-
-	bits, err := brBits(target, int64(pc), 14)
+func (i Tbz) Encode(w io.Writer) (int64, error) {
+	bits, err := offBits(i.off.val, 14)
 	if err != nil {
 		return 0, fmt.Errorf("tbz: %w", err)
 	}

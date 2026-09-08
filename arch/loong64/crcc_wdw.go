@@ -24,9 +24,9 @@ func (Builder) CrccWDW(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeCrccWDW(w uint32, addr uint64) Instr {
+func decodeCrccWDW(w uint32) Instr {
 	return CrccWDW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -37,7 +37,7 @@ func (i CrccWDW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("crcc.w.d.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i CrccWDW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i CrccWDW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["crcc.w.d.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

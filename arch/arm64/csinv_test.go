@@ -28,7 +28,7 @@ func TestCsinvBuild(t *testing.T) {
 	for _, c := range cases {
 		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word, 0x1000)
+		back := decodeOne(c.word)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}

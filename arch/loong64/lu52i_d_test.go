@@ -21,12 +21,11 @@ func TestLu52iDCtor(t *testing.T) {
 }
 
 func TestLu52iDDecodeEncode(t *testing.T) {
-	in := decodeLu52iD(0x030015ac, 0x90000000)
+	in := decodeLu52iD(0x030015ac)
 
 	x, ok := in.(Lu52iD)
 	require.True(t, ok, "type = %T, want Lu52iD", in)
 	require.Equal(t, "lu52i.d $t0, $t1, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.imm.val)
 	require.Equal(t, uint32(0x030015ac), ctorWord(t, x))

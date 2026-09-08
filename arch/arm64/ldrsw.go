@@ -45,27 +45,27 @@ func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
 	}, nil
 }
 
-func (i Ldrsw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ldrsw %s, %s", i.rt, i.lsText())
+func (i Ldrsw) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("ldrsw %s, %s", i.rt, i.lsText(ctx))
 }
 
-func (i Ldrsw) Encode(w io.Writer, pc uint64) (int64, error) {
-	return i.lsWrite(w, pc, "ldrsw")
+func (i Ldrsw) Encode(w io.Writer) (int64, error) {
+	return i.lsWrite(w, "ldrsw")
 }
 
-func decodeLdrswOf(enc uint32, kind memKind) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeLdrswOf(enc uint32, kind memKind) func(uint32) Instr {
+	return func(w uint32) Instr {
 		rt := regNameX(w & 0x1f)
 		rn := regNameXSP(w >> 5 & 0x1f)
 		var off int64
-		var tgt uint64
+		var lit int64
 		var rm, option string
 		var shiftAmt uint32
 		switch kind {
 		case memImm:
 			off = int64(w>>10&0xfff) << (w >> 30 & 3)
 		case memLiteral:
-			tgt = addr + uint64(signExtendN(w>>5&0x7ffff, 19))*4
+			lit = signExtendN(w>>5&0x7ffff, 19) * 4
 		case memRegOff:
 			rm = regNameX(w >> 16 & 0x1f)
 			option = lsOptName(w >> 13 & 7)
@@ -84,8 +84,8 @@ func decodeLdrswOf(enc uint32, kind memKind) func(uint32, uint64) Instr {
 		}
 
 		return Ldrsw{
-			base:   newBase(addr, w),
-			lsBase: newLsBase(rt, rn, kind, off, tgt, enc, rm, option, shiftAmt),
+			base:   newBase(w),
+			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
 }

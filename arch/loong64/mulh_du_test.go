@@ -22,11 +22,10 @@ func TestMulhDuCtor(t *testing.T) {
 }
 
 func TestMulhDuDecodeEncode(t *testing.T) {
-	in := decodeMulhDu(0x001eb9ac, 0x90000000)
+	in := decodeMulhDu(0x001eb9ac)
 
 	mulhdu, ok := in.(MulhDu)
 	require.True(t, ok, "type = %T, want MulhDu", in)
 	require.Equal(t, "mulh.du $t0, $t1, $t2", mulhdu.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), mulhdu.Addr())
 	require.Equal(t, uint32(0x001eb9ac), ctorWord(t, mulhdu))
 }

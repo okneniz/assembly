@@ -21,9 +21,9 @@ func (Builder) B(off int64) Instr {
 	}
 }
 
-func decodeB(w uint32, addr uint64) Instr {
+func decodeB(w uint32) Instr {
 	return B{
-		base: newBase(addr, w),
+		base: newBase(w),
 		off:  immNum(d10k16Imm(w) << 2),
 	}
 }
@@ -32,7 +32,7 @@ func (i B) ObjDump(_ disasm.ViewCtx) string {
 	return "b " + i.off.text()
 }
 
-func (i B) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i B) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 26, "b offset")
 	if err != nil {
 		return 0, err

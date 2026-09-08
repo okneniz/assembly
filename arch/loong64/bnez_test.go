@@ -19,7 +19,7 @@ func TestBnezCtor(t *testing.T) {
 }
 
 func TestBnezDecodeEncode(t *testing.T) {
-	x, ok := decodeBnez(0x440009a0, 0).(Bnez)
+	x, ok := decodeBnez(0x440009a0).(Bnez)
 	require.True(t, ok, "type = %T, want Bnez", x)
 	require.Equal(t, "bnez $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(8), x.off.val)
@@ -28,7 +28,7 @@ func TestBnezDecodeEncode(t *testing.T) {
 	// The split offs21 field: a negative offset round-trips (the high d5
 	// half lives in [4:0], the low k16 half in [25:10]); the off field
 	// is the offset itself, identical at any pc.
-	n, ok2 := decodeBnez(0x47fff9bf, 0x1000).(Bnez)
+	n, ok2 := decodeBnez(0x47fff9bf).(Bnez)
 	require.True(t, ok2, "type = %T, want Bnez", n)
 	require.Equal(t, "bnez $t1, -8", n.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), n.off.val)

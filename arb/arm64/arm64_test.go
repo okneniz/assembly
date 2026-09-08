@@ -250,7 +250,7 @@ func TestInstrGenValid(t *testing.T) {
 		for range 300 {
 			buf.Reset()
 			in := c.gen()
-			_, err := in.Encode(&buf, 0x1000)
+			_, err := in.Encode(&buf)
 			require.NoError(t, err, "%s: Encode (%s)", c.name, in.ObjDump(disasm.DefaultViewCtx()))
 		}
 	}

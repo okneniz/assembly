@@ -186,11 +186,11 @@ func newLdrPool(rt vOp, lit vOp) (Instr, error) {
 		enc = 0x18000000
 	}
 
-	return arch.LdrPoolWrapOf(rt.Reg(), uint64(lit.Num()), enc), nil
+	return arch.LdrPoolWrapOf(rt.Reg(), lit.Num(), enc), nil
 }
 
 // newLdrLiteral — ldr rt, label|#addr: the target is already computed
-// (resolveOps); w/x by the rt type.
+// into a pc-relative offset (resolveOps); w/x by the rt type.
 func newLdrLiteral(ops []vOp) (Instr, error) {
 	if len(ops) != 2 || ops[1].Kind() != arch.ArmOpImm {
 		return nil, errors.New("ldr: want rt, target")
@@ -205,11 +205,10 @@ func newLdrLiteral(ops []vOp) (Instr, error) {
 		return nil, fmt.Errorf("ldr: %w", err)
 	}
 
-	// numeric target — the absolute (in tgt)
 	enc := uint32(0x58000000) // x form
 	if rt[0] == 'w' {
 		enc = 0x18000000
 	}
 
-	return LdrLitOf(rt, uint64(ops[1].Num()), enc), nil
+	return LdrLitOf(rt, ops[1].Num(), enc), nil
 }

@@ -61,16 +61,26 @@ func keywordNum(mnem string, idx int, e *expr.Expr) (int64, bool) {
 	return 0, false
 }
 
+// branchForms - the mnemonics whose LAST operand is a pc-relative
+// target: both a symbolic expression and a numeric one evaluate to an
+// absolute address (verified against clang at a nonzero address), so
+// the value shifts by -pc before the structure is built (the arch
+// canon stores the offset).
+var branchForms = map[string]bool{
+	"beq": true, "bne": true, "blt": true, "bge": true,
+	"bltu": true, "bgeu": true,
+	"jal": true,
+}
+
 // resolved is an evaluated instruction: the arch structure + the
-// captured address and modes (pure encoding without an environment).
+// modes (pure encoding without an environment).
 type resolved struct {
 	in   arch.Instr
-	pc   uint64
 	opts arch.EncOpts
 }
 
 func (r resolved) Encode(w io.Writer) (int64, error) {
-	return r.in.Encode(w, r.pc, r.opts)
+	return r.in.Encode(w, r.opts)
 }
 
 // resolve evaluates the expression slots via ctx and builds the
@@ -102,6 +112,10 @@ func (in instr) resolve(ctx asm.Ctx, optNoRVC bool) (asm.Resolved, error) {
 				return nil, fmt.Errorf("%s: %w", in.mnem, err)
 			}
 
+			if branchForms[in.mnem] && idx == len(in.ops)-1 {
+				v -= int64(ctx.Addr())
+			}
+
 			ops = append(ops, arch.OpNum(v))
 		}
 	}
@@ -113,7 +127,6 @@ func (in instr) resolve(ctx asm.Ctx, optNoRVC bool) (asm.Resolved, error) {
 
 	return resolved{
 		in:   st,
-		pc:   ctx.Addr(),
 		opts: arch.EncOpts{NoRVC: optNoRVC},
 	}, nil
 }

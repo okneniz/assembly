@@ -14,7 +14,7 @@ import (
 func buildWord(t *testing.T, in Instr) uint32 {
 	t.Helper()
 	var buf bytes.Buffer
-	_, err := in.Encode(&buf, 0x1000)
+	_, err := in.Encode(&buf)
 	require.NoError(t, err, "Encode %s", in.ObjDump(disasm.DefaultViewCtx()))
 	require.Len(t, buf.Bytes(), 4, "Encode %s", in.ObjDump(disasm.DefaultViewCtx()))
 	return binary.LittleEndian.Uint32(buf.Bytes())

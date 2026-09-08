@@ -58,7 +58,7 @@ func (i Movz) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mov %s, #0x%x", i.rd, val)
 }
 
-func (i Movz) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Movz) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, movzX, movzW)
 	if err != nil {
 		return 0, fmt.Errorf("movz: %w", err)
@@ -76,9 +76,9 @@ func (i Movz) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-func decodeMovz(w uint32, addr uint64) Instr {
+func decodeMovz(w uint32) Instr {
 	return Movz{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		imm16: w >> 5 & 0xffff,
 		hw:    w >> 21 & 0x3,

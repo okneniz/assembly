@@ -22,11 +22,10 @@ func TestExtWBCtor(t *testing.T) {
 }
 
 func TestExtWBDecodeEncode(t *testing.T) {
-	in := decodeExtWB(0x00005dac, 0x90000000)
+	in := decodeExtWB(0x00005dac)
 
 	extwb, ok := in.(ExtWB)
 	require.True(t, ok, "type = %T, want ExtWB", in)
 	require.Equal(t, "ext.w.b $t0, $t1", extwb.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), extwb.Addr())
 	require.Equal(t, uint32(0x00005dac), ctorWord(t, extwb))
 }

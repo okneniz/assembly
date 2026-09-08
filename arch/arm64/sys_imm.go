@@ -45,7 +45,7 @@ func (i sysImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s #0x%x", i.name, i.imm16)
 }
 
-func (i sysImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i sysImm) Encode(w io.Writer) (int64, error) {
 	if i.imm16 > 0xffff {
 		return 0, fmt.Errorf("%s: imm out of range", i.name)
 	}
@@ -53,10 +53,10 @@ func (i sysImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, i.enc|i.imm16<<i.shift)
 }
 
-func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return sysImm{
-			base:  newBase(addr, w),
+			base:  newBase(w),
 			name:  name,
 			imm16: w >> shift & 0xffff,
 			enc:   enc,

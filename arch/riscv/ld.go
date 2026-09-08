@@ -24,9 +24,9 @@ func (Builder) Ld(rd, rs1 Reg, off Off) Instr {
 	}
 }
 
-func decodeLd(w uint32, addr uint64) Instr {
+func decodeLd(w uint32) Instr {
 	return Ld{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		off:  immNum(iImm(w)),
@@ -34,9 +34,9 @@ func decodeLd(w uint32, addr uint64) Instr {
 }
 
 // cLd - compressed forms (c.ld/c.ldsp): base - halfword, length 2.
-func cLd(h uint32, addr uint64, rd, rs1 string, off int64) Ld {
+func cLd(h uint32, rd, rs1 string, off int64) Ld {
 	return Ld{
-		base: newHalfBase(h, addr),
+		base: newHalfBase(h),
 		rd:   rd,
 		rs1:  rs1,
 		off:  immNum(off),
@@ -47,7 +47,7 @@ func (i Ld) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ld %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
-func (i Ld) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Ld) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
 	bits, err := encI(off)

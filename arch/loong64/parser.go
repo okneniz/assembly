@@ -15,25 +15,25 @@ import (
 // position back on a truncated tail (<4 bytes), Many swallows its error
 // and drives the loop to the end of the buffer. Every 32-bit word reaches
 // the output: unrecognized encodings become a .word instruction so the
-// total line count matches objdump.
-func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
+// total line count matches objdump. The instructions are
+// position-independent: addresses live in the view context (disasm),
+// not in the structures.
+func Parse() parsec.Combinator[byte, int, []Instr] {
 	word := bytes.ReadAs[uint32](4, "loong64: word", binary.LittleEndian)
 	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		addr := baseAddr + uint64(buf.Position())
-
 		w, err := word(buf)
 		if err != nil {
 			return nil, err
 		}
 
-		return decodeOne(w, addr), nil
+		return decodeOne(w), nil
 	}
 
 	return parsec.Many(0, bytes.Try(instr))
 }
 
 // decodeCtor - the constructor of a table entry (the decision-tree payload).
-type decodeCtor = func(word uint32, addr uint64) Instr
+type decodeCtor = func(word uint32) Instr
 
 // decodeRules - the decodeTable rules in priority order; match/mask are
 // authoritative - from the generated loongEncodings (loongarch-opcodes
@@ -66,10 +66,10 @@ var decodeTree = dtree.New(decodeRules())
 // first-match order of decodeTable (order = priority, for example
 // csrrd/csrwr before the csrxchg encoding they overlap) is preserved by
 // dtree. The unrecognized - Unknown.
-func decodeOne(word uint32, addr uint64) Instr {
+func decodeOne(word uint32) Instr {
 	if ctor, ok := decodeTree.Lookup(word); ok {
-		return ctor(word, addr)
+		return ctor(word)
 	}
 
-	return Unknown{base: newBase(addr, word)}
+	return Unknown{base: newBase(word)}
 }

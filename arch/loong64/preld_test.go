@@ -24,12 +24,11 @@ func TestPreldCtor(t *testing.T) {
 }
 
 func TestPreldDecodeEncode(t *testing.T) {
-	in := decodePreld(0x2ac021a5, 0x90000000)
+	in := decodePreld(0x2ac021a5)
 
 	x, ok := in.(Preld)
 	require.True(t, ok, "type = %T, want Preld", in)
 	require.Equal(t, "preld 5, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.hint.val)
 	require.Equal(t, int64(8), x.off.val)
@@ -37,7 +36,7 @@ func TestPreldDecodeEncode(t *testing.T) {
 
 	// llvm-mc-verified: preld 0, $t1, -8 (the negative byte offset
 	// round-trips through the sign-extended field).
-	y, ok := decodePreld(0x2affe1a0, 0).(Preld)
+	y, ok := decodePreld(0x2affe1a0).(Preld)
 	require.True(t, ok, "type = %T, want Preld", y)
 	require.Equal(t, "preld 0, $t1, -8", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, uint32(0x2affe1a0), ctorWord(t, y))

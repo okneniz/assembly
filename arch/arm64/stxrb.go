@@ -48,10 +48,10 @@ func (Builder) Stxrb(rs, rt, rn Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeStxrbOf(enc uint32, x64 bool) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeStxrbOf(enc uint32, x64 bool) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return Stxrb{
-			base: newBase(addr, w),
+			base: newBase(w),
 			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:  enc,
 		}
@@ -62,6 +62,6 @@ func (i Stxrb) ObjDump(_ disasm.ViewCtx) string {
 	return "stxrb " + i.exText()
 }
 
-func (i Stxrb) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Stxrb) Encode(w io.Writer) (int64, error) {
 	return i.exWrite(w, i.enc, "stxrb")
 }

@@ -22,11 +22,10 @@ func TestRevh2WCtor(t *testing.T) {
 }
 
 func TestRevh2WDecodeEncode(t *testing.T) {
-	in := decodeRevh2W(0x000041ac, 0x90000000)
+	in := decodeRevh2W(0x000041ac)
 
 	revh2w, ok := in.(Revh2W)
 	require.True(t, ok, "type = %T, want Revh2W", in)
 	require.Equal(t, "revh.2w $t0, $t1", revh2w.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), revh2w.Addr())
 	require.Equal(t, uint32(0x000041ac), ctorWord(t, revh2w))
 }

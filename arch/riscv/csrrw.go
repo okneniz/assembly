@@ -25,9 +25,9 @@ func (Builder) Csrrw(rd Reg, csr uint16, rs1 Reg) Instr {
 	}
 }
 
-func decodeCsrrw(w uint32, addr uint64) Instr {
+func decodeCsrrw(w uint32) Instr {
 	return Csrrw{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		csrOp: newCsrOp(rvRegNames[w>>7&0x1f], int64(w>>20&0xfff)),
 		rs1:   rvRegNames[w>>15&0x1f],
 	}
@@ -50,7 +50,7 @@ func (i Csrrw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrrw %s, %s, %s", i.rd, i.text(), i.rs1)
 }
 
-func (i Csrrw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Csrrw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	csr := i.csrBits()
 
 	return writeWord(w, riscvEncodings["csrrw"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|csr<<20)

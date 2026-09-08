@@ -16,24 +16,24 @@ func TestBBuild(t *testing.T) {
 	}{
 		{
 			"b 0x1008",
-			New().B(0x1008),
+			New().B(8),
 			0x14000002,
 		},
 		{
 			"b 0x1240",
-			New().B(0x1240),
+			New().B(576),
 			0x14000090,
 		},
 		{
 			"b 0x0",
-			New().B(0),
+			New().B(-4096),
 			0x17fffc00,
 		},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			require.Equal(t, c.word, buildWord(t, c.in), "case %q", c.name)
-			back := decodeOne(c.word, 0x1000)
+			back := decodeOne(c.word)
 			require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 				back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 		})

@@ -25,9 +25,9 @@ func (Builder) Addi(rd, rs1 Reg, imm Imm12) Instr {
 	}
 }
 
-func decodeAddi(w uint32, addr uint64) Instr {
+func decodeAddi(w uint32) Instr {
 	return Addi{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		imm:  immNum(iImm(w)),
@@ -35,9 +35,9 @@ func decodeAddi(w uint32, addr uint64) Instr {
 }
 
 // cAddi - compressed forms (c.addi/c.nop/c.li/c.addi4spn/c.addi16sp): base - halfword, length 2.
-func cAddi(h uint32, addr uint64, rd, rs1 string, imm int64) Addi {
+func cAddi(h uint32, rd, rs1 string, imm int64) Addi {
 	return Addi{
-		base: newHalfBase(h, addr),
+		base: newHalfBase(h),
 		rd:   rd,
 		rs1:  rs1,
 		imm:  immNum(imm),
@@ -57,7 +57,7 @@ func (i Addi) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("addi %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
-func (i Addi) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Addi) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
 	bits, err := encI(v)

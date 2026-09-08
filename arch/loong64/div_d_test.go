@@ -22,11 +22,10 @@ func TestDivDCtor(t *testing.T) {
 }
 
 func TestDivDDecodeEncode(t *testing.T) {
-	in := decodeDivD(0x002239ac, 0x90000000)
+	in := decodeDivD(0x002239ac)
 
 	divd, ok := in.(DivD)
 	require.True(t, ok, "type = %T, want DivD", in)
 	require.Equal(t, "div.d $t0, $t1, $t2", divd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), divd.Addr())
 	require.Equal(t, uint32(0x002239ac), ctorWord(t, divd))
 }

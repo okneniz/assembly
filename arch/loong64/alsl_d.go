@@ -26,9 +26,9 @@ func (Builder) AlslD(rd, rj, rk Reg, shift Shift3) Instr {
 	}
 }
 
-func decodeAlslD(w uint32, addr uint64) Instr {
+func decodeAlslD(w uint32) Instr {
 	return AlslD{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    uint8(w & 0x1f),
 		rj:    uint8(w >> 5 & 0x1f),
 		rk:    uint8(w >> 10 & 0x1f),
@@ -46,7 +46,7 @@ func (i AlslD) ObjDump(_ disasm.ViewCtx) string {
 	)
 }
 
-func (i AlslD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AlslD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["alsl.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
 		scatterU(i.shift.val-1, 15, 2)

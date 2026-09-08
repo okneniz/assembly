@@ -8,62 +8,61 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Jal - jal rd, target; pseudo: j (rd=zero), "jal target" (rd=ra, rd
+// Jal - jal rd, off; pseudo: j (rd=zero), "jal off" (rd=ra, rd
 // omitted). Compression: c.j (rd=zero).
 type Jal struct {
 	base
 
-	rd     string
-	target imm // absolute target address
+	rd  string
+	off imm // pc-relative byte offset
 }
 
-// Jal - jal rd, target (absolute target address).
-func (Builder) Jal(rd Reg, target int64) Instr {
+// Jal - jal rd, off (the pc-relative byte offset; the absolute target is off + the instruction address).
+func (Builder) Jal(rd Reg, off int64) Instr {
 	return Jal{
-		rd:     rd.name(),
-		target: immNum(target),
+		rd:  rd.name(),
+		off: immNum(off),
 	}
 }
 
-func decodeJal(w uint32, addr uint64) Instr {
+func decodeJal(w uint32) Instr {
 	return Jal{
-		base:   newBase(addr, w),
-		rd:     rvRegNames[w>>7&0x1f],
-		target: immNum(int64(addr) + jImm(w)),
+		base: newBase(w),
+		rd:   rvRegNames[w>>7&0x1f],
+		off:  immNum(jImm(w)),
 	}
 }
 
 // cJal - compressed forms (c.j): base - halfword, length 2.
-func cJal(h uint32, addr uint64, rd string, target int64) Jal {
+func cJal(h uint32, rd string, off int64) Jal {
 	return Jal{
-		base:   newHalfBase(h, addr),
-		rd:     rd,
-		target: immNum(target),
+		base: newHalfBase(h),
+		rd:   rd,
+		off:  immNum(off),
 	}
 }
 
-func (i Jal) ObjDump(_ disasm.ViewCtx) string {
+func (i Jal) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
 	switch i.rd {
 	case "zero":
-		return "j " + i.target.text()
+		return "j " + target.text()
 	case "ra":
-		return "jal " + i.target.text() // rd omitted
+		return "jal " + target.text() // rd omitted
 	}
 
-	return fmt.Sprintf("jal %s, %s", i.rd, i.target.text())
+	return fmt.Sprintf("jal %s, %s", i.rd, target.text())
 }
 
-func (i Jal) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
-	target := i.target.val
-
-	bits, err := encJ(target - int64(pc))
+func (i Jal) Encode(w io.Writer, o EncOpts) (int64, error) {
+	bits, err := encJ(i.off.val)
 	if err != nil {
 		return 0, err
 	}
 
 	word := riscvEncodings["jal"][0] | regBits(i.rd)<<7 | bits
 	if i.rd == "zero" && !o.NoRVC {
-		if half, ok := cjal(target - int64(pc)); ok {
+		if half, ok := cjal(i.off.val); ok {
 			return writeHalf(w, half)
 		}
 	}
@@ -71,18 +70,18 @@ func (i Jal) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-// newJal - constructor from parsing: jal target | jal rd, target.
+// newJal - constructor from parsing: jal off | jal rd, off.
 func newJal(ops []Op) (Instr, error) {
 	switch len(ops) {
-	case 1: // jal target → jal ra, target
+	case 1: // jal off → jal ra, off
 		e, err := wantExpr(ops[0])
 		if err != nil {
 			return nil, fmt.Errorf("jal: %w", err)
 		}
 
 		return Jal{
-			rd:     "ra",
-			target: e,
+			rd:  "ra",
+			off: e,
 		}, nil
 	case 2:
 		rd, err := wantReg(ops[0], false)
@@ -96,8 +95,8 @@ func newJal(ops []Op) (Instr, error) {
 		}
 
 		return Jal{
-			rd:     rd,
-			target: e,
+			rd:  rd,
+			off: e,
 		}, nil
 	}
 

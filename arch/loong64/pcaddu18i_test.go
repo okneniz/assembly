@@ -21,12 +21,11 @@ func TestPcaddu18iCtor(t *testing.T) {
 }
 
 func TestPcaddu18iDecodeEncode(t *testing.T) {
-	in := decodePcaddu18i(0x1e0000ac, 0x90000000)
+	in := decodePcaddu18i(0x1e0000ac)
 
 	x, ok := in.(Pcaddu18i)
 	require.True(t, ok, "type = %T, want Pcaddu18i", in)
 	require.Equal(t, "pcaddu18i $t0, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.imm.val)
 	require.Equal(t, uint32(0x1e0000ac), ctorWord(t, x))

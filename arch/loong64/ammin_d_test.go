@@ -22,12 +22,11 @@ func TestAmminDCtor(t *testing.T) {
 }
 
 func TestAmminDDecodeEncode(t *testing.T) {
-	in := decodeAmminD(0x3866b5cc, 0x90000000)
+	in := decodeAmminD(0x3866b5cc)
 
 	ammind, ok := in.(AmminD)
 	require.True(t, ok, "type = %T, want AmminD", in)
 	require.Equal(t, "ammin.d $t0, $t1, $t2", ammind.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), ammind.Addr())
 	require.Equal(t, 4, ammind.Len())
 	require.Equal(t, uint32(0x3866b5cc), ctorWord(t, ammind))
 }

@@ -44,9 +44,9 @@ func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
 	return OrrImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
 }
 
-func decodeOrrImm(w uint32, addr uint64) Instr {
+func decodeOrrImm(w uint32) Instr {
 	return OrrImm{
-		newBase(addr, w),
+		newBase(w),
 		decodeLogImm(w),
 	}
 }
@@ -91,7 +91,7 @@ func (i OrrImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("orr %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }
 
-func (i OrrImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i OrrImm) Encode(w io.Writer) (int64, error) {
 	match := orrImmX
 	if !i.is64 {
 		match = orrImmW

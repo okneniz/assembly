@@ -57,9 +57,9 @@ func (Builder) Bfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
 	}, nil
 }
 
-func decodeBfmInstr(w uint32, addr uint64) Instr {
+func decodeBfmInstr(w uint32) Instr {
 	return Bfm{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		immr: w >> 16 & 0x3f,
@@ -72,6 +72,6 @@ func (i Bfm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bfm %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms)
 }
 
-func (i Bfm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Bfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, bfmX, bfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }

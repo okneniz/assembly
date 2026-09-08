@@ -20,14 +20,14 @@ type FmovImm struct {
 	rdK  fpKind
 }
 
-func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32) Instr {
+	return func(w uint32) Instr {
 		imm8 := w >> 13 & 0xff
 		rd := fpReg(w&0x1f, rdK)
 		if isS {
 			v := vfpExpandImm32(imm8)
 			return FmovImm{
-				base: newBase(addr, w),
+				base: newBase(w),
 				rd:   rd,
 				val:  float64(v),
 				text: fmt.Sprintf("%.8f", v),
@@ -39,7 +39,7 @@ func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32, uint64) Inst
 
 		v := vfpExpandImm64(imm8)
 		return FmovImm{
-			base: newBase(addr, w),
+			base: newBase(w),
 			rd:   rd,
 			val:  v,
 			text: fmt.Sprintf("%.8f", v),
@@ -53,7 +53,7 @@ func (i FmovImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fmov %s, #%s", i.rd, i.text)
 }
 
-func (i FmovImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i FmovImm) Encode(w io.Writer) (int64, error) {
 	rd, err := armRegNum(i.rd)
 	if err != nil {
 		return 0, fmt.Errorf("fmov: %w", err)

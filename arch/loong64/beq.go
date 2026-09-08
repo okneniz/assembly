@@ -26,9 +26,9 @@ func (Builder) Beq(rj, rd Reg, off int64) Instr {
 	}
 }
 
-func decodeBeq(w uint32, addr uint64) Instr {
+func decodeBeq(w uint32) Instr {
 	return Beq{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 16) << 2),
@@ -39,7 +39,7 @@ func (i Beq) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("beq %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }
 
-func (i Beq) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Beq) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "beq offset")
 	if err != nil {
 		return 0, err

@@ -61,7 +61,7 @@ func (i SubImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sub %s, %s, %s", rd, rn, imm)
 }
 
-func (i SubImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SubImm) Encode(w io.Writer) (int64, error) {
 	match := SubImmX
 	if !i.isf {
 		match = SubImmW
@@ -79,9 +79,9 @@ func (i SubImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-func decodeSubImm(w uint32, addr uint64) Instr {
+func decodeSubImm(w uint32) Instr {
 	return SubImm{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rdNum: w & 0x1f,
 		rnNum: w >> 5 & 0x1f,
 		imm12: w >> 10 & 0xfff,

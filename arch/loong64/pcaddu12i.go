@@ -24,9 +24,9 @@ func (Builder) Pcaddu12i(rd Reg, v Imm20) Instr {
 	}
 }
 
-func decodePcaddu12i(w uint32, addr uint64) Instr {
+func decodePcaddu12i(w uint32) Instr {
 	return Pcaddu12i{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		imm:  immNum(sField(w, 5, 20)),
 	}
@@ -36,7 +36,7 @@ func (i Pcaddu12i) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("pcaddu12i %s, %s", laRegName(i.rd), i.imm.text())
 }
 
-func (i Pcaddu12i) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Pcaddu12i) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["pcaddu12i"][0] | uint32(i.rd) | scatterS(i.imm.val, 5, 20)
 
 	return writeWord(w, word)

@@ -20,9 +20,9 @@ func (Builder) Dbcl(code Code15) Instr {
 	}
 }
 
-func decodeDbcl(w uint32, addr uint64) Instr {
+func decodeDbcl(w uint32) Instr {
 	return Dbcl{
-		base: newBase(addr, w),
+		base: newBase(w),
 		code: immNum(int64(uField(w, 0, 15))),
 	}
 }
@@ -31,7 +31,7 @@ func (i Dbcl) ObjDump(_ disasm.ViewCtx) string {
 	return "dbcl " + i.code.text()
 }
 
-func (i Dbcl) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Dbcl) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["dbcl"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)

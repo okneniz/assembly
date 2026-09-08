@@ -59,9 +59,9 @@ func (Builder) Smulh(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeSmulh(w uint32, addr uint64) Instr {
+func decodeSmulh(w uint32) Instr {
 	return Smulh{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -72,7 +72,7 @@ func (i Smulh) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("smulh %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i Smulh) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Smulh) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, SmulhX, 0)
 	if err != nil {
 		return 0, fmt.Errorf("smulh: %w", err)

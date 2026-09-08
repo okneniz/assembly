@@ -22,11 +22,10 @@ func TestSrlDCtor(t *testing.T) {
 }
 
 func TestSrlDDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001939ac, 0x90000000)
+	in := decodeOne(0x001939ac)
 
 	x, ok := in.(SrlD)
 	require.True(t, ok, "type = %T, want SrlD", in)
 	require.Equal(t, "srl.d $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001939ac), ctorWord(t, x))
 }

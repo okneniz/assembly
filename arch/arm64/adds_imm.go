@@ -57,9 +57,9 @@ func (Builder) AddsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
 	}, nil
 }
 
-func decodeAddsImm(w uint32, addr uint64) Instr {
+func decodeAddsImm(w uint32) Instr {
 	return AddsImm{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rdNum: w & 0x1f,
 		rnNum: w >> 5 & 0x1f,
 		imm12: w >> 10 & 0xfff,
@@ -88,7 +88,7 @@ func (i AddsImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("adds %s, %s, %s", rd, rn, imm)
 }
 
-func (i AddsImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AddsImm) Encode(w io.Writer) (int64, error) {
 	match := AddsImmX
 	if !i.isf {
 		match = AddsImmW

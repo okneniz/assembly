@@ -25,9 +25,9 @@ func (Builder) StptrD(rd, rj Reg, off Imm14) Instr {
 	}
 }
 
-func decodeStptrD(w uint32, addr uint64) Instr {
+func decodeStptrD(w uint32) Instr {
 	return StptrD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 14) << 2),
@@ -38,7 +38,7 @@ func (i StptrD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("stptr.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }
 
-func (i StptrD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i StptrD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["stptr.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.off.val>>2, 10, 14)
 

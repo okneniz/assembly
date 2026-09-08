@@ -16,7 +16,7 @@ func TestDbclCtor(t *testing.T) {
 }
 
 func TestDbclDecodeEncode(t *testing.T) {
-	in := decodeDbcl(0x002a8001, 0x90000000)
+	in := decodeDbcl(0x002a8001)
 	require.Equal(t, "dbcl 1", in.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, uint32(0x002a8001), ctorWord(t, in))
 }

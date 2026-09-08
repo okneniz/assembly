@@ -76,39 +76,43 @@ func main() {
 	ours := map[uint64]string{}
 	switch kind {
 	case file.ArchARM64:
-		insts, err := arm64.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		insts, err := arm64.Parse()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
 		}
 
+		off := uint64(0)
 		for _, in := range insts {
-			a := in.Addr()
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[a-sec.Addr:], in, opts))
+			a := sec.Addr + off
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
+			off += uint64(in.Len())
 		}
 	case file.ArchRISCV64:
-		insts, err := riscv.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		insts, err := riscv.Parse()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
 		}
 
+		off := uint64(0)
 		for _, in := range insts {
-			ours[in.Addr()] = objdump.Normalize(
-				disasm.Line(in.Addr(), sec.Data[in.Addr()-sec.Addr:], in, opts),
-			)
+			a := sec.Addr + off
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
+			off += uint64(in.Len())
 		}
 	case file.ArchLOONGARCH64:
-		insts, err := loong64.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		insts, err := loong64.Parse()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
 		}
 
+		off := uint64(0)
 		for _, in := range insts {
-			ours[in.Addr()] = objdump.Normalize(
-				disasm.Line(in.Addr(), sec.Data[in.Addr()-sec.Addr:], in, opts),
-			)
+			a := sec.Addr + off
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
+			off += uint64(in.Len())
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "unsupported architecture (kind %d)\n", kind)

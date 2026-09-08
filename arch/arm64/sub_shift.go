@@ -89,7 +89,7 @@ func (i SubShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sub %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i SubShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SubShift) Encode(w io.Writer) (int64, error) {
 	match := SubShiftX
 	if !i.isf {
 		match = SubShiftW
@@ -112,9 +112,9 @@ func (i SubShift) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func decodeSubShift(w uint32, addr uint64) Instr {
+func decodeSubShift(w uint32) Instr {
 	return SubShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),

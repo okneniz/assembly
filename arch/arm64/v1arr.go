@@ -16,10 +16,10 @@ type V1arr struct {
 	enc    uint32
 }
 
-func decodeV1arrOf(op string, enc uint32) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeV1arrOf(op string, enc uint32) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return V1arr{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   vReg(w & 0x1f),
 			rn:   vReg(w >> 5 & 0x1f),
@@ -32,7 +32,7 @@ func (i V1arr) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s.16b %s, %s", i.op, i.rd, i.rn)
 }
 
-func (i V1arr) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i V1arr) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

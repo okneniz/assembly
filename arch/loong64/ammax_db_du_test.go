@@ -22,12 +22,11 @@ func TestAmmaxDbDuCtor(t *testing.T) {
 }
 
 func TestAmmaxDbDuDecodeEncode(t *testing.T) {
-	in := decodeAmmaxDbDu(0x3870b5cc, 0x90000000)
+	in := decodeAmmaxDbDu(0x3870b5cc)
 
 	ammaxdbdu, ok := in.(AmmaxDbDu)
 	require.True(t, ok, "type = %T, want AmmaxDbDu", in)
 	require.Equal(t, "ammax_db.du $t0, $t1, $t2", ammaxdbdu.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), ammaxdbdu.Addr())
 	require.Equal(t, 4, ammaxdbdu.Len())
 	require.Equal(t, uint32(0x3870b5cc), ctorWord(t, ammaxdbdu))
 }

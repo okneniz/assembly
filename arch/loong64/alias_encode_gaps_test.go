@@ -37,13 +37,13 @@ func TestBranchScaledOffsetErrors(t *testing.T) {
 	// field width does not fit (the ldptr/stptr/ll/sc rows are absent -
 	// their offsets are role-validated up front and cannot fail here).
 	for _, tc := range branches {
-		_, err := tc.in.Encode(errWriter{}, 0)
+		_, err := tc.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "does not fit", tc.mnem)
 	}
 
 	// jirl's offset is rj-relative: the raw constructor takes any int64,
 	// the range check is genuinely dynamic.
-	_, err := New().Jirl(lreg(t, 12), lreg(t, 13), 1<<18).Encode(errWriter{}, 0)
+	_, err := New().Jirl(lreg(t, 12), lreg(t, 13), 1<<18).Encode(errWriter{})
 	require.ErrorContains(t, err, "does not fit")
 }
 
@@ -76,7 +76,7 @@ func TestDecodeAliases(t *testing.T) {
 		require.Equal(
 			t,
 			tc.want,
-			decodeOne(tc.w, 0).ObjDump(disasm.DefaultViewCtx()),
+			decodeOne(tc.w).ObjDump(disasm.DefaultViewCtx()),
 			"%#x",
 			tc.w,
 		)
@@ -96,7 +96,7 @@ func TestLateFilesEncodeError(t *testing.T) {
 		{"ldx.hu", New().LdxHu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
 		{"dbcl", New().Dbcl(code15v(t, 1))},
 	} {
-		_, err := tc.in.Encode(errWriter{}, 0)
+		_, err := tc.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", tc.mnem)
 	}
 }

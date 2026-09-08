@@ -47,7 +47,7 @@ var byElemLong = map[string]bool{
 	"smull": true, "sqdmull": true, "umlal": true, "umlsl": true, "umull": true,
 }
 
-func decodeByElem(w uint32, addr uint64) Instr {
+func decodeByElem(w uint32) Instr {
 	u, size, opc, q := w>>29&1, w>>22&3, w>>12&0xf, w>>30&1
 	var name string
 	if size == 1 || size == 2 {
@@ -74,7 +74,7 @@ func decodeByElem(w uint32, addr uint64) Instr {
 	}
 
 	return ByElem{
-		base: newBase(addr, w),
+		base: newBase(w),
 		name: name2,
 		q:    q,
 		size: size,
@@ -113,7 +113,7 @@ func (i ByElem) ObjDump(_ disasm.ViewCtx) string {
 	return s
 }
 
-func (i ByElem) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i ByElem) Encode(w io.Writer) (int64, error) {
 	name := i.name
 	if i.long && i.q == 1 {
 		name = name[:len(name)-1]

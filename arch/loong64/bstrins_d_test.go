@@ -23,19 +23,18 @@ func TestBstrinsDCtor(t *testing.T) {
 }
 
 func TestBstrinsDDecodeEncode(t *testing.T) {
-	in := decodeBstrinsD(0x00850dac, 0x90000000)
+	in := decodeBstrinsD(0x00850dac)
 
 	x, ok := in.(BstrinsD)
 	require.True(t, ok, "type = %T, want BstrinsD", in)
 	require.Equal(t, int64(5), x.msb.val)
 	require.Equal(t, int64(3), x.lsb.val)
 	require.Equal(t, "bstrins.d $t0, $t1, 5, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x00850dac), ctorWord(t, x))
 
 	// llvm-mc-verified: bstrins.d $t0, $t1, 63, 0 - the full 6-bit fields.
-	y, ok2 := decodeBstrinsD(0x00bf01ac, 0).(BstrinsD)
+	y, ok2 := decodeBstrinsD(0x00bf01ac).(BstrinsD)
 	require.True(t, ok2, "type = %T, want BstrinsD", y)
 	require.Equal(t, "bstrins.d $t0, $t1, 63, 0", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, uint32(0x00bf01ac), ctorWord(t, y))

@@ -52,9 +52,9 @@ func (Builder) AndsImm(rd, rn Reg, imm uint64) (Instr, error) {
 	return AndsImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
 }
 
-func decodeAndsImm(w uint32, addr uint64) Instr {
+func decodeAndsImm(w uint32) Instr {
 	return AndsImm{
-		newBase(addr, w),
+		newBase(w),
 		decodeLogImm(w),
 	}
 }
@@ -72,7 +72,7 @@ func (i AndsImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ands %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }
 
-func (i AndsImm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AndsImm) Encode(w io.Writer) (int64, error) {
 	match := andsImmX
 	if !i.is64 {
 		match = andsImmW

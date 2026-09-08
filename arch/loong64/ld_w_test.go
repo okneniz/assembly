@@ -21,19 +21,18 @@ func TestLdWCtor(t *testing.T) {
 }
 
 func TestLdWDecodeEncode(t *testing.T) {
-	in := decodeLdW(0x288021ac, 0x90000000)
+	in := decodeLdW(0x288021ac)
 
 	x, ok := in.(LdW)
 	require.True(t, ok, "type = %T, want LdW", in)
 	require.Equal(t, "ld.w $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(8), x.imm.val)
 	require.Equal(t, uint32(0x288021ac), ctorWord(t, x))
 
 	// llvm-mc-verified: ld.w $t0, $t1, -8 (the negative byte offset
 	// round-trips through the sign-extended field).
-	y, ok := decodeLdW(0x28bfe1ac, 0).(LdW)
+	y, ok := decodeLdW(0x28bfe1ac).(LdW)
 	require.True(t, ok, "type = %T, want LdW", y)
 	require.Equal(t, "ld.w $t0, $t1, -8", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), y.imm.val)

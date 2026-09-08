@@ -24,9 +24,9 @@ func (Builder) StgtH(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeStgtH(w uint32, addr uint64) Instr {
+func decodeStgtH(w uint32) Instr {
 	return StgtH{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -37,7 +37,7 @@ func (i StgtH) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("stgt.h %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i StgtH) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i StgtH) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["stgt.h"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

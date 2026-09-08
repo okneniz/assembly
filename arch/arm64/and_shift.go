@@ -55,9 +55,9 @@ func (Builder) AndShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeAndShift(w uint32, addr uint64) Instr {
+func decodeAndShift(w uint32) Instr {
 	return AndShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -75,7 +75,7 @@ func (i AndShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("and %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i AndShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i AndShift) Encode(w io.Writer) (int64, error) {
 	match := AndShiftX
 	if !i.isf {
 		match = AndShiftW

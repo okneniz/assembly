@@ -27,9 +27,9 @@ func (Builder) FaddS(rd, rs1, rs2 Reg, rm uint8) Instr {
 	}
 }
 
-func decodeFaddS(w uint32, addr uint64) Instr {
+func decodeFaddS(w uint32) Instr {
 	return FaddS{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvFRegNames[w>>7&0x1f],
 		rs1:  rvFRegNames[w>>15&0x1f],
 		rs2:  rvFRegNames[w>>20&0x1f],
@@ -41,7 +41,7 @@ func (i FaddS) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fadd.s %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
-func (i FaddS) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i FaddS) Encode(w io.Writer, o EncOpts) (int64, error) {
 	rm := i.rm.val
 
 	if rm < 0 || rm > 7 {

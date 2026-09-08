@@ -24,9 +24,9 @@ func (Builder) Xori(rd, rs1 Reg, imm Imm12) Instr {
 	}
 }
 
-func decodeXori(w uint32, addr uint64) Instr {
+func decodeXori(w uint32) Instr {
 	return Xori{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		imm:  immNum(iImm(w)),
@@ -41,7 +41,7 @@ func (i Xori) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("xori %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
-func (i Xori) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Xori) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
 	bits, err := encI(v)

@@ -182,7 +182,7 @@ func TestISATailCoverage(t *testing.T) {
 	}
 
 	var unknown, generic int
-	insts, err := Parse(ts.Addr)(bytes.Buffer(ts.Data))
+	insts, err := Parse()(bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	for _, in := range insts {
 		switch in.(type) {
@@ -205,7 +205,7 @@ func TestISATailCoverage(t *testing.T) {
 	for k := 0; k < isaTailLen(); k += step {
 		e := isaTailEntry(k)
 		w := e.Match | (0x9e3779b9 &^ e.Mask) // fixed field bits
-		switch decodeOne(w, 0).(type) {
+		switch decodeOne(w).(type) {
 		case Generic:
 			gen++
 		default:

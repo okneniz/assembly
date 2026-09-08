@@ -29,6 +29,6 @@ func (i JalrReg) Len() int {
 	return 4
 }
 
-func (i JalrReg) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i JalrReg) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["jalr"][0]|1<<7|regBits(i.rs1)<<15)
 }

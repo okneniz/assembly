@@ -22,11 +22,10 @@ func TestMaskeqzCtor(t *testing.T) {
 }
 
 func TestMaskeqzDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001339ac, 0x90000000)
+	in := decodeOne(0x001339ac)
 
 	x, ok := in.(Maskeqz)
 	require.True(t, ok, "type = %T, want Maskeqz", in)
 	require.Equal(t, "maskeqz $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001339ac), ctorWord(t, x))
 }

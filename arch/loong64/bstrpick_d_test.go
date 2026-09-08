@@ -23,19 +23,18 @@ func TestBstrpickDCtor(t *testing.T) {
 }
 
 func TestBstrpickDDecodeEncode(t *testing.T) {
-	in := decodeBstrpickD(0x00c50dac, 0x90000000)
+	in := decodeBstrpickD(0x00c50dac)
 
 	x, ok := in.(BstrpickD)
 	require.True(t, ok, "type = %T, want BstrpickD", in)
 	require.Equal(t, int64(5), x.msb.val)
 	require.Equal(t, int64(3), x.lsb.val)
 	require.Equal(t, "bstrpick.d $t0, $t1, 5, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x00c50dac), ctorWord(t, x))
 
 	// llvm-mc-verified: bstrpick.d $t0, $t1, 63, 0 - the full 6-bit fields.
-	y, ok2 := decodeBstrpickD(0x00ff01ac, 0).(BstrpickD)
+	y, ok2 := decodeBstrpickD(0x00ff01ac).(BstrpickD)
 	require.True(t, ok2, "type = %T, want BstrpickD", y)
 	require.Equal(t, "bstrpick.d $t0, $t1, 63, 0", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, uint32(0x00ff01ac), ctorWord(t, y))

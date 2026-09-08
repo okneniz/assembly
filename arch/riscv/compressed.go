@@ -15,9 +15,8 @@ func r3(v uint32) string {
 }
 
 // half - the base of a compressed instruction (raw = zero-extended halfword).
-func newHalfBase(h uint32, addr uint64) base {
+func newHalfBase(h uint32) base {
 	return base{
-		addr:   addr,
 		raw:    h,
 		length: 2,
 	}
@@ -25,18 +24,18 @@ func newHalfBase(h uint32, addr uint64) base {
 
 // compressedInstruction decodes a 16-bit instruction (zero-extended
 // halfword).
-func compressedInstruction(halfword uint32, addr uint64) Instr {
+func compressedInstruction(halfword uint32) Instr {
 	h := halfword & 0xffff
 	switch h & 0x3 {
 	case 0:
-		return decodeQ0(h, addr)
+		return decodeQ0(h)
 	case 1:
-		return decodeQ1(h, addr)
+		return decodeQ1(h)
 	case 2:
-		return decodeQ2(h, addr)
+		return decodeQ2(h)
 	}
 
-	return newUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h))
 }
 
 // CI imm {bit12, bits[6:2]} → 6-bit signed (c.addi/c.li/c.addiw).
@@ -51,27 +50,27 @@ func ciShamt(h uint32) uint32 {
 
 // --- quadrant 0: c.addi4spn / c.lw / c.ld / c.sw / c.sd ---
 
-func decodeQ0(h uint32, addr uint64) Instr {
+func decodeQ0(h uint32) Instr {
 	rs13 := r3(h >> 7)
 	switch (h >> 13) & 0x7 {
 	case 0: // c.addi4spn: addi rd', sp, nzuimm
 		imm := addi4spnImm(h)
 		if imm == 0 {
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		}
 
-		return cAddi(h, addr, r3(h>>2), "sp", imm)
+		return cAddi(h, r3(h>>2), "sp", imm)
 	case 2: // c.lw
-		return cLw(h, addr, r3(h>>2), rs13, clLwImm(h))
+		return cLw(h, r3(h>>2), rs13, clLwImm(h))
 	case 3: // c.ld (RV64)
-		return cLd(h, addr, r3(h>>2), rs13, clLdImm(h))
+		return cLd(h, r3(h>>2), rs13, clLdImm(h))
 	case 6: // c.sw
-		return cSw(h, addr, rs13, r3(h>>2), clLwImm(h))
+		return cSw(h, rs13, r3(h>>2), clLwImm(h))
 	case 7: // c.sd (RV64)
-		return cSd(h, addr, rs13, r3(h>>2), clLdImm(h))
+		return cSd(h, rs13, r3(h>>2), clLdImm(h))
 	}
 
-	return newUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h))
 }
 
 // c.addi4spn nzuimm: [9:6]=inst[10:7], [5:4]=inst[12:11], [3]=inst[5], [2]=inst[6].
@@ -92,83 +91,83 @@ func clLdImm(h uint32) int64 {
 // --- quadrant 1: c.nop/c.addi / c.addiw / c.li / c.addi16sp / c.lui /
 // c.srli/srai/andi/sub/xor/or/and / c.beqz / c.bnez / c.j ---
 
-func decodeQ1(h uint32, addr uint64) Instr {
+func decodeQ1(h uint32) Instr {
 	rd := rvRegNames[(h>>7)&0x1f]
 	switch (h >> 13) & 0x7 {
 	case 0: // c.addi / c.nop
 		imm := ciImm(h)
 		if (h>>7)&0x1f == 0 {
-			return cAddi(h, addr, "zero", "zero", 0)
+			return cAddi(h, "zero", "zero", 0)
 		}
 
-		return cAddi(h, addr, rd, rd, imm)
+		return cAddi(h, rd, rd, imm)
 	case 1: // c.addiw (RV64; c.jal on RV32)
 		if (h>>7)&0x1f == 0 {
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		}
 
-		return cAddiw(h, addr, rd, rd, ciImm(h))
+		return cAddiw(h, rd, rd, ciImm(h))
 	case 2: // c.li
 		if (h>>7)&0x1f == 0 {
-			return cAddi(h, addr, "zero", "zero", 0)
+			return cAddi(h, "zero", "zero", 0)
 		}
 
-		return cAddi(h, addr, rd, "zero", ciImm(h))
+		return cAddi(h, rd, "zero", ciImm(h))
 	case 3: // c.addi16sp (rd==2) / c.lui
 		switch (h >> 7) & 0x1f {
 		case 2:
-			return cAddi(h, addr, "sp", "sp", addi16spImm(h))
+			return cAddi(h, "sp", "sp", addi16spImm(h))
 		case 0:
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		default:
-			return cLui(h, addr, rd, luiImm(h))
+			return cLui(h, rd, luiImm(h))
 		}
 
 	case 4: // c.srli / c.srai / c.andi / c.sub / c.xor / c.or / c.and
-		return decodeCA(h, addr)
+		return decodeCA(h)
 	case 6: // c.beqz
-		return cBeq(h, addr, r3(h>>7), "zero", int64(addr)+cbImm(h))
+		return cBeq(h, r3(h>>7), "zero", cbImm(h))
 	case 7: // c.bnez
-		return cBne(h, addr, r3(h>>7), "zero", int64(addr)+cbImm(h))
+		return cBne(h, r3(h>>7), "zero", cbImm(h))
 	case 5: // c.j
-		return cJal(h, addr, "zero", int64(addr)+cjImm(h))
+		return cJal(h, "zero", cjImm(h))
 	}
 
-	return newUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h))
 }
 
-func decodeCA(h uint32, addr uint64) Instr {
+func decodeCA(h uint32) Instr {
 	rs := r3(h >> 7)
 	switch (h >> 10) & 0x3 {
 	case 0: // c.srli (bit12=0) / c.srai (bit12=1)
 		sh := ((h >> 2) & 0x1f) | ((h>>12)&1)<<5
 		if (h>>12)&1 == 0 {
-			return cSrli(h, addr, rs, rs, int64(sh))
+			return cSrli(h, rs, rs, int64(sh))
 		}
 
-		return cSrai(h, addr, rs, rs, int64(sh))
+		return cSrai(h, rs, rs, int64(sh))
 	case 1: // c.andi
-		return cAndi(h, addr, rs, rs, signExtendN(((h>>2)&0x1f)|((h>>12)&1)<<5, 6))
+		return cAndi(h, rs, rs, signExtendN(((h>>2)&0x1f)|((h>>12)&1)<<5, 6))
 	}
 
 	// bits[11:10]=10: R-type; op in bits[6:5]; bit12 selects the RV64 /w variant.
 	rs2 := r3(h >> 2)
 	switch ((h >> 5) & 0x3) | ((h>>12)&1)<<2 {
 	case 0:
-		return cSub(h, addr, rs, rs, rs2)
+		return cSub(h, rs, rs, rs2)
 	case 1:
-		return cXor(h, addr, rs, rs, rs2)
+		return cXor(h, rs, rs, rs2)
 	case 2:
-		return cOr(h, addr, rs, rs, rs2)
+		return cOr(h, rs, rs, rs2)
 	case 3:
-		return cAnd(h, addr, rs, rs, rs2)
+		return cAnd(h, rs, rs, rs2)
 	case 4:
-		return cSubw(h, addr, rs, rs, rs2)
+		return cSubw(h, rs, rs, rs2)
 	case 5:
-		return cAddw(h, addr, rs, rs, rs2)
+		return cAddw(h, rs, rs, rs2)
 	}
 
-	return newUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h))
 }
 
 // c.addi16sp nzimm: [9]=inst[12], [8:7]=inst[4:3], [6]=inst[5], [5]=inst[2], [4]=inst[6].
@@ -201,62 +200,62 @@ func cjImm(h uint32) int64 {
 
 // --- quadrant 2: c.slli / c.lwsp / c.ldsp / c.mv/c.add/c.jr/c.jalr / c.swsp / c.sdsp ---
 
-func decodeQ2(h uint32, addr uint64) Instr {
+func decodeQ2(h uint32) Instr {
 	rd := rvRegNames[(h>>7)&0x1f]
 	switch (h >> 13) & 0x7 {
 	case 0: // c.slli
 		if (h>>7)&0x1f == 0 {
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		}
 
-		return cSlli(h, addr, rd, rd, int64(ciShamt(h)))
+		return cSlli(h, rd, rd, int64(ciShamt(h)))
 	case 2: // c.lwsp
 		if (h>>7)&0x1f == 0 {
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		}
 
-		return cLw(h, addr, rd, "sp", lwspImm(h))
+		return cLw(h, rd, "sp", lwspImm(h))
 	case 3: // c.ldsp (RV64)
 		if (h>>7)&0x1f == 0 {
-			return newUnknown(newHalfBase(h, addr))
+			return newUnknown(newHalfBase(h))
 		}
 
-		return cLd(h, addr, rd, "sp", ldspImm(h))
+		return cLd(h, rd, "sp", ldspImm(h))
 	case 4: // c.jr / c.mv (bit12=0); c.jalr / c.add / c.ebreak (bit12=1)
 		rs1 := rvRegNames[(h>>7)&0x1f]
 		rs2 := rvRegNames[(h>>2)&0x1f]
 		if (h>>12)&1 == 0 {
 			if (h>>2)&0x1f == 0 { // c.jr
 				if rs1 == "zero" {
-					return newUnknown(newHalfBase(h, addr))
+					return newUnknown(newHalfBase(h))
 				}
 
-				return cJalr(h, addr, "zero", rs1, 0)
+				return cJalr(h, "zero", rs1, 0)
 			}
 
 			if (h>>7)&0x1f == 0 {
-				return newUnknown(newHalfBase(h, addr))
+				return newUnknown(newHalfBase(h))
 			}
 
-			return cMv(h, addr, rd, rs2) // c.mv
+			return cMv(h, rd, rs2) // c.mv
 		}
 
 		if (h>>2)&0x1f == 0 && (h>>7)&0x1f == 0 {
-			return cSystem(h, addr, "ebreak", "RV32I")
+			return cSystem(h, "ebreak", "RV32I")
 		}
 
 		if (h>>2)&0x1f == 0 { // c.jalr
-			return cJalr(h, addr, "ra", rs1, 0)
+			return cJalr(h, "ra", rs1, 0)
 		}
 
-		return cAdd(h, addr, rd, rd, rs2) // c.add
+		return cAdd(h, rd, rd, rs2) // c.add
 	case 6: // c.swsp
-		return cSw(h, addr, "sp", rvRegNames[(h>>2)&0x1f], swspImm(h))
+		return cSw(h, "sp", rvRegNames[(h>>2)&0x1f], swspImm(h))
 	case 7: // c.sdsp (RV64)
-		return cSd(h, addr, "sp", rvRegNames[(h>>2)&0x1f], sdspImm(h))
+		return cSd(h, "sp", rvRegNames[(h>>2)&0x1f], sdspImm(h))
 	}
 
-	return newUnknown(newHalfBase(h, addr))
+	return newUnknown(newHalfBase(h))
 }
 
 // c.lwsp offset: [5]=inst[12], [4:2]=inst[6:4], [7:6]=inst[3:2].

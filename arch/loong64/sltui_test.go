@@ -18,11 +18,10 @@ func TestSltuiCtor(t *testing.T) {
 }
 
 func TestSltuiDecodeEncode(t *testing.T) {
-	x, ok := decodeSltui(0x027fc1ac, 0x90000000).(Sltui)
+	x, ok := decodeSltui(0x027fc1ac).(Sltui)
 	require.True(t, ok, "type = %T, want Sltui", x)
 
 	require.Equal(t, "sltui $t0, $t1, -16", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(-16), x.imm.val)
 
 	// The negative immediate round-trips through the sign-extended field.

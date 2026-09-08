@@ -55,9 +55,9 @@ func (Builder) BicShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
 	}, nil
 }
 
-func decodeBicShift(w uint32, addr uint64) Instr {
+func decodeBicShift(w uint32) Instr {
 	return BicShift{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    armRegName(w&0x1f, w>>31&1 == 1),
 		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -75,7 +75,7 @@ func (i BicShift) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bic %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i BicShift) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i BicShift) Encode(w io.Writer) (int64, error) {
 	match := BicShiftX
 	if !i.isf {
 		match = BicShiftW

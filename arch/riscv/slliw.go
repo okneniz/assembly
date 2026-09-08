@@ -24,9 +24,9 @@ func (Builder) Slliw(rd, rs1 Reg, shamt Imm12) Instr {
 	}
 }
 
-func decodeSlliw(w uint32, addr uint64) Instr {
+func decodeSlliw(w uint32) Instr {
 	return Slliw{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    rvRegNames[w>>7&0x1f],
 		rs1:   rvRegNames[w>>15&0x1f],
 		shamt: immNum(int64(shamt5(w))),
@@ -37,7 +37,7 @@ func (i Slliw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("slliw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
-func (i Slliw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Slliw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
 	if sh < 0 || sh > 31 {

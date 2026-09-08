@@ -17,10 +17,10 @@ type Simd3 struct {
 	q, size    uint32
 }
 
-func decodeSimd3Of(op string, enc uint32) func(w uint32, addr uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSimd3Of(op string, enc uint32) func(w uint32) Instr {
+	return func(w uint32) Instr {
 		return Simd3{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   op,
 			rd:   vReg(w & 0x1f),
 			rn:   vReg(w >> 5 & 0x1f),
@@ -57,9 +57,9 @@ func isSimd3Logical(op string) bool {
 // 4 instructions, so the mnemonic cannot be baked in as an argument. The
 // arrangement of logical operations depends only on Q (8b/16b), size is
 // part of the opcode.
-func decodeSimd3Logical(w uint32, addr uint64) Instr {
+func decodeSimd3Logical(w uint32) Instr {
 	return Simd3{
-		base: newBase(addr, w),
+		base: newBase(w),
 		op:   simd3Logical[w>>29&1][w>>22&3],
 		rd:   vReg(w & 0x1f),
 		rn:   vReg(w >> 5 & 0x1f),
@@ -93,7 +93,7 @@ func (i Simd3) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s.%s %s, %s, %s", i.op, arr, i.rd, i.rn, i.rm)
 }
 
-func (i Simd3) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Simd3) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", i.op, err)

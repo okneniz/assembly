@@ -15,18 +15,18 @@ import (
 // Try rolls the position back on a truncated tail (a halfword shorter than
 // 2 bytes or the cut-off high halfword of a 32-bit instruction), Many
 // swallows its error and drives the loop to the end of the buffer.
-func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
+// The instructions are position-independent: addresses live in the view
+// context (disasm), not in the structures.
+func Parse() parsec.Combinator[byte, int, []Instr] {
 	half := bytes.ReadAs[uint16](2, "riscv: halfword", binary.LittleEndian)
 	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		addr := baseAddr + uint64(buf.Position())
-
 		lo, err := half(buf)
 		if err != nil {
 			return nil, err
 		}
 
 		if lo&0x3 != 0x3 {
-			return compressedInstruction(uint32(lo), addr), nil
+			return compressedInstruction(uint32(lo)), nil
 		}
 
 		hi, err := half(buf)
@@ -34,14 +34,14 @@ func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
 			return nil, err
 		}
 
-		return decodeOne(uint32(lo)|uint32(hi)<<16, addr), nil
+		return decodeOne(uint32(lo) | uint32(hi)<<16), nil
 	}
 
 	return parsec.Many(0, bytes.Try(instr))
 }
 
 // decodeCtor - the constructor of a table entry (the decision-tree payload).
-type decodeCtor = func(word uint32, addr uint64) Instr
+type decodeCtor = func(word uint32) Instr
 
 // decodeRules - the decodeTable rules in priority order; match/mask
 // are authoritative - from the generated riscvEncodings (Spike encoding.h).
@@ -73,10 +73,10 @@ var decodeTree = dtree.New(decodeRules())
 // first-match order of decodeTable (order = priority, for example OP-IMM
 // shifts before OP-IMM arithmetic) is preserved by dtree. The
 // unrecognized - Unknown.
-func decodeOne(word uint32, addr uint64) Instr {
+func decodeOne(word uint32) Instr {
 	if ctor, ok := decodeTree.Lookup(word); ok {
-		return ctor(word, addr)
+		return ctor(word)
 	}
 
-	return Unknown{base: newBase(addr, word)}
+	return Unknown{base: newBase(word)}
 }

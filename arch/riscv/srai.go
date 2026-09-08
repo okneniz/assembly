@@ -24,9 +24,9 @@ func (Builder) Srai(rd, rs1 Reg, shamt Imm12) Instr {
 	}
 }
 
-func decodeSrai(w uint32, addr uint64) Instr {
+func decodeSrai(w uint32) Instr {
 	return Srai{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    rvRegNames[w>>7&0x1f],
 		rs1:   rvRegNames[w>>15&0x1f],
 		shamt: immNum(int64(shamt6(w))),
@@ -34,9 +34,9 @@ func decodeSrai(w uint32, addr uint64) Instr {
 }
 
 // cSrai - compressed forms (c.srai): base - halfword, length 2.
-func cSrai(h uint32, addr uint64, rd, rs1 string, shamt int64) Srai {
+func cSrai(h uint32, rd, rs1 string, shamt int64) Srai {
 	return Srai{
-		base:  newHalfBase(h, addr),
+		base:  newHalfBase(h),
 		rd:    rd,
 		rs1:   rs1,
 		shamt: immNum(shamt),
@@ -47,7 +47,7 @@ func (i Srai) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srai %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
-func (i Srai) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Srai) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
 	if sh < 0 || sh > 63 {

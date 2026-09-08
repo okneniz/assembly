@@ -21,19 +21,18 @@ func TestStDCtor(t *testing.T) {
 }
 
 func TestStDDecodeEncode(t *testing.T) {
-	in := decodeStD(0x29c021ac, 0x90000000)
+	in := decodeStD(0x29c021ac)
 
 	x, ok := in.(StD)
 	require.True(t, ok, "type = %T, want StD", in)
 	require.Equal(t, "st.d $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(8), x.imm.val)
 	require.Equal(t, uint32(0x29c021ac), ctorWord(t, x))
 
 	// llvm-mc-verified: st.d $t0, $t1, -8 (the negative byte offset
 	// round-trips through the sign-extended field).
-	y, ok := decodeStD(0x29ffe1ac, 0).(StD)
+	y, ok := decodeStD(0x29ffe1ac).(StD)
 	require.True(t, ok, "type = %T, want StD", y)
 	require.Equal(t, "st.d $t0, $t1, -8", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), y.imm.val)

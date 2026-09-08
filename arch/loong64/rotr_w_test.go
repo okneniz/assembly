@@ -22,11 +22,10 @@ func TestRotrWCtor(t *testing.T) {
 }
 
 func TestRotrWDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001b39ac, 0x90000000)
+	in := decodeOne(0x001b39ac)
 
 	x, ok := in.(RotrW)
 	require.True(t, ok, "type = %T, want RotrW", in)
 	require.Equal(t, "rotr.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001b39ac), ctorWord(t, x))
 }

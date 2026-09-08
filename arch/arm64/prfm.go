@@ -34,9 +34,9 @@ func (Builder) Prfm(rn Reg) (Instr, error) {
 	return Prfm{rn: rn.name()}, nil
 }
 
-func decodePrfm(w uint32, addr uint64) Instr {
+func decodePrfm(w uint32) Instr {
 	return Prfm{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rn:   regNameXSP(w >> 5 & 0x1f),
 	}
 }
@@ -45,7 +45,7 @@ func (i Prfm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("prfm pldl1keep, [%s]", i.rn)
 }
 
-func (i Prfm) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Prfm) Encode(w io.Writer) (int64, error) {
 	n, err := armRegNum(i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("prfm: %w", err)

@@ -23,9 +23,9 @@ func (Builder) Mulw(rd, rs1, rs2 Reg) Instr {
 	}
 }
 
-func decodeMulw(w uint32, addr uint64) Instr {
+func decodeMulw(w uint32) Instr {
 	return Mulw{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		rs2:  rvRegNames[w>>20&0x1f],
@@ -36,7 +36,7 @@ func (i Mulw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mulw %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
-func (i Mulw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Mulw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["mulw"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 
 	return writeWord(w, word)

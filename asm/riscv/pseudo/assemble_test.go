@@ -33,8 +33,8 @@ func wordOf(b []byte) uint32 {
 	return binary.LittleEndian.Uint32(b)
 }
 
-func instrTextSource(inst arch.Instr) string {
-	return inst.ObjDump(disasm.DefaultViewCtx())
+func instrTextSource(inst arch.Instr, addr uint64) string {
+	return inst.ObjDump(disasm.ViewCtxAt(addr))
 }
 
 func TestAssemblePseudo(t *testing.T) {
@@ -108,10 +108,10 @@ func TestAssemblePseudo(t *testing.T) {
 	}
 	for _, c := range structural {
 		got := assembleOne(t, c.src, 0)
-		insts, err := arch.Parse(0)(parsecbytes.Buffer(got))
+		insts, err := arch.Parse()(parsecbytes.Buffer(got))
 		require.NoError(t, err)
 		require.NotEmpty(t, insts, "case %q: nothing decoded", c.src)
-		back := objdump.Normalize(instrTextSource(insts[0]))
+		back := objdump.Normalize(instrTextSource(insts[0], 0))
 		require.Equal(t, c.want, back, "case %q → % x → %q", c.src, got, back)
 	}
 }
@@ -319,9 +319,9 @@ target:
 		// distance 4+4096 > 2046: the optimistic seed compresses (offset
 		// 0), the relaxed layout widens back to jal
 		require.Len(t, d, 4+4096+2, "total")
-		insts, err := arch.Parse(0x1000)(parsecbytes.Buffer(d))
+		insts, err := arch.Parse()(parsecbytes.Buffer(d))
 		require.NoError(t, err)
-		require.Equal(t, "j 0x2004", insts[0].ObjDump(disasm.DefaultViewCtx()), "jal +4100 (relaxed)")
+		require.Equal(t, "j 0x2004", insts[0].ObjDump(disasm.ViewCtxAt(0x1000)), "jal +4100 (relaxed)")
 		require.Equal(t, 4, insts[0].Len(), "32-bit form")
 	})
 
@@ -355,10 +355,10 @@ back:
 		require.Empty(t, errs, "errors: %v", errs)
 		d := res.Sections[0].Data
 		require.Len(t, d, 4096+4, "total")
-		insts, err := arch.Parse(0x1000)(parsecbytes.Buffer(d))
+		insts, err := arch.Parse()(parsecbytes.Buffer(d))
 		require.NoError(t, err)
 		last := insts[len(insts)-1] // the .space bytes decode as junk before it
-		require.Equal(t, "j 0x1000", last.ObjDump(disasm.DefaultViewCtx()), "jal -4096")
+		require.Equal(t, "j 0x1000", last.ObjDump(disasm.ViewCtxAt(0x2000)), "jal -4096")
 		require.Equal(t, 4, last.Len(), "32-bit form")
 	})
 }
@@ -415,22 +415,24 @@ func TestRoundTripExample(t *testing.T) {
 		t.Skipf("example not available: %v", err)
 	}
 
-	insts, err := arch.Parse(ts.Addr)(parsecbytes.Buffer(ts.Data))
+	insts, err := arch.Parse()(parsecbytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	matched, rmLossy, mismatched := 0, 0, 0
 	var failures []string
+	off := uint64(0)
 	for _, in := range insts {
-		src := instrTextSource(in)
+		addr := ts.Addr + off
+		off += uint64(in.Len())
+		src := instrTextSource(in, addr)
 		if src == "" || src == "<unknown>" {
 			continue
 		}
 
-		off := in.Addr() - ts.Addr
-		want := ts.Data[off : off+uint64(in.Len())]
-		res, errs := asm.Assemble(src, in.Addr(), NewASMBackend())
+		want := ts.Data[addr-ts.Addr : addr-ts.Addr+uint64(in.Len())]
+		res, errs := asm.Assemble(src, addr, NewASMBackend())
 		if len(errs) != 0 {
 			mismatched++
-			failures = append(failures, fmt.Sprintf("addr %#x: %q: %v", in.Addr(), src, errs))
+			failures = append(failures, fmt.Sprintf("addr %#x: %q: %v", addr, src, errs))
 			continue
 		}
 
@@ -449,7 +451,7 @@ func TestRoundTripExample(t *testing.T) {
 			if len(failures) < 5 {
 				failures = append(
 					failures,
-					fmt.Sprintf("addr %#x: %q\n  got  % x\n  want % x", in.Addr(), src, got, want),
+					fmt.Sprintf("addr %#x: %q\n  got  % x\n  want % x", in, src, got, want),
 				)
 			}
 		}
@@ -608,17 +610,20 @@ func TestRoundTripSynthetic(t *testing.T) {
 		}
 
 		want := res.Sections[0].Data
-		insts, err := arch.Parse(addr)(parsecbytes.Buffer(want))
+		insts, err := arch.Parse()(parsecbytes.Buffer(want))
 		require.NoError(t, err)
+		off := uint64(0)
 		for _, in := range insts {
-			src2 := instrTextSource(in)
+			inAddr := addr + off
+			off += uint64(in.Len())
+			src2 := instrTextSource(in, inAddr)
 			if src2 == "" || src2 == "<unknown>" {
 				mismatched++
 				failures = append(failures, fmt.Sprintf("%q → % x: decode failed", src, want))
 				continue
 			}
 
-			res2, errs2 := asm.Assemble(src2, in.Addr(), NewASMBackend())
+			res2, errs2 := asm.Assemble(src2, inAddr, NewASMBackend())
 			if len(errs2) != 0 {
 				mismatched++
 				failures = append(failures, fmt.Sprintf("re-assemble %q: %v", src2, errs2))
@@ -626,7 +631,7 @@ func TestRoundTripSynthetic(t *testing.T) {
 			}
 
 			got := res2.Sections[0].Data
-			want2 := want[in.Addr()-addr : in.Addr()-addr+uint64(in.Len())]
+			want2 := want[inAddr-addr : inAddr-addr+uint64(in.Len())]
 			if bytes.Equal(got, want2) {
 				matched++
 			} else {

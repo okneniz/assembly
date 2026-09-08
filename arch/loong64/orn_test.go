@@ -22,11 +22,10 @@ func TestOrnCtor(t *testing.T) {
 }
 
 func TestOrnDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001639ac, 0x90000000)
+	in := decodeOne(0x001639ac)
 
 	x, ok := in.(Orn)
 	require.True(t, ok, "type = %T, want Orn", in)
 	require.Equal(t, "orn $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001639ac), ctorWord(t, x))
 }

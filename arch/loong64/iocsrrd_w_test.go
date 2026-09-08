@@ -23,12 +23,11 @@ func TestIocsrrdWCtor(t *testing.T) {
 
 func TestIocsrrdWDecodeEncode(t *testing.T) {
 	// llvm-mc-verified: iocsrrd.w $t0, $t1.
-	in := decodeIocsrrdW(0x064809ac, 0x90000000)
+	in := decodeIocsrrdW(0x064809ac)
 
 	x, ok := in.(IocsrrdW)
 	require.True(t, ok, "type = %T, want IocsrrdW", in)
 	require.Equal(t, "iocsrrd.w $t0, $t1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x064809ac), ctorWord(t, x))
 }

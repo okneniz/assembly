@@ -22,11 +22,10 @@ func TestRevbit8BCtor(t *testing.T) {
 }
 
 func TestRevbit8BDecodeEncode(t *testing.T) {
-	in := decodeRevbit8B(0x00004dac, 0x90000000)
+	in := decodeRevbit8B(0x00004dac)
 
 	revbit8b, ok := in.(Revbit8B)
 	require.True(t, ok, "type = %T, want Revbit8B", in)
 	require.Equal(t, "bitrev.8b $t0, $t1", revbit8b.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), revbit8b.Addr())
 	require.Equal(t, uint32(0x00004dac), ctorWord(t, revbit8b))
 }

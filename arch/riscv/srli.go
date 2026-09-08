@@ -24,9 +24,9 @@ func (Builder) Srli(rd, rs1 Reg, shamt Imm12) Instr {
 	}
 }
 
-func decodeSrli(w uint32, addr uint64) Instr {
+func decodeSrli(w uint32) Instr {
 	return Srli{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    rvRegNames[w>>7&0x1f],
 		rs1:   rvRegNames[w>>15&0x1f],
 		shamt: immNum(int64(shamt6(w))),
@@ -34,9 +34,9 @@ func decodeSrli(w uint32, addr uint64) Instr {
 }
 
 // cSrli - compressed forms (c.srli): base - halfword, length 2.
-func cSrli(h uint32, addr uint64, rd, rs1 string, shamt int64) Srli {
+func cSrli(h uint32, rd, rs1 string, shamt int64) Srli {
 	return Srli{
-		base:  newHalfBase(h, addr),
+		base:  newHalfBase(h),
 		rd:    rd,
 		rs1:   rs1,
 		shamt: immNum(shamt),
@@ -47,7 +47,7 @@ func (i Srli) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srli %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
-func (i Srli) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Srli) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
 	if sh < 0 || sh > 63 {

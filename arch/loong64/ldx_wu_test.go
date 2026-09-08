@@ -18,12 +18,11 @@ func TestLdxWuCtor(t *testing.T) {
 }
 
 func TestLdxWuDecodeEncode(t *testing.T) {
-	in := decodeLdxWu(0x382839ac, 0x90000000)
+	in := decodeLdxWu(0x382839ac)
 
 	x, ok := in.(LdxWu)
 	require.True(t, ok, "type = %T, want LdxWu", in)
 	require.Equal(t, "ldx.wu $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x382839ac), ctorWord(t, x))
 }

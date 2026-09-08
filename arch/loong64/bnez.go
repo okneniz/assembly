@@ -25,9 +25,9 @@ func (Builder) Bnez(rj Reg, off int64) Instr {
 	}
 }
 
-func decodeBnez(w uint32, addr uint64) Instr {
+func decodeBnez(w uint32) Instr {
 	return Bnez{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(d5k16Imm(w) << 2),
 	}
@@ -37,7 +37,7 @@ func (i Bnez) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bnez %s, %s", laRegName(i.rj), i.off.text())
 }
 
-func (i Bnez) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Bnez) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 21, "bnez offset")
 	if err != nil {
 		return 0, err

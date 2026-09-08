@@ -18,10 +18,10 @@ type Fcmp struct {
 	k      fpKind
 }
 
-func decodeFcmpOf(withRM bool, enc uint32, k fpKind) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeFcmpOf(withRM bool, enc uint32, k fpKind) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return Fcmp{
-			base:   newBase(addr, w),
+			base:   newBase(w),
 			rn:     fpReg(w>>5&0x1f, k),
 			rm:     fpReg(w>>16&0x1f, k),
 			withRM: withRM,
@@ -40,7 +40,7 @@ func (i Fcmp) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fcmp %s, %s", i.rn, i.rm)
 }
 
-func (i Fcmp) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Fcmp) Encode(w io.Writer) (int64, error) {
 	rn, err := armRegNum(i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("fcmp: %w", err)

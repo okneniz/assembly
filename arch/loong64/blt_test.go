@@ -20,7 +20,7 @@ func TestBltCtor(t *testing.T) {
 }
 
 func TestBltDecodeEncode(t *testing.T) {
-	x, ok := decodeBlt(0x600009ac, 0).(Blt)
+	x, ok := decodeBlt(0x600009ac).(Blt)
 	require.True(t, ok, "type = %T, want Blt", x)
 	require.Equal(t, "blt $t1, $t0, 8", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(8), x.off.val)
@@ -28,13 +28,13 @@ func TestBltDecodeEncode(t *testing.T) {
 
 	// The off field is the byte offset itself: the same word decodes
 	// identically at any pc, and Encode is pc-independent.
-	y, ok2 := decodeBlt(0x600009ac, 0x90000000).(Blt)
+	y, ok2 := decodeBlt(0x600009ac).(Blt)
 	require.True(t, ok2, "type = %T, want Blt", y)
 	require.Equal(t, int64(8), y.off.val)
 	require.Equal(t, uint32(0x600009ac), ctorWord(t, y))
 
 	// llvm-mc-verified: blt $t1, $t0, -8 - the negative target round-trips.
-	n, ok3 := decodeBlt(0x63fff9ac, 0).(Blt)
+	n, ok3 := decodeBlt(0x63fff9ac).(Blt)
 	require.True(t, ok3, "type = %T, want Blt", n)
 	require.Equal(t, "blt $t1, $t0, -8", n.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(-8), n.off.val)

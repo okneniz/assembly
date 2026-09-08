@@ -26,9 +26,9 @@ func (Builder) Bge(rj, rd Reg, off int64) Instr {
 	}
 }
 
-func decodeBge(w uint32, addr uint64) Instr {
+func decodeBge(w uint32) Instr {
 	return Bge{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 16) << 2),
@@ -47,7 +47,7 @@ func (i Bge) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bge %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }
 
-func (i Bge) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Bge) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "bge offset")
 	if err != nil {
 		return 0, err

@@ -53,20 +53,23 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 	switch ff.ArchKind() {
 	case file.ArchARM64:
 		archName = arm64.Name
-		insts, err := arm64.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		insts, err := arm64.Parse()(bytes.Buffer(sec.Data))
 		require.NoError(t, err)
+		off := uint64(0)
 		for _, inst := range insts {
-			a := inst.Addr()
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[a-sec.Addr:], inst, opts))
+			a := sec.Addr + off
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], inst, opts))
+			off += uint64(inst.Len())
 		}
 	case file.ArchRISCV64:
 		archName = riscv.Name
-		insts, err := riscv.Parse(sec.Addr)(bytes.Buffer(sec.Data))
+		insts, err := riscv.Parse()(bytes.Buffer(sec.Data))
 		require.NoError(t, err)
+		off := uint64(0)
 		for _, inst := range insts {
-			ours[inst.Addr()] = objdump.Normalize(
-				disasm.Line(inst.Addr(), sec.Data[inst.Addr()-sec.Addr:], inst, opts),
-			)
+			a := sec.Addr + off
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], inst, opts))
+			off += uint64(inst.Len())
 		}
 	default:
 		require.Fail(t, "unsupported architecture", "kind %d", ff.ArchKind())

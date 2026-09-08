@@ -832,7 +832,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		bits, err := brBits(target, int64(ctx.Addr), 26)
+		bits, err := offBits(target, 26)
 		if err != nil {
 			return nil, err
 		}
@@ -845,7 +845,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		bits, err := brBits(target, int64(ctx.Addr), 19)
+		bits, err := offBits(target, 19)
 		if err != nil {
 			return nil, err
 		}
@@ -863,7 +863,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		bits, err := brBits(target, int64(ctx.Addr), 19)
+		bits, err := offBits(target, 19)
 		if err != nil {
 			return nil, err
 		}
@@ -886,7 +886,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		bits, err := brBits(target, int64(ctx.Addr), 14)
+		bits, err := offBits(target, 14)
 		if err != nil {
 			return nil, err
 		}
@@ -1165,7 +1165,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		bits, err := brBits(target, int64(ctx.Addr), 19)
+		bits, err := offBits(target, 19)
 		if err != nil {
 			return nil, err
 		}

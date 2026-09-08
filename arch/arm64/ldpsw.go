@@ -55,9 +55,9 @@ func (Builder) Ldpsw(rt, rt2, rn Reg, off Off) (Instr, error) {
 	}, nil
 }
 
-func decodeLdpsw(w uint32, addr uint64) Instr {
+func decodeLdpsw(w uint32) Instr {
 	return Ldpsw{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rt:   regNameX(w & 0x1f),
 		rt2:  regNameX(w >> 10 & 0x1f),
 		rn:   regNameXSP(w >> 5 & 0x1f),
@@ -73,7 +73,7 @@ func (i Ldpsw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldpsw %s, %s, [%s, #%#x]", i.rt, i.rt2, i.rn, i.off)
 }
 
-func (i Ldpsw) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 	rt, err := armRegNum(i.rt)
 	if err != nil {
 		return 0, fmt.Errorf("ldpsw: %w", err)

@@ -24,7 +24,7 @@ func disasmOne(t *testing.T, word uint32) string {
 	t.Helper()
 	var buf [4]byte
 	binary.LittleEndian.PutUint32(buf[:], word)
-	insts, err := Parse(0)(bytes.Buffer(buf[:]))
+	insts, err := Parse()(bytes.Buffer(buf[:]))
 	require.NoError(t, err)
 	require.Len(t, insts, 1, "expected 1 instruction")
 	return insts[0].ObjDump(disasm.DefaultViewCtx())

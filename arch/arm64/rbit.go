@@ -39,9 +39,9 @@ func (Builder) Rbit(rd, rn Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeRbit(w uint32, addr uint64) Instr {
+func decodeRbit(w uint32) Instr {
 	return Rbit{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 	}
@@ -51,7 +51,7 @@ func (i Rbit) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rbit %s, %s", i.rd, i.rn)
 }
 
-func (i Rbit) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Rbit) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, RbitX, 0x5AC00000)
 	if err != nil {
 		return 0, fmt.Errorf("rbit: %w", err)

@@ -22,11 +22,10 @@ func TestSubDCtor(t *testing.T) {
 }
 
 func TestSubDDecodeEncode(t *testing.T) {
-	in := decodeOne(0x0011b9ac, 0x90000000)
+	in := decodeOne(0x0011b9ac)
 
 	x, ok := in.(SubD)
 	require.True(t, ok, "type = %T, want SubD", in)
 	require.Equal(t, "sub.d $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x0011b9ac), ctorWord(t, x))
 }

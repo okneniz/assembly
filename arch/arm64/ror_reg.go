@@ -60,9 +60,9 @@ func (Builder) RorReg(rd, rn, rm Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeRorReg(w uint32, addr uint64) Instr {
+func decodeRorReg(w uint32) Instr {
 	return RorReg{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
@@ -73,7 +73,7 @@ func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
-func (i RorReg) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i RorReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, RorRegX, 0)
 	if err != nil {
 		return 0, fmt.Errorf("ror: %w", err)

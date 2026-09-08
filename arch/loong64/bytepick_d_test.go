@@ -23,18 +23,17 @@ func TestBytepickDCtor(t *testing.T) {
 }
 
 func TestBytepickDDecodeEncode(t *testing.T) {
-	in := decodeBytepickD(0x000db9ac, 0x90000000)
+	in := decodeBytepickD(0x000db9ac)
 
 	x, ok := in.(BytepickD)
 	require.True(t, ok, "type = %T, want BytepickD", in)
 	require.Equal(t, int64(3), x.sel.val)
 	require.Equal(t, "bytepick.d $t0, $t1, $t2, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x000db9ac), ctorWord(t, x))
 
 	// llvm-mc-verified: bytepick.d $t0, $t1, $t2, 7 - the full a3 field.
-	y, ok2 := decodeBytepickD(0x000fb9ac, 0).(BytepickD)
+	y, ok2 := decodeBytepickD(0x000fb9ac).(BytepickD)
 	require.True(t, ok2, "type = %T, want BytepickD", y)
 	require.Equal(t, "bytepick.d $t0, $t1, $t2, 7", y.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, uint32(0x000fb9ac), ctorWord(t, y))

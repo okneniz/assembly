@@ -23,9 +23,9 @@ func (Builder) MulwDWu(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeMulwDWu(w uint32, addr uint64) Instr {
+func decodeMulwDWu(w uint32) Instr {
 	return MulwDWu{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -36,7 +36,7 @@ func (i MulwDWu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mulw.d.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i MulwDWu) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i MulwDWu) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["mulw.d.wu"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

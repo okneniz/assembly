@@ -25,9 +25,9 @@ func (Builder) LdD(rd, rj Reg, v Imm12) Instr {
 	}
 }
 
-func decodeLdD(w uint32, addr uint64) Instr {
+func decodeLdD(w uint32) Instr {
 	return LdD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		imm:  immNum(sField(w, 10, 12)),
@@ -38,7 +38,7 @@ func (i LdD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ld.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }
 
-func (i LdD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i LdD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ld.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.imm.val, 10, 12)
 

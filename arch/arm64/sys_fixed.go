@@ -16,10 +16,10 @@ type sysFixed struct {
 	enc   uint32
 }
 
-func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return sysFixed{
-			base:  newBase(addr, w),
+			base:  newBase(w),
 			name:  name,
 			ops:   ops,
 			group: group,
@@ -36,7 +36,7 @@ func (i sysFixed) ObjDump(_ disasm.ViewCtx) string {
 	return i.name + " " + i.ops
 }
 
-func (i sysFixed) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i sysFixed) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.enc)
 }
 

@@ -20,9 +20,9 @@ func (Builder) Dbar(code Code15) Instr {
 	}
 }
 
-func decodeDbar(w uint32, addr uint64) Instr {
+func decodeDbar(w uint32) Instr {
 	return Dbar{
-		base: newBase(addr, w),
+		base: newBase(w),
 		code: immNum(int64(uField(w, 0, 15))),
 	}
 }
@@ -31,7 +31,7 @@ func (i Dbar) ObjDump(_ disasm.ViewCtx) string {
 	return "dbar " + i.code.text()
 }
 
-func (i Dbar) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Dbar) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["dbar"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)

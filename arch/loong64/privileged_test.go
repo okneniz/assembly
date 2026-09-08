@@ -57,7 +57,7 @@ func TestPrivilegedJSONEncodeError(t *testing.T) {
 	for _, f := range family {
 		in := f.ctor()
 
-		_, err := in.Encode(errWriter{}, 0)
+		_, err := in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", f.mnem)
 	}
 }

@@ -26,9 +26,9 @@ func (Builder) BstrpickW(rd, rj Reg, msb, lsb UImm5) Instr {
 	}
 }
 
-func decodeBstrpickW(w uint32, addr uint64) Instr {
+func decodeBstrpickW(w uint32) Instr {
 	return BstrpickW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		msb:  immNum(int64(uField(w, 16, 5))),
@@ -46,7 +46,7 @@ func (i BstrpickW) ObjDump(_ disasm.ViewCtx) string {
 	)
 }
 
-func (i BstrpickW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i BstrpickW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["bstrpick.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 |
 		scatterU(i.msb.val, 16, 5) | scatterU(i.lsb.val, 10, 5)

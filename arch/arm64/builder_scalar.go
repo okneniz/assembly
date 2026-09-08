@@ -30,20 +30,20 @@ func AsrRegOf(rd string, rn string, rm string) AsrReg {
 
 // BOf — the B family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func BOf(target int64) B {
-	return B{target: immNum(target)}
+func BOf(off int64) B {
+	return B{off: immNum(off)}
 }
 
 // BcondOf — the Bcond family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func BcondOf(cond string, target int64) Bcond {
-	return Bcond{cond: cond, target: immNum(target)}
+func BcondOf(cond string, off int64) Bcond {
+	return Bcond{cond: cond, off: immNum(off)}
 }
 
 // BlOf — the Bl family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func BlOf(target int64) Bl {
-	return Bl{target: immNum(target)}
+func BlOf(off int64) Bl {
+	return Bl{off: immNum(off)}
 }
 
 // BlrOf — the Blr family constructor (string-operands form for the
@@ -60,14 +60,14 @@ func BrOf(rn string) Br {
 
 // CbnzOf — the Cbnz family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func CbnzOf(rt string, target int64) Cbnz {
-	return Cbnz{rt: rt, target: immNum(target)}
+func CbnzOf(rt string, off int64) Cbnz {
+	return Cbnz{rt: rt, off: immNum(off)}
 }
 
 // CbzOf — the Cbz family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func CbzOf(rt string, target int64) Cbz {
-	return Cbz{rt: rt, target: immNum(target)}
+func CbzOf(rt string, off int64) Cbz {
+	return Cbz{rt: rt, off: immNum(off)}
 }
 
 // CcmpOf — the Ccmp family constructor (string-operands form for the
@@ -204,8 +204,8 @@ func SmulhOf(rd string, rn string, rm string) Smulh {
 
 // TbzOf — the Tbz family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
-func TbzOf(rt string, bit uint32, target int64, isTbnz bool) Tbz {
-	return Tbz{rt: rt, bit: bit, target: immNum(target), isTbnz: isTbnz}
+func TbzOf(rt string, bit uint32, off int64, isTbnz bool) Tbz {
+	return Tbz{rt: rt, bit: bit, off: immNum(off), isTbnz: isTbnz}
 }
 
 // UdivOf — the Udiv family constructor (string-operands form for the
@@ -299,9 +299,10 @@ func LdrswOf(rt, rn string, kind MemKind, off int64, enc uint32, rm, option stri
 	return Ldrsw{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}
 }
 
-// LdrLitOf — the ldr literal form (ldr rt, =addr / label).
-func LdrLitOf(rt string, tgt uint64, enc uint32) Ldr {
-	return Ldr{lsBase: newLsBase(rt, "", memLiteral, 0, tgt, enc, "", "", 0)}
+// LdrLitOf — the ldr literal form (ldr rt, =addr / label; lit — the
+// pc-relative byte offset of the literal).
+func LdrLitOf(rt string, lit int64, enc uint32) Ldr {
+	return Ldr{lsBase: newLsBase(rt, "", memLiteral, 0, lit, enc, "", "", 0)}
 }
 
 // LdpOf/StpOf — the load/store pair family.

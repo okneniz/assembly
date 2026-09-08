@@ -40,7 +40,7 @@ func (i Ret) ObjDump(_ disasm.ViewCtx) string {
 	return "ret " + i.rn
 }
 
-func (i Ret) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Ret) Encode(w io.Writer) (int64, error) {
 	num, err := armRegNum(i.rn)
 	if err != nil {
 		return 0, fmt.Errorf("ret: %w", err)
@@ -49,9 +49,9 @@ func (i Ret) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, retMatch|num<<5)
 }
 
-func decodeRet(w uint32, addr uint64) Instr {
+func decodeRet(w uint32) Instr {
 	return Ret{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rn:   regNameX(w >> 5 & 0x1f),
 	}
 }

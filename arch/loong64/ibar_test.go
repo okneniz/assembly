@@ -17,7 +17,7 @@ func TestIbarCtor(t *testing.T) {
 }
 
 func TestIbarDecodeEncode(t *testing.T) {
-	x, ok := decodeIbar(0x38728000, 0x90000000).(Ibar)
+	x, ok := decodeIbar(0x38728000).(Ibar)
 	require.True(t, ok, "type = %T, want Ibar", x)
 	require.Equal(t, "ibar 0", x.ObjDump(disasm.DefaultViewCtx()))
 	require.Equal(t, int64(0), x.code.val)

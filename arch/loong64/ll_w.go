@@ -25,9 +25,9 @@ func (Builder) LlW(rd, rj Reg, off Imm14) Instr {
 	}
 }
 
-func decodeLlW(w uint32, addr uint64) Instr {
+func decodeLlW(w uint32) Instr {
 	return LlW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 14) << 2),
@@ -38,7 +38,7 @@ func (i LlW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ll.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }
 
-func (i LlW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i LlW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ll.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.off.val>>2, 10, 14)
 

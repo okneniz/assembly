@@ -81,7 +81,7 @@ func TestAtomicsJSONEncodeError(t *testing.T) {
 	}
 
 	for _, f := range family {
-		_, err := f.in.Encode(errWriter{}, 0)
+		_, err := f.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", f.mnem)
 	}
 }

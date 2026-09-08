@@ -55,9 +55,9 @@ func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
 	}, nil
 }
 
-func decodeMadd(w uint32, addr uint64) Instr {
+func decodeMadd(w uint32) Instr {
 	return Madd{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   armRegName(w&0x1f, w>>31&1 == 1),
 		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
 		ra:   armRegName(w>>10&0x1f, w>>31&1 == 1),
@@ -78,7 +78,7 @@ func (i Madd) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("madd %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
 }
 
-func (i Madd) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Madd) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, maddX, maddW)
 	if err != nil {
 		return 0, fmt.Errorf("madd: %w", err)

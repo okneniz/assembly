@@ -114,27 +114,29 @@ func TestArmRoundTripExample(t *testing.T) {
 		t.Skipf("example not available: %v", err)
 	}
 
-	insts, err := arch.Parse(ts.Addr)(bytes.Buffer(ts.Data))
+	insts, err := arch.Parse()(bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	matched, failed, notAssembled, dontCare, equiv := 0, 0, 0, 0, 0
 	sample := 0
+	off := uint64(0)
 	for _, in := range insts {
+		addr := ts.Addr + off
+		off += uint64(in.Len())
 		if _, ok := in.(arch.Generic); ok {
 			continue // decode-only: the generic syntax is not parsed by the assembler
 		}
 
-		src := objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
+		src := objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(addr))))
 		if src == "" || strings.HasPrefix(src, ".word") {
 			continue
 		}
 
-		off := in.Addr() - ts.Addr
-		want := ts.Data[off : off+4]
-		res, errs := asm.Assemble(src, in.Addr(), New())
+		want := ts.Data[addr-ts.Addr : addr-ts.Addr+4]
+		res, errs := asm.Assemble(src, addr, New())
 		if len(errs) != 0 {
 			notAssembled++
 			if sample < 8 {
-				t.Logf("addr %#x: %q: %v", in.Addr(), src, errs)
+				t.Logf("addr %#x: %q: %v", addr, src, errs)
 				sample++
 			}
 
@@ -152,14 +154,14 @@ func TestArmRoundTripExample(t *testing.T) {
 			// schema's Mask (e.g., bit 25 of FP pairs): the text cannot
 			// carry this information
 			dontCare++
-		} else if instrTextOf(arch.DecodeWord(gotW, in.Addr())) == instrTextOf(arch.DecodeWord(wantW, in.Addr())) {
+		} else if instrTextOf(arch.DecodeWord(gotW), addr) == instrTextOf(arch.DecodeWord(wantW), addr) {
 			// an equivalent encoding of the same text (multiple legal
 			// encodings: the ubfm/sbfm form of lsl, immr canonicity)
 			equiv++
 		} else {
 			failed++
 			if sample < 8 {
-				t.Logf("addr %#x: %q\n  got  % x\n  want % x", in.Addr(), src, got, want)
+				t.Logf("addr %#x: %q\n  got  % x\n  want % x", addr, src, got, want)
 				sample++
 			}
 		}

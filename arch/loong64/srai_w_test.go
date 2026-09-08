@@ -21,11 +21,10 @@ func TestSraiWCtor(t *testing.T) {
 }
 
 func TestSraiWDecodeEncode(t *testing.T) {
-	x, ok := decodeSraiW(0x00488dac, 0x90000000).(SraiW)
+	x, ok := decodeSraiW(0x00488dac).(SraiW)
 	require.True(t, ok, "type = %T, want SraiW", x)
 
 	require.Equal(t, "srai.w $t0, $t1, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3), x.imm.val)
 	require.Equal(t, uint32(0x00488dac), ctorWord(t, x))
 }

@@ -21,11 +21,10 @@ func TestOriCtor(t *testing.T) {
 }
 
 func TestOriDecodeEncode(t *testing.T) {
-	x, ok := decodeOri(0x03bc3dac, 0x90000000).(Ori)
+	x, ok := decodeOri(0x03bc3dac).(Ori)
 	require.True(t, ok, "type = %T, want Ori", x)
 
 	require.Equal(t, "ori $t0, $t1, 3855", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, int64(3855), x.imm.val)
 	require.Equal(t, uint32(0x03bc3dac), ctorWord(t, x))
 }

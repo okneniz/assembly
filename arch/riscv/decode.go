@@ -10,10 +10,10 @@ import "strings"
 
 type decodeEntry struct {
 	name string
-	ctor func(word uint32, addr uint64) Instr
+	ctor func(word uint32) Instr
 }
 
-func newDecodeEntry(name string, ctor func(word uint32, addr uint64) Instr) decodeEntry {
+func newDecodeEntry(name string, ctor func(word uint32) Instr) decodeEntry {
 	return decodeEntry{
 		name: name,
 		ctor: ctor,

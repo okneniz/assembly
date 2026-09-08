@@ -23,13 +23,12 @@ func TestBytepickWCtor(t *testing.T) {
 }
 
 func TestBytepickWDecodeEncode(t *testing.T) {
-	in := decodeBytepickW(0x0009b9ac, 0x90000000)
+	in := decodeBytepickW(0x0009b9ac)
 
 	x, ok := in.(BytepickW)
 	require.True(t, ok, "type = %T, want BytepickW", in)
 	require.Equal(t, int64(3), x.sel.val)
 	require.Equal(t, "bytepick.w $t0, $t1, $t2, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x0009b9ac), ctorWord(t, x))
 }

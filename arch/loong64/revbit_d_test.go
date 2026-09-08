@@ -22,11 +22,10 @@ func TestRevbitDCtor(t *testing.T) {
 }
 
 func TestRevbitDDecodeEncode(t *testing.T) {
-	in := decodeRevbitD(0x000055ac, 0x90000000)
+	in := decodeRevbitD(0x000055ac)
 
 	revbitd, ok := in.(RevbitD)
 	require.True(t, ok, "type = %T, want RevbitD", in)
 	require.Equal(t, "bitrev.d $t0, $t1", revbitd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), revbitd.Addr())
 	require.Equal(t, uint32(0x000055ac), ctorWord(t, revbitd))
 }

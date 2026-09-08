@@ -24,9 +24,9 @@ func (Builder) Srliw(rd, rs1 Reg, shamt Imm12) Instr {
 	}
 }
 
-func decodeSrliw(w uint32, addr uint64) Instr {
+func decodeSrliw(w uint32) Instr {
 	return Srliw{
-		base:  newBase(addr, w),
+		base:  newBase(w),
 		rd:    rvRegNames[w>>7&0x1f],
 		rs1:   rvRegNames[w>>15&0x1f],
 		shamt: immNum(int64(shamt5(w))),
@@ -37,7 +37,7 @@ func (i Srliw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srliw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
-func (i Srliw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Srliw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
 	if sh < 0 || sh > 31 {

@@ -10,7 +10,7 @@ import (
 )
 
 // decodeCtor - constructor of a registry entry (decision tree payload).
-type decodeCtor = func(word uint32, addr uint64) Instr
+type decodeCtor = func(word uint32) Instr
 
 // schemaRules - rules of the curated schemas in priority order. The match
 // bits come from the generated armISA when the entry is mapped
@@ -50,8 +50,8 @@ func tailRules() []dtree.Rule[decodeCtor] {
 		rules = append(rules, dtree.Rule[decodeCtor]{
 			Mask:  e.Mask,
 			Match: e.Match,
-			Payload: func(w uint32, addr uint64) Instr {
-				return decodeGeneric(e, w, addr)
+			Payload: func(w uint32) Instr {
+				return decodeGeneric(e, w)
 			},
 		})
 	}
@@ -72,16 +72,16 @@ var (
 // builds its structure; a missing match or a barrier (schema without a
 // ctor) sends the word to the isaTail tail; the unrecognized becomes
 // Unknown (.word) so the total line count matches objdump.
-func decodeOne(word uint32, addr uint64) Instr {
+func decodeOne(word uint32) Instr {
 	if ctor, ok := schemaTree.Lookup(word); ok && ctor != nil {
-		return ctor(word, addr)
+		return ctor(word)
 	}
 
 	if ctor, ok := tailTree.Lookup(word); ok {
-		return ctor(word, addr)
+		return ctor(word)
 	}
 
-	return decodeUnknown(word, addr)
+	return decodeUnknown(word)
 }
 
 // Parse — constructor of a combinator that decodes ARM64 machine code
@@ -90,18 +90,18 @@ func decodeOne(word uint32, addr uint64) Instr {
 // position back on a truncated tail (<4 bytes), Many swallows its error
 // and drives the loop to the end of the buffer. Every 32-bit word reaches
 // the output: unrecognized encodings become a .word instruction so the
-// total line count matches objdump.
-func Parse(baseAddr uint64) parsec.Combinator[byte, int, []Instr] {
+// total line count matches objdump. The instructions are
+// position-independent: addresses live in the view context (disasm),
+// not in the structures.
+func Parse() parsec.Combinator[byte, int, []Instr] {
 	word := bytes.ReadAs[uint32](4, "arm64: word", binary.LittleEndian)
 	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		addr := baseAddr + uint64(buf.Position())
-
 		w, err := word(buf)
 		if err != nil {
 			return nil, err
 		}
 
-		return decodeOne(w, addr), nil
+		return decodeOne(w), nil
 	}
 
 	return parsec.Many(0, bytes.Try(instr))

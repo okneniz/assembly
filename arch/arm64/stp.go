@@ -64,6 +64,6 @@ func (i Stp) ObjDump(_ disasm.ViewCtx) string {
 	return "stp " + i.pairText()
 }
 
-func (i Stp) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Stp) Encode(w io.Writer) (int64, error) {
 	return i.pairWrite(w, "stp")
 }

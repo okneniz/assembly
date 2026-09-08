@@ -13,39 +13,33 @@ import (
 const Name = "ARM64"
 
 // Instr — an ARM64 instruction: represents itself — encodes itself into
-// bytes (Encode: computed form, operand values are already numbers, the
-// environment — only the address), into text (disasm.ObjDump) and knows
-// its address (the key of diff tools). There is NO common type with other
-// architectures; every instruction is its own struct (Ldr, AddImm,
-// Csel, ...).
+// bytes (Encode: computed form, operand values are already numbers,
+// PC-relative ones are offsets — there is no environment), into text
+// (disasm.ObjDump; absolute targets are computed from the address in the
+// view context). There is NO common type with other architectures; every
+// instruction is its own struct (Ldr, AddImm, Csel, ...).
 type Instr interface {
 	disasm.ObjDump
-	Addr() uint64
 
-	// Encode encodes the computed instruction: pc — the absolute address
-	// (PC-relative forms). There is no resolver — an exact inverse of decode.
-	Encode(w io.Writer, pc uint64) (int64, error)
+	// Encode encodes the computed instruction. There is no resolver —
+	// an exact inverse of decode.
+	Encode(w io.Writer) (int64, error)
 }
 
-// base — the bookkeeping fields of every instruction: address, raw word
-// and length (32-bit ones are always 4; bookkeeping for Addr/Len).
+// base — the bookkeeping fields of every instruction: raw word and
+// length (32-bit ones are always 4; bookkeeping for Len).
 type base struct {
-	addr   uint64
 	raw    uint32
 	length int
 }
 
-func newBase(addr uint64, raw uint32) base {
+func newBase(raw uint32) base {
 	return base{
-		addr:   addr,
 		raw:    raw,
 		length: 4,
 	}
 }
 
-func (b base) Addr() uint64 {
-	return b.addr
-}
 func (b base) Len() int {
 	return b.length
 }
@@ -147,7 +141,7 @@ type Schema struct {
 	FullFormat bool
 	// ctor — the constructor of the per-instruction struct: the decoding
 	// contract (all table entries carry it).
-	ctor func(word uint32, addr uint64) Instr
+	ctor func(word uint32) Instr
 }
 
 func NewSchema(
@@ -157,7 +151,7 @@ func NewSchema(
 	meta Meta,
 	formatter string,
 	fullFormat bool,
-	ctor func(word uint32, addr uint64) Instr,
+	ctor func(word uint32) Instr,
 ) Schema {
 	return Schema{
 		Mask:       mask,
@@ -178,9 +172,9 @@ type Unknown struct {
 	word uint32
 }
 
-func decodeUnknown(w uint32, addr uint64) Instr {
+func decodeUnknown(w uint32) Instr {
 	return Unknown{
-		base: newBase(addr, w),
+		base: newBase(w),
 		word: w,
 	}
 }
@@ -189,7 +183,7 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(".word #0x%x", i.word)
 }
 
-func (i Unknown) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Unknown) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.word)
 }
 

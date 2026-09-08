@@ -29,12 +29,11 @@ func TestCacopCtor(t *testing.T) {
 
 func TestCacopDecodeEncode(t *testing.T) {
 	// llvm-mc-verified: cacop 5, $t1, 8.
-	in := decodeCacop(0x060021a5, 0x90000000)
+	in := decodeCacop(0x060021a5)
 
 	x, ok := in.(Cacop)
 	require.True(t, ok, "type = %T, want Cacop", in)
 	require.Equal(t, "cacop 5, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x060021a5), ctorWord(t, x))
 }

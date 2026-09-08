@@ -22,12 +22,11 @@ func TestLlacqDCtor(t *testing.T) {
 }
 
 func TestLlacqDDecodeEncode(t *testing.T) {
-	in := decodeLlacqD(0x385789ac, 0x90000000)
+	in := decodeLlacqD(0x385789ac)
 
 	llacqd, ok := in.(LlacqD)
 	require.True(t, ok, "type = %T, want LlacqD", in)
 	require.Equal(t, "llacq.d $t0, $t1", llacqd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), llacqd.Addr())
 	require.Equal(t, 4, llacqd.Len())
 	require.Equal(t, uint32(0x385789ac), ctorWord(t, llacqd))
 }

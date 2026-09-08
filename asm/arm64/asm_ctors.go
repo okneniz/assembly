@@ -417,7 +417,7 @@ func LdarOf(rt, rn string, enc uint32) arch.Ldar { return arch.LdarOf(rt, rn, en
 func LdpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) arch.Ldp {
 	return arch.LdpOf(rt, rt2, rn, kind, off, scale, enc)
 }
-func LdrLitOf(rt string, tgt uint64, enc uint32) arch.Ldr { return arch.LdrLitOf(rt, tgt, enc) }
+func LdrLitOf(rt string, lit int64, enc uint32) arch.Ldr { return arch.LdrLitOf(rt, lit, enc) }
 func LdrOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldr {
 	return arch.LdrOf(rt, rn, kind, off, enc, rm, option, amt)
 }
@@ -542,6 +542,6 @@ func armReg3(ops []vOp, name string) (string, string, string, error) {
 	return arch.ArmReg3(ops, name)
 }
 
-func brBits(target, addr int64, bits int) (uint32, error) { return arch.BrBits(target, addr, bits) }
+func offBits(off int64, bits int) (uint32, error) { return arch.OffBits(off, bits) }
 
 func invertCond(c string) string { return arch.InvertCond(c) }

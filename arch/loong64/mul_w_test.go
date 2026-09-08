@@ -22,11 +22,10 @@ func TestMulWCtor(t *testing.T) {
 }
 
 func TestMulWDecodeEncode(t *testing.T) {
-	in := decodeMulW(0x001c39ac, 0x90000000)
+	in := decodeMulW(0x001c39ac)
 
 	mulw, ok := in.(MulW)
 	require.True(t, ok, "type = %T, want MulW", in)
 	require.Equal(t, "mul.w $t0, $t1, $t2", mulw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), mulw.Addr())
 	require.Equal(t, uint32(0x001c39ac), ctorWord(t, mulw))
 }

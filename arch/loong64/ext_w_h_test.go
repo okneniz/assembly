@@ -22,11 +22,10 @@ func TestExtWHCtor(t *testing.T) {
 }
 
 func TestExtWHDecodeEncode(t *testing.T) {
-	in := decodeExtWH(0x000059ac, 0x90000000)
+	in := decodeExtWH(0x000059ac)
 
 	extwh, ok := in.(ExtWH)
 	require.True(t, ok, "type = %T, want ExtWH", in)
 	require.Equal(t, "ext.w.h $t0, $t1", extwh.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), extwh.Addr())
 	require.Equal(t, uint32(0x000059ac), ctorWord(t, extwh))
 }

@@ -22,12 +22,11 @@ func TestAmswapHCtor(t *testing.T) {
 }
 
 func TestAmswapHDecodeEncode(t *testing.T) {
-	in := decodeAmswapH(0x385cb5cc, 0x90000000)
+	in := decodeAmswapH(0x385cb5cc)
 
 	amswaph, ok := in.(AmswapH)
 	require.True(t, ok, "type = %T, want AmswapH", in)
 	require.Equal(t, "amswap.h $t0, $t1, $t2", amswaph.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), amswaph.Addr())
 	require.Equal(t, 4, amswaph.Len())
 	require.Equal(t, uint32(0x385cb5cc), ctorWord(t, amswaph))
 }

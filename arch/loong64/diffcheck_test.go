@@ -45,7 +45,7 @@ func TestDiffAgainstLLVM(t *testing.T) {
 
 		want := strings.Join(strings.Fields(strings.TrimSpace(out.String())), " ")
 		got := strings.Join(
-			strings.Fields(decodeOne(w, 0).ObjDump(disasm.DefaultViewCtx())),
+			strings.Fields(decodeOne(w).ObjDump(disasm.DefaultViewCtx())),
 			" ",
 		)
 		require.Equal(t, want, got, "%s (%#x)", e.name, w)

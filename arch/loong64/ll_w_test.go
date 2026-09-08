@@ -25,12 +25,11 @@ func TestLlWCtor(t *testing.T) {
 }
 
 func TestLlWDecodeEncode(t *testing.T) {
-	in := decodeLlW(0x200009ac, 0x90000000)
+	in := decodeLlW(0x200009ac)
 
 	llw, ok := in.(LlW)
 	require.True(t, ok, "type = %T, want LlW", in)
 	require.Equal(t, "ll.w $t0, $t1, 8", llw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), llw.Addr())
 	require.Equal(t, 4, llw.Len())
 	require.Equal(t, int64(8), llw.off.val)
 	require.Equal(t, uint32(0x200009ac), ctorWord(t, llw))

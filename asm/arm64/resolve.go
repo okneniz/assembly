@@ -10,11 +10,33 @@ package arm64
 
 import (
 	"errors"
+	"strings"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 )
+
+// absTargetSlot — the operand index of the pc-relative target of mnemonic
+// mnem (-1: none). The operand value (symbolic or numeric) is an absolute
+// address at parse time; resolveOps shifts it into a pc-relative byte
+// offset (the arch canon), renderInstr shifts it back for the self-verify
+// text. adr/adrp are NOT here: their symbolic target has its own
+// conversion above and a numeric operand is already an offset.
+func absTargetSlot(mnem string) int {
+	switch {
+	case mnem == "b" || mnem == "bl" || strings.HasPrefix(mnem, "b."):
+		return 0
+	case mnem == "cbz" || mnem == "cbnz":
+		return 1
+	case mnem == "tbz" || mnem == "tbnz":
+		return 2
+	case mnem == "ldr": // the literal form: ldr rt, label|#addr
+		return 1
+	}
+
+	return -1
+}
 
 // resolveOps evaluates the operand expression slots via ctx and builds
 // the evaluated arch.VOp operands.
@@ -54,12 +76,21 @@ func resolveOps(mnem string, ops []armOp, ctx ctx) ([]arch.VOp, error) {
 				return nil, err
 			}
 
+			// a pc-relative target (b/bl/b.cond/cbz/cbnz/tbz/tbnz, the
+			// ldr literal form): both a symbolic and a numeric operand
+			// are an absolute address; the arch canon stores the offset
+			// (verified against clang at a nonzero address)
+			if absTargetSlot(mnem) == i {
+				n -= int64(ctx.Addr)
+			}
+
 			out = append(out, arch.VOpImm(n, sym))
 		case armOpLit:
 			// the literal pool slot address (the reserved name PoolSelf);
 			// the slot size is the width of rt (ldr xN,=... is 8; wN is 4).
 			// The placeholder pass does not know the slot - the direct
-			// value suffices (the size is always 4).
+			// value suffices (the size is always 4). The value is the
+			// slot's absolute address; the arch canon stores the offset.
 			num := int64(0)
 			if addr, ok := ctx.Resolve(asm.PoolSelf); ok {
 				num = int64(addr)
@@ -67,6 +98,7 @@ func resolveOps(mnem string, ops []armOp, ctx ctx) ([]arch.VOp, error) {
 				num = v
 			}
 
+			num -= int64(ctx.Addr)
 			out = append(out, arch.VOpLit(num))
 		case armOpShift:
 			n, _, err := resolveSlot(op.expr, ctx)

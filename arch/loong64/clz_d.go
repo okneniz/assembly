@@ -22,9 +22,9 @@ func (Builder) ClzD(rd, rj Reg) Instr {
 	}
 }
 
-func decodeClzD(w uint32, addr uint64) Instr {
+func decodeClzD(w uint32) Instr {
 	return ClzD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i ClzD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("clz.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }
 
-func (i ClzD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i ClzD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["clz.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 

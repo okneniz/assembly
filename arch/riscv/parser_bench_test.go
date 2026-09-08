@@ -33,17 +33,17 @@ func benchCtorOf(in Instr) benchCtor {
 func benchWordFor(
 	rnd *mrnd.Rand,
 	match, mask uint32,
-	ctor func(word uint32, addr uint64) Instr,
+	ctor func(word uint32) Instr,
 ) uint32 {
-	ref := func(w uint32) benchCtor { return benchCtorOf(ctor(w, 0)) }
+	ref := func(w uint32) benchCtor { return benchCtorOf(ctor(w)) }
 
-	if benchCtorOf(decodeOne(match, 0)) == ref(match) {
+	if benchCtorOf(decodeOne(match)) == ref(match) {
 		return match
 	}
 
 	for range 32 {
 		w := match | (rnd.Uint32() &^ mask)
-		if benchCtorOf(decodeOne(w, 0)) == ref(w) {
+		if benchCtorOf(decodeOne(w)) == ref(w) {
 			return w
 		}
 	}
@@ -112,7 +112,7 @@ func BenchmarkParse(b *testing.B) {
 
 	start := time.Now()
 	for range b.N {
-		if _, err := Parse(0)(bytes.Buffer(data)); err != nil {
+		if _, err := Parse()(bytes.Buffer(data)); err != nil {
 			b.Fatal(err)
 		}
 	}

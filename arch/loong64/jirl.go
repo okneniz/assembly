@@ -26,9 +26,9 @@ func (Builder) Jirl(rd, rj Reg, off int64) Instr {
 	}
 }
 
-func decodeJirl(w uint32, addr uint64) Instr {
+func decodeJirl(w uint32) Instr {
 	return Jirl{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 16) << 2),
@@ -47,7 +47,7 @@ func (i Jirl) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("jirl %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }
 
-func (i Jirl) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Jirl) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "jirl offset")
 	if err != nil {
 		return 0, err

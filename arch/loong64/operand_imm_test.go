@@ -150,17 +150,17 @@ func TestBitsScatter(t *testing.T) {
 func TestBEncodeOutOfRange(t *testing.T) {
 	in := New().B(1 << 28)
 
-	_, err := in.Encode(errWriter{}, 0)
+	_, err := in.Encode(errWriter{})
 	require.ErrorContains(t, err, "does not fit")
 
 	in = New().B(2)
-	_, err = in.Encode(errWriter{}, 0)
+	_, err = in.Encode(errWriter{})
 	require.ErrorContains(t, err, "not word-aligned")
 }
 
 func TestBeqzEncodeOutOfRange(t *testing.T) {
 	in := New().Beqz(lreg(t, 13), 1<<23)
 
-	_, err := in.Encode(errWriter{}, 0)
+	_, err := in.Encode(errWriter{})
 	require.ErrorContains(t, err, "does not fit")
 }

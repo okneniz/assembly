@@ -26,9 +26,9 @@ func (Builder) BytepickD(rd, rj, rk Reg, sel UImm3) Instr {
 	}
 }
 
-func decodeBytepickD(w uint32, addr uint64) Instr {
+func decodeBytepickD(w uint32) Instr {
 	return BytepickD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -46,7 +46,7 @@ func (i BytepickD) ObjDump(_ disasm.ViewCtx) string {
 	)
 }
 
-func (i BytepickD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i BytepickD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["bytepick.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
 		scatterU(i.sel.val, 15, 3)

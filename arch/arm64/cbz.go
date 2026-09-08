@@ -11,38 +11,37 @@ import (
 type Cbz struct {
 	base
 
-	rt     string
-	target imm
+	rt  string
+	off imm // pc-relative byte offset
 }
 
-// Cbz — cbz rt, target: target — the absolute address of the branch
-// destination (the ±1MB imm19 range is checked at encode time, from pc).
+// Cbz — cbz rt, off: off — the pc-relative byte offset of the branch
+// destination (the ±1MB imm19 range is checked at encode time).
 // rt — x/w register (register 31 reads as zr — use XZR/WZR).
-func (Builder) Cbz(rt Reg, target int64) (Instr, error) {
+func (Builder) Cbz(rt Reg, off int64) (Instr, error) {
 	if err := requireClass(rt, "Cbz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
 		classX, classW, classXZR, classWZR); err != nil {
 		return nil, err
 	}
 
-	return Cbz{rt: rt.name(), target: immNum(target)}, nil
+	return Cbz{rt: rt.name(), off: immNum(off)}, nil
 }
 
-func decodeCbz(w uint32, addr uint64) Instr {
+func decodeCbz(w uint32) Instr {
 	return Cbz{
-		base:   newBase(addr, w),
-		rt:     armRegName(w&0x1f, w>>31&1 == 1),
-		target: immNum(int64(addr) + signExtendN(w>>5&0x7ffff, 19)*4),
+		base: newBase(w),
+		rt:   armRegName(w&0x1f, w>>31&1 == 1),
+		off:  immNum(signExtendN(w>>5&0x7ffff, 19) * 4),
 	}
 }
 
-func (i Cbz) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cbz %s, %s", i.rt, i.target.textHex())
+func (i Cbz) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("cbz %s, %s", i.rt, target.textHex())
 }
 
-func (i Cbz) Encode(w io.Writer, pc uint64) (int64, error) {
-	target := i.target.val
-
-	bits, err := brBits(target, int64(pc), 19)
+func (i Cbz) Encode(w io.Writer) (int64, error) {
+	bits, err := offBits(i.off.val, 19)
 	if err != nil {
 		return 0, fmt.Errorf("cbz: %w", err)
 	}

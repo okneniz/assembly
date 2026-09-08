@@ -22,12 +22,11 @@ func TestStleHCtor(t *testing.T) {
 }
 
 func TestStleHDecodeEncode(t *testing.T) {
-	in := decodeStleH(0x387eb9ac, 0x90000000)
+	in := decodeStleH(0x387eb9ac)
 
 	x, ok := in.(StleH)
 	require.True(t, ok, "type = %T, want StleH", in)
 	require.Equal(t, "stle.h $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x387eb9ac), ctorWord(t, x))
 }

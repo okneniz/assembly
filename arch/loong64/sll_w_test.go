@@ -22,11 +22,10 @@ func TestSllWCtor(t *testing.T) {
 }
 
 func TestSllWDecodeEncode(t *testing.T) {
-	in := decodeOne(0x001739ac, 0x90000000)
+	in := decodeOne(0x001739ac)
 
 	x, ok := in.(SllW)
 	require.True(t, ok, "type = %T, want SllW", in)
 	require.Equal(t, "sll.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, uint32(0x001739ac), ctorWord(t, x))
 }

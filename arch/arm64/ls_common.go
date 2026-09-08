@@ -3,6 +3,8 @@ package arm64
 import (
 	"fmt"
 	"io"
+
+	"github.com/okneniz/assembly/disasm"
 )
 
 // memKind — the kind of load/store immediate addressing.
@@ -23,7 +25,7 @@ type lsBase struct {
 	rn       string
 	kind     memKind
 	off      int64  // byte offset (imm12 already multiplied by the scale)
-	tgt      uint64 // absolute address (literal)
+	lit      int64  // pc-relative byte offset (literal)
 	enc      uint32 // base word of the matched entry
 	rm       string // index register (memRegOff)
 	option   string // extension: lsl/uxtw/sxtw/sxtx ("" — none)
@@ -35,7 +37,7 @@ func newLsBase(
 	rn string,
 	kind memKind,
 	off int64,
-	tgt uint64,
+	lit int64,
 	enc uint32,
 	rm string,
 	option string,
@@ -46,7 +48,7 @@ func newLsBase(
 		rn:       rn,
 		kind:     kind,
 		off:      off,
-		tgt:      tgt,
+		lit:      lit,
 		enc:      enc,
 		rm:       rm,
 		option:   option,
@@ -54,8 +56,9 @@ func newLsBase(
 	}
 }
 
-// lsText — operands by addressing kind (objdump style).
-func (m lsBase) lsText() string {
+// lsText — operands by addressing kind (objdump style; the literal
+// target prints absolute — from the view-context address).
+func (m lsBase) lsText(ctx disasm.ViewCtx) string {
 	switch m.kind {
 	case memImm:
 		if m.off == 0 {
@@ -87,7 +90,7 @@ func (m lsBase) lsText() string {
 		// literal: llvm prints the absolute for near targets (symbol/Mach-O
 		// location) and #offset for far ones — the heuristic is not
 		// reproducible without section info; we print the absolute
-		return fmt.Sprintf("0x%x", m.tgt)
+		return fmt.Sprintf("0x%x", uint64(int64(ctx.Addr())+m.lit))
 	default:
 		// all memKind values are listed above; defensive branch
 		return fmt.Sprintf("[%s]", m.rn)
@@ -95,8 +98,8 @@ func (m lsBase) lsText() string {
 }
 
 // lsWrite — the encoding word by addressing kind (computed form: the
-// literal target is already a number in tgt; pc — the instruction address).
-func (m lsBase) lsWrite(w io.Writer, pc uint64, mnem string) (int64, error) {
+// literal offset is already a number in lit).
+func (m lsBase) lsWrite(w io.Writer, mnem string) (int64, error) {
 	rt, err := armRegNum(m.rt)
 	if err != nil {
 		return 0, fmt.Errorf("%s: %w", mnem, err)
@@ -148,7 +151,7 @@ func (m lsBase) lsWrite(w io.Writer, pc uint64, mnem string) (int64, error) {
 
 		return writeWord(w, m.enc|rt|rn<<5|sh<<12|opt<<13|rm<<16)
 	case memLiteral: // literal
-		rel := int64(m.tgt) - int64(pc)
+		rel := m.lit
 		if rel%4 != 0 || rel < -(1<<20) || rel >= 1<<20 {
 			return 0, fmt.Errorf("%s: literal out of range", mnem)
 		}

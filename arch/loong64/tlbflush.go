@@ -16,9 +16,9 @@ func (Builder) Tlbflush() Instr {
 	return Tlbflush{}
 }
 
-func decodeTlbflush(w uint32, addr uint64) Instr {
+func decodeTlbflush(w uint32) Instr {
 	return Tlbflush{
-		base: newBase(addr, w),
+		base: newBase(w),
 	}
 }
 
@@ -26,6 +26,6 @@ func (i Tlbflush) ObjDump(_ disasm.ViewCtx) string {
 	return "tlbflush"
 }
 
-func (i Tlbflush) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Tlbflush) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, loongEncodings["tlbflush"][0])
 }

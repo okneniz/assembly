@@ -20,9 +20,9 @@ type systemInstr struct {
 }
 
 // cSystem - compressed forms (c.ebreak): base - halfword, length 2.
-func cSystem(h uint32, addr uint64, name, group string) systemInstr {
+func cSystem(h uint32, name, group string) systemInstr {
 	return systemInstr{
-		base:  newHalfBase(h, addr),
+		base:  newHalfBase(h),
 		name:  name,
 		group: group,
 	}
@@ -32,14 +32,14 @@ func (i systemInstr) ObjDump(_ disasm.ViewCtx) string {
 	return i.name
 }
 
-func (i systemInstr) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i systemInstr) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings[i.name][0])
 }
 
-func decodeSystem(name, group string) func(uint32, uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSystem(name, group string) func(uint32) Instr {
+	return func(w uint32) Instr {
 		return systemInstr{
-			base:  newBase(addr, w),
+			base:  newBase(w),
 			name:  name,
 			group: group,
 		}
@@ -72,9 +72,9 @@ func (Builder) Fence(fm uint8) Instr {
 	}
 }
 
-func decodeFence(w uint32, addr uint64) Instr {
+func decodeFence(w uint32) Instr {
 	return Fence{
-		base: newBase(addr, w),
+		base: newBase(w),
 		fm:   immNum(int64(w >> 20 & 0xf)),
 	}
 }
@@ -87,7 +87,7 @@ func (i Fence) ObjDump(_ disasm.ViewCtx) string {
 	return "fence " + i.fm.text()
 }
 
-func (i Fence) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Fence) Encode(w io.Writer, o EncOpts) (int64, error) {
 	fm := i.fm.val
 
 	if fm < 0 || fm > 0xf {

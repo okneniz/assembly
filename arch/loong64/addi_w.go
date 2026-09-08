@@ -24,9 +24,9 @@ func (Builder) AddiW(rd, rj Reg, v Imm12) Instr {
 	}
 }
 
-func decodeAddiW(w uint32, addr uint64) Instr {
+func decodeAddiW(w uint32) Instr {
 	return AddiW{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		imm:  immNum(sField(w, 10, 12)),
@@ -37,7 +37,7 @@ func (i AddiW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("addi.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }
 
-func (i AddiW) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AddiW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["addi.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.imm.val, 10, 12)
 

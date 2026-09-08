@@ -222,7 +222,7 @@ func main() {
 func runDisasm(data []byte, arch string, base uint64) error {
 	switch arch {
 	case "arm64", "aarch64":
-		instrs, err := arm64.Parse(base)(bytes.Buffer(data))
+		instrs, err := arm64.Parse()(bytes.Buffer(data))
 		if err != nil {
 			return err
 		}
@@ -235,7 +235,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			disasm.NewOptions(text.CodeBytes),
 		)
 	case "riscv64", "riscv":
-		instrs, err := riscv.Parse(base)(bytes.Buffer(data))
+		instrs, err := riscv.Parse()(bytes.Buffer(data))
 		if err != nil {
 			return err
 		}
@@ -248,7 +248,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			disasm.NewOptions(text.CodeWord),
 		)
 	case "loong64", "loongarch64":
-		instrs, err := loong64.Parse(base)(bytes.Buffer(data))
+		instrs, err := loong64.Parse()(bytes.Buffer(data))
 		if err != nil {
 			return err
 		}

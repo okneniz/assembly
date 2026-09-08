@@ -24,9 +24,9 @@ func (Builder) Csrwr(rd Reg, csr UImm14) Instr {
 	}
 }
 
-func decodeCsrwr(w uint32, addr uint64) Instr {
+func decodeCsrwr(w uint32) Instr {
 	return Csrwr{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		csr:  immNum(int64(uField(w, 10, 14))),
 	}
@@ -36,7 +36,7 @@ func (i Csrwr) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrwr %s, %s", laRegName(i.rd), i.csr.text())
 }
 
-func (i Csrwr) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i Csrwr) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["csrwr"][0] |
 		uint32(i.rd) | scatterU(i.csr.val, 10, 14)
 

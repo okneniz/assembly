@@ -23,14 +23,13 @@ func TestBstrinsWCtor(t *testing.T) {
 }
 
 func TestBstrinsWDecodeEncode(t *testing.T) {
-	in := decodeBstrinsW(0x00650dac, 0x90000000)
+	in := decodeBstrinsW(0x00650dac)
 
 	x, ok := in.(BstrinsW)
 	require.True(t, ok, "type = %T, want BstrinsW", in)
 	require.Equal(t, int64(5), x.msb.val)
 	require.Equal(t, int64(3), x.lsb.val)
 	require.Equal(t, "bstrins.w $t0, $t1, 5, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x00650dac), ctorWord(t, x))
 }

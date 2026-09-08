@@ -16,39 +16,39 @@ func TestTbzBuild(t *testing.T) {
 	}{
 		{
 			"tbz w0,#5,0x1000",
-			buildTbz(t, wreg(t, 0), 5, 0x1000),
+			buildTbz(t, wreg(t, 0), 5, 0),
 			0x36280000,
 		},
 		{
 			"tbz w1,#0,0x1010",
-			buildTbz(t, wreg(t, 1), 0, 0x1010),
+			buildTbz(t, wreg(t, 1), 0, 16),
 			0x36000081,
 		},
 		{
 			"tbz w0,#31,0x8ffc",
-			buildTbz(t, wreg(t, 0), 31, 0x8ffc),
+			buildTbz(t, wreg(t, 0), 31, 32764),
 			0x36fbffe0,
 		},
 		{
 			"tbz x2,#32,0x1000",
-			buildTbz(t, xreg(t, 2), 32, 0x1000),
+			buildTbz(t, xreg(t, 2), 32, 0),
 			0xb6000002,
 		},
 		{
 			"tbz w0,#1,0xf00",
-			buildTbz(t, wreg(t, 0), 1, 0xf00),
+			buildTbz(t, wreg(t, 0), 1, -256),
 			0x360ff800,
 		},
 	}
 	for _, c := range cases {
 		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word, 0x1000)
+		back := decodeOne(c.word)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := buildTbz(t, wreg(t, 0), 5, 0x1000)
+	in := buildTbz(t, wreg(t, 0), 5, 0)
 	_, ok := in.(Tbz)
 	require.True(t, ok, "type = %T, want Tbz", in)
 	for _, c := range []struct {

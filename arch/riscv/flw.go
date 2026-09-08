@@ -25,9 +25,9 @@ func (Builder) Flw(rd, rs1 Reg, off Off) Instr {
 	}
 }
 
-func decodeFlw(w uint32, addr uint64) Instr {
+func decodeFlw(w uint32) Instr {
 	return Flw{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvFRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		off:  immNum(iImm(w)),
@@ -38,7 +38,7 @@ func (i Flw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("flw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
-func (i Flw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Flw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
 	bits, err := encI(off)

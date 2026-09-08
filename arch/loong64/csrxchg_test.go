@@ -26,12 +26,11 @@ func TestCsrxchgCtor(t *testing.T) {
 
 func TestCsrxchgDecodeEncode(t *testing.T) {
 	// llvm-mc-verified: csrxchg $t0, $t1, 5.
-	in := decodeCsrxchg(0x040015ac, 0x90000000)
+	in := decodeCsrxchg(0x040015ac)
 
 	x, ok := in.(Csrxchg)
 	require.True(t, ok, "type = %T, want Csrxchg", in)
 	require.Equal(t, "csrxchg $t0, $t1, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, uint64(0x90000000), x.Addr())
 	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x040015ac), ctorWord(t, x))
 }

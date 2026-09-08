@@ -23,9 +23,9 @@ func (Builder) AddD(rd, rj, rk Reg) Instr {
 	}
 }
 
-func decodeAddD(w uint32, addr uint64) Instr {
+func decodeAddD(w uint32) Instr {
 	return AddD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
@@ -36,7 +36,7 @@ func (i AddD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("add.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i AddD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AddD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["add.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 

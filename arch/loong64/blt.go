@@ -26,9 +26,9 @@ func (Builder) Blt(rj, rd Reg, off int64) Instr {
 	}
 }
 
-func decodeBlt(w uint32, addr uint64) Instr {
+func decodeBlt(w uint32) Instr {
 	return Blt{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   uint8(w & 0x1f),
 		rj:   uint8(w >> 5 & 0x1f),
 		off:  immNum(sField(w, 10, 16) << 2),
@@ -47,7 +47,7 @@ func (i Blt) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("blt %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }
 
-func (i Blt) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i Blt) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "blt offset")
 	if err != nil {
 		return 0, err

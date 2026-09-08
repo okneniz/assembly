@@ -22,9 +22,9 @@ func (Builder) AsrtleD(rj, rk Reg) Instr {
 	}
 }
 
-func decodeAsrtleD(w uint32, addr uint64) Instr {
+func decodeAsrtleD(w uint32) Instr {
 	return AsrtleD{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rj:   uint8(w >> 5 & 0x1f),
 		rk:   uint8(w >> 10 & 0x1f),
 	}
@@ -34,7 +34,7 @@ func (i AsrtleD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("asrtle.d %s, %s", laRegName(i.rj), laRegName(i.rk))
 }
 
-func (i AsrtleD) Encode(w io.Writer, _ uint64) (int64, error) {
+func (i AsrtleD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["asrtle.d"][0] |
 		uint32(i.rj)<<5 | uint32(i.rk)<<10
 

@@ -24,15 +24,15 @@ type SimdWiden struct {
 	rmN      uint32
 }
 
-func decodeSimdWidenOf(op string, enc uint32) func(w uint32, addr uint64) Instr {
-	return func(w uint32, addr uint64) Instr {
+func decodeSimdWidenOf(op string, enc uint32) func(w uint32) Instr {
+	return func(w uint32) Instr {
 		name := op
 		if w>>30&1 == 1 {
 			name += "2"
 		}
 
 		return SimdWiden{
-			base: newBase(addr, w),
+			base: newBase(w),
 			op:   name,
 			q:    w >> 30 & 1,
 			size: w >> 22 & 3,
@@ -52,6 +52,6 @@ func (i SimdWiden) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("%s.%s %s, %s, %s", i.op, arr, i.rd, i.rn, i.rm)
 }
 
-func (i SimdWiden) Encode(w io.Writer, pc uint64) (int64, error) {
+func (i SimdWiden) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.enc|i.q<<30|i.size<<22|i.rmN<<16|i.rnN<<5|i.rdN)
 }

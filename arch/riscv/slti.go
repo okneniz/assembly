@@ -24,9 +24,9 @@ func (Builder) Slti(rd, rs1 Reg, imm Imm12) Instr {
 	}
 }
 
-func decodeSlti(w uint32, addr uint64) Instr {
+func decodeSlti(w uint32) Instr {
 	return Slti{
-		base: newBase(addr, w),
+		base: newBase(w),
 		rd:   rvRegNames[w>>7&0x1f],
 		rs1:  rvRegNames[w>>15&0x1f],
 		imm:  immNum(iImm(w)),
@@ -37,7 +37,7 @@ func (i Slti) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("slti %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
-func (i Slti) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
+func (i Slti) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
 	bits, err := encI(v)
