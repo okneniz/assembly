@@ -1,7 +1,6 @@
 package loong64
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -45,23 +44,4 @@ func TestAddWEncodeError(t *testing.T) {
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "write failed")
-}
-
-func TestAddWMarshalJSON(t *testing.T) {
-	in := New().AddW(lreg(t, 12), lreg(t, 13), lreg(t, 14))
-
-	b, err := in.MarshalJSON()
-	require.NoError(t, err)
-
-	var dto map[string]any
-	require.NoError(t, json.Unmarshal(b, &dto))
-	require.Equal(t, "add.w", dto["mnemonic"])
-	require.Equal(t, "add.w $t0, $t1, $t2", dto["operands"])
-	require.Equal(t, "LA64", dto["group"])
-
-	fields, ok := dto["fields"].(map[string]any)
-	require.True(t, ok)
-	require.Equal(t, "$t0", fields["rd"])
-	require.Equal(t, "$t1", fields["rj"])
-	require.Equal(t, "$t2", fields["rk"])
 }

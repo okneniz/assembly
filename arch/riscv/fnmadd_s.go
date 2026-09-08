@@ -54,11 +54,6 @@ func (i FnmaddS) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20|fregBits(i.rs3)<<27)
 }
 
-func (i FnmaddS) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO("fnmadd.s", i.ObjDump(disasm.DefaultViewCtx()), "RV32F",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2, "rs3": i.rs3})
-}
-
 func newFnmaddS(ops []Op) (Instr, error) {
 	regs, err := wantFP(ops, "fnmadd.s", 4)
 	if err != nil {

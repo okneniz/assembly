@@ -1,7 +1,6 @@
 package loong64
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -146,14 +145,7 @@ func TestTemplatesJSONEncodeError(t *testing.T) {
 		{"b", New().B(8)},
 		{"jirl", New().Jirl(lreg(t, 12), lreg(t, 13), 4)},
 	} {
-		b, err := tc.in.MarshalJSON()
-		require.NoError(t, err, tc.mnem)
-
-		var dto map[string]any
-		require.NoError(t, json.Unmarshal(b, &dto), tc.mnem)
-		require.Equal(t, tc.mnem, dto["mnemonic"], tc.mnem)
-
-		_, err = tc.in.Encode(errWriter{}, 0)
+		_, err := tc.in.Encode(errWriter{}, 0)
 		require.ErrorContains(t, err, "write failed", tc.mnem)
 	}
 }

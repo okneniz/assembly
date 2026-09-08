@@ -57,7 +57,6 @@ const (
 var matrixPassLines = []string{
 	"MATRIX asm: PASS",
 	"MATRIX diff: PASS",
-	"MATRIX server: PASS",
 	"MATRIX FINAL: PASS",
 }
 
@@ -66,7 +65,6 @@ var matrixPassLines = []string{
 var matrixCommands = []string{
 	"assembly",
 	"assembly-diff",
-	"assembly-server",
 }
 
 // kernelSrc - a vmlinuz extracted once from a cached tarball into the

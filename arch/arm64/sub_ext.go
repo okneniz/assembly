@@ -66,18 +66,3 @@ func (i SubExt) ObjDump(_ disasm.ViewCtx) string {
 func (i SubExt) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.extWrite(w, SubExtX, SubExtW, "sub")
 }
-
-func (i SubExt) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"sub",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Data processing - register",
-		map[string]any{
-			"Rd":     i.rdNum,
-			"Rn":     i.rnNum,
-			"Rm":     i.rmNum,
-			"option": i.option,
-			"imm3":   i.imm3,
-		},
-	)
-}

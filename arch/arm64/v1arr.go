@@ -40,12 +40,3 @@ func (i V1arr) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, i.enc|rd|rn<<5)
 }
-
-func (i V1arr) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		i.op,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn},
-	)
-}

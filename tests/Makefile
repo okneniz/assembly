@@ -96,7 +96,7 @@ file-fixtures:
 # --- round-trip final test: prebuilt binaries → disasm → asm → bytes ---
 
 # Paths, not names: assembly-diff is a test utility living in tests/cmd.
-RT_CMDS := cmd/assembly tests/cmd/assembly-diff cmd/assembly-server
+RT_CMDS := cmd/assembly tests/cmd/assembly-diff
 RT_ARCHES := arm64 riscv64 loong64
 
 # rt-cli cross-builds the final-test corpus: our own CLIs for linux/arm64 and

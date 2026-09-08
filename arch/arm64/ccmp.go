@@ -79,8 +79,3 @@ func (i Ccmp) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, ccmpX|i.immVal|rn<<5|c<<12|rm<<16)
 }
-
-func (i Ccmp) MarshalJSON() ([]byte, error) {
-	return i.marshal("ccmp", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rn": i.rn, "Rm": i.rm, "imm": i.immVal, "cond": i.cond})
-}

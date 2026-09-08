@@ -40,10 +40,6 @@ func (i Tail) Encode(w io.Writer) (int64, error) {
 	return arch.WriteWord(w, arch.EncodingWord("jal")|bits)
 }
 
-func (i Tail) MarshalJSON() ([]byte, error) {
-	return arch.MarshalDTO(arch.Base{}, "tail", i.ObjDump(disasm.DefaultViewCtx()), "Pseudo", nil)
-}
-
 // resolveTail is the evaluator wired to parsing: tail sym.
 func resolveTail(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
 	if len(ops) != 1 {

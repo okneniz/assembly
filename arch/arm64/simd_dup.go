@@ -119,12 +119,3 @@ func (i DupElem) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i DupElem) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"dup",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"SIMD copy",
-		map[string]any{"op": i.op, "size": i.size},
-	)
-}

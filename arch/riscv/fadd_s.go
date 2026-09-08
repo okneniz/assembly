@@ -52,15 +52,6 @@ func (i FaddS) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20)
 }
 
-func (i FaddS) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"fadd.s",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32F",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newFaddS(ops []Op) (Instr, error) {
 	regs, err := wantFP(ops, "fadd.s", 3)
 	if err != nil {

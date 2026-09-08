@@ -42,15 +42,6 @@ func (i Mulw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Mulw) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"mulw",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV64M",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newMulw(ops []Op) (Instr, error) {
 	rd, rs1, rs2, err := wantR3(ops, "mulw")
 	if err != nil {

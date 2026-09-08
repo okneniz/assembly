@@ -42,12 +42,3 @@ func (i MulhDu) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i MulhDu) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"mulh.du",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj), "rk": laRegName(i.rk)},
-	)
-}

@@ -53,17 +53,3 @@ func (i BstrinsD) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i BstrinsD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"bstrins.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{
-			"rd":  laRegName(i.rd),
-			"rj":  laRegName(i.rj),
-			"msb": i.msb.val,
-			"lsb": i.lsb.val,
-		},
-	)
-}

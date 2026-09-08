@@ -37,8 +37,3 @@ func (i Tbl) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, tblEnc|rd|rn<<5|rm<<16)
 }
-
-func (i Tbl) MarshalJSON() ([]byte, error) {
-	return i.marshal("tbl", i.ObjDump(disasm.DefaultViewCtx()), "ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm})
-}

@@ -391,7 +391,7 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 }
 
 // TestPropertyDecodeRobustness - an arbitrary word does not crash the
-// decoder: Parse + ObjDump + MarshalJSON without panics, one instruction of
+// decoder: Parse + ObjDump without panics, one instruction of
 // length 4.
 func TestPropertyDecodeRobustness(t *testing.T) {
 	rnd := seedRnd(t)
@@ -416,9 +416,7 @@ func TestPropertyDecodeRobustness(t *testing.T) {
 			for _, in := range ins {
 				// render errors are acceptable (garbage words) - we only
 				// check that no panic occurs
-				odErr := in.ObjDump(disasm.DefaultViewCtx())
-				_, mjErr := in.MarshalJSON()
-				_, _ = odErr, mjErr
+				_ = in.ObjDump(disasm.DefaultViewCtx())
 			}
 
 			ok = len(ins) == 1 && ins[0].Len() == 4

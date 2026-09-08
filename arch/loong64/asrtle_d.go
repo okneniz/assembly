@@ -40,12 +40,3 @@ func (i AsrtleD) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i AsrtleD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"asrtle.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rj": laRegName(i.rj), "rk": laRegName(i.rk)},
-	)
-}

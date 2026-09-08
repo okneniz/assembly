@@ -77,15 +77,6 @@ func compressLui(rd string, v int64) (uint16, bool) {
 	return 0x6001 | r<<7 | ciBits(sv), true
 }
 
-func (i Lui) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"lui",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd},
-	)
-}
-
 // newLui - constructor from parsing: lui rd, imm.
 func newLui(ops []Op) (Instr, error) {
 	if len(ops) != 2 {

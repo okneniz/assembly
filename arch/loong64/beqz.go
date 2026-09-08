@@ -47,12 +47,3 @@ func (i Beqz) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Beqz) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"beqz",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rj": laRegName(i.rj), "off": i.off.val},
-	)
-}

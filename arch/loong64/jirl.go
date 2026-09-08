@@ -58,12 +58,3 @@ func (i Jirl) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Jirl) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"jirl",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj), "off": i.off.val},
-	)
-}

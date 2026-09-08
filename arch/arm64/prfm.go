@@ -54,14 +54,5 @@ func (i Prfm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, 0xF9800000|n<<5)
 }
 
-func (i Prfm) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"prfm",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rn": i.rn},
-	)
-}
-
 // SkipVerify — pldl1keep is a keyword, not an address.
 func (i Prfm) SkipVerify() {}

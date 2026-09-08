@@ -50,15 +50,6 @@ func (i Slliw) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	)
 }
 
-func (i Slliw) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"slliw",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV64I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newSlliw(ops []Op) (Instr, error) {
 	rd, rs1, m, err := wantI3(ops, "slliw")
 	if err != nil {

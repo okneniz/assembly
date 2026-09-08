@@ -36,12 +36,3 @@ func (i Dbcl) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Dbcl) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"dbcl",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"code": i.code.val},
-	)
-}

@@ -58,10 +58,6 @@ func (i Call) Encode(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-func (i Call) MarshalJSON() ([]byte, error) {
-	return arch.MarshalDTO(arch.Base{}, "call", i.ObjDump(disasm.DefaultViewCtx()), "Pseudo", nil)
-}
-
 // resolveCall is the evaluator wired to parsing: call sym.
 func resolveCall(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
 	if len(ops) != 1 {

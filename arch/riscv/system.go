@@ -36,10 +36,6 @@ func (i systemInstr) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings[i.name][0])
 }
 
-func (i systemInstr) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(i.name, i.ObjDump(disasm.DefaultViewCtx()), i.group, nil)
-}
-
 func decodeSystem(name, group string) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		return systemInstr{
@@ -99,10 +95,6 @@ func (i Fence) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, riscvEncodings["fence"][0]|uint32(fm)<<20)
-}
-
-func (i Fence) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO("fence", i.ObjDump(disasm.DefaultViewCtx()), "RV32I", nil)
 }
 
 func newFence(ops []Op) (Instr, error) {

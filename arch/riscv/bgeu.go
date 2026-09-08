@@ -50,15 +50,6 @@ func (i Bgeu) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Bgeu) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"bgeu",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newBgeu(ops []Op) (Instr, error) {
 	rs1, rs2, t, err := wantR2T(ops, "bgeu")
 	if err != nil {

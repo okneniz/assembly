@@ -91,8 +91,3 @@ func (i Ldpsw) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, ldpswEnc|rt|rn<<5|rt2<<10|uint32(i.off>>2&0x7f)<<15)
 }
-
-func (i Ldpsw) MarshalJSON() ([]byte, error) {
-	return i.marshal("ldpsw", i.ObjDump(disasm.DefaultViewCtx()), "Load/Store",
-		map[string]any{"Rt": i.rt, "Rt2": i.rt2, "Rn": i.rn})
-}

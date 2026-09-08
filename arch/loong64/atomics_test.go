@@ -1,7 +1,6 @@
 package loong64
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -82,15 +81,7 @@ func TestAtomicsJSONEncodeError(t *testing.T) {
 	}
 
 	for _, f := range family {
-		b, err := f.in.MarshalJSON()
-		require.NoError(t, err, f.mnem)
-
-		var dto map[string]any
-		require.NoError(t, json.Unmarshal(b, &dto), f.mnem)
-		require.Equal(t, f.mnem, dto["mnemonic"], f.mnem)
-		require.Equal(t, "LA64", dto["group"], f.mnem)
-
-		_, err = f.in.Encode(errWriter{}, 0)
+		_, err := f.in.Encode(errWriter{}, 0)
 		require.ErrorContains(t, err, "write failed", f.mnem)
 	}
 }

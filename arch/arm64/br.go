@@ -51,7 +51,3 @@ func (i Br) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, brMatch|num<<5)
 }
-
-func (i Br) MarshalJSON() ([]byte, error) {
-	return i.marshal("br", i.ObjDump(disasm.DefaultViewCtx()), "Branch", map[string]any{"Rn": i.rn})
-}

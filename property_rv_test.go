@@ -432,9 +432,7 @@ func TestPropertyRiscvDecodeRobustness(t *testing.T) {
 			for _, in := range ins {
 				// render errors are acceptable (garbage words) - we only
 				// check that no panic occurs
-				odErr := in.ObjDump(disasm.DefaultViewCtx())
-				_, mjErr := in.MarshalJSON()
-				_, _ = odErr, mjErr
+				_ = in.ObjDump(disasm.DefaultViewCtx())
 				if n := in.Len(); n != 2 && n != 4 {
 					t.Logf("word %#08x: Len = %d", w, n)
 					ok = false

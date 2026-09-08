@@ -42,15 +42,6 @@ func (i AmomaxW) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
 }
 
-func (i AmomaxW) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"amomax.w",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32A",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newAmomaxW(ops []Op) (Instr, error) {
 	if len(ops) != 3 {
 		return nil, errors.New("amomax.w: want rd, rs2, (rs1)")

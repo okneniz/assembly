@@ -64,8 +64,3 @@ func (i Msub) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return msubWrite(w, match, i.Madd)
 }
-
-func (i Msub) MarshalJSON() ([]byte, error) {
-	return i.marshal("msub", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "Ra": i.ra})
-}

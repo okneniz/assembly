@@ -112,11 +112,6 @@ func (i SubShift) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func (i SubShift) MarshalJSON() ([]byte, error) {
-	return i.marshal("sub", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - register",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "imm6": i.imm6})
-}
-
 func decodeSubShift(w uint32, addr uint64) Instr {
 	return SubShift{
 		base:  newBase(addr, w),

@@ -44,8 +44,3 @@ func (i B) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, bMatch|bits)
 }
-
-func (i B) MarshalJSON() ([]byte, error) {
-	return i.marshal("b", i.ObjDump(disasm.DefaultViewCtx()), "Branch",
-		map[string]any{"imm26": i.target.val - int64(i.addr)})
-}

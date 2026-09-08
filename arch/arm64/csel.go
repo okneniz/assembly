@@ -84,11 +84,6 @@ func (i Csel) Encode(w io.Writer, pc uint64) (int64, error) {
 	return cselWrite(w, i, cselX, cselW, "csel")
 }
 
-func (i Csel) MarshalJSON() ([]byte, error) {
-	return i.marshal("csel", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "cond": i.cond})
-}
-
 // cselWrite — the common encoding skeleton of the csel family.
 func cselWrite(w io.Writer, i Csel, matchX, matchW uint32, name string) (int64, error) {
 	match, err := sfMatch(i.rd, matchX, matchW)

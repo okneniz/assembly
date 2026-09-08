@@ -40,12 +40,3 @@ func (i IocsrrdD) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i IocsrrdD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"iocsrrd.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj)},
-	)
-}

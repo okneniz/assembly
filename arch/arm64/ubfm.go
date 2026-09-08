@@ -89,8 +89,3 @@ func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 func (i Ubfm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
-
-func (i Ubfm) MarshalJSON() ([]byte, error) {
-	return i.marshal("ubfm", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - immediate",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "immr": i.immr, "imms": i.imms})
-}

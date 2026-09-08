@@ -11,9 +11,6 @@ import (
 	"io"
 )
 
-// Base - the instruction bookkeeping record (for MarshalDTO of pseudo structures).
-type Base = base
-
 // BuildInstr builds a computed instruction from a mnemonic and operands
 // (asmCtors lookup + constructor). Errors - in encoding-path form.
 func BuildInstr(mnem string, ops []Op) (Instr, error) {
@@ -66,11 +63,6 @@ func WriteWord(w io.Writer, word uint32) (int64, error) {
 }
 func WriteHalf(w io.Writer, h uint16) (int64, error) {
 	return writeHalf(w, h)
-}
-
-// MarshalDTO - the instruction JSON skeleton (as for real structures).
-func MarshalDTO(b Base, mnem, full, group string, fields map[string]any) ([]byte, error) {
-	return b.marshalDTO(mnem, full, group, fields)
 }
 
 // Mnemonics - the mnemonics of the decode table (the assembler grammar

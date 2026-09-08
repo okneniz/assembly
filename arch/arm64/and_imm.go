@@ -71,8 +71,3 @@ func (i AndImm) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
 }
-
-func (i AndImm) MarshalJSON() ([]byte, error) {
-	return i.marshal("and", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - immediate",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "immr": i.immr, "imms": i.imms})
-}

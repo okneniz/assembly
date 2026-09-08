@@ -44,12 +44,3 @@ func (i Lddir) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Lddir) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"lddir",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj), "imm": i.imm.val},
-	)
-}

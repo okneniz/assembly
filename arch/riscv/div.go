@@ -42,15 +42,6 @@ func (i Div) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Div) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"div",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32M",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newDiv(ops []Op) (Instr, error) {
 	rd, rs1, rs2, err := wantR3(ops, "div")
 	if err != nil {

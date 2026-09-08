@@ -29,12 +29,3 @@ func (i Ertn) ObjDump(_ disasm.ViewCtx) string {
 func (i Ertn) Encode(w io.Writer, _ uint64) (int64, error) {
 	return writeWord(w, loongEncodings["ertn"][0])
 }
-
-func (i Ertn) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"ertn",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		nil,
-	)
-}

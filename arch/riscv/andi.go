@@ -70,15 +70,6 @@ func (i Andi) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Andi) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"andi",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newAndi(ops []Op) (Instr, error) {
 	rd, rs1, m, err := wantI3(ops, "andi")
 	if err != nil {

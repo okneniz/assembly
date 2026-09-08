@@ -132,8 +132,3 @@ func (i SimdCopy) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, i.enc|i.q<<30|0xC00|opBits<<12|imm5<<16|i.gprNum<<5|i.vdNum)
 }
-
-func (i SimdCopy) MarshalJSON() ([]byte, error) {
-	return i.marshal(i.op, i.ObjDump(disasm.DefaultViewCtx()), "ASIMD",
-		map[string]any{"Vd": i.vd, "R": i.gpr, "imm5": uint32(1)<<i.size | i.idx<<(i.size+1)})
-}

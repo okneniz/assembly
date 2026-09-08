@@ -2,27 +2,23 @@ package loong64
 
 import (
 	"encoding/binary"
-	"encoding/json"
-	"fmt"
 	"io"
 	"strconv"
 
 	"github.com/okneniz/assembly/disasm"
-	"github.com/okneniz/assembly/text"
 )
 
-// Name - the architecture as consumers see it (test/diff/server).
+// Name - the architecture as consumers see it (test/diff).
 const Name = "LOONG64"
 
 // Instr - a LoongArch instruction: it represents itself - encodes itself
 // into bytes (Encode, the computed form: operand values are already
 // numbers, the environment is just the address), into text
-// (disasm.ObjDump, for the disassembler) and into JSON (json.Marshaler,
-// for the server). There is NO common type with other architectures; each
-// instruction is its own structure (AddW, AddiW, Beq, ...).
+// (disasm.ObjDump, for the disassembler). There is NO common type with
+// other architectures; each instruction is its own structure
+// (AddW, AddiW, Beq, ...).
 type Instr interface {
 	disasm.ObjDump
-	json.Marshaler
 	Addr() uint64
 
 	// Encode encodes the computed instruction: pc is the absolute address
@@ -33,7 +29,7 @@ type Instr interface {
 
 // base - the bookkeeping fields of every instruction: address, raw word,
 // and length. This is not instruction semantics but a bookkeeping record
-// for Addr/Len/MarshalJSON.
+// for Addr/Len.
 type base struct {
 	addr   uint64
 	raw    uint32
@@ -54,37 +50,6 @@ func (b base) Addr() uint64 {
 
 func (b base) Len() int {
 	return b.length
-}
-
-// marshalDTO - the shared JSON skeleton for the server (server response
-// keys; full is the full ObjDump text).
-func (b base) marshalDTO(mnem, full, group string, fields map[string]any) ([]byte, error) {
-	type dto struct {
-		Addr        string         `json:"addr"`
-		Bytes       string         `json:"bytes"`
-		Raw         string         `json:"raw"`
-		Mnemonic    string         `json:"mnemonic"`
-		Operands    string         `json:"operands"`
-		Group       string         `json:"group"`
-		Tags        []string       `json:"tags"`
-		Description string         `json:"description"`
-		Aliases     []string       `json:"aliases"`
-		DocURL      string         `json:"docurl"`
-		Fields      map[string]any `json:"fields"`
-	}
-	if fields == nil {
-		fields = map[string]any{}
-	}
-
-	return json.Marshal(dto{
-		Addr:     fmt.Sprintf("0x%x", b.addr),
-		Bytes:    text.FormatCode(b.raw, b.length, text.CodeWord),
-		Raw:      fmt.Sprintf("0x%x", b.raw),
-		Mnemonic: mnem,
-		Operands: full,
-		Group:    group,
-		Fields:   fields,
-	})
 }
 
 // writeWord - writing an encoded instruction (LE).
@@ -110,10 +75,6 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 
 func (i Unknown) Encode(w io.Writer, _ uint64) (int64, error) {
 	return writeWord(w, i.raw)
-}
-
-func (i Unknown) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(".word", i.ObjDump(disasm.DefaultViewCtx()), "", nil)
 }
 
 // imm - the value of an immediate operand: a concrete number. Symbolic

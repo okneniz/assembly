@@ -42,12 +42,3 @@ func (i AmswapDbH) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i AmswapDbH) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"amswap_db.h",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rk": laRegName(i.rk), "rj": laRegName(i.rj)},
-	)
-}

@@ -32,12 +32,3 @@ func (i JalrReg) Len() int {
 func (i JalrReg) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["jalr"][0]|1<<7|regBits(i.rs1)<<15)
 }
-
-func (i JalrReg) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"jalr",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Pseudo",
-		map[string]any{"rs1": i.rs1},
-	)
-}

@@ -52,15 +52,6 @@ func (i Ldrb) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.lsWrite(w, pc, "ldrb")
 }
 
-func (i Ldrb) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"ldrb",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}
-
 func decodeLdrbOf(enc uint32, kind memKind) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		rt := regNameW(w & 0x1f)

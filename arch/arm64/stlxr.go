@@ -61,8 +61,3 @@ func (i Stlxr) ObjDump(_ disasm.ViewCtx) string {
 func (i Stlxr) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.exWrite(w, i.enc, "stlxr")
 }
-
-func (i Stlxr) MarshalJSON() ([]byte, error) {
-	return i.marshal("stlxr", i.ObjDump(disasm.DefaultViewCtx()), "Load/Store",
-		map[string]any{"Rs": i.rs, "Rt": i.rt, "Rn": i.rn})
-}

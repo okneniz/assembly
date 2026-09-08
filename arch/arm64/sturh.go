@@ -53,15 +53,6 @@ func (i Sturh) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.lsWrite(w, pc, "sturh")
 }
 
-func (i Sturh) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"sturh",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}
-
 func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		var rt string

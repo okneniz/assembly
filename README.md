@@ -161,10 +161,6 @@ go build ./...
 # Run the full test suite (requires objdump and qemu-system on PATH)
 make tests
 
-# Start the interactive server
-go run ./cmd/assembly-server
-# → open http://127.0.0.1:8080, drop a binary on the page
-
 # Check coverage against objdump
 go run ./tests/cmd/assembly-diff tests/examples/hello-world/hello-world
 
@@ -200,11 +196,6 @@ assembly -arch arm64 -format macho -o prog prog.s
 # Disassemble a raw binary (the reverse direction of the same tool;
 # our own ELF layout is recognized automatically)
 assembly -arch arm64 --disasm prog.bin
-
-# Interactive web UI: disassembly viewer + assembler panel
-go run ./cmd/assembly-server        # → http://127.0.0.1:8080
-#   POST /api/v1/disasm  — multipart binary → disassembly JSON
-#   POST /api/v1/asm     — {arch, source, baseAddr} → sections/symbols/errors
 
 # Compare local disassembly against objdump (coverage tool)
 go run ./tests/cmd/assembly-diff tests/examples/hello-world/hello-world

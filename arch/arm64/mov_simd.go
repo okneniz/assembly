@@ -32,14 +32,5 @@ func (i MovSimd) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, i.enc|rd|31<<5|rm<<16)
 }
 
-func (i MovSimd) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"mov",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"ASIMD",
-		map[string]any{"Rd": i.rd, "Rm": i.rm},
-	)
-}
-
 // SkipVerify — there is no decoding schema.
 func (i MovSimd) SkipVerify() {}

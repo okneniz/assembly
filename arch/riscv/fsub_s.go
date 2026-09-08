@@ -52,15 +52,6 @@ func (i FsubS) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20)
 }
 
-func (i FsubS) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"fsub.s",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32F",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newFsubS(ops []Op) (Instr, error) {
 	regs, err := wantFP(ops, "fsub.s", 3)
 	if err != nil {

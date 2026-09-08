@@ -36,12 +36,3 @@ func (i Syscall) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Syscall) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"syscall",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"code": i.code.val},
-	)
-}

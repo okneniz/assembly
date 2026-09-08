@@ -87,11 +87,6 @@ func (i Madd) Encode(w io.Writer, pc uint64) (int64, error) {
 	return msubWrite(w, match, i)
 }
 
-func (i Madd) MarshalJSON() ([]byte, error) {
-	return i.marshal("madd", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "Ra": i.ra})
-}
-
 // msubWrite - the shared word of the madd/msub family (msub = Madd with the opcode bit).
 func msubWrite(w io.Writer, match uint32, i Madd) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)

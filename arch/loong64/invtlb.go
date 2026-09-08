@@ -44,12 +44,3 @@ func (i Invtlb) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Invtlb) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"invtlb",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"op": i.op.val, "rj": laRegName(i.rj), "rk": laRegName(i.rk)},
-	)
-}

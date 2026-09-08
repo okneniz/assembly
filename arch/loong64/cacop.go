@@ -45,12 +45,3 @@ func (i Cacop) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Cacop) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"cacop",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"op": i.op.val, "rj": laRegName(i.rj), "off": i.off.val},
-	)
-}

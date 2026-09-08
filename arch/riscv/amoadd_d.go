@@ -42,15 +42,6 @@ func (i AmoaddD) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
 }
 
-func (i AmoaddD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"amoadd.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV64A",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newAmoaddD(ops []Op) (Instr, error) {
 	if len(ops) != 3 {
 		return nil, errors.New("amoadd.d: want rd, rs2, (rs1)")

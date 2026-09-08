@@ -47,15 +47,6 @@ func (i Auipc) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["auipc"][0]|regBits(i.rd)<<7|bits)
 }
 
-func (i Auipc) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"auipc",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd},
-	)
-}
-
 // newAuipc - constructor from parsing: auipc rd, imm.
 func newAuipc(ops []Op) (Instr, error) {
 	if len(ops) != 2 {

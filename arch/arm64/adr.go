@@ -56,12 +56,3 @@ func (i Adr) ObjDump(_ disasm.ViewCtx) string {
 func (i Adr) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }
-
-func (i Adr) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"adr",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"PC-relative",
-		map[string]any{"Rd": i.rd},
-	)
-}

@@ -63,16 +63,6 @@ func (i La) Encode(w io.Writer) (int64, error) {
 	return int64(n), err
 }
 
-func (i La) MarshalJSON() ([]byte, error) {
-	return arch.MarshalDTO(
-		arch.Base{},
-		"la",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Pseudo",
-		map[string]any{"rd": i.rd},
-	)
-}
-
 // resolveLa is the evaluator wired to parsing: la rd, sym.
 func resolveLa(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
 	if len(ops) != 2 {

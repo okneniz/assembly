@@ -43,12 +43,3 @@ func (i RotriW) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i RotriW) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"rotri.w",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj), "imm": i.imm.val},
-	)
-}

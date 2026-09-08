@@ -69,12 +69,3 @@ func (i Ldrsh) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldrsh) Encode(w io.Writer, pc uint64) (int64, error) {
 	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
 }
-
-func (i Ldrsh) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"ldrsh",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}

@@ -64,12 +64,3 @@ func (i Clz) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5)
 }
-
-func (i Clz) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"clz",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn},
-	)
-}

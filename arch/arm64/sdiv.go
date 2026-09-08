@@ -71,12 +71,3 @@ func (i Sdiv) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
-
-func (i Sdiv) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"sdiv",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm},
-	)
-}

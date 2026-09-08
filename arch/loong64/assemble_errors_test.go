@@ -2,7 +2,6 @@ package loong64
 
 import (
 	"bytes"
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -65,18 +64,8 @@ func TestShapeKindErrors(t *testing.T) {
 	}
 }
 
-// TestAPIWrappers - MarshalDTO and WriteWord (the pseudo layer's pair
-// primitives).
+// TestAPIWrappers - WriteWord (the pseudo layer's pair primitive).
 func TestAPIWrappers(t *testing.T) {
-	in := newUnknown(newBase(0x10, 0x1c000000))
-
-	b, err := MarshalDTO(in.base, ".word", "<unknown>", "", nil)
-	require.NoError(t, err)
-
-	var dto map[string]any
-	require.NoError(t, json.Unmarshal(b, &dto))
-	require.Equal(t, ".word", dto["mnemonic"])
-
 	var buf bytes.Buffer
 	written, err := WriteWord(&buf, 0x001039ac)
 	require.NoError(t, err)

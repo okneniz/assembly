@@ -61,8 +61,3 @@ func (i Csinc) ObjDump(_ disasm.ViewCtx) string {
 func (i Csinc) Encode(w io.Writer, pc uint64) (int64, error) {
 	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
 }
-
-func (i Csinc) MarshalJSON() ([]byte, error) {
-	return i.marshal("csinc", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "cond": i.cond})
-}

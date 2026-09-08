@@ -42,15 +42,6 @@ func (i Remu) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Remu) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"remu",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32M",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newRemu(ops []Op) (Instr, error) {
 	rd, rs1, rs2, err := wantR3(ops, "remu")
 	if err != nil {

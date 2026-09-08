@@ -64,12 +64,3 @@ func (i Rev16) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5)
 }
-
-func (i Rev16) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"rev16",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn},
-	)
-}

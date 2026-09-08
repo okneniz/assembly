@@ -49,12 +49,3 @@ func (i Fp3) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, i.enc|rd|rn<<5|rm<<16)
 }
-
-func (i Fp3) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		i.op,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"FP",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm},
-	)
-}

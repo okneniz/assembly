@@ -59,12 +59,3 @@ func (i Ldarb) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldarb) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.atWrite(w, i.enc, "ldarb")
 }
-
-func (i Ldarb) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"ldarb",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}

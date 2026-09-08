@@ -44,12 +44,3 @@ func (i Preldx) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Preldx) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"preldx",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"hint": i.hint.val, "rj": laRegName(i.rj), "rk": laRegName(i.rk)},
-	)
-}

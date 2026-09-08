@@ -48,15 +48,6 @@ func (i Ori) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["ori"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|bits)
 }
 
-func (i Ori) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"ori",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newOri(ops []Op) (Instr, error) {
 	rd, rs1, m, err := wantI3(ops, "ori")
 	if err != nil {

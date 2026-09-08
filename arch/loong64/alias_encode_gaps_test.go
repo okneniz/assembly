@@ -1,7 +1,6 @@
 package loong64
 
 import (
-	"encoding/json"
 	"testing"
 
 	"github.com/stretchr/testify/require"
@@ -84,9 +83,9 @@ func TestDecodeAliases(t *testing.T) {
 	}
 }
 
-// TestLateFilesJSONEncodeError - the JSON and write-error paths of the
+// TestLateFilesEncodeError - the write-error paths of the
 // instructions added after the slice family tests were written.
-func TestLateFilesJSONEncodeError(t *testing.T) {
+func TestLateFilesEncodeError(t *testing.T) {
 	for _, tc := range []struct {
 		mnem string
 		in   Instr
@@ -97,14 +96,7 @@ func TestLateFilesJSONEncodeError(t *testing.T) {
 		{"ldx.hu", New().LdxHu(lreg(t, 12), lreg(t, 13), lreg(t, 14))},
 		{"dbcl", New().Dbcl(code15v(t, 1))},
 	} {
-		b, err := tc.in.MarshalJSON()
-		require.NoError(t, err, tc.mnem)
-
-		var dto map[string]any
-		require.NoError(t, json.Unmarshal(b, &dto), tc.mnem)
-		require.Equal(t, tc.mnem, dto["mnemonic"], tc.mnem)
-
-		_, err = tc.in.Encode(errWriter{}, 0)
+		_, err := tc.in.Encode(errWriter{}, 0)
 		require.ErrorContains(t, err, "write failed", tc.mnem)
 	}
 }

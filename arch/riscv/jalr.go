@@ -83,15 +83,6 @@ func (i Jalr) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Jalr) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"jalr",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 // newJalr - constructor from parsing: jalr rd, off(rs) | jalr rs (indirect call,
 // the 32-bit form jalr ra, 0(rs) - compression to c.jalr changes the text, so
 // the form is fixed).

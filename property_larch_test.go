@@ -619,11 +619,6 @@ func TestPropertyLoongDecodeRobustness(t *testing.T) {
 				for _, in := range ins {
 					_ = in.ObjDump(disasm.DefaultViewCtx())
 
-					if _, err := in.MarshalJSON(); err != nil {
-						t.Logf("word %#08x: MarshalJSON: %v", w, err)
-						ok = false
-					}
-
 					if n := in.Len(); n != 4 {
 						t.Logf("word %#08x: Len = %d", w, n)
 						ok = false

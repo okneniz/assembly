@@ -49,15 +49,6 @@ func (i Ret) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, retMatch|num<<5)
 }
 
-func (i Ret) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"ret",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Branch",
-		map[string]any{"Rn": i.rn},
-	)
-}
-
 func decodeRet(w uint32, addr uint64) Instr {
 	return Ret{
 		base: newBase(addr, w),

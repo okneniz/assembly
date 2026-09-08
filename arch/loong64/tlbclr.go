@@ -30,12 +30,3 @@ func (i Tlbclr) ObjDump(_ disasm.ViewCtx) string {
 func (i Tlbclr) Encode(w io.Writer, _ uint64) (int64, error) {
 	return writeWord(w, loongEncodings["tlbclr"][0])
 }
-
-func (i Tlbclr) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"tlbclr",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		nil,
-	)
-}

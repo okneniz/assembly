@@ -65,8 +65,3 @@ func (i Adc) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, adcX|rd|rn<<5|rm<<16)
 }
-
-func (i Adc) MarshalJSON() ([]byte, error) {
-	return i.marshal("adc", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm})
-}

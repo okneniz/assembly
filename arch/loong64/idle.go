@@ -37,12 +37,3 @@ func (i Idle) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Idle) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"idle",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"code": i.code.val},
-	)
-}

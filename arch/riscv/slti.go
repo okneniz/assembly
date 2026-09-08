@@ -48,15 +48,6 @@ func (i Slti) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["slti"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|bits)
 }
 
-func (i Slti) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"slti",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newSlti(ops []Op) (Instr, error) {
 	rd, rs1, m, err := wantI3(ops, "slti")
 	if err != nil {

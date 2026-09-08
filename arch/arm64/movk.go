@@ -74,11 +74,6 @@ func (i Movk) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-func (i Movk) MarshalJSON() ([]byte, error) {
-	return i.marshal("movk", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - immediate",
-		map[string]any{"Rd": i.rd, "imm16": i.imm16, "hw": i.hw})
-}
-
 func decodeMovk(w uint32, addr uint64) Instr {
 	return Movk{
 		base:  newBase(addr, w),

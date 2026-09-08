@@ -60,11 +60,6 @@ func (i Csrrwi) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["csrrwi"][0]|regBits(i.rd)<<7|z<<15|csr<<20)
 }
 
-func (i Csrrwi) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO("csrrwi", i.ObjDump(disasm.DefaultViewCtx()), "Zicsr",
-		map[string]any{"rd": i.rd, "csr": i.text()})
-}
-
 func newCsrrwi(ops []Op) (Instr, error) {
 	return newCsrI(ops, "csrrwi")
 }

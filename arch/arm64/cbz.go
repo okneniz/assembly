@@ -59,8 +59,3 @@ func (i Cbz) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|bits<<5|num)
 }
-
-func (i Cbz) MarshalJSON() ([]byte, error) {
-	return i.marshal("cbz", i.ObjDump(disasm.DefaultViewCtx()), "Branch",
-		map[string]any{"Rt": i.rt, "imm19": i.target.val - int64(i.addr)})
-}

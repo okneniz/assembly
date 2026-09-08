@@ -2,27 +2,24 @@ package arm64
 
 import (
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 
 	"github.com/okneniz/assembly/disasm"
-	"github.com/okneniz/assembly/text"
 )
 
-// Name — the architecture as consumers see it (test/diff/server).
+// Name — the architecture as consumers see it (test/diff).
 const Name = "ARM64"
 
 // Instr — an ARM64 instruction: represents itself — encodes itself into
 // bytes (Encode: computed form, operand values are already numbers, the
-// environment — only the address), into text (disasm.ObjDump), into JSON
-// (for the server) and knows its address (the key of diff tools). There is
-// NO common type with other architectures; every instruction is its own
-// struct (Ldr, AddImm, Csel, ...).
+// environment — only the address), into text (disasm.ObjDump) and knows
+// its address (the key of diff tools). There is NO common type with other
+// architectures; every instruction is its own struct (Ldr, AddImm,
+// Csel, ...).
 type Instr interface {
 	disasm.ObjDump
-	json.Marshaler
 	Addr() uint64
 
 	// Encode encodes the computed instruction: pc — the absolute address
@@ -31,7 +28,7 @@ type Instr interface {
 }
 
 // base — the bookkeeping fields of every instruction: address, raw word
-// and length (32-bit ones are always 4; bookkeeping for Addr/Len/MarshalJSON).
+// and length (32-bit ones are always 4; bookkeeping for Addr/Len).
 type base struct {
 	addr   uint64
 	raw    uint32
@@ -51,37 +48,6 @@ func (b base) Addr() uint64 {
 }
 func (b base) Len() int {
 	return b.length
-}
-
-// marshal — the common JSON skeleton for the server (server response keys;
-// full — the full ObjDump text).
-func (b base) marshal(mnem, full, group string, fields map[string]any) ([]byte, error) {
-	type dto struct {
-		Addr        string         `json:"addr"`
-		Bytes       string         `json:"bytes"`
-		Raw         string         `json:"raw"`
-		Mnemonic    string         `json:"mnemonic"`
-		Operands    string         `json:"operands"`
-		Group       string         `json:"group"`
-		Tags        []string       `json:"tags"`
-		Description string         `json:"description"`
-		Aliases     []string       `json:"aliases"`
-		DocURL      string         `json:"docurl"`
-		Fields      map[string]any `json:"fields"`
-	}
-	if fields == nil {
-		fields = map[string]any{}
-	}
-
-	return json.Marshal(dto{
-		Addr:     fmt.Sprintf("0x%x", b.addr),
-		Bytes:    text.FormatCode(b.raw, b.length, text.CodeBytes),
-		Raw:      fmt.Sprintf("0x%x", b.raw),
-		Mnemonic: mnem,
-		Operands: full,
-		Group:    group,
-		Fields:   fields,
-	})
 }
 
 // armRegName — the x/w register name by number and width.
@@ -225,10 +191,6 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 
 func (i Unknown) Encode(w io.Writer, _ uint64) (int64, error) {
 	return writeWord(w, i.word)
-}
-
-func (i Unknown) MarshalJSON() ([]byte, error) {
-	return i.marshal(".word", i.ObjDump(disasm.DefaultViewCtx()), "", nil)
 }
 
 // shiftNumByName — the shift-kind number (inverse of shiftNames).

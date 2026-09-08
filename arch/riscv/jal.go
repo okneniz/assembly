@@ -71,15 +71,6 @@ func (i Jal) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Jal) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"jal",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd},
-	)
-}
-
 // newJal - constructor from parsing: jal target | jal rd, target.
 func newJal(ops []Op) (Instr, error) {
 	switch len(ops) {

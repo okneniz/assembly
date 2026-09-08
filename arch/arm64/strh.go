@@ -53,15 +53,6 @@ func (i Strh) Encode(w io.Writer, pc uint64) (int64, error) {
 	return i.lsWrite(w, pc, "strh")
 }
 
-func (i Strh) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"strh",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}
-
 func decodeStrhOf(enc uint32, kind memKind) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		rt := regNameW(w & 0x1f)

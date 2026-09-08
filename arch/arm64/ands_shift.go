@@ -103,8 +103,3 @@ func (i AndsShift) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
-
-func (i AndsShift) MarshalJSON() ([]byte, error) {
-	return i.marshal("ands", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - register",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "imm6": i.imm6})
-}

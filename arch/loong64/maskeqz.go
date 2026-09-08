@@ -42,12 +42,3 @@ func (i Maskeqz) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Maskeqz) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"maskeqz",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj), "rk": laRegName(i.rk)},
-	)
-}

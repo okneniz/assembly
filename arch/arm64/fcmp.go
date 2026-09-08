@@ -58,7 +58,3 @@ func (i Fcmp) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Fcmp) MarshalJSON() ([]byte, error) {
-	return i.marshal("fcmp", i.ObjDump(disasm.DefaultViewCtx()), "FP", map[string]any{"Rn": i.rn})
-}

@@ -42,12 +42,3 @@ func (i Ldpte) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Ldpte) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"ldpte",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Privileged",
-		map[string]any{"rj": laRegName(i.rj), "imm": i.imm.val},
-	)
-}

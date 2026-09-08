@@ -105,11 +105,6 @@ func (i Simd3) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, i.enc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }
 
-func (i Simd3) MarshalJSON() ([]byte, error) {
-	return i.marshal(i.op, i.ObjDump(disasm.DefaultViewCtx()), "ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm})
-}
-
 func (i Simd3) size3() uint32 {
 	return i.raw >> 22 & 3
 }

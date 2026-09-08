@@ -36,12 +36,3 @@ func (i Break) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Break) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"break",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"code": i.code.val},
-	)
-}

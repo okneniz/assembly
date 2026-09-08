@@ -58,15 +58,6 @@ func (i Bge) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Bge) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"bge",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newBge(ops []Op) (Instr, error) {
 	rs1, rs2, t, err := wantR2T(ops, "bge")
 	if err != nil {

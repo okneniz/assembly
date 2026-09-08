@@ -29,7 +29,3 @@ func (i Nop) ObjDump(_ disasm.ViewCtx) string {
 func (i Nop) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, nopMatch)
 }
-
-func (i Nop) MarshalJSON() ([]byte, error) {
-	return i.marshal("nop", i.ObjDump(disasm.DefaultViewCtx()), "Hint", nil)
-}

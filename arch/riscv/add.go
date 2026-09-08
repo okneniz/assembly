@@ -62,15 +62,6 @@ func (i Add) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Add) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"add",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newAdd(ops []Op) (Instr, error) {
 	rd, rs1, rs2, err := wantR3(ops, "add")
 	if err != nil {

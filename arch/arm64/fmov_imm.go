@@ -72,7 +72,3 @@ func (i FmovImm) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return 0, errors.New("fmov: bad imm")
 }
-
-func (i FmovImm) MarshalJSON() ([]byte, error) {
-	return i.marshal("fmov", i.ObjDump(disasm.DefaultViewCtx()), "FP", map[string]any{"Rd": i.rd})
-}

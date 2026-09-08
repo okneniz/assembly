@@ -54,8 +54,3 @@ func (i Csneg) ObjDump(_ disasm.ViewCtx) string {
 func (i Csneg) Encode(w io.Writer, pc uint64) (int64, error) {
 	return cselWrite(w, i.Csel, csnegX, csnegW, "csneg")
 }
-
-func (i Csneg) MarshalJSON() ([]byte, error) {
-	return i.marshal("csneg", i.ObjDump(disasm.DefaultViewCtx()), "Data processing",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "cond": i.cond})
-}

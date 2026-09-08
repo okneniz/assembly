@@ -3,7 +3,6 @@ package loong64
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"testing"
 
@@ -37,19 +36,6 @@ func TestUnknownEncodeError(t *testing.T) {
 
 	_, err := in.Encode(errWriter{}, 0)
 	require.ErrorContains(t, err, "write failed")
-}
-
-func TestUnknownMarshalJSON(t *testing.T) {
-	in := newUnknown(newBase(0x90000010, 0x1c000000))
-
-	b, err := in.MarshalJSON()
-	require.NoError(t, err)
-
-	var dto map[string]any
-	require.NoError(t, json.Unmarshal(b, &dto))
-	require.Equal(t, ".word", dto["mnemonic"])
-	require.Equal(t, "0x90000010", dto["addr"])
-	require.Equal(t, "0x1c000000", dto["raw"])
 }
 
 // writeWord - the LE byte order and the error path.

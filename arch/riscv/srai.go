@@ -65,15 +65,6 @@ func (i Srai) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Srai) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"srai",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newSrai(ops []Op) (Instr, error) {
 	rd, rs1, m, err := wantI3(ops, "srai")
 	if err != nil {

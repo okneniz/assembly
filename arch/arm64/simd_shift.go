@@ -52,12 +52,3 @@ func (i SimdShift) Encode(w io.Writer, pc uint64) (int64, error) {
 	// immh carries size; the enc constants are in the Q=0 form
 	return writeWord(w, i.enc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
 }
-
-func (i SimdShift) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		i.op,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn},
-	)
-}

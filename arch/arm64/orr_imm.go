@@ -109,11 +109,6 @@ func (i OrrImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
 }
 
-func (i OrrImm) MarshalJSON() ([]byte, error) {
-	return i.marshal("orr", i.ObjDump(disasm.DefaultViewCtx()), "Data processing - immediate",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "immr": i.immr, "imms": i.imms})
-}
-
 // immText - the immediate in objdump style: 64-bit patterns with the top
 // bit set are printed signed (#-0x80000000 instead of #0xffffffff80000000).
 func (i OrrImm) immText() string {

@@ -1,8 +1,7 @@
 # tests/cmd/
 
 This directory holds commands and wrappers needed only for tests and quality
-gates - everything that is not a product CLI (`cmd/assembly`,
-`cmd/assembly-server`).
+gates - everything that is not a product CLI (`cmd/assembly`).
 
 - `assembly-diff/` - differential of our disassembler against objdump
   (coverage gate; also run in the `make rt-vm` VM matrix).

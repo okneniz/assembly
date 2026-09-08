@@ -42,12 +42,3 @@ func (i AmaddDbH) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i AmaddDbH) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"amadd_db.h",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rk": laRegName(i.rk), "rj": laRegName(i.rj)},
-	)
-}

@@ -40,12 +40,3 @@ func (i LlacqD) Encode(w io.Writer, _ uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i LlacqD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"llacq.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rd": laRegName(i.rd), "rj": laRegName(i.rj)},
-	)
-}

@@ -48,12 +48,3 @@ func (i Uaddlv) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, uaddlvEnc|rd|rn<<5)
 }
-
-func (i Uaddlv) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"uaddlv",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn},
-	)
-}

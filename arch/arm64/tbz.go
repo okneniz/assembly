@@ -99,17 +99,3 @@ func (i Tbz) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word|rt|bits<<5|i.bit&0x1f<<19)
 }
-
-func (i Tbz) MarshalJSON() ([]byte, error) {
-	name := "tbz"
-	if i.isTbnz {
-		name = "tbnz"
-	}
-
-	return i.marshal(
-		name,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Branch",
-		map[string]any{"Rt": i.rt, "bit": i.bit},
-	)
-}

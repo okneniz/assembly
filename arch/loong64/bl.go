@@ -43,12 +43,3 @@ func (i Bl) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Bl) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"bl",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"off": i.off.val},
-	)
-}

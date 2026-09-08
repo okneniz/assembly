@@ -56,12 +56,3 @@ func (i Generic) ObjDump(_ disasm.ViewCtx) string {
 func (i Generic) Encode(w io.Writer, pc uint64) (int64, error) {
 	return 0, fmt.Errorf("%s: generic instruction, assembly not supported", i.name)
 }
-
-func (i Generic) MarshalJSON() ([]byte, error) {
-	fields := make(map[string]any, len(i.fields))
-	for _, f := range i.fields {
-		fields[f.Name] = fmt.Sprintf("0x%x", fieldValue(i.word, f))
-	}
-
-	return i.marshal(i.name, i.ObjDump(disasm.DefaultViewCtx()), "", fields)
-}

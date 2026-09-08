@@ -58,15 +58,6 @@ type ldrPoolWrap struct {
 
 func (ldrPoolWrap) SkipVerify() {}
 
-func (i Ldr) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"ldr",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Load/Store",
-		map[string]any{"Rt": i.rt, "Rn": i.rn},
-	)
-}
-
 func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		var rt string

@@ -43,12 +43,3 @@ func (i Mv) ObjDump(_ disasm.ViewCtx) string {
 func (i Mv) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeHalf(w, uint16(i.raw))
 }
-
-func (i Mv) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"mv",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Pseudo",
-		map[string]any{"rd": i.rd, "rs2": i.rs2},
-	)
-}

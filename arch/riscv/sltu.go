@@ -46,15 +46,6 @@ func (i Sltu) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Sltu) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"sltu",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newSltu(ops []Op) (Instr, error) {
 	rd, rs1, rs2, err := wantR3(ops, "sltu")
 	if err != nil {

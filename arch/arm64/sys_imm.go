@@ -53,15 +53,6 @@ func (i sysImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, i.enc|i.imm16<<i.shift)
 }
 
-func (i sysImm) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		i.name,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"System",
-		map[string]any{"imm16": i.imm16},
-	)
-}
-
 func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32, uint64) Instr {
 	return func(w uint32, addr uint64) Instr {
 		return sysImm{

@@ -40,10 +40,6 @@ func (i sysFixed) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, i.enc)
 }
 
-func (i sysFixed) MarshalJSON() ([]byte, error) {
-	return i.marshal(i.name, i.ObjDump(disasm.DefaultViewCtx()), i.group, nil)
-}
-
 // SysFixedOf — the fixed system instruction (dmb/dsb/yield/...).
 func SysFixedOf(name, ops, group string, enc uint32) sysFixed {
 	return sysFixed{name: name, ops: ops, group: group, enc: enc}

@@ -52,15 +52,6 @@ func (i FmulD) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20)
 }
 
-func (i FmulD) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"fmul.d",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV64D",
-		map[string]any{"rd": i.rd, "rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newFmulD(ops []Op) (Instr, error) {
 	regs, err := wantFP(ops, "fmul.d", 3)
 	if err != nil {

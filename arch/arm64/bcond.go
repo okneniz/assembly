@@ -56,12 +56,3 @@ func (i Bcond) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, 0x54000000|c|bits<<5)
 }
-
-func (i Bcond) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"b."+i.cond,
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Branch",
-		map[string]any{"cond": i.cond},
-	)
-}

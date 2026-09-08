@@ -75,15 +75,6 @@ func (i Addi) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Addi) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"addi",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 // compressAddi - c.nop/c.li/c.addi4spn/c.addi/c.addi16sp (c.addi
 // is preferred over c.addi16sp, as in GAS).
 func compressAddi(rd, rs1 string, imm int64) (uint16, bool) {

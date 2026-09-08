@@ -84,19 +84,6 @@ func (i AddImm) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-func (i AddImm) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"add",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"Data processing - immediate",
-		map[string]any{
-			"Rd":    addSubRegName(i.rdNum, i.isf, false),
-			"Rn":    addSubRegName(i.rnNum, i.isf, false),
-			"imm12": i.imm12,
-		},
-	)
-}
-
 func decodeAddImm(w uint32, addr uint64) Instr {
 	return AddImm{
 		base:  newBase(addr, w),

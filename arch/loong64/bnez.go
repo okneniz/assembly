@@ -47,12 +47,3 @@ func (i Bnez) Encode(w io.Writer, pc uint64) (int64, error) {
 
 	return writeWord(w, word)
 }
-
-func (i Bnez) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"bnez",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"LA64",
-		map[string]any{"rj": laRegName(i.rj), "off": i.off.val},
-	)
-}

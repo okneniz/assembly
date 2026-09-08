@@ -150,11 +150,6 @@ func (i ByElem) Encode(w io.Writer, pc uint64) (int64, error) {
 		(f>>3&1)<<11|(f>>2&1)<<21|(f>>1&1)<<20|(f&1)<<19|i.rnN<<5|i.rdN)
 }
 
-func (i ByElem) MarshalJSON() ([]byte, error) {
-	return i.marshal(i.name, i.ObjDump(disasm.DefaultViewCtx()), "ASIMD",
-		map[string]any{"Rd": i.rd, "Rn": i.rn, "Rm": i.rm, "index": i.idx})
-}
-
 // Exported for the asm layer (the by-element ctor registrations).
 var ByElemIntNames = byElemIntNames
 var ByElemFPNames = byElemFPNames

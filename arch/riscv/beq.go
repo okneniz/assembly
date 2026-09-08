@@ -69,15 +69,6 @@ func (i Beq) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Beq) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"beq",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV32I",
-		map[string]any{"rs1": i.rs1, "rs2": i.rs2},
-	)
-}
-
 func newBeq(ops []Op) (Instr, error) {
 	rs1, rs2, t, err := wantR2T(ops, "beq")
 	if err != nil {

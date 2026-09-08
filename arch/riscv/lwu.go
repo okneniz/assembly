@@ -49,15 +49,6 @@ func (i Lwu) Encode(w io.Writer, pc uint64, o EncOpts) (int64, error) {
 	return writeWord(w, word)
 }
 
-func (i Lwu) MarshalJSON() ([]byte, error) {
-	return i.marshalDTO(
-		"lwu",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"RV64I",
-		map[string]any{"rd": i.rd, "rs1": i.rs1},
-	)
-}
-
 func newLwu(ops []Op) (Instr, error) {
 	rd, base, off, err := wantR2M(ops, "lwu", false)
 	if err != nil {

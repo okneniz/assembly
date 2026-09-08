@@ -52,12 +52,3 @@ func (i Mrs) ObjDump(_ disasm.ViewCtx) string {
 func (i Mrs) Encode(w io.Writer, pc uint64) (int64, error) {
 	return writeWord(w, 0xD5300000|regBitsX(i.rd)|invSysRegChecked(i.sysreg)<<5)
 }
-
-func (i Mrs) MarshalJSON() ([]byte, error) {
-	return i.marshal(
-		"mrs",
-		i.ObjDump(disasm.DefaultViewCtx()),
-		"System",
-		map[string]any{"Rd": i.rd, "sysreg": i.sysreg},
-	)
-}
