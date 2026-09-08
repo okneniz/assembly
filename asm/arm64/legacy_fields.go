@@ -302,6 +302,15 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 					return nil, err
 				}
 
+				// the ADD #0 form is the sp path (and a GPR
+				// fallback); a vector/FP register here is a
+				// misspelled SIMD form - it must not feed addSub
+				// silently as the other register operand
+				if rd != "sp" && rn != "sp" &&
+					(!isGPR(rd) || !isGPR(rn)) {
+					return nil, errors.New("mov: integer registers expected")
+				}
+
 				rdN, err := addSubRegNum(rd)
 				if err != nil {
 					return nil, err

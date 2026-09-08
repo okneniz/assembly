@@ -42,6 +42,18 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	rendered := renderInstr(res)
 	loose := looseNormalize(rendered)
 
+	// LLVM print alias: UMOV whose element fills the destination register
+	// (s into w, d into x) is printed - and canonically spelled - MOV.
+	// The self-verify compares the input render against the decoded text,
+	// so canonicalize the input spelling of the alias shape.
+	if res.mnem == "umov" && len(res.ops) == 2 &&
+		res.ops[0].IsReg() && res.ops[1].IsReg() && res.ops[1].LaneIdx() {
+		gprX := strings.HasPrefix(res.ops[0].Reg(), "x")
+		if arr := res.ops[1].Arr(); (arr == "s" && !gprX) || (arr == "d" && gprX) {
+			loose = looseNormalize("mov" + rendered[len("umov"):])
+		}
+	}
+
 	// objdump style: an arrangement suffix on the mnemonic (orr.16b
 	// v6, v3, v4). SIMD ctors expect it on the first operand - move it
 	// onto A COPY of ops (the backing array is shared between the

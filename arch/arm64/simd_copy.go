@@ -98,8 +98,9 @@ func (i SimdCopy) ObjDump(_ disasm.ViewCtx) string {
 	case "smov":
 		return fmt.Sprintf("smov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
 	default:
-		// LLVM alias: umov that fills the whole register - mov
-		if i.q == 1 && i.size >= 2 {
+		// LLVM alias: umov whose element fills the whole register - mov
+		// (s into w: Q=0; d into x: Q=1)
+		if (i.size == 2 && i.q == 0) || (i.size == 3 && i.q == 1) {
 			return fmt.Sprintf("mov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
 		}
 

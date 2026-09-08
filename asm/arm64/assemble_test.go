@@ -304,3 +304,32 @@ sym:
 	require.Equal(t, uint64(0x100C), res.Symbols["sym"], "sym")
 	require.Len(t, res.Symbols, 1, "pool names must not be in Symbols: %v", res.Symbols)
 }
+
+// TestMovUmovAlias - the UMOV input spellings and the LLVM print alias:
+// the decoder prints mov for the filling sizes (s into w, d into x), so
+// the self-verify canonicalizes the input spelling. Words pinned against
+// llvm-mc (docker assembly-tests, 2026-09-08); the mov input alias and
+// the rejection cases are in asm/arm64/alias/assemble_test.go.
+func TestMovUmovAlias(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"umov x0, v1.d[1]", 0x4E183C20},
+		{"umov w0, v1.s[1]", 0x0E0C3C20},
+		{"umov w0, v1.b[3]", 0x0E073C20},
+		{"umov w0, v1.h[7]", 0x0E1E3C20},
+	} {
+		require.Equal(t, c.word, armAssembleOne(t, c.src, 0), "case %q", c.src)
+	}
+
+	// llvm rejects these ("invalid operand"): the umov width must match
+	// the element size.
+	for _, src := range []string{
+		"umov w0, v1.d[1]",
+		"umov x0, v1.s[1]",
+	} {
+		_, errs := asm.Assemble(src, 0, New())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+	}
+}

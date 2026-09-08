@@ -110,6 +110,43 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 		return nil, errors.New("mov: integer register expected")
 	}
 
+	// mov wd, vn.s[n] | mov xd, vn.d[n]: the LLVM input alias of UMOV
+	// (the element fills the register - the decoder prints this form).
+	// Only the filling sizes have the alias (mov wd, vn.b[n] is not a
+	// spelling; the canonical input there is umov).
+	if ops[1].IsReg() && ops[1].LaneIdx() &&
+		(ops[1].Arr() == "s" && rd[0] != 'x' || ops[1].Arr() == "d" && rd[0] == 'x') {
+		vd := ops[1].Reg()
+		if vd == "" || vd[0] != 'v' {
+			return nil, errors.New("mov: vector register expected")
+		}
+
+		vdN, err := arch.ArmRegNum(vd)
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		rdN, err := arch.ArmRegNum(rd)
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		size := uint32(2)
+		q := uint32(0)
+		if rd[0] == 'x' {
+			size, q = 3, 1
+		}
+
+		var idx int64 = ops[1].Num()
+		if idx < 0 || idx >= 16>>size {
+			return nil, fmt.Errorf("mov: lane index out of range (0..%d)",
+				(16>>size)-1)
+		}
+
+		return arch.Builder{}.SimdCopyGPR("umov", vd, rd, size,
+			uint32(idx), q, vdN, rdN, true), nil
+	}
+
 	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {
 		return arch.OrrShiftOf(rd, arch.ZeroReg(rd), ops[1].Reg(), 0, "", rd[0] == 'x'), nil
 	}

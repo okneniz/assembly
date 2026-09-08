@@ -33,6 +33,11 @@ func TestSimdDupElem(t *testing.T) {
 		{0x0E072C20, "smov w0, v1.b[3]"},
 		{0x0E073C20, "umov w0, v1.b[3]"},
 		{0x4E071C20, "mov.b v0[3], w1"}, // llvm: ins v0.b[3], w1
+		// the mov print alias covers the filling sizes only: s into w
+		// (Q=0) and d into x (Q=1); b/h stay umov (llvm-mc words)
+		{0x0E0C3C20, "mov w0, v1.s[1]"},  // input umov w0, v1.s[1]
+		{0x4E183C20, "mov x0, v1.d[1]"},  // input umov/mov x0, v1.d[1]
+		{0x0E1E3C20, "umov w0, v1.h[7]"}, // no alias below esize 32
 	} {
 		in := decodeOne(c.word, 0x1000)
 		if got := in.ObjDump(disasm.DefaultViewCtx()); got != c.text {

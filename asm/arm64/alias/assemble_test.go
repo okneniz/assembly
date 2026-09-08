@@ -85,3 +85,34 @@ func TestAliasRoundTrip(t *testing.T) {
 		require.Equal(t, word, got, "%q → %#08x → %q", src, word, text)
 	}
 }
+
+// TestMovFromVectorAlias - the MOV (from vector) input alias of UMOV:
+// llvm accepts both spellings for the filling sizes (s into w, d into x)
+// and prints mov; mov wd, vn.b[n]/vn.h[n] is not a spelling there, and
+// the umov width must match the element. Words pinned against llvm-mc
+// (docker assembly-tests, 2026-09-08).
+func TestMovFromVectorAlias(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"mov x0, v1.d[1]", 0x4E183C20},
+		{"mov w0, v1.s[1]", 0x0E0C3C20},
+		{"umov x0, v1.d[1]", 0x4E183C20},
+		{"umov w0, v1.s[1]", 0x0E0C3C20},
+	} {
+		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+	}
+
+	for _, src := range []string{
+		"mov w0, v1.b[3]",
+		"mov w0, v1.h[7]",
+		"mov x0, v1.s[1]",
+		"umov w0, v1.d[1]",
+		"umov x0, v1.s[1]",
+	} {
+		res, errs := asm.Assemble(src, 0, NewASMBackend())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+		require.Empty(t, res.Sections, "case %q", src)
+	}
+}

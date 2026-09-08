@@ -329,6 +329,15 @@ func newSmovUmovArm(op string) func([]vOp) (Instr, error) {
 			return nil, errors.New("smov: .d elements are not allowed")
 		}
 
+		// the element must fill (smov) or fit (umov) the destination
+		// register: UMOV takes .d only into x and .b/.h/.s only into w
+		// (llvm: "invalid operand" otherwise)
+		if op == "umov" && (size == 3) != (gpr[0] == 'x') {
+			return nil, fmt.Errorf("%s: %s destination expected for .%s elements",
+				op, map[bool]string{true: "x", false: "w"}[size == 3],
+				[...]string{"b", "h", "s", "d"}[size])
+		}
+
 		return Builder{}.SimdCopyGPR(op, vd, gpr, size, uint32(ops[1].Num()), q, vdN, gprN, true), nil
 	}
 }

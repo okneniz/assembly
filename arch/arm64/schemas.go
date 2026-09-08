@@ -1303,11 +1303,6 @@ var arm64Schemas = []Schema{
 		NewField("immh", 19, 4),
 		NewField("immb", 16, 3),
 	}, NewMeta("sshr", "SIMD shift"), "simdShiftImm", true, decodeSimdShiftOf("sshr", 0x0F000000)),
-	NewSchema(0xFFE0FC00, 0x4E003C00, []Field{
-		NewField("Rd", 0, 5, "regX"),
-		NewField("Rn", 5, 5, "regV"),
-		NewField("imm5", 16, 5),
-	}, NewMeta("mov", "SIMD element"), "movElem", true, decodeMovElem),
 	NewSchema(0xFFE01C00, 0x1E601000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("imm8", 13, 8),
