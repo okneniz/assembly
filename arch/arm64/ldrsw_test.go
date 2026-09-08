@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdrswCtor(t *testing.T) {
+func TestLdrswBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestLdrswCtor(t *testing.T) {
 	}{
 		{
 			"ldrsw x0,[x1]",
-			ctorLdrsw(t, xreg(t, 0), xreg(t, 1), 0),
+			buildLdrsw(t, xreg(t, 0), xreg(t, 1), 0),
 			0xb9800020,
 		},
 		{
 			"ldrsw x2,[sp,#0xffc]",
-			ctorLdrsw(t, xreg(t, 2), SP, 0xffc),
+			buildLdrsw(t, xreg(t, 2), SP, 0xffc),
 			0xb98fffe2,
 		},
 		{
 			"ldrsw xzr,[x3,#4]",
-			ctorLdrsw(t, XZR, xreg(t, 3), 4),
+			buildLdrsw(t, XZR, xreg(t, 3), 4),
 			0xb980047f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdrsw(t, xreg(t, 0), xreg(t, 1), 0)
+	in := buildLdrsw(t, xreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Ldrsw)
 	require.True(t, ok, "type = %T, want Ldrsw", in)
 	for _, c := range []struct {
@@ -78,9 +78,9 @@ func TestLdrswCtor(t *testing.T) {
 	}
 }
 
-// ctorLdrsw — an instruction constructor wrapper for table literals:
+// buildLdrsw — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdrsw(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildLdrsw(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldrsw(rt, rn, off)
 	require.NoError(t, err)

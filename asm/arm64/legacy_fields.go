@@ -11,6 +11,12 @@ import (
 	"strings"
 )
 
+import (
+	"math"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
+
 // armAliasMap — source mnemonic → base (Meta.Name, Formatter) pairs that can
 // produce it. The candidate order repeats the arm64Schemas order — as decoder
 // priority.
@@ -163,7 +169,7 @@ func candidatesFor(mnem string) []*Schema {
 		return out
 	}
 
-	// fallback: exact name or base name (without .arr/.cond suffix: add.4s → add)
+	// fallback: exact name or base name (without .Arr()/.cond suffix: add.4s → add)
 	for i := range schemas {
 		if schemas[i].Meta.Name == mnem || schemas[i].Meta.Name == base {
 			out = append(out, &schemas[i])
@@ -275,11 +281,11 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		cond := in.ops[3]
-		if cond.kind != armOpImm || cond.sym == "" {
+		if cond.Kind() != arch.ArmOpImm || cond.Sym() == "" {
 			return nil, errors.New("condition expected")
 		}
 
-		return map[string]any{"Rn": rn, "Rm": rm, "imm": imm, "cond": cond.sym}, nil
+		return map[string]any{"Rn": rn, "Rm": rm, "imm": imm, "cond": cond.Sym()}, nil
 
 	case "addSubImm":
 		// forms: add Rd, Rn, #imm[, lsl #12] | cmp Rn, #imm | mov Rd, Rn
@@ -343,8 +349,8 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			}
 
 			shift := "lsl #0"
-			if len(in.ops) == 4 && in.ops[3].kind == armOpShift {
-				shift = fmt.Sprintf("%s #%d", in.ops[3].shift, shiftAmt(in.ops[3]))
+			if len(in.ops) == 4 && in.ops[3].Kind() == arch.ArmOpShift {
+				shift = fmt.Sprintf("%s #%d", in.ops[3].ShiftName(), shiftAmt(in.ops[3]))
 				if shift != "lsl #0" && shift != "lsl #12" {
 					return nil, fmt.Errorf("bad immediate shift %q", shift)
 				}
@@ -441,22 +447,22 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		opt := ""
 		amt := int64(0)
 		for _, op := range in.ops {
-			if op.kind == armOpExtend {
-				opt = op.shift
-				if op.hasAmt {
-					amt = op.num
+			if op.Kind() == arch.ArmOpExtend {
+				opt = op.ShiftName()
+				if op.HasAmt() {
+					amt = op.Num()
 				}
 			}
 		}
 
 		// 64-bit Rm without extension — uxtx (lsl); 32-bit — uxtw
 		rmWidth := "x"
-		if len(in.ops) >= 2 && in.ops[1].kind == armOpReg && regIsW(in.ops[1].reg) {
+		if len(in.ops) >= 2 && in.ops[1].Kind() == arch.ArmOpReg && regIsW(in.ops[1].Reg()) {
 			rmWidth = "w"
 		}
 
-		if len(in.ops) >= 3 && in.ops[2].kind == armOpReg {
-			if regIsW(in.ops[2].reg) {
+		if len(in.ops) >= 3 && in.ops[2].Kind() == arch.ArmOpReg {
+			if regIsW(in.ops[2].Reg()) {
 				rmWidth = "w"
 			} else {
 				rmWidth = "x"
@@ -716,7 +722,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 
 	case "movWide":
 		// movz/movn/movk Rd, #imm16[, lsl #hw*16] | mov Rd, #imm (alias)
-		if len(in.ops) != 2 && (len(in.ops) != 3 || in.ops[2].kind != armOpShift) {
+		if len(in.ops) != 2 && (len(in.ops) != 3 || in.ops[2].Kind() != arch.ArmOpShift) {
 			return nil, errors.New("bad operand count")
 		}
 
@@ -731,7 +737,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		hw := int64(0)
-		if len(in.ops) == 3 && in.ops[2].kind == armOpShift {
+		if len(in.ops) == 3 && in.ops[2].Kind() == arch.ArmOpShift {
 			sh := shiftAmt(in.ops[2])
 			if sh%16 != 0 || sh > 48 {
 				return nil, fmt.Errorf("bad movk shift %d", sh)
@@ -938,9 +944,9 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		fields := map[string]any{"Rt": rt, "Rn": m.base}
-		if m.hasOff {
-			off := m.off
+		fields := map[string]any{"Rt": rt, "Rn": m.Base()}
+		if m.HasOff() {
+			off := m.Off()
 			switch s.Formatter {
 			case "lsImm", "lsSigned":
 				scale := int64(1) << (uint64(s.Value>>30) & 3)
@@ -978,15 +984,15 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		if m.offReg == "" {
+		if m.OffReg() == "" {
 			return nil, errors.New("register offset expected")
 		}
 
-		fields := map[string]any{"Rt": rt, "Rn": m.base, "Rm": m.offReg}
-		if m.opt != "" {
-			fields["option"] = m.opt
+		fields := map[string]any{"Rt": rt, "Rn": m.Base(), "Rm": m.OffReg()}
+		if m.Opt() != "" {
+			fields["option"] = m.Opt()
 			sBit := int64(0)
-			if m.hasOpt {
+			if m.HasOpt() {
 				sBit = 1
 			}
 
@@ -1011,12 +1017,12 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 
 		var off int64
 		switch {
-		case m.pre && s.Formatter == "lsPreIndex" && m.hasOff:
-			off = m.off
-		case m.hasPost && s.Formatter == "lsPostIndex":
-			off = m.post
-		case m.hasOff && s.Formatter == "lsPreIndex":
-			off = m.off
+		case m.Pre() && s.Formatter == "lsPreIndex" && m.HasOff():
+			off = m.Off()
+		case m.HasPost() && s.Formatter == "lsPostIndex":
+			off = m.Post()
+		case m.HasOff() && s.Formatter == "lsPreIndex":
+			off = m.Off()
 		default:
 			return nil, errors.New("indexing form mismatch")
 		}
@@ -1025,7 +1031,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, fmt.Errorf("offset %d out of imm9 range", off)
 		}
 
-		return map[string]any{"Rt": rt, "Rn": m.base, "imm9": off}, nil
+		return map[string]any{"Rt": rt, "Rn": m.Base(), "imm9": off}, nil
 
 	case "lsPair", "lsPairPP":
 		rt, err := opRegOf(in, 0)
@@ -1043,18 +1049,18 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		fields := map[string]any{"Rt": rt, "Rt2": rt2, "Rn": m.base}
+		fields := map[string]any{"Rt": rt, "Rt2": rt2, "Rn": m.Base()}
 		var off int64
 		switch {
-		case m.hasPost:
-			off = m.post
+		case m.HasPost():
+			off = m.Post()
 			fields["idx"] = 1
-		case m.pre:
-			off = m.off
+		case m.Pre():
+			off = m.Off()
 			fields["idx"] = 3
 		default:
-			if m.hasOff {
-				off = m.off
+			if m.HasOff() {
+				off = m.Off()
 			}
 
 			fields["idx"] = 2
@@ -1095,7 +1101,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 				return nil, err
 			}
 
-			return map[string]any{"Rt": rt, "Rn": m.base}, nil
+			return map[string]any{"Rt": rt, "Rn": m.Base()}, nil
 		}
 
 		// stxr Rs, Rt, [Rn]
@@ -1114,7 +1120,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		return map[string]any{"Rs": rs, "Rt": rt, "Rn": m.base}, nil
+		return map[string]any{"Rs": rs, "Rt": rt, "Rn": m.Base()}, nil
 
 	case "stxrbFmt":
 		rs, err := opRegOf(in, 0)
@@ -1132,11 +1138,11 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		return map[string]any{"Rs": rs, "Rt": rt, "Rn": m.base}, nil
+		return map[string]any{"Rs": rs, "Rt": rt, "Rn": m.Base()}, nil
 
 	case "ldrLiteral":
 		// ldr Rt, target (no brackets)
-		if len(in.ops) != 2 || in.ops[1].kind != armOpImm {
+		if len(in.ops) != 2 || in.ops[1].Kind() != arch.ArmOpImm {
 			return nil, errors.New("literal form expects Rt, target")
 		}
 
@@ -1447,11 +1453,11 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		sr := in.ops[1]
-		if sr.kind != armOpImm || sr.sym == "" {
+		if sr.Kind() != arch.ArmOpImm || sr.Sym() == "" {
 			return nil, errors.New("sysreg name expected")
 		}
 
-		return map[string]any{"Rd": rd, "sysreg": sr.sym}, nil
+		return map[string]any{"Rd": rd, "sysreg": sr.Sym()}, nil
 
 	case "msrFmt":
 		if len(in.ops) < 2 {
@@ -1459,7 +1465,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		sr := in.ops[0]
-		if sr.kind != armOpImm || sr.sym == "" {
+		if sr.Kind() != arch.ArmOpImm || sr.Sym() == "" {
 			return nil, errors.New("sysreg name expected")
 		}
 
@@ -1468,7 +1474,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		return map[string]any{"Rt": rt, "sysreg": sr.sym}, nil
+		return map[string]any{"Rt": rt, "sysreg": sr.Sym()}, nil
 
 	case "fmovImmD":
 		if len(in.ops) != 2 {
@@ -1480,13 +1486,13 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		if in.ops[1].kind != armOpFloat {
+		if in.ops[1].Kind() != arch.ArmOpFloat {
 			return nil, errors.New("float immediate expected")
 		}
 
-		imm8, ok := encodeVFPImm64(in.ops[1].fval)
+		imm8, ok := encodeVFPImm64(in.ops[1].Float())
 		if !ok {
-			return nil, fmt.Errorf("immediate %v not VFP-encodable", in.ops[1].fval)
+			return nil, fmt.Errorf("immediate %v not VFP-encodable", in.ops[1].Float())
 		}
 
 		return map[string]any{"Rd": rd, "imm8": imm8}, nil
@@ -1501,13 +1507,13 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		if in.ops[1].kind != armOpFloat {
+		if in.ops[1].Kind() != arch.ArmOpFloat {
 			return nil, errors.New("float immediate expected")
 		}
 
-		imm8, ok := encodeVFPImm32(in.ops[1].fval)
+		imm8, ok := encodeVFPImm32(in.ops[1].Float())
 		if !ok {
-			return nil, fmt.Errorf("immediate %v not VFP-encodable", in.ops[1].fval)
+			return nil, fmt.Errorf("immediate %v not VFP-encodable", in.ops[1].Float())
 		}
 
 		return map[string]any{"Rd": rd, "imm8": imm8}, nil
@@ -1570,7 +1576,7 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 			return nil, err
 		}
 
-		if len(in.ops) >= 2 && in.ops[1].kind == armOpReg {
+		if len(in.ops) >= 2 && in.ops[1].Kind() == arch.ArmOpReg {
 			rm, err := opRegOf(in, 1)
 			if err != nil {
 				return nil, err
@@ -1669,8 +1675,8 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		idx := int64(0)
-		if in.ops[1].laneIdx {
-			idx = in.ops[1].num
+		if in.ops[1].LaneIdx() {
+			idx = in.ops[1].Num()
 		}
 
 		// .d element: imm5 = 1<<(3+idx) (mirror of movElem: idx = imm5>>4)
@@ -1694,8 +1700,8 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		count := 1
-		if len(in.ops) > 0 && in.ops[0].kind == armOpList {
-			count = len(in.ops[0].list)
+		if len(in.ops) > 0 && in.ops[0].Kind() == arch.ArmOpList {
+			count = len(in.ops[0].List())
 		}
 
 		l := 0
@@ -1713,9 +1719,9 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 		}
 
 		fields := map[string]any{
-			"Rt": rt, "Rn": m.base, "opcode": opc, "size": size, "Q": q, "L": l,
+			"Rt": rt, "Rn": m.Base(), "opcode": opc, "size": size, "Q": q, "L": l,
 		}
-		if m.hasPost {
+		if m.HasPost() {
 			// post-index immediate: Rm=11111 (the value is NOT encoded —
 			// it is implicit: regBytes×count / element size)
 			fields["s"] = uint32(0x1f)
@@ -1728,10 +1734,6 @@ func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) 
 }
 
 // --- helpers ---
-
-func shiftAmt(op vOp) int64 {
-	return op.num
-}
 
 func boolToInt(b bool) int {
 	if b {
@@ -1771,7 +1773,7 @@ func addSubRegNum(name string) (uint32, error) {
 
 // condText — condition text from an operand.
 func condText(op vOp) string {
-	return op.sym
+	return op.Sym()
 }
 
 // arrangementOf — ".8b"/".2d"/... → (Q, size).
@@ -1801,8 +1803,8 @@ func arrangementOf(arr string) (uint32, uint32, error) {
 // arrOf — arrangement from the first operand's register suffix or from the
 // mnemonic suffix ("cmeq.2d v8, ..." — suffix on the mnemonic).
 func arrOf(in resolvedInstr) string {
-	if len(in.ops) > 0 && in.ops[0].arr != "" {
-		return in.ops[0].arr
+	if len(in.ops) > 0 && in.ops[0].Arr() != "" {
+		return in.ops[0].Arr()
 	}
 
 	if i := strings.IndexByte(in.mnem, '.'); i >= 0 {
@@ -1819,15 +1821,15 @@ func listFirstReg(in resolvedInstr, i int) (string, error) {
 	}
 
 	op := in.ops[i]
-	switch op.kind {
-	case armOpReg:
-		return op.reg, nil
-	case armOpList:
-		if len(op.list) == 0 {
+	switch op.Kind() {
+	case arch.ArmOpReg:
+		return op.Reg(), nil
+	case arch.ArmOpList:
+		if len(op.List()) == 0 {
 			return "", errors.New("empty register list")
 		}
 
-		return op.list[0].reg, nil
+		return op.List()[0].Reg(), nil
 	default:
 		return "", errors.New("register or register list expected")
 	}
@@ -1870,4 +1872,115 @@ func encodeVFPImm32(v float64) (uint32, bool) {
 	}
 
 	return 0, false
+}
+
+// --- operand access + word packing (moved from arch assemble.go) ---
+
+// contextTransforms — transforms that require addr (branches, literal
+// offsets): their inverses are not in the registry, format handlers put
+// ready bits into the fields, and packFields passes them through the empty
+// transform.
+var contextTransforms = map[string]bool{
+	"brOff26": true, "brOff19": true, "brOff14": true,
+	"sext19": true, "sext9": true,
+	"lsPairImm7_64": true, "lsPairImm7_32": true,
+}
+
+// packFields assembles the word: Schema.Value | fields (inverse transforms).
+func packFields(s *Schema, fields map[string]any) (uint32, error) {
+	w := s.Value
+	for _, f := range s.Fields {
+		v, ok := fields[f.Name]
+		if !ok {
+			// field not set by a handler — must be part of Value
+			continue
+		}
+
+		var bits uint32
+		var err error
+		if contextTransforms[f.Transform] {
+			bits, err = applyInverseTransform("", v) // value already = bits
+			if err == nil && f.Width < 32 {
+				bits &= (1 << f.Width) - 1 // signed raw bits (imm7=-2 → 0x7e)
+			}
+		} else {
+			bits, err = applyInverseTransform(f.Transform, v)
+		}
+
+		if err != nil {
+			return 0, fmt.Errorf("field %s: %w", f.Name, err)
+		}
+
+		if f.Width < 32 && bits>>f.Width != 0 {
+			return 0, fmt.Errorf("field %s: %#x does not fit in %d bits", f.Name, bits, f.Width)
+		}
+
+		w |= bits << f.Offset
+	}
+
+	return w, nil
+}
+
+// opRegOf — the register operand at position i (or an error).
+func opRegOf(in resolvedInstr, i int) (string, error) {
+	if i >= len(in.ops) {
+		return "", fmt.Errorf("operand %d: register expected", i+1)
+	}
+
+	op := in.ops[i]
+	if op.Kind() != arch.ArmOpReg {
+		return "", fmt.Errorf("operand %d: register expected", i+1)
+	}
+
+	return op.Reg(), nil
+}
+
+// opImmOf — the number operand at position i (the value is already computed).
+func opImmOf(in resolvedInstr, i int) (int64, error) {
+	if i >= len(in.ops) {
+		return 0, fmt.Errorf("operand %d: immediate expected", i+1)
+	}
+
+	op := in.ops[i]
+	if op.Kind() == arch.ArmOpImm {
+		return op.Num(), nil
+	}
+
+	if op.Kind() == arch.ArmOpFloat {
+		return int64(math.Float64bits(op.Float())), nil
+	}
+
+	return 0, fmt.Errorf("operand %d: immediate expected", i+1)
+}
+
+// opMemOf — the memory operand at position i.
+func opMemOf(in resolvedInstr, i int) (vMem, error) {
+	if i >= len(in.ops) || in.ops[i].Kind() != arch.ArmOpMem {
+		return vMem{}, fmt.Errorf("operand %d: memory operand expected", i+1)
+	}
+
+	return in.ops[i].Mem(), nil
+}
+
+// opShiftOf — a trailing lsl/... modifier (after position from).
+func opShiftOf(in resolvedInstr, from int) (name string, amt int64, ok bool) {
+	for i := from; i < len(in.ops); i++ {
+		if in.ops[i].Kind() == arch.ArmOpShift {
+			return in.ops[i].ShiftName(), in.ops[i].Num(), true
+		}
+	}
+
+	return "", 0, false
+}
+
+// legacyBuild — legacy encoding of a candidate from computed operands:
+// format-family handlers + word assembly via inverse transforms (the
+// old arch.BuildLegacy seam, now local).
+func legacyBuild(s *Schema, mnem string, ops []vOp, pc uint64) (uint32, error) {
+	fields, err := armFieldsFor(s, resolvedInstr{mnem: mnem, ops: ops}, ctx{Addr: pc})
+	if err != nil {
+		return 0, err
+	}
+
+	return packFields(s, fields)
 }

@@ -1,5 +1,7 @@
 package arm64
 
+import arch "github.com/okneniz/assembly/arch/arm64"
+
 // Load/store pair assembler constructors: ldp/stp rt, rt2, [rn{, #imm7}{!}]
 // | ldp rt, rt2, [rn], #imm.
 
@@ -26,12 +28,12 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 		return nil, err
 	}
 
-	m := ops[2].mem
-	if m == nil {
+	if !ops[2].IsMem() {
 		return nil, fmt.Errorf("%s: memory operand expected", name)
 	}
+	m := ops[2].Mem()
 
-	rn := m.base
+	rn := m.Base()
 	scale := uint32(2)
 	enc := uint32(0xA9400000) // ldp x pair offset form
 	switch rt[0] {
@@ -47,23 +49,22 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 		enc &^= 1 << 22
 	}
 
-	var kind memKind
+	var kind arch.MemKind
 	var off int64
 	switch {
-	case m.post != 0:
-		kind, off = memPost, m.post
+	case m.Post() != 0:
+		kind, off = arch.MemPost, m.Post()
 		enc = enc&^0x01800000 | 0x00800000
-	case m.pre:
-		kind, off = memPre, m.off
+	case m.Pre():
+		kind, off = arch.MemPre, m.Off()
 		enc |= 0x01800000
 	default:
-		kind, off = memImm, m.off
+		kind, off = arch.MemImm, m.Off()
 	}
 
-	pb := newPairBase(rt, rt2, rn, kind, off, scale, enc)
 	if name == "ldp" {
-		return Ldp{pairBase: pb}, nil
+		return LdpOf(rt, rt2, rn, kind, off, scale, enc), nil
 	}
 
-	return Stp{pairBase: pb}, nil
+	return StpOf(rt, rt2, rn, kind, off, scale, enc), nil
 }

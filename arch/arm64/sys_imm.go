@@ -73,3 +73,8 @@ func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32, uint64) In
 		}
 	}
 }
+
+// SysImmOf — the system instruction with imm16 (svc/brk/hlt/hvc/udf).
+func SysImmOf(name string, imm16 uint32, enc uint32, shift uint) sysImm {
+	return sysImm{name: name, imm16: imm16, enc: enc, shift: shift}
+}

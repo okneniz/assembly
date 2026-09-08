@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestRev16Ctor(t *testing.T) {
+func TestRev16Build(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestRev16Ctor(t *testing.T) {
 	}{
 		{
 			"rev16 x0,x1",
-			ctorRev16(t, xreg(t, 0), xreg(t, 1)),
+			buildRev16(t, xreg(t, 0), xreg(t, 1)),
 			0xdac00420,
 		},
 		{
 			"rev16 w2,w3",
-			ctorRev16(t, wreg(t, 2), wreg(t, 3)),
+			buildRev16(t, wreg(t, 2), wreg(t, 3)),
 			0x5ac00462,
 		},
 		{
 			"rev16 x1,xzr",
-			ctorRev16(t, xreg(t, 1), XZR),
+			buildRev16(t, xreg(t, 1), XZR),
 			0xdac007e1,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorRev16(t, xreg(t, 0), xreg(t, 1))
+	in := buildRev16(t, xreg(t, 0), xreg(t, 1))
 	_, ok := in.(Rev16)
 	require.True(t, ok, "type = %T, want Rev16", in)
 	for _, c := range []struct {
@@ -71,9 +71,9 @@ func TestRev16Ctor(t *testing.T) {
 	}
 }
 
-// ctorRev16 — an instruction constructor wrapper for table literals:
+// buildRev16 — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorRev16(t *testing.T, rd, rn Reg) Instr {
+func buildRev16(t *testing.T, rd, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Rev16(rd, rn)
 	require.NoError(t, err)

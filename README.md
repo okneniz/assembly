@@ -138,9 +138,11 @@ Three ISA backends, fully separated (no shared line between them):
 
 - **Disassembler** — ARM64, RISC-V (RV64GC + RVC), LoongArch; diffed against llvm-objdump on real binaries
 - **Assembler** — GNU-as compatible syntax; assembles back into the same bytes
+- **llvm-mc byte parity** — all five hello examples (arm64 macOS/Linux/VM, RISC-V, LoongArch) assemble into exactly the bytes llvm-mc chooses; gated in docker (`make tests`)
 - **Executable writer** — minimal ELF64 (Linux, qemu) and Mach-O (arm64 macOS, ad-hoc signed)
 - **Container parsers** — ELF and Mach-O, self-contained, no `debug/elf`/`debug/macho`
-- **Generated decode tables** — from the ARM A64 XML, Spike's `encoding.h`, `loongarch-opcodes`
+- **Generated decode tables** — from the ARM A64 XML, Spike's `encoding.h`, loongarch-opcodes
+- **prog DSL** — Go-level machine code programming (chain methods = source lines)
 - **Web UI** — disassembly viewer + assembler panel
 - **assembly-diff** — objdump coverage gate
 
@@ -224,6 +226,7 @@ One command runs every gate: `make tests`. What it actually checks:
 - **Differential gates vs objdump** — every instruction diffed against objdump, address-keyed, on real binaries:
   - ARM64: 99.97% on a Go Mach-O build (155,576 of 155,625)
   - RISC-V: 100% on the example
+- **llvm-mc byte parity** — all five hello examples assemble into the exact bytes llvm-mc produces (`llvm-mc -mattr=+c` for RISC-V, `ld.lld` for LoongArch relocation-dependent forms); skips without the LLVM tools, runs in the docker toolchain container
 - **Round-trip fidelity on real binaries**:
   - the project's own CLIs, cross-built for linux/arm64, linux/riscv64 and linux/loong64
   - each binary: disasm → listing → assemble, 3 iterations
@@ -252,6 +255,8 @@ Conventions and trade-offs established for this codebase (ARM64, RISC-V and Loon
 **Data-driven schemas (ARM64).** Every ARM64 instruction is `Schema{Mask, Value, Fields, Formatter}` matched by `(word & Mask) == Value`. `Transform`/`Formatter` are string keys into registries (not closures), so a schema stays plain, serializable data.
 
 **Decode data is generated; formatting is hand-written.** Match/mask tables come from each arch's authoritative source (Spike's `encoding.h`, ARM sysreg XML + m1n1, the loongarch-opcodes tables) via `gen/cmd/*`; operand layout and alias mnemonics are hand-written because they can't be machine-generated. RISC-V joins the two by mnemonic: `decodeTable` holds the format config, `riscvEncodings` (generated) holds the match/mask.
+
+**arch/\* is the model; asm/\* is the assembler.** `arch/arm64` contains the decode table, per-instruction structures (Encode/ObjDump), the Builder vocabulary (programmatic construction), and the shared operand interface (vOp) — nothing that exists only for the assembler. The assembler constructors, the legacy fallback, the alias layer, and the pseudo-instruction expanders all live in `asm/arm64` and below. The same separation holds for RISC-V and LoongArch.
 
 **No shared instruction type — instructions represent themselves.** Each arch owns its decode result with its own `Parse` and rendering; duplication between the arches is accepted as the lesser evil compared to a bad abstraction (a shared "universal instruction" model was tried and reverted). What crosses package boundaries are only small capability interfaces (`disasm.ObjDump`, `asm.Instr`); consumers `switch` on `file.ArchKind` and call the arch directly — no registry, no shared `Architecture` interface.
 

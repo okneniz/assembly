@@ -10,8 +10,8 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// ctorWord — the word encoded by a constructor.
-func ctorWord(t *testing.T, in Instr) uint32 {
+// builderWord — the word encoded by a constructor.
+func buildWord(t *testing.T, in Instr) uint32 {
 	t.Helper()
 	var buf bytes.Buffer
 	_, err := in.Encode(&buf, 0x1000)
@@ -63,65 +63,65 @@ func imm6(t *testing.T, v int64) Imm6 {
 	return iv
 }
 
-// ctorAddImm and its siblings — instruction constructor wrappers for
+// buildAddImm and its siblings — instruction constructor wrappers for
 // table literals: valid operands, an error is impossible by construction.
-func ctorAddImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
+func buildAddImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
 	t.Helper()
 	in, err := New().AddImm(rd, rn, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorAddShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
+func buildAddShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
 	in, err := New().AddShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorSubImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
+func buildSubImm(t *testing.T, rd, rn Reg, imm Imm12, sh Sh12) Instr {
 	t.Helper()
 	in, err := New().SubImm(rd, rn, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorSubShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
+func buildSubShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
 	in, err := New().SubShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorMovz(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
+func buildMovz(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
 	t.Helper()
 	in, err := New().Movz(rd, imm, hw)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorMovk(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
+func buildMovk(t *testing.T, rd Reg, imm Imm16, hw Hw) Instr {
 	t.Helper()
 	in, err := New().Movk(rd, imm, hw)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorLdr(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildLdr(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldr(rt, rn, off)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorStr(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildStr(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Str(rt, rn, off)
 	require.NoError(t, err)
 	return in
 }
 
-func ctorRet(t *testing.T, rn Reg) Instr {
+func buildRet(t *testing.T, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Ret(rn)
 	require.NoError(t, err)

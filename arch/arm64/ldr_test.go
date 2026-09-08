@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLdrCtor(t *testing.T) {
+func TestLdrBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,31 +14,31 @@ func TestLdrCtor(t *testing.T) {
 	}{
 		{
 			"ldr x0,[x1]",
-			ctorLdr(t, xreg(t, 0), xreg(t, 1), 0),
+			buildLdr(t, xreg(t, 0), xreg(t, 1), 0),
 			0xf9400020,
 		},
 		{
 			"ldr x0,[x1,#8]",
-			ctorLdr(t, xreg(t, 0), xreg(t, 1), 8),
+			buildLdr(t, xreg(t, 0), xreg(t, 1), 8),
 			0xf9400420,
 		},
 		{
 			"ldr w2,[sp,#0x10]",
-			ctorLdr(t, wreg(t, 2), SP, 0x10),
+			buildLdr(t, wreg(t, 2), SP, 0x10),
 			0xb94013e2,
 		},
 		{
 			"ldr xzr,[x1,#0x7ff8]",
-			ctorLdr(t, XZR, xreg(t, 1), 0x7ff8),
+			buildLdr(t, XZR, xreg(t, 1), 0x7ff8),
 			0xf97ffc3f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorLdr(t, xreg(t, 0), xreg(t, 1), 0)
+	in := buildLdr(t, xreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Ldr)
 	require.True(t, ok, "type = %T, want Ldr", in)
 	for _, c := range []struct {

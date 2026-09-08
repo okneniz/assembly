@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestBlCtor(t *testing.T) {
+func TestBlBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -36,7 +36,7 @@ func TestBlCtor(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),

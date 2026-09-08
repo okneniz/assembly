@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdarCtor(t *testing.T) {
+func TestLdarBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestLdarCtor(t *testing.T) {
 	}{
 		{
 			"ldar x0,[x1]",
-			ctorLdar(t, xreg(t, 0), xreg(t, 1)),
+			buildLdar(t, xreg(t, 0), xreg(t, 1)),
 			0xc8dffc20,
 		},
 		{
 			"ldar w2,[sp]",
-			ctorLdar(t, wreg(t, 2), SP),
+			buildLdar(t, wreg(t, 2), SP),
 			0x88dfffe2,
 		},
 		{
 			"ldar xzr,[x3]",
-			ctorLdar(t, XZR, xreg(t, 3)),
+			buildLdar(t, XZR, xreg(t, 3)),
 			0xc8dffc7f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdar(t, xreg(t, 0), xreg(t, 1))
+	in := buildLdar(t, xreg(t, 0), xreg(t, 1))
 	_, ok := in.(Ldar)
 	require.True(t, ok, "type = %T, want Ldar", in)
 	for _, c := range []struct {
@@ -64,9 +64,9 @@ func TestLdarCtor(t *testing.T) {
 	}
 }
 
-// ctorLdar — an instruction constructor wrapper for table literals:
+// buildLdar — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdar(t *testing.T, rt, rn Reg) Instr {
+func buildLdar(t *testing.T, rt, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Ldar(rt, rn)
 	require.NoError(t, err)

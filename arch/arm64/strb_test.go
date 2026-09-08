@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestStrbCtor(t *testing.T) {
+func TestStrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestStrbCtor(t *testing.T) {
 	}{
 		{
 			"strb w0,[x1]",
-			ctorStrb(t, wreg(t, 0), xreg(t, 1), 0),
+			buildStrb(t, wreg(t, 0), xreg(t, 1), 0),
 			0x39000020,
 		},
 		{
 			"strb wzr,[sp,#1]",
-			ctorStrb(t, WZR, SP, 1),
+			buildStrb(t, WZR, SP, 1),
 			0x390007ff,
 		},
 		{
 			"strb w2,[x3,#0xfff]",
-			ctorStrb(t, wreg(t, 2), xreg(t, 3), 0xfff),
+			buildStrb(t, wreg(t, 2), xreg(t, 3), 0xfff),
 			0x393ffc62,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorStrb(t, wreg(t, 0), xreg(t, 1), 0)
+	in := buildStrb(t, wreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Strb)
 	require.True(t, ok, "type = %T, want Strb", in)
 	for _, c := range []struct {
@@ -71,9 +71,9 @@ func TestStrbCtor(t *testing.T) {
 	}
 }
 
-// ctorStrb — an instruction constructor wrapper for table literals:
+// buildStrb — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorStrb(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildStrb(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Strb(rt, rn, off)
 	require.NoError(t, err)

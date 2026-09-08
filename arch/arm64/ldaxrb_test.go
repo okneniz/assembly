@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdaxrbCtor(t *testing.T) {
+func TestLdaxrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestLdaxrbCtor(t *testing.T) {
 	}{
 		{
 			"ldaxrb w0,[x1]",
-			ctorLdaxrb(t, wreg(t, 0), xreg(t, 1)),
+			buildLdaxrb(t, wreg(t, 0), xreg(t, 1)),
 			0x085ffc20,
 		},
 		{
 			"ldaxrb w5,[sp]",
-			ctorLdaxrb(t, wreg(t, 5), SP),
+			buildLdaxrb(t, wreg(t, 5), SP),
 			0x085fffe5,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdaxrb(t, wreg(t, 0), xreg(t, 1))
+	in := buildLdaxrb(t, wreg(t, 0), xreg(t, 1))
 	_, ok := in.(Ldaxrb)
 	require.True(t, ok, "type = %T, want Ldaxrb", in)
 	for _, c := range []struct {
@@ -59,9 +59,9 @@ func TestLdaxrbCtor(t *testing.T) {
 	}
 }
 
-// ctorLdaxrb — an instruction constructor wrapper for table literals:
+// buildLdaxrb — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdaxrb(t *testing.T, rt, rn Reg) Instr {
+func buildLdaxrb(t *testing.T, rt, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Ldaxrb(rt, rn)
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestBrCtor(t *testing.T) {
+func TestBrBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestBrCtor(t *testing.T) {
 	}{
 		{
 			"br x5",
-			ctorBr(t, xreg(t, 5)),
+			buildBr(t, xreg(t, 5)),
 			0xd61f00a0,
 		},
 		{
 			"br x0",
-			ctorBr(t, xreg(t, 0)),
+			buildBr(t, xreg(t, 0)),
 			0xd61f0000,
 		},
 		{
 			"br xzr",
-			ctorBr(t, XZR),
+			buildBr(t, XZR),
 			0xd61f03e0,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorBr(t, xreg(t, 5))
+	in := buildBr(t, xreg(t, 5))
 	_, ok := in.(Br)
 	require.True(t, ok, "type = %T, want Br", in)
 	for _, c := range []struct {
@@ -57,9 +57,9 @@ func TestBrCtor(t *testing.T) {
 	}
 }
 
-// ctorBr — an instruction constructor wrapper for table literals:
+// buildBr — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorBr(t *testing.T, rn Reg) Instr {
+func buildBr(t *testing.T, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Br(rn)
 	require.NoError(t, err)

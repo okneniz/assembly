@@ -8,6 +8,7 @@ package arm64
 
 import (
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // asAddSub — the constructor by the base (op, S) pair and form.
@@ -43,11 +44,11 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 		mod = ops[idx+1]
 	}
 
-	isf := ops[0].reg[0] == 'x'
-	switch op.kind {
-	case armOpImm:
+	isf := ops[0].Reg()[0] == 'x'
+	switch op.Kind() {
+	case arch.ArmOpImm:
 		if hasMod {
-			if mod.kind != armOpShift || mod.shift != "lsl" {
+			if mod.Kind() != arch.ArmOpShift || mod.ShiftName() != "lsl" {
 				return nil, fmt.Errorf("%s: only lsl #12 modifier allowed", base)
 			}
 
@@ -56,18 +57,18 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 			}
 		}
 
-		if op.sym != "" {
+		if op.Sym() != "" {
 			return nil, fmt.Errorf("%s: want immediate operand", base)
 		}
 
-		v := op.num
+		v := op.Num()
 		if v < 0 || v > 0xfff {
 			return nil, fmt.Errorf("%s: large imm — legacy path", base)
 		}
 
 		sh := hasMod
 		return makeImmStruct(base, rdN, rnN, uint32(v), sh, isf), nil
-	case armOpReg:
+	case arch.ArmOpReg:
 		rm, err := wantAReg(op, base)
 		if err != nil {
 			return nil, err
@@ -77,17 +78,17 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 			return makeShiftStruct(base, rdN, rnN, rm, "lsl", 0, isf), nil
 		}
 
-		switch mod.kind {
-		case armOpShift:
+		switch mod.Kind() {
+		case arch.ArmOpShift:
 			amt := shiftAmt(mod)
 			if amt < 0 || amt > 63 {
 				return nil, fmt.Errorf("%s: bad shift", base)
 			}
 
-			return makeShiftStruct(base, rdN, rnN, rm, mod.shift, uint32(amt), isf), nil
-		case armOpExtend:
-			ext := mod.shift
-			amt := mod.num
+			return makeShiftStruct(base, rdN, rnN, rm, mod.ShiftName(), uint32(amt), isf), nil
+		case arch.ArmOpExtend:
+			ext := mod.ShiftName()
+			amt := mod.Num()
 			if amt < 0 || amt > 7 {
 				return nil, fmt.Errorf("%s: bad extend amount", base)
 			}
@@ -105,37 +106,13 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) Instr {
 	switch base {
 	case "adds":
-		return AddsImm{
-			rdNum: rd,
-			rnNum: rn,
-			imm12: imm12,
-			shift: sh,
-			isf:   isf,
-		}
+		return AddsImmOf(rd, rn, imm12, sh, isf)
 	case "sub":
-		return SubImm{
-			rdNum: rd,
-			rnNum: rn,
-			imm12: imm12,
-			shift: sh,
-			isf:   isf,
-		}
+		return SubImmOf(rd, rn, imm12, sh, isf)
 	case "subs":
-		return SubsImm{
-			rdNum: rd,
-			rnNum: rn,
-			imm12: imm12,
-			shift: sh,
-			isf:   isf,
-		}
+		return SubsImmOf(rd, rn, imm12, sh, isf)
 	default:
-		return AddImm{
-			rdNum: rd,
-			rnNum: rn,
-			imm12: imm12,
-			shift: sh,
-			isf:   isf,
-		}
+		return AddImmOf(rd, rn, imm12, sh, isf)
 	}
 }
 
@@ -144,41 +121,13 @@ func makeShiftStruct(base string, rdN, rnN uint32, rm, shift string, amt uint32,
 	rn := addSubRegName(rnN, isf, false)
 	switch base {
 	case "adds":
-		return AddsShift{
-			rd:    rd,
-			rn:    rn,
-			rm:    rm,
-			imm6:  amt,
-			shift: shift,
-			isf:   isf,
-		}
+		return AddsShiftOf(rd, rn, rm, amt, shift, isf)
 	case "sub":
-		return SubShift{
-			rd:    rd,
-			rn:    rn,
-			rm:    rm,
-			imm6:  amt,
-			shift: shift,
-			isf:   isf,
-		}
+		return SubShiftOf(rd, rn, rm, amt, shift, isf)
 	case "subs":
-		return SubsShift{
-			rd:    rd,
-			rn:    rn,
-			rm:    rm,
-			imm6:  amt,
-			shift: shift,
-			isf:   isf,
-		}
+		return SubsShiftOf(rd, rn, rm, amt, shift, isf)
 	default:
-		return AddShift{
-			rd:    rd,
-			rn:    rn,
-			rm:    rm,
-			imm6:  amt,
-			shift: shift,
-			isf:   isf,
-		}
+		return AddShiftOf(rd, rn, rm, amt, shift, isf)
 	}
 }
 
@@ -188,16 +137,15 @@ func makeExtStruct(base string, rdN, rnN uint32, rm, ext string, amt uint32, isf
 		rmN = 0
 	}
 
-	eb := newExtBase(rdN, rnN, rmN, ext, amt, isf)
 	switch base {
 	case "adds":
-		return AddsExt{extBase: eb}
+		return AddsExtOf(rdN, rnN, rmN, ext, amt, isf)
 	case "sub":
-		return SubExt{extBase: eb}
+		return SubExtOf(rdN, rnN, rmN, ext, amt, isf)
 	case "subs":
-		return SubsExt{extBase: eb}
+		return SubsExtOf(rdN, rnN, rmN, ext, amt, isf)
 	default:
-		return AddExt{extBase: eb}
+		return AddExtOf(rdN, rnN, rmN, ext, amt, isf)
 	}
 }
 

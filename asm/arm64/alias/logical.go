@@ -8,6 +8,7 @@ package alias
 import (
 	"errors"
 	"fmt"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
@@ -24,7 +25,7 @@ func newTst(ops []arch.ArmOp) (arch.Instr, error) {
 		return nil, err
 	}
 
-	if !arch.IsGPR(rn) {
+	if !arm64.IsGPR(rn) {
 		return nil, errors.New("tst: integer register expected")
 	}
 
@@ -40,7 +41,7 @@ func newTst(ops []arch.ArmOp) (arch.Instr, error) {
 		return arch.AndsImmOf(zr, rn, immr, imms, n == 1, is64), nil
 	}
 
-	if ops[1].IsReg() && arch.IsGPR(ops[1].Reg()) {
+	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {
 		shift, amt := "lsl", uint32(0)
 		if len(ops) == 3 {
 			if !ops[2].IsShift() {
@@ -72,7 +73,7 @@ func newMvn(ops []arch.ArmOp) (arch.Instr, error) {
 		return nil, err
 	}
 
-	if !arch.IsGPR(rd) || !arch.IsGPR(rm) {
+	if !arm64.IsGPR(rd) || !arm64.IsGPR(rm) {
 		return nil, errors.New("mvn: integer registers expected")
 	}
 
@@ -105,11 +106,11 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 		return nil, err
 	}
 
-	if !arch.IsGPR(rd) {
+	if !arm64.IsGPR(rd) {
 		return nil, errors.New("mov: integer register expected")
 	}
 
-	if ops[1].IsReg() && arch.IsGPR(ops[1].Reg()) {
+	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {
 		return arch.OrrShiftOf(rd, arch.ZeroReg(rd), ops[1].Reg(), 0, "", rd[0] == 'x'), nil
 	}
 

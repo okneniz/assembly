@@ -7,13 +7,14 @@ package arm64
 import (
 	"errors"
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // newAdr — adr rd, sym|#off: the target (resolveOps: abs − addr).
 // Our syntax: adr rd, #<offset from the current address> (as the formatter
 // prints it); a symbolic target — legacy.
 func newAdr(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[1].kind != armOpImm {
+	if len(ops) != 2 || ops[1].Kind() != arch.ArmOpImm {
 		return nil, errors.New("adr: want rd, #off")
 	}
 
@@ -22,21 +23,18 @@ func newAdr(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	v := ops[1].num
+	v := ops[1].Num()
 	if v < -(1<<20) || v >= 1<<20 {
 		return nil, errors.New("adr: offset out of range")
 	}
 
-	return Adr{
-		rd:  rd,
-		off: v,
-	}, nil
+	return AdrOf(rd, v), nil
 }
 
 // newAdrp — adrp rd, #pageOff (the page offset as the formatter prints it;
 // the address annotation is cut off by the comment).
 func newAdrp(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[1].kind != armOpImm {
+	if len(ops) != 2 || ops[1].Kind() != arch.ArmOpImm {
 		return nil, errors.New("adrp: want rd, #pageoff")
 	}
 
@@ -45,21 +43,18 @@ func newAdrp(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	v := ops[1].num
+	v := ops[1].Num()
 	if v < -(1<<20) || v >= 1<<20 {
 		return nil, errors.New("adrp: offset out of range")
 	}
 
-	return Adrp{
-		rd:  rd,
-		off: v,
-	}, nil
+	return AdrpOf(rd, v), nil
 }
 
 // newTbzArm — tbz/tbnz rt, #bit, target.
 func newTbzArm(isTbnz bool) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
-		if len(ops) != 3 || ops[1].kind != armOpImm {
+		if len(ops) != 3 || ops[1].Kind() != arch.ArmOpImm {
 			return nil, errors.New("tbz: want rt, #bit, target")
 		}
 
@@ -68,21 +63,16 @@ func newTbzArm(isTbnz bool) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		bit := ops[1].num
+		bit := ops[1].Num()
 		if bit < 0 || bit > 63 {
 			return nil, errors.New("tbz: bad bit")
 		}
 
-		if ops[2].kind != armOpImm {
+		if ops[2].Kind() != arch.ArmOpImm {
 			return nil, errors.New("tbz: target expected")
 		}
 
-		return Tbz{
-			rt:     rt,
-			bit:    uint32(bit),
-			target: immNum(ops[2].num),
-			isTbnz: isTbnz,
-		}, nil
+		return TbzOf(rt, uint32(bit), ops[2].Num(), isTbnz), nil
 	}
 }
 
@@ -93,12 +83,7 @@ func newSvc(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return sysImm{
-		name:  "svc",
-		imm16: uint32(v),
-		enc:   0xD4000001,
-		shift: 5,
-	}, nil
+	return arch.SysImmOf("svc", uint32(v), 0xD4000001, 5), nil
 }
 
 // newBrkArm — brk #imm16 (#0 → "#0").
@@ -108,12 +93,7 @@ func newBrkArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return sysImm{
-		name:  "brk",
-		imm16: uint32(v),
-		enc:   0xD4200000,
-		shift: 5,
-	}, nil
+	return arch.SysImmOf("brk", uint32(v), 0xD4200000, 5), nil
 }
 
 // newUdfArm — udf #imm16.
@@ -123,12 +103,7 @@ func newUdfArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return sysImm{
-		name:  "udf",
-		imm16: uint32(v),
-		enc:   0x00000000,
-		shift: 5,
-	}, nil
+	return arch.SysImmOf("udf", uint32(v), 0x00000000, 5), nil
 }
 
 // newHlt — hlt #imm16; newHvc — hvc.
@@ -138,12 +113,7 @@ func newHlt(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return sysImm{
-		name:  "hlt",
-		imm16: uint32(v),
-		enc:   0xD4400000,
-		shift: 21,
-	}, nil
+	return arch.SysImmOf("hlt", uint32(v), 0xD4400000, 21), nil
 }
 
 func newHvc(ops []vOp) (Instr, error) {
@@ -152,21 +122,16 @@ func newHvc(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return sysImm{
-		name:  "hvc",
-		imm16: uint32(v),
-		enc:   0xD4000002,
-		shift: 21,
-	}, nil
+	return arch.SysImmOf("hvc", uint32(v), 0xD4000002, 21), nil
 }
 
 // sysImm16 — a single immediate operand.
 func sysImm16(ops []vOp, name string) (int64, error) {
-	if len(ops) != 1 || ops[0].kind != armOpImm {
+	if len(ops) != 1 || ops[0].Kind() != arch.ArmOpImm {
 		return 0, fmt.Errorf("%s: want #imm", name)
 	}
 
-	v := ops[0].num
+	v := ops[0].Num()
 	if v < 0 || v > 0xffff {
 		return 0, fmt.Errorf("%s: bad imm", name)
 	}
@@ -176,7 +141,7 @@ func sysImm16(ops []vOp, name string) (int64, error) {
 
 // newMrsArm — mrs rd, sysreg.
 func newMrsArm(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[1].sym == "" {
+	if len(ops) != 2 || ops[1].Sym() == "" {
 		return nil, errors.New("mrs: want rd, sysreg")
 	}
 
@@ -185,15 +150,12 @@ func newMrsArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Mrs{
-		rd:     rd,
-		sysreg: ops[1].sym,
-	}, nil
+	return MrsOf(rd, ops[1].Sym()), nil
 }
 
 // newMsrArm — msr sysreg, rt.
 func newMsrArm(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[0].sym == "" {
+	if len(ops) != 2 || ops[0].Sym() == "" {
 		return nil, errors.New("msr: want sysreg, rt")
 	}
 
@@ -202,25 +164,19 @@ func newMsrArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Msr{
-		rt:     rt,
-		sysreg: ops[0].sym,
-	}, nil
+	return MsrOf(rt, ops[0].Sym()), nil
 }
 
 // newBcondOf — b.<cond> target: a numeric target — the absolute; a
 // symbolic one — legacy.
 func newBcondOf(cond string) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
-		if len(ops) != 1 || ops[0].kind != armOpImm {
+		if len(ops) != 1 || ops[0].Kind() != arch.ArmOpImm {
 			return nil, fmt.Errorf("b.%s: want target", cond)
 		}
 
-		v := ops[0].num
+		v := ops[0].Num()
 
-		return Bcond{
-			cond:   cond,
-			target: immNum(v),
-		}, nil
+		return BcondOf(cond, v), nil
 	}
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLsrRegCtor(t *testing.T) {
+func TestLsrRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,21 +14,21 @@ func TestLsrRegCtor(t *testing.T) {
 	}{
 		{
 			"lsr x1,x2,x3",
-			ctorLsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
+			buildLsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
 			0x9a032441,
 		},
 		{
 			"lsr w1,w2,w3",
-			ctorLsrReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
+			buildLsrReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
 			0x1a032441,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorLsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
+	in := buildLsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
 	_, ok := in.(LsrReg)
 	require.True(t, ok, "type = %T, want LsrReg", in)
 	for _, c := range []struct {
@@ -68,9 +68,9 @@ func TestLsrRegCtor(t *testing.T) {
 	}
 }
 
-// ctorLsrReg — an instruction constructor wrapper for table literals:
+// buildLsrReg — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLsrReg(t *testing.T, rd, rn, rm Reg) Instr {
+func buildLsrReg(t *testing.T, rd, rn, rm Reg) Instr {
 	t.Helper()
 	in, err := New().LsrReg(rd, rn, rm)
 	require.NoError(t, err)

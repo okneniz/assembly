@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestSturhCtor(t *testing.T) {
+func TestSturhBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestSturhCtor(t *testing.T) {
 	}{
 		{
 			"sturh w0,[x1]",
-			ctorSturh(t, wreg(t, 0), xreg(t, 1), 0),
+			buildSturh(t, wreg(t, 0), xreg(t, 1), 0),
 			0x78000020,
 		},
 		{
 			"sturh w7,[x8,#-9]",
-			ctorSturh(t, wreg(t, 7), xreg(t, 8), -9),
+			buildSturh(t, wreg(t, 7), xreg(t, 8), -9),
 			0x781f7107,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorSturh(t, wreg(t, 0), xreg(t, 1), 0)
+	in := buildSturh(t, wreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Sturh)
 	require.True(t, ok, "type = %T, want Sturh", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestSturhCtor(t *testing.T) {
 	}
 }
 
-// ctorSturh — an instruction constructor wrapper for table literals:
+// buildSturh — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorSturh(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildSturh(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Sturh(rt, rn, off)
 	require.NoError(t, err)

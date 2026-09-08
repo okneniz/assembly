@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestSbfmCtor(t *testing.T) {
+func TestSbfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestSbfmCtor(t *testing.T) {
 	}{
 		{
 			"sbfm x0,x1,#5,#63 (asr)",
-			ctorSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63),
+			buildSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63),
 			0x9345fc20,
 		},
 		{
 			"sbfm x1,x2,#0,#7 (sxtb)",
-			ctorSbfm(t, xreg(t, 1), xreg(t, 2), 0, 7),
+			buildSbfm(t, xreg(t, 1), xreg(t, 2), 0, 7),
 			0x93401c41,
 		},
 		{
 			"sbfm w3,w4,#1,#3 (sbfx)",
-			ctorSbfm(t, wreg(t, 3), wreg(t, 4), 1, 3),
+			buildSbfm(t, wreg(t, 3), wreg(t, 4), 1, 3),
 			0x13010c83,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63)
+	in := buildSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63)
 	_, ok := in.(Sbfm)
 	require.True(t, ok, "type = %T, want Sbfm", in)
 	for _, c := range []struct {
@@ -85,9 +85,9 @@ func TestSbfmCtor(t *testing.T) {
 	}
 }
 
-// ctorSbfm — an instruction constructor wrapper for table literals:
+// buildSbfm — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorSbfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
+func buildSbfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
 	t.Helper()
 	in, err := New().Sbfm(rd, rn, immr, imms)
 	require.NoError(t, err)

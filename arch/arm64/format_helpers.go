@@ -277,3 +277,8 @@ func bfmRegsize(rd string, immr, imms uint32) uint32 {
 
 	return 64
 }
+
+// LdStructDecode — the ldN structural name/arr/count by opcode bits.
+func LdStructDecode(opcode, size, q, l uint32) (name, arr string, count int, isElem bool) {
+	return ldStructDecode(opcode, size, q, l)
+}

@@ -116,3 +116,8 @@ func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32, uint64) Instr
 		}
 	}
 }
+
+// LdrPoolWrapOf — the pool-wrapped literal ldr (PoolUser).
+func LdrPoolWrapOf(rt string, tgt uint64, enc uint32) ldrPoolWrap {
+	return ldrPoolWrap{Ldr{lsBase: newLsBase(rt, "", memLiteral, 0, tgt, enc, "", "", 0)}}
+}

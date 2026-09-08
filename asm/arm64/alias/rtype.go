@@ -7,18 +7,19 @@ package alias
 
 import (
 	"fmt"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // newMul is the mul rd, rn, rm alias: madd with ra = zr.
 func newMul(ops []arch.ArmOp) (arch.Instr, error) {
-	return arch.MaddCtor(ops, "mul")
+	return arm64.MaddCtor(ops, "mul")
 }
 
 // newMneg is the mneg rd, rn, rm alias: msub with ra = zr.
 func newMneg(ops []arch.ArmOp) (arch.Instr, error) {
-	return arch.Msub3(ops, "mneg")
+	return arm64.Msub3(ops, "mneg")
 }
 
 // newCset/newCsetm are the cset/csetm rd, cond aliases: csinc/csinv
@@ -47,7 +48,7 @@ func csCond(ops []arch.ArmOp, name, base string) (arch.Instr, error) {
 	}
 
 	zr := arch.ZeroReg(rd)
-	return arch.CsOf(base, rd, zr, zr, arch.InvertCond(cond))
+	return arm64.CsOf(base, rd, zr, zr, arch.InvertCond(cond))
 }
 
 // newCinc/newCinv/newCneg are the cinc/cinv/cneg rd, rm, cond aliases:
@@ -84,5 +85,5 @@ func csRM(ops []arch.ArmOp, name, base string) (arch.Instr, error) {
 		return nil, err
 	}
 
-	return arch.CsOf(base, rd, rm, rm, arch.InvertCond(cond))
+	return arm64.CsOf(base, rd, rm, rm, arch.InvertCond(cond))
 }

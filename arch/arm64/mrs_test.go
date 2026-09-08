@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestMrsCtor(t *testing.T) {
+func TestMrsBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestMrsCtor(t *testing.T) {
 	}{
 		{
 			"mrs x0,MIDR_EL1",
-			ctorMrs(t, xreg(t, 0), "MIDR_EL1"),
+			buildMrs(t, xreg(t, 0), "MIDR_EL1"),
 			0xd5380000,
 		},
 		{
 			"mrs x5,SCTLR_EL1",
-			ctorMrs(t, xreg(t, 5), "SCTLR_EL1"),
+			buildMrs(t, xreg(t, 5), "SCTLR_EL1"),
 			0xd5381005,
 		},
 		{
 			"mrs x1,NZCV",
-			ctorMrs(t, xreg(t, 1), "NZCV"),
+			buildMrs(t, xreg(t, 1), "NZCV"),
 			0xd53b4201,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorMrs(t, xreg(t, 0), "MIDR_EL1")
+	in := buildMrs(t, xreg(t, 0), "MIDR_EL1")
 	_, ok := in.(Mrs)
 	require.True(t, ok, "type = %T, want Mrs", in)
 	for _, c := range []struct {
@@ -64,9 +64,9 @@ func TestMrsCtor(t *testing.T) {
 	}
 }
 
-// ctorMrs — an instruction constructor wrapper for table literals:
+// buildMrs — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorMrs(t *testing.T, rd Reg, sysreg string) Instr {
+func buildMrs(t *testing.T, rd Reg, sysreg string) Instr {
 	t.Helper()
 	in, err := New().Mrs(rd, sysreg)
 	require.NoError(t, err)

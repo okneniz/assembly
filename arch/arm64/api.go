@@ -73,9 +73,6 @@ func RegNameXOf(num uint32) string {
 func ZeroReg(rd string) string {
 	return zeroReg(rd)
 }
-func IsGPR(name string) bool {
-	return isGPR(name)
-}
 func ShiftAmt(op ArmOp) int64 {
 	return shiftAmt(op)
 }
@@ -89,25 +86,6 @@ func EncodeBitMasks(is64 bool, value uint64) (n, immr, imms uint32, ok bool) {
 }
 
 // --- family constructor machinery (reused by aliases) ---
-
-// AddSubThird — the third operand (imm | reg | reg+modifier) selects the
-// add/sub family form; cmp/cmn call it with rdN=31 (zr).
-func AddSubThird(ops []ArmOp, base string, rdN, rnN uint32, idx int) (Instr, error) {
-	return addSubThird(ops, base, rdN, rnN, idx)
-}
-
-// MaddCtor/Msub3 — constructors of the madd/msub family (mul/mneg: ra = zr).
-func MaddCtor(ops []ArmOp, name string) (Instr, error) {
-	return makeMaddCtor(ops, name)
-}
-func Msub3(ops []ArmOp, name string) (Instr, error) {
-	return msub3(ops, name)
-}
-
-// CsOf — assemble a csel-family struct by the base encoding name.
-func CsOf(base, rd, rn, rm, cond string) (Instr, error) {
-	return csOf(base, rd, rn, rm, cond)
-}
 
 // --- alias struct builders (struct fields stay unexported) ---
 
@@ -215,3 +193,48 @@ func UbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
 func VerifyBitMasks() error {
 	return verifyBitMasks()
 }
+
+// DecodeArrangement — the arrangement string by Q+size.
+func DecodeArrangement(q, size uint32) string { return decodeArrangement(q, size) }
+
+// RegNums2/3 — register names to numbers.
+func RegNums2(a, b string) (uint32, uint32, error)            { return regNums2(a, b) }
+func RegNums3(a, b, c string) (uint32, uint32, uint32, error) { return regNums3(a, b, c) }
+
+// AddSubRegName — the register name by number, sf and flags.
+func AddSubRegName(n uint32, isf bool, is64 bool) string { return addSubRegName(n, isf, is64) }
+
+// ArmReg3 — three registers.
+func ArmReg3(ops []ArmOp, name string) (string, string, string, error) { return armReg3(ops, name) }
+
+// NewCsel — the Csel base of the conditional-select family.
+func NewCsel(rd, rn, rm, cond string) Csel { return newCsel(rd, rn, rm, cond) }
+
+// CondNum — a condition name to its 4-bit index.
+func CondNum(name string) (uint32, error) { return condNum(name) }
+
+// RegIndex — the register number of a vector register name.
+func RegIndex(reg string) uint32 { return regIndex(reg) }
+
+// RegListStr — the rendered "{ vN, vN+1... }" list.
+func RegListStr(rt0 uint32, count int) string { return regListStr(rt0, count) }
+
+// IsSimd3Logical — whether the three-same mnemonic uses the logical
+// arrangement convention (only Q selects).
+func IsSimd3Logical(name string) bool { return isSimd3Logical(name) }
+
+// InvSysReg — a system register name → 15-bit key.
+func InvSysReg(v any) (uint32, error) { return invSysReg(v) }
+
+// VfpExpandImm64/32 — the fmov immediate expansion.
+func VfpExpandImm64(imm8 uint32) float64 { return vfpExpandImm64(imm8) }
+func VfpExpandImm32(imm8 uint32) float32 { return vfpExpandImm32(imm8) }
+
+// CondNames — the condition names table.
+func CondNames() [16]string { return condNames }
+
+// SysregNames — the system register names table.
+func SysregNames() map[uint32]string { return sysregNames }
+
+// BrBits — the branch target to signed offset bits.
+func BrBits(target, addr int64, bits int) (uint32, error) { return brBits(target, addr, bits) }

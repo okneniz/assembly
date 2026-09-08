@@ -4,48 +4,27 @@ package arm64
 // sqrshl/eor/bic/orn/eon/bics + the mov alias), simd2 (cnt/rev32/not/abs/
 // rbit), shifts (shl/sri/ushr/sshr), aese/aesmc, dup,
 // tbl, uaddlv, ld1 + structural ld1-ld4/st1-st4 (reglist/element
-// forms), mov.16b/mov.8b. The .arr suffix carries Q/size (arrQSize —
+// forms), mov.16b/mov.8b. The .Arr() suffix carries Q/size (arrQSize —
 // the inverse of decodeArrangement).
 
 import (
 	"errors"
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 	"strings"
 )
 
-// arrQSize — (Q, size) from the .8b/.16b/.4h/.8h/.2s/.4s/.2d suffix.
-func arrQSize(arr string) (q, size uint32, err error) {
-	switch arr {
-	case "8b":
-		return 0, 0, nil
-	case "16b":
-		return 1, 0, nil
-	case "4h":
-		return 0, 1, nil
-	case "8h":
-		return 1, 1, nil
-	case "2s":
-		return 0, 2, nil
-	case "4s":
-		return 1, 2, nil
-	case "2d":
-		return 1, 3, nil
-	}
-
-	return 0, 0, fmt.Errorf("unknown arrangement %q", arr)
-}
-
 // wantV — a vector operand (a v register with or without a suffix).
 func wantV(op vOp, name string) (string, error) {
-	if op.reg == "" || op.reg[0] != 'v' {
+	if op.Reg() == "" || op.Reg()[0] != 'v' {
 		return "", fmt.Errorf("%s: vector register expected", name)
 	}
 
-	if _, err := armRegNum(op.reg); err != nil {
+	if _, err := armRegNum(op.Reg()); err != nil {
 		return "", fmt.Errorf("%s: %w", name, err)
 	}
 
-	return op.reg, nil
+	return op.Reg(), nil
 }
 
 // newSimd3 — op.Arr vd, vn, vm.
@@ -55,16 +34,16 @@ func newSimd3(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: want vd, vn, vm", op)
 		}
 
-		if ops[0].arr == "" {
+		if ops[0].Arr() == "" {
 			return nil, fmt.Errorf("%s: arrangement suffix expected (.16b)", op)
 		}
 
-		q, size, err := arrQSize(ops[0].arr)
+		q, size, err := arrQSize(ops[0].Arr())
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
-		if isSimd3Logical(op) && ops[0].arr != "8b" && ops[0].arr != "16b" {
+		if isSimd3Logical(op) && ops[0].Arr() != "8b" && ops[0].Arr() != "16b" {
 			// in the logical group bits 23:22 are an opcode, not an arrangement
 			return nil, fmt.Errorf("%s: only .8b/.16b arrangements", op)
 		}
@@ -84,15 +63,7 @@ func newSimd3(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Simd3{
-			op:   op,
-			rd:   rd,
-			rn:   rn,
-			rm:   rm,
-			enc:  enc,
-			q:    q,
-			size: size,
-		}, nil
+		return Builder{}.Simd3(op, rd, rn, rm, enc, q, size), nil
 	}
 }
 
@@ -103,11 +74,11 @@ func newSimd2(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: want vd, vn", op)
 		}
 
-		if ops[0].arr == "" {
+		if ops[0].Arr() == "" {
 			return nil, fmt.Errorf("%s: arrangement suffix expected", op)
 		}
 
-		q, size, err := arrQSize(ops[0].arr)
+		q, size, err := arrQSize(ops[0].Arr())
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -122,15 +93,7 @@ func newSimd2(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Simd2{
-			op:   op,
-			rd:   rd,
-			rn:   rn,
-			arr:  ops[0].arr,
-			enc:  enc,
-			q:    q,
-			size: size,
-		}, nil
+		return Builder{}.Simd2(op, rd, rn, ops[0].Arr(), enc, q, size), nil
 	}
 }
 
@@ -138,11 +101,11 @@ func newSimd2(op string, enc uint32) func([]vOp) (Instr, error) {
 // and the amount (ushr/sshr/sri invert — like simdShiftAmount).
 func newSimdShift(op string, enc uint32) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
-		if len(ops) != 3 || ops[2].kind != armOpImm {
+		if len(ops) != 3 || ops[2].Kind() != arch.ArmOpImm {
 			return nil, fmt.Errorf("%s: want vd, vn, #shift", op)
 		}
 
-		arr := ops[0].arr
+		arr := ops[0].Arr()
 		if arr == "" {
 			return nil, fmt.Errorf("%s: arrangement suffix expected", op)
 		}
@@ -152,7 +115,7 @@ func newSimdShift(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
-		sh := ops[2].num
+		sh := ops[2].Num()
 		if sh < 0 {
 			return nil, fmt.Errorf("%s: bad shift", op)
 		}
@@ -186,15 +149,7 @@ func newSimdShift(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return SimdShift{
-			op:   op,
-			rd:   rd,
-			rn:   rn,
-			immh: immh,
-			immb: immb,
-			q:    q,
-			enc:  enc,
-		}, nil
+		return Builder{}.SimdShift(op, rd, rn, immh, immb, q, enc), nil
 	}
 }
 
@@ -215,12 +170,7 @@ func newAes(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return V1arr{
-			op:  op,
-			rd:  rd,
-			rn:  rn,
-			enc: enc,
-		}, nil
+		return Builder{}.V1arr(op, rd, rn, enc), nil
 	}
 }
 
@@ -230,11 +180,11 @@ func newDupArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("dup: want vd, wn")
 	}
 
-	if ops[0].arr == "" {
+	if ops[0].Arr() == "" {
 		return nil, errors.New("dup: arrangement suffix expected")
 	}
 
-	q, size, err := arrQSize(ops[0].arr)
+	q, size, err := arrQSize(ops[0].Arr())
 	if err != nil {
 		return nil, fmt.Errorf("dup: %w", err)
 	}
@@ -254,21 +204,12 @@ func newDupArm(ops []vOp) (Instr, error) {
 		return nil, fmt.Errorf("dup: %w", err)
 	}
 
-	return SimdCopy{
-		op:     "dup",
-		size:   size,
-		q:      q,
-		vd:     rd,
-		gpr:    rn,
-		enc:    0x0E000000,
-		vdNum:  rdN,
-		gprNum: rnN,
-	}, nil
+	return Builder{}.SimdCopyGPR("dup", rd, rn, size, 0, q, rdN, rnN, false), nil
 }
 
 // newTblArm — tbl.16b vd, { vn }, vm.
 func newTblArm(ops []vOp) (Instr, error) {
-	if len(ops) != 3 || ops[1].kind != armOpList || len(ops[1].list) != 1 {
+	if len(ops) != 3 || ops[1].Kind() != arch.ArmOpList || len(ops[1].List()) != 1 {
 		return nil, errors.New("tbl: want vd, { vn }, vm")
 	}
 
@@ -277,7 +218,7 @@ func newTblArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	rn := ops[1].list[0].reg
+	rn := ops[1].List()[0].Reg()
 	if rn == "" || rn[0] != 'v' {
 		return nil, errors.New("tbl: vector in list expected")
 	}
@@ -287,20 +228,16 @@ func newTblArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Tbl{
-		rd: rd,
-		rn: rn,
-		rm: rm,
-	}, nil
+	return Builder{}.Tbl(rd, rn, rm), nil
 }
 
 // newUaddlv — uaddlv.Arr hd/sd/dd, vn (dest scalar by size).
 func newUaddlv(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[0].arr == "" {
-		return nil, errors.New("uaddlv: want vd, vn with .arr")
+	if len(ops) != 2 || ops[0].Arr() == "" {
+		return nil, errors.New("uaddlv: want vd, vn with .Arr()")
 	}
 
-	q, size, err := arrQSize(ops[0].arr)
+	q, size, err := arrQSize(ops[0].Arr())
 	if err != nil {
 		return nil, fmt.Errorf("uaddlv: %w", err)
 	}
@@ -323,28 +260,23 @@ func newUaddlv(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Uaddlv{
-		rd:   scalar,
-		rn:   rn,
-		q:    q,
-		size: size,
-	}, nil
+	return Builder{}.Uaddlv(scalar, rn, q, size), nil
 }
 
 // newLdStruct — all structural load/store: ld1-ld4/st1-st4 (+ r forms
 // ld1r/ld4r/...), reglist { vt... }{[idx]}, [rn]{, #post}. The reglist sets
 // count → opcode (1→0x7, 2→0xa, 3→0x4, 4→0x0; r forms: 1r→0xc, 4r→0xe),
-// .arr → Q/size, post-imm = regBytes*count with a check.
+// .Arr() → Q/size, post-imm = regBytes*count with a check.
 func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 	isLoad := strings.HasPrefix(mnem, "ld")
 	return func(ops []vOp) (Instr, error) {
-		if len(ops) < 2 || ops[0].kind != armOpList {
+		if len(ops) < 2 || ops[0].Kind() != arch.ArmOpList {
 			return nil, fmt.Errorf("%s: want { vt... }, [rn]", mnem)
 		}
 
-		arr := ops[0].arr
-		if arr == "" && len(ops[0].list) > 0 {
-			arr = ops[0].list[0].arr
+		arr := ops[0].Arr()
+		if arr == "" && len(ops[0].List()) > 0 {
+			arr = ops[0].List()[0].Arr()
 		}
 
 		q, size, err := arrQSize(arr)
@@ -352,7 +284,7 @@ func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: %w", mnem, err)
 		}
 
-		count := len(ops[0].list)
+		count := len(ops[0].List())
 		if count < 1 || count > 4 {
 			return nil, fmt.Errorf("%s: 1-4 registers in list", mnem)
 		}
@@ -374,20 +306,20 @@ func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 		dname, darr, _, _ := ldStructDecode(opcode, size, q, l)
 		_ = darr
 		enc := uint32(0x0C000000) | q<<30 | size<<10 | opcode<<12 | l<<22
-		rt0, err := wantV(vOp{kind: armOpReg, reg: ops[0].list[0].reg}, mnem)
+		rt0, err := wantV(arch.VOpReg(ops[0].List()[0].Reg(), "", false, 0), mnem)
 		if err != nil {
 			return nil, err
 		}
 
-		m := ops[1].mem
-		if m == nil {
+		if !ops[1].IsMem() {
 			return nil, fmt.Errorf("%s: memory operand expected", mnem)
 		}
+		m := ops[1].Mem()
 
-		rn := m.base
+		rn := m.Base()
 		hasPost, postImm := false, uint32(0)
-		if m.post != 0 {
-			v := m.post
+		if m.Post() != 0 {
+			v := m.Post()
 			hasPost = true
 			regBytes := uint32(8)
 			if q == 1 {
@@ -411,24 +343,12 @@ func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 		}
 
 		list := "{ " + regListStr(regIndex(rt0), count) + " }"
-		return Ld1{
-			regList: list,
-			rn:      rn,
-			name:    dname,
-			arr:     arr,
-			hasPost: hasPost,
-			postImm: postImm,
-			enc:     enc,
-			rtNum:   regIndex(rt0),
-			count:   count,
-			opcode:  opcode,
-			size:    size,
-			q:       q,
-		}, nil
+		return Builder{}.Ld1(list, rn, dname, arr, "", postImm, hasPost, enc,
+			regIndex(rt0), count, opcode, size, q, false), nil
 	}
 }
 
-// newMovSimd — mov.16b/mov.8b vd, vm (ORR-vector, Rn=31). The .arr suffix
+// newMovSimd — mov.16b/mov.8b vd, vm (ORR-vector, Rn=31). The .Arr() suffix
 // sits in the mnemonic itself (the grammar yields it whole).
 func newMovSimd(arr string) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
@@ -451,12 +371,7 @@ func newMovSimd(arr string) func([]vOp) (Instr, error) {
 			enc &^= 1 << 30
 		}
 
-		return MovSimd{
-			rd:  rd,
-			rm:  rm,
-			arr: arr,
-			enc: enc,
-		}, nil
+		return Builder{}.MovSimd(rd, rm, arr, enc), nil
 	}
 }
 
@@ -468,11 +383,11 @@ func newSimdWidenArm(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: want vd, vn, vm", op)
 		}
 
-		if ops[0].arr == "" {
+		if ops[0].Arr() == "" {
 			return nil, fmt.Errorf("%s: arrangement suffix expected", op)
 		}
 
-		q, size, err := arrQSize(ops[0].arr)
+		q, size, err := arrQSize(ops[0].Arr())
 		if err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -502,31 +417,20 @@ func newSimdWidenArm(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
-		return SimdWiden{
-			op:   op,
-			q:    q,
-			size: size,
-			rd:   rd,
-			rn:   rn,
-			rm:   rm,
-			enc:  enc,
-			rdN:  rdN,
-			rnN:  rnN,
-			rmN:  rmN,
-		}, nil
+		return Builder{}.SimdWiden(op, q, size, rd, rn, rm, enc, rdN, rnN, rmN), nil
 	}
 }
 
 // newMovInsArm — mov.sz vd[idx], rn (INS general: inserting a GPR into a lane).
 // The size arrives with the registration key (mov.b/h/s/d); the index — in
-// ops[0].num (the laneIdx flag).
+// ops[0].Num() (the laneIdx flag).
 func newMovInsArm(size uint32) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
-		if len(ops) != 2 || ops[0].kind != armOpReg {
+		if len(ops) != 2 || ops[0].Kind() != arch.ArmOpReg {
 			return nil, errors.New("mov: want vd[idx], rn")
 		}
 
-		idx := ops[0].num
+		idx := ops[0].Num()
 		if idx < 0 {
 			return nil, errors.New("mov: bad index")
 		}
@@ -555,16 +459,6 @@ func newMovInsArm(size uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return SimdCopy{
-			op:     "ins",
-			size:   size,
-			idx:    uint32(idx),
-			q:      1,
-			vd:     vd,
-			gpr:    rn,
-			enc:    0x0E000000,
-			vdNum:  vdN,
-			gprNum: rnN,
-		}, nil
+		return Builder{}.SimdCopyGPR("ins", vd, rn, size, uint32(idx), 1, vdN, rnN, false), nil
 	}
 }

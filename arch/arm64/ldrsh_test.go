@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdrshCtor(t *testing.T) {
+func TestLdrshBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestLdrshCtor(t *testing.T) {
 	}{
 		{
 			"ldrsh x0,[x1]",
-			ctorLdrsh(t, xreg(t, 0), xreg(t, 1), 0),
+			buildLdrsh(t, xreg(t, 0), xreg(t, 1), 0),
 			0x79800020,
 		},
 		{
 			"ldrsh xzr,[x2,#0x1ffe]",
-			ctorLdrsh(t, XZR, xreg(t, 2), 0x1ffe),
+			buildLdrsh(t, XZR, xreg(t, 2), 0x1ffe),
 			0x79bffc5f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdrsh(t, xreg(t, 0), xreg(t, 1), 0)
+	in := buildLdrsh(t, xreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Ldrsh)
 	require.True(t, ok, "type = %T, want Ldrsh", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestLdrshCtor(t *testing.T) {
 	}
 }
 
-// ctorLdrsh — an instruction constructor wrapper for table literals:
+// buildLdrsh — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdrsh(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildLdrsh(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldrsh(rt, rn, off)
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestRevCtor(t *testing.T) {
+func TestRevBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestRevCtor(t *testing.T) {
 	}{
 		{
 			"rev x0,x1",
-			ctorRev(t, xreg(t, 0), xreg(t, 1)),
+			buildRev(t, xreg(t, 0), xreg(t, 1)),
 			0xdac00c20,
 		},
 		{
 			"rev xzr,x2",
-			ctorRev(t, XZR, xreg(t, 2)),
+			buildRev(t, XZR, xreg(t, 2)),
 			0xdac00c5f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorRev(t, xreg(t, 0), xreg(t, 1))
+	in := buildRev(t, xreg(t, 0), xreg(t, 1))
 	_, ok := in.(Rev)
 	require.True(t, ok, "type = %T, want Rev", in)
 	for _, c := range []struct {
@@ -59,9 +59,9 @@ func TestRevCtor(t *testing.T) {
 	}
 }
 
-// ctorRev — an instruction constructor wrapper for table literals:
+// buildRev — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorRev(t *testing.T, rd, rn Reg) Instr {
+func buildRev(t *testing.T, rd, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Rev(rd, rn)
 	require.NoError(t, err)

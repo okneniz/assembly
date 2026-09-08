@@ -4,7 +4,11 @@ package arm64
 // used by the assembler's legacy path (BuildLegacy) when assembling a word
 // from the decode table. Implementations are in asm_inverse.go.
 
-import "fmt"
+import (
+	"fmt"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
 
 // inverseTransformFunc - final representation (register name, condition
 // name, literal) -> field bits. Used by the assembler's legacy path
@@ -24,7 +28,7 @@ var inverseTransforms = map[string]inverseTransformFunc{
 	"intW":        invRegW,
 	"regIndex":    invInt,
 	"cond":        invCond,
-	"sysreg":      invSysReg,
+	"sysreg":      arch.InvSysReg,
 	"shiftName":   invShiftName,
 	"immShiftLSL": invImmShiftLSL,
 	"extOpt":      invExtOpt,

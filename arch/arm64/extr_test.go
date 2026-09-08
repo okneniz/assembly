@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestExtrCtor(t *testing.T) {
+func TestExtrBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,26 +14,26 @@ func TestExtrCtor(t *testing.T) {
 	}{
 		{
 			"extr x1,x2,x3,#5",
-			ctorExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5)),
+			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5)),
 			0x93031441,
 		},
 		{
 			"ror x1,x2,#4",
-			ctorExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 2), imm6(t, 4)),
+			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 2), imm6(t, 4)),
 			0x93021041,
 		},
 		{
 			"extr x1,x2,x3,#63",
-			ctorExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63)),
+			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63)),
 			0x9303fc41,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5))
+	in := buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5))
 	_, ok := in.(Extr)
 	require.True(t, ok, "type = %T, want Extr", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestExtrCtor(t *testing.T) {
 	}
 }
 
-// ctorExtr — an instruction constructor wrapper for table literals:
+// buildExtr — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorExtr(t *testing.T, rd, rn, rm Reg, lsb Imm6) Instr {
+func buildExtr(t *testing.T, rd, rn, rm Reg, lsb Imm6) Instr {
 	t.Helper()
 	in, err := New().Extr(rd, rn, rm, lsb)
 	require.NoError(t, err)

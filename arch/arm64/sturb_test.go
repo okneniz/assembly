@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestSturbCtor(t *testing.T) {
+func TestSturbBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestSturbCtor(t *testing.T) {
 	}{
 		{
 			"sturb w0,[x1]",
-			ctorSturb(t, wreg(t, 0), xreg(t, 1), 0),
+			buildSturb(t, wreg(t, 0), xreg(t, 1), 0),
 			0x38000020,
 		},
 		{
 			"sturb wzr,[x29,#255]",
-			ctorSturb(t, WZR, xreg(t, 29), 255),
+			buildSturb(t, WZR, xreg(t, 29), 255),
 			0x380ff3bf,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorSturb(t, wreg(t, 0), xreg(t, 1), 0)
+	in := buildSturb(t, wreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Sturb)
 	require.True(t, ok, "type = %T, want Sturb", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestSturbCtor(t *testing.T) {
 	}
 }
 
-// ctorSturb — an instruction constructor wrapper for table literals:
+// buildSturb — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorSturb(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildSturb(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Sturb(rt, rn, off)
 	require.NoError(t, err)

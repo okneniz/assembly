@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdpCtor(t *testing.T) {
+func TestLdpBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,34 +16,34 @@ func TestLdpCtor(t *testing.T) {
 	}{
 		{
 			"ldp x0,x1,[x2]",
-			ctorLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0),
+			buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0),
 			0xa9400440,
 		},
 		{
 			"ldp x29,x30,[sp]",
-			ctorLdp(t, xreg(t, 29), xreg(t, 30), SP, 0),
+			buildLdp(t, xreg(t, 29), xreg(t, 30), SP, 0),
 			0xa9407bfd,
 		},
 		{
 			"ldp w3,w4,[x5,#8]",
-			ctorLdp(t, wreg(t, 3), wreg(t, 4), xreg(t, 5), 8),
+			buildLdp(t, wreg(t, 3), wreg(t, 4), xreg(t, 5), 8),
 			0x294110a3,
 		},
 		{
 			"ldp x0,x1,[x2,#-512]",
-			ctorLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), -512),
+			buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), -512),
 			0xa9600440,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0)
+	in := buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0)
 	_, ok := in.(Ldp)
 	require.True(t, ok, "type = %T, want Ldp", in)
 	for _, c := range []struct {
@@ -97,9 +97,9 @@ func TestLdpCtor(t *testing.T) {
 	}
 }
 
-// ctorLdp — an instruction constructor wrapper for table literals:
+// buildLdp — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdp(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
+func buildLdp(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldp(rt, rt2, rn, off)
 	require.NoError(t, err)

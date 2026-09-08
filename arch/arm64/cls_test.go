@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestClsCtor(t *testing.T) {
+func TestClsBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,21 +14,21 @@ func TestClsCtor(t *testing.T) {
 	}{
 		{
 			"cls x1,x2",
-			ctorCls(t, xreg(t, 1), xreg(t, 2)),
+			buildCls(t, xreg(t, 1), xreg(t, 2)),
 			0xdac01441,
 		},
 		{
 			"cls w1,w2",
-			ctorCls(t, wreg(t, 1), wreg(t, 2)),
+			buildCls(t, wreg(t, 1), wreg(t, 2)),
 			0x5ac01441,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorCls(t, xreg(t, 1), xreg(t, 2))
+	in := buildCls(t, xreg(t, 1), xreg(t, 2))
 	_, ok := in.(Cls)
 	require.True(t, ok, "type = %T, want Cls", in)
 	for _, c := range []struct {
@@ -61,9 +61,9 @@ func TestClsCtor(t *testing.T) {
 	}
 }
 
-// ctorCls — an instruction constructor wrapper for table literals:
+// buildCls — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorCls(t *testing.T, rd, rn Reg) Instr {
+func buildCls(t *testing.T, rd, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Cls(rd, rn)
 	require.NoError(t, err)

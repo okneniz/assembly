@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAdrpCtor(t *testing.T) {
+func TestAdrpBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,27 +14,27 @@ func TestAdrpCtor(t *testing.T) {
 	}{
 		{
 			"adrp x0,#1",
-			ctorAdrp(t, xreg(t, 0), 1),
+			buildAdrp(t, xreg(t, 0), 1),
 			0xb0000000,
 		},
 		{
 			"adrp x2,#0x10",
-			ctorAdrp(t, xreg(t, 2), 0x10),
+			buildAdrp(t, xreg(t, 2), 0x10),
 			0x90000082,
 		},
 		{
 			"adrp x1,#-0x400",
-			ctorAdrp(t, xreg(t, 1), -0x400),
+			buildAdrp(t, xreg(t, 1), -0x400),
 			0x90ffe001,
 		},
 		{
 			"adrp x0,#0xfffff",
-			ctorAdrp(t, xreg(t, 0), 0xfffff),
+			buildAdrp(t, xreg(t, 0), 0xfffff),
 			0xf07fffe0,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 
 		// The absolute-page annotation of the decoded form is derived
@@ -48,7 +48,7 @@ func TestAdrpCtor(t *testing.T) {
 		require.Equal(t, want.off, back.off, "case %q", c.name)
 	}
 
-	in := ctorAdrp(t, xreg(t, 0), 1)
+	in := buildAdrp(t, xreg(t, 0), 1)
 	_, ok := in.(Adrp)
 	require.True(t, ok, "type = %T, want Adrp", in)
 	for _, c := range []struct {
@@ -81,9 +81,9 @@ func TestAdrpCtor(t *testing.T) {
 	}
 }
 
-// ctorAdrp — an instruction constructor wrapper for table literals:
+// buildAdrp — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorAdrp(t *testing.T, rd Reg, off int64) Instr {
+func buildAdrp(t *testing.T, rd Reg, off int64) Instr {
 	t.Helper()
 	in, err := New().Adrp(rd, off)
 	require.NoError(t, err)

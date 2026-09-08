@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestBfmCtor(t *testing.T) {
+func TestBfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestBfmCtor(t *testing.T) {
 	}{
 		{
 			"bfm x0,x1,#5,#7",
-			ctorBfm(t, xreg(t, 0), xreg(t, 1), 5, 7),
+			buildBfm(t, xreg(t, 0), xreg(t, 1), 5, 7),
 			0xb3451c20,
 		},
 		{
 			"bfm w2,w3,#0,#31",
-			ctorBfm(t, wreg(t, 2), wreg(t, 3), 0, 31),
+			buildBfm(t, wreg(t, 2), wreg(t, 3), 0, 31),
 			0x33007c62,
 		},
 		{
 			"bfm x0,x1,#63,#63",
-			ctorBfm(t, xreg(t, 0), xreg(t, 1), 63, 63),
+			buildBfm(t, xreg(t, 0), xreg(t, 1), 63, 63),
 			0xb37ffc20,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorBfm(t, xreg(t, 0), xreg(t, 1), 5, 7)
+	in := buildBfm(t, xreg(t, 0), xreg(t, 1), 5, 7)
 	_, ok := in.(Bfm)
 	require.True(t, ok, "type = %T, want Bfm", in)
 	for _, c := range []struct {
@@ -85,9 +85,9 @@ func TestBfmCtor(t *testing.T) {
 	}
 }
 
-// ctorBfm — an instruction constructor wrapper for table literals:
+// buildBfm — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorBfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
+func buildBfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
 	t.Helper()
 	in, err := New().Bfm(rd, rn, immr, imms)
 	require.NoError(t, err)

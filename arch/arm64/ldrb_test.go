@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdrbCtor(t *testing.T) {
+func TestLdrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestLdrbCtor(t *testing.T) {
 	}{
 		{
 			"ldrb w0,[x1]",
-			ctorLdrb(t, wreg(t, 0), xreg(t, 1), 0),
+			buildLdrb(t, wreg(t, 0), xreg(t, 1), 0),
 			0x39400020,
 		},
 		{
 			"ldrb w2,[sp,#1]",
-			ctorLdrb(t, wreg(t, 2), SP, 1),
+			buildLdrb(t, wreg(t, 2), SP, 1),
 			0x394007e2,
 		},
 		{
 			"ldrb wzr,[x2,#0xfff]",
-			ctorLdrb(t, WZR, xreg(t, 2), 0xfff),
+			buildLdrb(t, WZR, xreg(t, 2), 0xfff),
 			0x397ffc5f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdrb(t, wreg(t, 0), xreg(t, 1), 0)
+	in := buildLdrb(t, wreg(t, 0), xreg(t, 1), 0)
 	_, ok := in.(Ldrb)
 	require.True(t, ok, "type = %T, want Ldrb", in)
 	for _, c := range []struct {
@@ -78,9 +78,9 @@ func TestLdrbCtor(t *testing.T) {
 	}
 }
 
-// ctorLdrb — an instruction constructor wrapper for table literals:
+// buildLdrb — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdrb(t *testing.T, rt, rn Reg, off Off) Instr {
+func buildLdrb(t *testing.T, rt, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldrb(rt, rn, off)
 	require.NoError(t, err)

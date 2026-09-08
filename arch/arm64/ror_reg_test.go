@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestRorRegCtor(t *testing.T) {
+func TestRorRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestRorRegCtor(t *testing.T) {
 	}{
 		{
 			"ror x0,x1,x2",
-			ctorRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
+			buildRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
 			0x9a022c20,
 		},
 		{
 			"ror x3,xzr,x4",
-			ctorRorReg(t, xreg(t, 3), XZR, xreg(t, 4)),
+			buildRorReg(t, xreg(t, 3), XZR, xreg(t, 4)),
 			0x9a042fe3,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	in := buildRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
 	_, ok := in.(RorReg)
 	require.True(t, ok, "type = %T, want RorReg", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestRorRegCtor(t *testing.T) {
 	}
 }
 
-// ctorRorReg — an instruction constructor wrapper for table literals:
+// buildRorReg — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorRorReg(t *testing.T, rd, rn, rm Reg) Instr {
+func buildRorReg(t *testing.T, rd, rn, rm Reg) Instr {
 	t.Helper()
 	in, err := New().RorReg(rd, rn, rm)
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestRbitCtor(t *testing.T) {
+func TestRbitBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestRbitCtor(t *testing.T) {
 	}{
 		{
 			"rbit x0,x1",
-			ctorRbit(t, xreg(t, 0), xreg(t, 1)),
+			buildRbit(t, xreg(t, 0), xreg(t, 1)),
 			0xdac00020,
 		},
 		{
 			"rbit w2,w3",
-			ctorRbit(t, wreg(t, 2), wreg(t, 3)),
+			buildRbit(t, wreg(t, 2), wreg(t, 3)),
 			0x5ac00062,
 		},
 		{
 			"rbit xzr,x30",
-			ctorRbit(t, XZR, xreg(t, 30)),
+			buildRbit(t, XZR, xreg(t, 30)),
 			0xdac003df,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorRbit(t, xreg(t, 0), xreg(t, 1))
+	in := buildRbit(t, xreg(t, 0), xreg(t, 1))
 	_, ok := in.(Rbit)
 	require.True(t, ok, "type = %T, want Rbit", in)
 	for _, c := range []struct {
@@ -71,9 +71,9 @@ func TestRbitCtor(t *testing.T) {
 	}
 }
 
-// ctorRbit — an instruction constructor wrapper for table literals:
+// buildRbit — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorRbit(t *testing.T, rd, rn Reg) Instr {
+func buildRbit(t *testing.T, rd, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Rbit(rd, rn)
 	require.NoError(t, err)

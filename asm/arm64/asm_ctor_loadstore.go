@@ -8,52 +8,53 @@ package arm64
 import (
 	"errors"
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // memOperand — parse a mem operand: base, addressing kind, offset/index.
 func memOperand(
 	op vOp,
 	name string,
-) (base string, kind memKind, off int64, rm, option string, shiftAmt32 uint32, err error) {
-	if op.mem == nil {
+) (base string, kind arch.MemKind, off int64, rm, option string, shiftAmt32 uint32, err error) {
+	if !op.IsMem() {
 		return "", 0, 0, "", "", 0, fmt.Errorf("%s: memory operand expected", name)
 	}
 
-	m := op.mem
-	base = m.base
-	if m.post != 0 {
-		return base, memPost, m.post, "", "", 0, nil
+	m := op.Mem()
+	base = m.Base()
+	if m.Post() != 0 {
+		return base, arch.MemPost, m.Post(), "", "", 0, nil
 	}
 
-	if m.offReg != "" {
-		if m.optAmt < 0 || m.optAmt > 7 {
+	if m.OffReg() != "" {
+		if m.OptAmt() < 0 || m.OptAmt() > 7 {
 			return "", 0, 0, "", "", 0, fmt.Errorf("%s: bad option amount", name)
 		}
 
-		opt := m.opt
+		opt := m.Opt()
 		if opt == "" {
 			opt = "lsl"
 		}
 
-		return base, memRegOff, 0, m.offReg, opt, uint32(m.optAmt), nil
+		return base, arch.MemRegOff, 0, m.OffReg(), opt, uint32(m.OptAmt()), nil
 	}
 
-	if m.pre {
-		return base, memPre, m.off, "", "", 0, nil
+	if m.Pre() {
+		return base, arch.MemPre, m.Off(), "", "", 0, nil
 	}
 
-	return base, memUnscaled, m.off, "", "", 0, nil // imm12 vs unscaled — chosen by divisibility
+	return base, arch.MemUnscaled, m.Off(), "", "", 0, nil // imm12 vs unscaled — chosen by divisibility
 }
 
 // Constructors by mnemonic (enc from the decode table).
 func newLdrArm(ops []vOp) (Instr, error) {
 	// literal pool: ldr rt, =literal
-	if len(ops) == 2 && ops[1].kind == armOpLit {
+	if len(ops) == 2 && ops[1].Kind() == arch.ArmOpLit {
 		return newLdrPool(ops[0], ops[1])
 	}
 
 	// literal form: ldr rt, label (no brackets)
-	if len(ops) == 2 && ops[1].mem == nil {
+	if len(ops) == 2 && !ops[1].IsMem() {
 		return newLdrLiteral(ops)
 	}
 
@@ -103,25 +104,6 @@ func newLdrshArm(ops []vOp) (Instr, error) {
 }
 
 // makeLSBase — assemble an lsBase.
-func makeLSBase(
-	rt, rn string,
-	kind memKind,
-	off int64,
-	enc uint32,
-	rm, option string,
-	amt uint32,
-) lsBase {
-	return lsBase{
-		rt:       rt,
-		rn:       rn,
-		kind:     kind,
-		off:      off,
-		enc:      enc,
-		rm:       rm,
-		option:   option,
-		shiftAmt: amt,
-	}
-}
 
 // makeLSCtorTyped — builds the struct by mnemonic.
 func makeLSCtorTyped(ops []vOp, name string, enc uint32) (Instr, error) {
@@ -131,11 +113,11 @@ func makeLSCtorTyped(ops []vOp, name string, enc uint32) (Instr, error) {
 
 	rt, err := wantAReg(ops[0], name)
 	if err != nil {
-		if ops[0].reg == "" {
+		if ops[0].Reg() == "" {
 			return nil, fmt.Errorf("%s: register expected", name)
 		}
 
-		rt = ops[0].reg
+		rt = ops[0].Reg()
 	}
 
 	rn, kind, off, rm, option, amt, err := memOperand(ops[1], name)
@@ -144,53 +126,45 @@ func makeLSCtorTyped(ops []vOp, name string, enc uint32) (Instr, error) {
 	}
 
 	scale := enc >> 30 & 3
-	if kind == memUnscaled && off >= 0 && off&(int64(1)<<scale-1) == 0 {
-		kind = memImm
+	if kind == arch.MemUnscaled && off >= 0 && off&(int64(1)<<scale-1) == 0 {
+		kind = arch.MemImm
 	}
 
 	switch name {
 	case "ldr":
-		return Ldr{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdrOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldrb":
-		return Ldrb{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdrbOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldrh":
-		return Ldrh{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdrhOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "str":
-		return Str{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return StrOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "strb":
-		return Strb{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return StrbOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "strh":
-		return Strh{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return StrhOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldur":
-		return Ldur{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdurOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "stur":
-		return Stur{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return SturOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldurb":
-		return Ldurb{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdurbOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldurh":
-		return Ldurh{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdurhOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "sturb":
-		return Sturb{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return SturbOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "sturh":
-		return Sturh{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return SturhOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	case "ldrsw":
-		return Ldrsw{lsBase: makeLSBase(rt, rn, kind, off, enc, rm, option, amt)}, nil
+		return LdrswOf(rt, rn, kind, off, enc, rm, option, amt), nil
 	}
 
 	// ldrsb/ldrsh — own fields (imm12 scale), not lsBase
 	if name == "ldrsb" {
-		return Ldrsb{
-			rt:  rt,
-			rn:  rn,
-			off: off,
-		}, nil
+		return LdrsbOf(rt, rn, off), nil
 	}
 
-	return Ldrsh{
-		rt:  rt,
-		rn:  rn,
-		off: off,
-	}, nil
+	return LdrshOf(rt, rn, off), nil
 }
 
 // newLdrPool — ldr rt, =literal: a literal-pool slot at the end of the
@@ -199,31 +173,30 @@ func makeLSCtorTyped(ops []vOp, name string, enc uint32) (Instr, error) {
 // equivalent, the bytes differ. The target — the slot's auto-name
 // (PoolName), resolved by the core.
 func newLdrPool(rt vOp, lit vOp) (Instr, error) {
-	if rt.reg == "" {
+	if rt.Reg() == "" {
 		return nil, errors.New("ldr: register expected")
 	}
 
-	if _, err := armRegNum(rt.reg); err != nil {
+	if _, err := armRegNum(rt.Reg()); err != nil {
 		return nil, fmt.Errorf("ldr: %w", err)
 	}
 
 	enc := uint32(0x58000000)
-	if rt.reg[0] == 'w' {
+	if rt.Reg()[0] == 'w' {
 		enc = 0x18000000
 	}
 
-	lb := newLsBase(rt.reg, "", memLiteral, 0, uint64(lit.num), enc, "", "", 0)
-	return ldrPoolWrap{Ldr{lsBase: lb}}, nil
+	return arch.LdrPoolWrapOf(rt.Reg(), uint64(lit.Num()), enc), nil
 }
 
 // newLdrLiteral — ldr rt, label|#addr: the target is already computed
 // (resolveOps); w/x by the rt type.
 func newLdrLiteral(ops []vOp) (Instr, error) {
-	if len(ops) != 2 || ops[1].kind != armOpImm {
+	if len(ops) != 2 || ops[1].Kind() != arch.ArmOpImm {
 		return nil, errors.New("ldr: want rt, target")
 	}
 
-	rt := ops[0].reg
+	rt := ops[0].Reg()
 	if rt == "" {
 		return nil, errors.New("ldr: register expected")
 	}
@@ -238,6 +211,5 @@ func newLdrLiteral(ops []vOp) (Instr, error) {
 		enc = 0x18000000
 	}
 
-	lb := newLsBase(rt, "", memLiteral, 0, uint64(ops[1].num), enc, "", "", 0)
-	return Ldr{lsBase: lb}, nil
+	return LdrLitOf(rt, uint64(ops[1].Num()), enc), nil
 }

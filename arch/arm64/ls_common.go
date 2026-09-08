@@ -373,3 +373,23 @@ func lsSignedWrite(w io.Writer, enc uint32, rt, rn string, off int64, mnem strin
 
 	return writeWord(w, enc|r|n<<5|uint32(off>>scale)<<10)
 }
+
+func makeLSBase(
+	rt, rn string,
+	kind memKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) lsBase {
+	return lsBase{
+		rt:       rt,
+		rn:       rn,
+		kind:     kind,
+		off:      off,
+		enc:      enc,
+		rm:       rm,
+		option:   option,
+		shiftAmt: amt,
+	}
+}

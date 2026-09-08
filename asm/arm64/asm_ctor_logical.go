@@ -9,6 +9,7 @@ package arm64
 
 import (
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // isGPR — an integer register (the x/w family, sp/zr).
@@ -32,16 +33,16 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 	}
 
 	op := ops[2]
-	if op.kind == armOpImm {
+	if op.Kind() == arch.ArmOpImm {
 		if len(ops) == 4 {
 			return nil, fmt.Errorf("%s: no modifier for immediate form", name)
 		}
 
-		if op.kind != armOpImm || op.sym != "" {
+		if op.Kind() != arch.ArmOpImm || op.Sym() != "" {
 			return nil, fmt.Errorf("%s: immediate expected", name)
 		}
 
-		v := op.num
+		v := op.Num()
 
 		is64 := rd[0] == 'x'
 		n, immr, imms, ok := encodeBitMasks(is64, uint64(v))
@@ -52,11 +53,11 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 		return makeLogImmStruct(name, rd, rn, immr, imms, n == 1, is64), nil
 	}
 
-	if op.kind == armOpReg && isGPR(op.reg) {
-		rm := op.reg
+	if op.Kind() == arch.ArmOpReg && isGPR(op.Reg()) {
+		rm := op.Reg()
 		shift, amt := "lsl", uint32(0)
 		if len(ops) == 4 {
-			if ops[3].kind != armOpShift {
+			if ops[3].Kind() != arch.ArmOpShift {
 				return nil, fmt.Errorf("%s: shift modifier expected", name)
 			}
 
@@ -65,7 +66,7 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 				return nil, fmt.Errorf("%s: bad shift", name)
 			}
 
-			shift, amt = ops[3].shift, uint32(a)
+			shift, amt = ops[3].ShiftName(), uint32(a)
 		}
 
 		return makeLogShiftStruct(name, rd, rn, rm, shift, amt, rd[0] == 'x'), nil
@@ -76,16 +77,15 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 
 // makeLogImmStruct/makeLogShiftStruct — assembly by the base name.
 func makeLogImmStruct(name, rd, rn string, immr, imms uint32, n, is64 bool) Instr {
-	base := newLogImm(rd, rn, immr, imms, n, is64)
 	switch name {
 	case "orr":
-		return OrrImm{logImm: base}
+		return OrrImmOf(rd, rn, immr, imms, n, is64)
 	case "eor":
-		return EorImm{logImm: base}
+		return EorImmOf(rd, rn, immr, imms, n, is64)
 	case "ands":
-		return AndsImm{logImm: base}
+		return AndsImmOf(rd, rn, immr, imms, n, is64)
 	default:
-		return AndImm{logImm: base}
+		return AndImmOf(rd, rn, immr, imms, n, is64)
 	}
 }
 
@@ -105,77 +105,21 @@ func makeLogShiftStruct(name, rd, rn, rm, shift string, amt uint32, isf bool) In
 	}
 	switch name {
 	case "ands":
-		return AndsShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return AndsShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "bic":
-		return BicShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return BicShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "orr":
-		return OrrShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return OrrShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "orn":
-		return OrnShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return OrnShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "eor":
-		return EorShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return EorShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "eon":
-		return EonShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return EonShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	case "bics":
-		return BicsShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return BicsShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	default:
-		return AndShift{
-			rd:    common.rd,
-			rn:    common.rn,
-			rm:    common.rm,
-			imm6:  common.imm6,
-			shift: common.shift,
-			isf:   common.isf,
-		}
+		return AndShiftOf(common.rd, common.rn, common.rm, common.imm6, common.shift, common.isf)
 	}
 }
 

@@ -1,5 +1,7 @@
 package arm64
 
+import arch "github.com/okneniz/assembly/arch/arm64"
+
 import "errors"
 
 // Branch assembler constructors: b/bl label, cbz/cbnz rt, label,
@@ -16,7 +18,7 @@ func newB(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return B{target: t}, nil
+	return BOf(t), nil
 }
 
 func newBl(ops []vOp) (Instr, error) {
@@ -29,7 +31,7 @@ func newBl(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Bl{target: t}, nil
+	return BlOf(t), nil
 }
 
 func newCbz(ops []vOp) (Instr, error) {
@@ -47,10 +49,7 @@ func newCbz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Cbz{
-		rt:     rt,
-		target: t,
-	}, nil
+	return CbzOf(rt, t), nil
 }
 
 func newCbnz(ops []vOp) (Instr, error) {
@@ -68,10 +67,7 @@ func newCbnz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Cbnz{
-		rt:     rt,
-		target: t,
-	}, nil
+	return CbnzOf(rt, t), nil
 }
 
 func newNop(ops []vOp) (Instr, error) {
@@ -79,7 +75,7 @@ func newNop(ops []vOp) (Instr, error) {
 		return nil, errors.New("nop expects no operands")
 	}
 
-	return Nop{}, nil
+	return arch.Nop{}, nil
 }
 
 func newRet(ops []vOp) (Instr, error) {
@@ -97,7 +93,7 @@ func newRet(ops []vOp) (Instr, error) {
 		rn = r
 	}
 
-	return Ret{rn: rn}, nil
+	return RetOf(rn), nil
 }
 
 func newBr(ops []vOp) (Instr, error) {
@@ -110,7 +106,7 @@ func newBr(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Br{rn: rn}, nil
+	return BrOf(rn), nil
 }
 
 func newBlr(ops []vOp) (Instr, error) {
@@ -123,5 +119,5 @@ func newBlr(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Blr{rn: rn}, nil
+	return BlrOf(rn), nil
 }

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestBicShiftCtor(t *testing.T) {
+func TestBicShiftBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,26 +14,26 @@ func TestBicShiftCtor(t *testing.T) {
 	}{
 		{
 			"bic x1,x2,x3",
-			ctorBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 0), LSL),
+			buildBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 0), LSL),
 			0x8a230041,
 		},
 		{
 			"bic w1,w2,w3,asr#5",
-			ctorBicShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 5), ASR),
+			buildBicShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 5), ASR),
 			0x0aa31441,
 		},
 		{
 			"bic x1,x2,x3,lsr#63",
-			ctorBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63), LSR),
+			buildBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63), LSR),
 			0x8a63fc41,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
+	in := buildBicShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
 	_, ok := in.(BicShift)
 	require.True(t, ok, "type = %T, want BicShift", in)
 	for _, c := range []struct {
@@ -73,9 +73,9 @@ func TestBicShiftCtor(t *testing.T) {
 	}
 }
 
-// ctorBicShift — an instruction constructor wrapper for table literals:
+// buildBicShift — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorBicShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
+func buildBicShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
 	in, err := New().BicShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)

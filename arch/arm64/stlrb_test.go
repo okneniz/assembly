@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestStlrbCtor(t *testing.T) {
+func TestStlrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestStlrbCtor(t *testing.T) {
 	}{
 		{
 			"stlrb w3,[x4]",
-			ctorStlrb(t, wreg(t, 3), xreg(t, 4)),
+			buildStlrb(t, wreg(t, 3), xreg(t, 4)),
 			0x089ffc83,
 		},
 		{
 			"stlrb wzr,[sp]",
-			ctorStlrb(t, WZR, SP),
+			buildStlrb(t, WZR, SP),
 			0x089fffff,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorStlrb(t, wreg(t, 3), xreg(t, 4))
+	in := buildStlrb(t, wreg(t, 3), xreg(t, 4))
 	_, ok := in.(Stlrb)
 	require.True(t, ok, "type = %T, want Stlrb", in)
 	for _, c := range []struct {
@@ -59,9 +59,9 @@ func TestStlrbCtor(t *testing.T) {
 	}
 }
 
-// ctorStlrb — an instruction constructor wrapper for table literals:
+// buildStlrb — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorStlrb(t *testing.T, rt, rn Reg) Instr {
+func buildStlrb(t *testing.T, rt, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Stlrb(rt, rn)
 	require.NoError(t, err)

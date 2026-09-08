@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestPrfmCtor(t *testing.T) {
+func TestPrfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestPrfmCtor(t *testing.T) {
 	}{
 		{
 			"prfm pldl1keep,[x1]",
-			ctorPrfm(t, xreg(t, 1)),
+			buildPrfm(t, xreg(t, 1)),
 			0xf9800020,
 		},
 		{
 			"prfm pldl1keep,[sp]",
-			ctorPrfm(t, SP),
+			buildPrfm(t, SP),
 			0xf98003e0,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorPrfm(t, xreg(t, 1))
+	in := buildPrfm(t, xreg(t, 1))
 	_, ok := in.(Prfm)
 	require.True(t, ok, "type = %T, want Prfm", in)
 	for _, c := range []struct {
@@ -52,9 +52,9 @@ func TestPrfmCtor(t *testing.T) {
 	}
 }
 
-// ctorPrfm — an instruction constructor wrapper for table literals:
+// buildPrfm — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorPrfm(t *testing.T, rn Reg) Instr {
+func buildPrfm(t *testing.T, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Prfm(rn)
 	require.NoError(t, err)

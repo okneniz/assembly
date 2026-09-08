@@ -1,5 +1,7 @@
 package arm64
 
+import arch "github.com/okneniz/assembly/arch/arm64"
+
 // Mov wide assembler constructors: movz/movn/movk rd, #imm16
 // [, lsl #N]. movn — arithmetic inversion of imm16 at encoding time.
 
@@ -7,7 +9,7 @@ import "fmt"
 
 // movWideOps — rd, #imm16[, lsl #N] → rd, imm16, hw.
 func movWideOps(ops []vOp, name string) (string, uint32, uint32, error) {
-	if len(ops) != 2 && (len(ops) != 3 || ops[2].kind != armOpShift) {
+	if len(ops) != 2 && (len(ops) != 3 || ops[2].Kind() != arch.ArmOpShift) {
 		return "", 0, 0, fmt.Errorf("%s: want rd, #imm16[, lsl #N]", name)
 	}
 
@@ -16,11 +18,11 @@ func movWideOps(ops []vOp, name string) (string, uint32, uint32, error) {
 		return "", 0, 0, err
 	}
 
-	if ops[1].kind != armOpImm || ops[1].sym != "" {
+	if ops[1].Kind() != arch.ArmOpImm || ops[1].Sym() != "" {
 		return "", 0, 0, fmt.Errorf("%s: immediate expected", name)
 	}
 
-	v := ops[1].num
+	v := ops[1].Num()
 	if v < 0 || v > 0xffff {
 		return "", 0, 0, fmt.Errorf("%s: imm16 expected", name)
 	}
@@ -44,11 +46,7 @@ func newMovz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Movz{
-		rd:    rd,
-		imm16: imm,
-		hw:    hw,
-	}, nil
+	return MovzOf(rd, imm, hw), nil
 }
 
 func newMovn(ops []vOp) (Instr, error) {
@@ -57,11 +55,7 @@ func newMovn(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Movn{
-		rd:    rd,
-		imm16: imm,
-		hw:    hw,
-	}, nil
+	return MovnOf(rd, imm, hw), nil
 }
 
 func newMovk(ops []vOp) (Instr, error) {
@@ -70,9 +64,5 @@ func newMovk(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Movk{
-		rd:    rd,
-		imm16: imm,
-		hw:    hw,
-	}, nil
+	return MovkOf(rd, imm, hw), nil
 }

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestLdpswCtor(t *testing.T) {
+func TestLdpswBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestLdpswCtor(t *testing.T) {
 	}{
 		{
 			"ldpsw x0,x1,[x2,#4]",
-			ctorLdpsw(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 4),
+			buildLdpsw(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 4),
 			0x69408440,
 		},
 		{
 			"ldpsw x2,x3,[x4,#-256]",
-			ctorLdpsw(t, xreg(t, 2), xreg(t, 3), xreg(t, 4), -256),
+			buildLdpsw(t, xreg(t, 2), xreg(t, 3), xreg(t, 4), -256),
 			0x69600c82,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorLdpsw(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 4)
+	in := buildLdpsw(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 4)
 	_, ok := in.(Ldpsw)
 	require.True(t, ok, "type = %T, want Ldpsw", in)
 	for _, c := range []struct {
@@ -80,9 +80,9 @@ func TestLdpswCtor(t *testing.T) {
 	}
 }
 
-// ctorLdpsw — an instruction constructor wrapper for table literals:
+// buildLdpsw — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLdpsw(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
+func buildLdpsw(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Ldpsw(rt, rt2, rn, off)
 	require.NoError(t, err)

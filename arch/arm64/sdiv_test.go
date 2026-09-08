@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestSdivCtor(t *testing.T) {
+func TestSdivBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestSdivCtor(t *testing.T) {
 	}{
 		{
 			"sdiv x0,x1,x2",
-			ctorSdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
+			buildSdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
 			0x9ac20c20,
 		},
 		{
 			"sdiv w4,w5,w6",
-			ctorSdiv(t, wreg(t, 4), wreg(t, 5), wreg(t, 6)),
+			buildSdiv(t, wreg(t, 4), wreg(t, 5), wreg(t, 6)),
 			0x1ac60ca4,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorSdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	in := buildSdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
 	_, ok := in.(Sdiv)
 	require.True(t, ok, "type = %T, want Sdiv", in)
 	for _, c := range []struct {
@@ -73,9 +73,9 @@ func TestSdivCtor(t *testing.T) {
 	}
 }
 
-// ctorSdiv — an instruction constructor wrapper for table literals:
+// buildSdiv — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorSdiv(t *testing.T, rd, rn, rm Reg) Instr {
+func buildSdiv(t *testing.T, rd, rn, rm Reg) Instr {
 	t.Helper()
 	in, err := New().Sdiv(rd, rn, rm)
 	require.NoError(t, err)

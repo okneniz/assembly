@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestUdivCtor(t *testing.T) {
+func TestUdivBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestUdivCtor(t *testing.T) {
 	}{
 		{
 			"udiv x0,x1,x2",
-			ctorUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
+			buildUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
 			0x9ac20820,
 		},
 		{
 			"udiv w4,w5,w6",
-			ctorUdiv(t, wreg(t, 4), wreg(t, 5), wreg(t, 6)),
+			buildUdiv(t, wreg(t, 4), wreg(t, 5), wreg(t, 6)),
 			0x1ac608a4,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	in := buildUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
 	_, ok := in.(Udiv)
 	require.True(t, ok, "type = %T, want Udiv", in)
 	for _, c := range []struct {
@@ -73,9 +73,9 @@ func TestUdivCtor(t *testing.T) {
 	}
 }
 
-// ctorUdiv — an instruction constructor wrapper for table literals:
+// buildUdiv — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorUdiv(t *testing.T, rd, rn, rm Reg) Instr {
+func buildUdiv(t *testing.T, rd, rn, rm Reg) Instr {
 	t.Helper()
 	in, err := New().Udiv(rd, rn, rm)
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestStpCtor(t *testing.T) {
+func TestStpBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestStpCtor(t *testing.T) {
 	}{
 		{
 			"stp x0,x1,[x2]",
-			ctorStp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0),
+			buildStp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0),
 			0xa9000440,
 		},
 		{
 			"stp x29,x30,[sp,#-16]",
-			ctorStp(t, xreg(t, 29), xreg(t, 30), SP, -16),
+			buildStp(t, xreg(t, 29), xreg(t, 30), SP, -16),
 			0xa93f7bfd,
 		},
 		{
 			"stp w0,w1,[x2,#252]",
-			ctorStp(t, wreg(t, 0), wreg(t, 1), xreg(t, 2), 252),
+			buildStp(t, wreg(t, 0), wreg(t, 1), xreg(t, 2), 252),
 			0x291f8440,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorStp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0)
+	in := buildStp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0)
 	_, ok := in.(Stp)
 	require.True(t, ok, "type = %T, want Stp", in)
 	for _, c := range []struct {
@@ -92,9 +92,9 @@ func TestStpCtor(t *testing.T) {
 	}
 }
 
-// ctorStp — an instruction constructor wrapper for table literals:
+// buildStp — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorStp(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
+func buildStp(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
 	t.Helper()
 	in, err := New().Stp(rt, rt2, rn, off)
 	require.NoError(t, err)

@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestBlrCtor(t *testing.T) {
+func TestBlrBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestBlrCtor(t *testing.T) {
 	}{
 		{
 			"blr x1",
-			ctorBlr(t, xreg(t, 1)),
+			buildBlr(t, xreg(t, 1)),
 			0xd63f0020,
 		},
 		{
 			"blr x30",
-			ctorBlr(t, xreg(t, 30)),
+			buildBlr(t, xreg(t, 30)),
 			0xd63f03c0,
 		},
 		{
 			"blr xzr",
-			ctorBlr(t, XZR),
+			buildBlr(t, XZR),
 			0xd63f03e0,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorBlr(t, xreg(t, 1))
+	in := buildBlr(t, xreg(t, 1))
 	_, ok := in.(Blr)
 	require.True(t, ok, "type = %T, want Blr", in)
 	for _, c := range []struct {
@@ -57,9 +57,9 @@ func TestBlrCtor(t *testing.T) {
 	}
 }
 
-// ctorBlr — an instruction constructor wrapper for table literals:
+// buildBlr — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorBlr(t *testing.T, rn Reg) Instr {
+func buildBlr(t *testing.T, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Blr(rn)
 	require.NoError(t, err)

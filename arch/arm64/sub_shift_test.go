@@ -6,13 +6,13 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSubShiftCtor(t *testing.T) {
-	got := ctorWord(
+func TestSubShiftBuild(t *testing.T) {
+	got := buildWord(
 		t,
-		ctorSubShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 2), LSR),
+		buildSubShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 2), LSR),
 	)
 	require.Equal(t, uint32(0xcb430841), got, "sub lsr#2")
-	in := ctorSubShift(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
+	in := buildSubShift(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
 	_, ok := in.(SubShift)
 	require.True(t, ok, "type = %T, want SubShift", in)
 	for _, c := range []struct {

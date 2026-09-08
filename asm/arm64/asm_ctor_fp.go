@@ -7,6 +7,7 @@ package arm64
 import (
 	"errors"
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // newFp3Arm — fop fd, fn, fm: the (d, s) enc pair by the first register's type.
@@ -27,13 +28,7 @@ func newFp3Arm(op string, encD, encS uint32) func([]vOp) (Instr, error) {
 			enc = encD
 		}
 
-		return Fp3{
-			op:  op,
-			rd:  fd,
-			rn:  fn,
-			rm:  fm,
-			enc: enc,
-		}, nil
+		return Builder{}.Fp3(op, fd, fn, fm, enc), nil
 	}
 }
 
@@ -45,15 +40,15 @@ func armReg3Strings(ops []vOp, name string) ([3]string, error) {
 	}
 
 	for i := range 3 {
-		if ops[i].reg == "" {
+		if ops[i].Reg() == "" {
 			return out, fmt.Errorf("%s: register operand %d", name, i+1)
 		}
 
-		if _, err := armRegNum(ops[i].reg); err != nil {
+		if _, err := armRegNum(ops[i].Reg()); err != nil {
 			return out, fmt.Errorf("%s: %w", name, err)
 		}
 
-		out[i] = ops[i].reg
+		out[i] = ops[i].Reg()
 	}
 
 	return out, nil
@@ -67,11 +62,11 @@ func newFp2Arm(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: want fd, fn", op)
 		}
 
-		if ops[0].reg == "" || ops[1].reg == "" {
+		if ops[0].Reg() == "" || ops[1].Reg() == "" {
 			return nil, fmt.Errorf("%s: register operands", op)
 		}
 
-		rd, rn := ops[0].reg, ops[1].reg
+		rd, rn := ops[0].Reg(), ops[1].Reg()
 		if _, err := armRegNum(rd); err != nil {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
@@ -81,14 +76,7 @@ func newFp2Arm(op string, enc uint32) func([]vOp) (Instr, error) {
 		}
 
 		rdK, rnK := regKindOf(rd), regKindOf(rn)
-		return Fp2{
-			op:  op,
-			rd:  rd,
-			rn:  rn,
-			enc: enc,
-			rdK: rdK,
-			rnK: rnK,
-		}, nil
+		return Builder{}.Fp2(op, rd, rn, enc, rdK, rnK), nil
 	}
 }
 
@@ -113,18 +101,18 @@ func newFmov(ops []vOp) (Instr, error) {
 		return nil, errors.New("fmov: want fd, op")
 	}
 
-	if ops[0].reg == "" {
+	if ops[0].Reg() == "" {
 		return nil, errors.New("fmov: register expected")
 	}
 
-	rd := ops[0].reg
+	rd := ops[0].Reg()
 	if _, err := armRegNum(rd); err != nil {
 		return nil, fmt.Errorf("fmov: %w", err)
 	}
 
 	isS := rd[0] == 's'
-	if ops[1].kind == armOpFloat || ops[1].kind == armOpImm {
-		text := fmt.Sprintf("%.8f", ops[1].fval)
+	if ops[1].Kind() == arch.ArmOpFloat || ops[1].Kind() == arch.ArmOpImm {
+		text := fmt.Sprintf("%.8f", ops[1].Float())
 		enc := uint32(0x1E601000)
 		rdK := kD
 		if isS {
@@ -134,35 +122,21 @@ func newFmov(ops []vOp) (Instr, error) {
 		for imm8 := range uint32(256) {
 			if isS {
 				if fmt.Sprintf("%.8f", vfpExpandImm32(imm8)) == text {
-					return FmovImm{
-						rd:   rd,
-						val:  ops[1].fval,
-						text: text,
-						isS:  isS,
-						enc:  enc,
-						rdK:  rdK,
-					}, nil
+					return Builder{}.FmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
 				}
 			} else if fmt.Sprintf("%.8f", vfpExpandImm64(imm8)) == text {
-				return FmovImm{
-					rd:   rd,
-					val:  ops[1].fval,
-					text: text,
-					isS:  isS,
-					enc:  enc,
-					rdK:  rdK,
-				}, nil
+				return Builder{}.FmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
 			}
 		}
 
 		return nil, errors.New("fmov: imm not encodable")
 	}
 
-	if ops[1].reg == "" {
+	if ops[1].Reg() == "" {
 		return nil, errors.New("fmov: register or immediate expected")
 	}
 
-	rn := ops[1].reg
+	rn := ops[1].Reg()
 	if _, err := armRegNum(rn); err != nil {
 		return nil, fmt.Errorf("fmov: %w", err)
 	}
@@ -188,14 +162,7 @@ func newFmov(ops []vOp) (Instr, error) {
 		return nil, errors.New("fmov: bad register kinds")
 	}
 
-	return Fp2{
-		op:  "fmov",
-		rd:  rd,
-		rn:  rn,
-		enc: enc,
-		rdK: rdK,
-		rnK: rnK,
-	}, nil
+	return Builder{}.Fp2("fmov", rd, rn, enc, rdK, rnK), nil
 }
 
 // newFcmpArm — fcmp fn, fm | fcmp fn, #0.0.
@@ -204,39 +171,26 @@ func newFcmpArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("fcmp: want fn, fm|#0.0")
 	}
 
-	if ops[0].reg == "" {
+	if ops[0].Reg() == "" {
 		return nil, errors.New("fcmp: register expected")
 	}
 
-	rn := ops[0].reg
+	rn := ops[0].Reg()
 	k := regKindOf(rn)
 	enc := uint32(0x1E602000)
 	if k == kS {
 		enc = 0x1E202000
 	}
 
-	if ops[1].kind == armOpFloat || ops[1].kind == armOpImm {
-		return Fcmp{
-			rn:     rn,
-			withRM: false,
-			enc0:   enc,
-			encR:   enc,
-			k:      k,
-		}, nil
+	if ops[1].Kind() == arch.ArmOpFloat || ops[1].Kind() == arch.ArmOpImm {
+		return Builder{}.Fcmp(rn, "", false, enc, enc, k), nil
 	}
 
-	if ops[1].reg == "" {
+	if ops[1].Reg() == "" {
 		return nil, errors.New("fcmp: register or #0.0")
 	}
 
-	return Fcmp{
-		rn:     rn,
-		rm:     ops[1].reg,
-		withRM: true,
-		enc0:   enc,
-		encR:   enc,
-		k:      k,
-	}, nil
+	return Builder{}.Fcmp(rn, ops[1].Reg(), true, enc, enc, k), nil
 }
 
 // newFmadd — fmadd fd, fn, fm, fa (d form).
@@ -248,24 +202,17 @@ func newFmadd(op string, enc uint32) func([]vOp) (Instr, error) {
 
 		regs := make([]string, 4)
 		for i := range 4 {
-			if ops[i].reg == "" {
+			if ops[i].Reg() == "" {
 				return nil, fmt.Errorf("%s: register operand %d", op, i+1)
 			}
 
-			if _, err := armRegNum(ops[i].reg); err != nil {
+			if _, err := armRegNum(ops[i].Reg()); err != nil {
 				return nil, fmt.Errorf("%s: %w", op, err)
 			}
 
-			regs[i] = ops[i].reg
+			regs[i] = ops[i].Reg()
 		}
 
-		return Fp4{
-			op:  op,
-			rd:  regs[0],
-			rn:  regs[1],
-			rm:  regs[2],
-			ra:  regs[3],
-			enc: enc,
-		}, nil
+		return Builder{}.Fp4(op, regs[0], regs[1], regs[2], regs[3], enc), nil
 	}
 }

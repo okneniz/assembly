@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestStlrCtor(t *testing.T) {
+func TestStlrBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,29 +16,29 @@ func TestStlrCtor(t *testing.T) {
 	}{
 		{
 			"stlr x0,[x1]",
-			ctorStlr(t, xreg(t, 0), xreg(t, 1)),
+			buildStlr(t, xreg(t, 0), xreg(t, 1)),
 			0xc89ffc20,
 		},
 		{
 			"stlr w2,[sp]",
-			ctorStlr(t, wreg(t, 2), SP),
+			buildStlr(t, wreg(t, 2), SP),
 			0x889fffe2,
 		},
 		{
 			"stlr xzr,[x3]",
-			ctorStlr(t, XZR, xreg(t, 3)),
+			buildStlr(t, XZR, xreg(t, 3)),
 			0xc89ffc7f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorStlr(t, xreg(t, 0), xreg(t, 1))
+	in := buildStlr(t, xreg(t, 0), xreg(t, 1))
 	_, ok := in.(Stlr)
 	require.True(t, ok, "type = %T, want Stlr", in)
 	for _, c := range []struct {
@@ -64,9 +64,9 @@ func TestStlrCtor(t *testing.T) {
 	}
 }
 
-// ctorStlr — an instruction constructor wrapper for table literals:
+// buildStlr — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorStlr(t *testing.T, rt, rn Reg) Instr {
+func buildStlr(t *testing.T, rt, rn Reg) Instr {
 	t.Helper()
 	in, err := New().Stlr(rt, rn)
 	require.NoError(t, err)

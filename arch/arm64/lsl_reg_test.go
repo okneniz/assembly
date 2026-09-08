@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestLslRegCtor(t *testing.T) {
+func TestLslRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,21 +14,21 @@ func TestLslRegCtor(t *testing.T) {
 	}{
 		{
 			"lsl x1,x2,x3",
-			ctorLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
+			buildLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
 			0x9a032041,
 		},
 		{
 			"lsl w1,w2,w3",
-			ctorLslReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
+			buildLslReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
 			0x1a032041,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
+	in := buildLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
 	_, ok := in.(LslReg)
 	require.True(t, ok, "type = %T, want LslReg", in)
 	for _, c := range []struct {
@@ -68,9 +68,9 @@ func TestLslRegCtor(t *testing.T) {
 	}
 }
 
-// ctorLslReg — an instruction constructor wrapper for table literals:
+// buildLslReg — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorLslReg(t *testing.T, rd, rn, rm Reg) Instr {
+func buildLslReg(t *testing.T, rd, rn, rm Reg) Instr {
 	t.Helper()
 	in, err := New().LslReg(rd, rn, rm)
 	require.NoError(t, err)

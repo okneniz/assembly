@@ -88,6 +88,24 @@ func NewArmListReg(reg, arr string) ArmListReg {
 
 // --- reading (for the self-verify renderer of the syntax layer) ---
 
+// The computed operand kinds (exported; IsReg/IsImm/... are below).
+const (
+	ArmOpReg    = armOpReg
+	ArmOpImm    = armOpImm
+	ArmOpLit    = armOpLit
+	ArmOpMem    = armOpMem
+	ArmOpList   = armOpList
+	ArmOpShift  = armOpShift
+	ArmOpExtend = armOpExtend
+	ArmOpFloat  = armOpFloat
+)
+
+// ArmOpKind — the exported alias of the operand kind type.
+type ArmOpKind = armOpKind
+
+// Kind — the operand kind.
+func (v VOp) Kind() armOpKind { return v.kind }
+
 // Arr — the arrangement suffix ("" if absent).
 func (o VOp) Arr() string {
 	return o.arr

@@ -8,6 +8,7 @@ package alias
 
 import (
 	"fmt"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
@@ -30,7 +31,7 @@ func newCmp(base string) arch.ArmCtor {
 			return nil, err
 		}
 
-		return arch.AddSubThird(ops, base, 31, rnN, 1)
+		return arm64.AddSubThird(ops, base, 31, rnN, 1)
 	}
 }
 

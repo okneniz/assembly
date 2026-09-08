@@ -10,33 +10,28 @@ package arm64
 import (
 	"errors"
 	"fmt"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // makeUbfmLSL — the UBFM encoding of lsl rd, rn, #sh: immr = -sh mod
 // regsize, imms = regsize-1 (scalable width).
-func makeUbfmLSL(rd, rn string, sh uint32, isf bool) (Ubfm, bool) {
+func makeUbfmLSL(rd, rn string, sh uint32, isf bool) (arch.Ubfm, bool) {
 	regsize := uint32(64)
 	if !isf {
 		regsize = 32
 	}
 
 	if sh == 0 || sh >= regsize {
-		return Ubfm{}, false
+		return arch.Ubfm{}, false
 	}
 
-	return Ubfm{
-		rd:   rd,
-		rn:   rn,
-		immr: (regsize - sh) % regsize,
-		imms: regsize - 1,
-		isf:  isf,
-	}, true
+	return UbfmOfC(rd, rn, (regsize-sh)%regsize, regsize-1, isf), true
 }
 
 // newLslArm — lsl rd, rn, #sh → UBFM (primary); reg form → LslReg;
 // anything unfit — legacy candidates.
 func newLslArm(ops []vOp) (Instr, error) {
-	if len(ops) == 3 && ops[2].kind == armOpReg {
+	if len(ops) == 3 && ops[2].Kind() == arch.ArmOpReg {
 		return newLslReg(ops)
 	}
 
@@ -54,7 +49,7 @@ func newLslArm(ops []vOp) (Instr, error) {
 
 // newLsrArm — lsr rd, rn, #sh → UBFM immr=sh, imms=regsize-1.
 func newLsrArm(ops []vOp) (Instr, error) {
-	if len(ops) == 3 && ops[2].kind == armOpReg {
+	if len(ops) == 3 && ops[2].Kind() == arch.ArmOpReg {
 		return newLsrReg(ops)
 	}
 
@@ -73,18 +68,12 @@ func newLsrArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("lsr: imm out of range")
 	}
 
-	return Ubfm{
-		rd:   rd,
-		rn:   rn,
-		immr: sh,
-		imms: regsize - 1,
-		isf:  isf,
-	}, nil
+	return UbfmOf(rd, rn, sh, regsize-1, isf), nil
 }
 
 // newAsrArm — asr rd, rn, #sh → SBFM immr=sh, imms=regsize-1.
 func newAsrArm(ops []vOp) (Instr, error) {
-	if len(ops) == 3 && ops[2].kind == armOpReg {
+	if len(ops) == 3 && ops[2].Kind() == arch.ArmOpReg {
 		return newAsrReg(ops)
 	}
 
@@ -103,18 +92,12 @@ func newAsrArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("asr: imm out of range")
 	}
 
-	return Sbfm{
-		rd:   rd,
-		rn:   rn,
-		immr: sh,
-		imms: regsize - 1,
-		isf:  isf,
-	}, nil
+	return SbfmOf(rd, rn, sh, regsize-1, isf), nil
 }
 
 // rri — rd, rn, #imm parsing.
 func rri(ops []vOp, name string) (string, string, uint32, error) {
-	if len(ops) != 3 || ops[2].kind != armOpImm || ops[2].sym != "" {
+	if len(ops) != 3 || ops[2].Kind() != arch.ArmOpImm || ops[2].Sym() != "" {
 		return "", "", 0, fmt.Errorf("%s: want rd, rn, #imm", name)
 	}
 
@@ -123,7 +106,7 @@ func rri(ops []vOp, name string) (string, string, uint32, error) {
 		return "", "", 0, err
 	}
 
-	v := ops[2].num
+	v := ops[2].Num()
 	if v < 0 || v > 63 {
 		return "", "", 0, fmt.Errorf("%s: bad imm", name)
 	}
@@ -133,7 +116,7 @@ func rri(ops []vOp, name string) (string, string, uint32, error) {
 
 // newRorArm2 — ror rd, rn, #imm → EXTR rn, rn.
 func newRorArm2(ops []vOp) (Instr, error) {
-	if len(ops) == 3 && ops[2].kind == armOpReg {
+	if len(ops) == 3 && ops[2].Kind() == arch.ArmOpReg {
 		return newRorReg(ops)
 	}
 
@@ -146,10 +129,5 @@ func newRorArm2(ops []vOp) (Instr, error) {
 		return nil, errors.New("ror: imm out of range")
 	}
 
-	return Extr{
-		rd:  rd,
-		rn:  rn,
-		rm:  rn,
-		lsb: sh,
-	}, nil
+	return ExtrOf(rd, rn, rn, sh), nil
 }

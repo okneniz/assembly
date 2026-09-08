@@ -75,7 +75,7 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		}
 	}
 
-	if st, cerr := arch.BuildInstr(res.mnem, res.ops); cerr == nil {
+	if st, cerr := buildInstr(res.mnem, res.ops); cerr == nil {
 		if w, ok := verifyWord(st, ctx.Addr, loose); ok {
 			return w, nil
 		}
@@ -84,8 +84,8 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	var lastErr error
 	encoded := false
 	var firstWord uint32
-	for _, cand := range arch.LegacyCandidates(res.mnem) {
-		w, err := arch.BuildLegacy(cand, res.mnem, res.ops, ctx.Addr)
+	for _, cand := range candidatesFor(res.mnem) {
+		w, err := legacyBuild(cand, res.mnem, res.ops, ctx.Addr)
 		if err != nil {
 			if lastErr == nil {
 				lastErr = err

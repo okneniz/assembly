@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestRetCtor(t *testing.T) {
+func TestRetBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,21 +14,21 @@ func TestRetCtor(t *testing.T) {
 	}{
 		{
 			"ret",
-			ctorRet(t, xreg(t, 30)),
+			buildRet(t, xreg(t, 30)),
 			0xd65f03c0,
 		},
 		{
 			"ret x8",
-			ctorRet(t, xreg(t, 8)),
+			buildRet(t, xreg(t, 8)),
 			0xd65f0100,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorRet(t, xreg(t, 30))
+	in := buildRet(t, xreg(t, 30))
 	_, ok := in.(Ret)
 	require.True(t, ok, "type = %T, want Ret", in)
 	for _, c := range []struct {

@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestMaddCtor(t *testing.T) {
+func TestMaddBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,26 +14,26 @@ func TestMaddCtor(t *testing.T) {
 	}{
 		{
 			"madd x1,x2,x3,x4",
-			ctorMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4)),
+			buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4)),
 			0x9b031041,
 		},
 		{
 			"mul x1,x2,x3",
-			ctorMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), XZR),
+			buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), XZR),
 			0x9b037c41,
 		},
 		{
 			"madd w1,w2,w3,w4",
-			ctorMadd(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), wreg(t, 4)),
+			buildMadd(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), wreg(t, 4)),
 			0x1b031041,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4))
+	in := buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4))
 	_, ok := in.(Madd)
 	require.True(t, ok, "type = %T, want Madd", in)
 	for _, c := range []struct {
@@ -80,9 +80,9 @@ func TestMaddCtor(t *testing.T) {
 	}
 }
 
-// ctorMadd — an instruction constructor wrapper for table literals:
+// buildMadd — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorMadd(t *testing.T, rd, rn, rm, ra Reg) Instr {
+func buildMadd(t *testing.T, rd, rn, rm, ra Reg) Instr {
 	t.Helper()
 	in, err := New().Madd(rd, rn, rm, ra)
 	require.NoError(t, err)

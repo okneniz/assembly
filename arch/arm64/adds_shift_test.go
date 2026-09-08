@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestAddsShiftCtor(t *testing.T) {
+func TestAddsShiftBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,31 +14,31 @@ func TestAddsShiftCtor(t *testing.T) {
 	}{
 		{
 			"cmn x1,x2",
-			ctorAddsShift(t, XZR, xreg(t, 1), xreg(t, 2), imm6(t, 0), LSL),
+			buildAddsShift(t, XZR, xreg(t, 1), xreg(t, 2), imm6(t, 0), LSL),
 			0xab02003f,
 		},
 		{
 			"adds x1,x2,x3,lsl#4",
-			ctorAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 4), LSL),
+			buildAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 4), LSL),
 			0xab031041,
 		},
 		{
 			"adds w1,w2,w3,asr#5",
-			ctorAddsShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 5), ASR),
+			buildAddsShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 5), ASR),
 			0x2b831441,
 		},
 		{
 			"adds x1,x2,x3,lsr#63",
-			ctorAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63), LSR),
+			buildAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63), LSR),
 			0xab43fc41,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
+	in := buildAddsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
 	_, ok := in.(AddsShift)
 	require.True(t, ok, "type = %T, want AddsShift", in)
 	for _, c := range []struct {
@@ -92,9 +92,9 @@ func TestAddsShiftCtor(t *testing.T) {
 	}
 }
 
-// ctorAddsShift — an instruction constructor wrapper for table literals:
+// buildAddsShift — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorAddsShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
+func buildAddsShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
 	t.Helper()
 	in, err := New().AddsShift(rd, rn, rm, imm, sh)
 	require.NoError(t, err)

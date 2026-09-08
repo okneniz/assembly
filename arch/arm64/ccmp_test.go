@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestCcmpCtor(t *testing.T) {
+func TestCcmpBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -14,21 +14,21 @@ func TestCcmpCtor(t *testing.T) {
 	}{
 		{
 			"ccmp x1,x2,#3,eq",
-			ctorCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq"),
+			buildCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq"),
 			0xfa420023,
 		},
 		{
 			"ccmp x0,xzr,#0xf,ne",
-			ctorCcmp(t, xreg(t, 0), XZR, 0xf, "ne"),
+			buildCcmp(t, xreg(t, 0), XZR, 0xf, "ne"),
 			0xfa5f100f,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 
-	in := ctorCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq")
+	in := buildCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq")
 	_, ok := in.(Ccmp)
 	require.True(t, ok, "type = %T, want Ccmp", in)
 	for _, c := range []struct {
@@ -68,9 +68,9 @@ func TestCcmpCtor(t *testing.T) {
 	}
 }
 
-// ctorCcmp — an instruction constructor wrapper for table literals:
+// buildCcmp — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorCcmp(t *testing.T, rn, rm Reg, nzcv uint32, cond string) Instr {
+func buildCcmp(t *testing.T, rn, rm Reg, nzcv uint32, cond string) Instr {
 	t.Helper()
 	in, err := New().Ccmp(rn, rm, nzcv, cond)
 	require.NoError(t, err)

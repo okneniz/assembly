@@ -6,7 +6,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestSvcBrkCtor(t *testing.T) {
+func TestSvcBrkBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -29,7 +29,7 @@ func TestSvcBrkCtor(t *testing.T) {
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 	}
 

@@ -7,29 +7,8 @@ package arm64
 import (
 	"errors"
 	"fmt"
-	"strconv"
-	"strings"
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
-
-// armRegNum parses a register name: prefix + number (x0..x30, w3, v31, d7,
-// s2, b0, h5, q1). Named ones (sp/xzr/wzr/wsp) → 31.
-func armRegNum(name string) (uint32, error) {
-	switch name {
-	case "sp", "xzr", "wzr", "wsp":
-		return 31, nil
-	}
-
-	if len(name) < 2 {
-		return 0, fmt.Errorf("bad register %q", name)
-	}
-
-	n, err := strconv.Atoi(name[1:])
-	if err != nil || n < 0 || n > 31 {
-		return 0, fmt.Errorf("bad register %q", name)
-	}
-
-	return uint32(n), nil
-}
 
 // invRegX: names for the regX Transform (x31 = xzr).
 func invRegX(v any) (uint32, error) {
@@ -133,7 +112,7 @@ func invFpReg(prefix byte) func(any) (uint32, error) {
 // synonyms from GNU syntax are also accepted).
 var invCondNames = func() map[string]uint32 {
 	m := map[string]uint32{}
-	for i, n := range condNames {
+	for i, n := range arch.CondNames() {
 		m[n] = uint32(i)
 	}
 
@@ -153,55 +132,6 @@ func invCond(v any) (uint32, error) {
 	}
 
 	return 0, fmt.Errorf("unknown condition %q", s)
-}
-
-// invSysReg: system register name → 15-bit key (inverse of sysregNames;
-// the objdump form S<op0>_<op1>_C<n>_C<m>_<op2> is also accepted).
-var invSysRegNames = func() map[string]uint32 {
-	m := map[string]uint32{}
-	for k, name := range sysregNames {
-		if _, exists := m[name]; !exists {
-			m[name] = k
-		}
-	}
-
-	return m
-}()
-
-func invSysReg(v any) (uint32, error) {
-	s, ok := v.(string)
-	if !ok {
-		return 0, errors.New("sysreg expected")
-	}
-
-	if k, ok := invSysRegNames[s]; ok {
-		return k, nil
-	}
-
-	if strings.HasPrefix(s, "S") && strings.Count(s, "_") == 4 {
-		parts := strings.Split(s[1:], "_")
-		op0, err0 := strconv.Atoi(parts[0])
-		op1, err1 := strconv.Atoi(parts[1])
-		crn, err2 := strconv.Atoi(strings.TrimPrefix(parts[2], "C"))
-		crm, err3 := strconv.Atoi(strings.TrimPrefix(parts[3], "C"))
-		op2, err4 := strconv.Atoi(parts[4])
-		if err0 == nil && err1 == nil && err2 == nil && err3 == nil && err4 == nil &&
-			op0 >= 2 && op0 <= 3 && crn >= 0 && crn <= 15 && crm >= 0 && crm <= 15 {
-			return uint32(
-				op0&1,
-			)<<14 | uint32(
-				op1,
-			)<<11 | uint32(
-				crn,
-			)<<7 | uint32(
-				crm,
-			)<<3 | uint32(
-				op2,
-			), nil
-		}
-	}
-
-	return 0, fmt.Errorf("unknown system register %q", s)
 }
 
 var invShiftNames = map[string]uint32{"lsl": 0, "lsr": 1, "asr": 2, "ror": 3}

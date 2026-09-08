@@ -8,7 +8,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func TestCsinvCtor(t *testing.T) {
+func TestCsinvBuild(t *testing.T) {
 	cases := []struct {
 		name string
 		in   Instr
@@ -16,24 +16,24 @@ func TestCsinvCtor(t *testing.T) {
 	}{
 		{
 			"csinv x5,x6,x7,al",
-			ctorCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al"),
+			buildCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al"),
 			0xda87e0c5,
 		},
 		{
 			"csinv w2,w3,wzr,le",
-			ctorCsinv(t, wreg(t, 2), wreg(t, 3), WZR, "le"),
+			buildCsinv(t, wreg(t, 2), wreg(t, 3), WZR, "le"),
 			0x5a9fd062,
 		},
 	}
 	for _, c := range cases {
-		got := ctorWord(t, c.in)
+		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
 		back := decodeOne(c.word, 0x1000)
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	in := ctorCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al")
+	in := buildCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al")
 	_, ok := in.(Csinv)
 	require.True(t, ok, "type = %T, want Csinv", in)
 	for _, c := range []struct {
@@ -66,9 +66,9 @@ func TestCsinvCtor(t *testing.T) {
 	}
 }
 
-// ctorCsinv — an instruction constructor wrapper for table literals:
+// buildCsinv — an instruction constructor wrapper for table literals:
 // valid operands, an error is impossible by construction.
-func ctorCsinv(t *testing.T, rd, rn, rm Reg, cond string) Instr {
+func buildCsinv(t *testing.T, rd, rn, rm Reg, cond string) Instr {
 	t.Helper()
 	in, err := New().Csinv(rd, rn, rm, cond)
 	require.NoError(t, err)
