@@ -26,22 +26,19 @@ type Instr interface {
 	Encode(w io.Writer) (int64, error)
 }
 
-// base — the bookkeeping fields of every instruction: raw word and
-// length (32-bit ones are always 4; bookkeeping for Len).
+// base — the bookkeeping record of every instruction: the raw word.
+// The encoding is fixed 32-bit, so Len is a constant (unlike RISC-V,
+// where the compressed halfwords carry their length).
 type base struct {
-	raw    uint32
-	length int
+	raw uint32
 }
 
 func newBase(raw uint32) base {
-	return base{
-		raw:    raw,
-		length: 4,
-	}
+	return base{raw: raw}
 }
 
 func (b base) Len() int {
-	return b.length
+	return 4
 }
 
 // armRegName — the x/w register name by number and width.
