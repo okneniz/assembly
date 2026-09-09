@@ -49,6 +49,7 @@ func TestSimdDupElem(t *testing.T) {
 			t.Errorf("%#010x: Encode: %v (%d bytes)", c.word, err, buf.Len())
 			continue
 		}
+
 		if back := binary.LittleEndian.Uint32(buf.Bytes()); back != c.word {
 			t.Errorf("%#010x: encode round-trip gave %#010x", c.word, back)
 		}

@@ -114,7 +114,7 @@ func TestArmRoundTripExample(t *testing.T) {
 		t.Skipf("example not available: %v", err)
 	}
 
-	insts, err := arch.Parse()(bytes.Buffer(ts.Data))
+	insts, err := arch.MakeDecoder()(bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	matched, failed, notAssembled, dontCare, equiv := 0, 0, 0, 0, 0
 	sample := 0

@@ -11,13 +11,12 @@ import (
 // historical names keep working.
 
 type (
-	vOp     = arch.VOp
-	vMem    = arch.VMem
-	Schema  = arch.Schema
-	Field   = arch.Field
-	fpKind  = arch.FpKind
-	memKind = arch.MemKind
-	Csel    = arch.Csel
+	vOp    = arch.VOp
+	vMem   = arch.VMem
+	Schema = arch.Schema
+	Field  = arch.Field
+	fpKind = arch.FpKind
+	Csel   = arch.Csel
 )
 
 // fp/mem helpers of the moved bodies.
@@ -57,14 +56,24 @@ func regNums2(a, b string) (uint32, uint32, error)           { return arch.RegNu
 func zeroReg(rd string) string                               { return arch.ZeroReg(rd) }
 func arrQSize(arr string) (uint32, uint32, error)            { return arch.ArrQSize(arr) }
 func armRegNum(name string) (uint32, error)                  { return arch.ArmRegNum(name) }
-func addSubRegName(n uint32, isf, flags bool) string         { return arch.AddSubRegName(n, isf, flags) }
-func newCsel(rd, rn, rm, cond string) arch.Csel              { return arch.NewCsel(rd, rn, rm, cond) }
-func condNum(name string) (uint32, error)                    { return arch.CondNum(name) }
-func regIndex(reg string) uint32                             { return arch.RegIndex(reg) }
-func regListStr(rt0 uint32, count int) string                { return arch.RegListStr(rt0, count) }
-func vfpExpandImm64(imm8 uint32) float64                     { return arch.VfpExpandImm64(imm8) }
-func vfpExpandImm32(imm8 uint32) float32                     { return arch.VfpExpandImm32(imm8) }
-func isSimd3Logical(name string) bool                        { return arch.IsSimd3Logical(name) }
+
+func addSubRegName(
+	n uint32,
+	isf, flags bool,
+) string {
+	return arch.AddSubRegName(n, isf, flags)
+}
+
+func newCsel(
+	rd, rn, rm, cond string,
+) arch.Csel {
+	return arch.NewCsel(rd, rn, rm, cond)
+}
+func regIndex(reg string) uint32              { return arch.RegIndex(reg) }
+func regListStr(rt0 uint32, count int) string { return arch.RegListStr(rt0, count) }
+func vfpExpandImm64(imm8 uint32) float64      { return arch.VfpExpandImm64(imm8) }
+func vfpExpandImm32(imm8 uint32) float32      { return arch.VfpExpandImm32(imm8) }
+func isSimd3Logical(name string) bool         { return arch.IsSimd3Logical(name) }
 
 // armCtors — constructors of per-instruction structs from parsed text:
 // mnemonic (with .arr/.cond suffixes, where the grammar yields them
@@ -72,251 +81,262 @@ func isSimd3Logical(name string) bool                        { return arch.IsSim
 // (cmp/mov/cset/sxt*/...) — asm/arm64/alias on top of NewWithCtors. The
 // hook runs before the armFieldsFor legacy path; the encoding choice is
 // confirmed by encodeARM's self-verify.
-var armCtors = map[string]func(ops []vOp) (Instr, error){
-	"b":          newB,
-	"bl":         newBl,
-	"cbz":        newCbz,
-	"cbnz":       newCbnz,
-	"nop":        newNop,
-	"ret":        newRet,
-	"br":         newBr,
-	"blr":        newBlr,
-	"rbit":       newRbit,
-	"rev16":      newRev16,
-	"rev32":      newRev32,
-	"rev":        newRev,
-	"clz":        newClz,
-	"cls":        newCls,
-	"udiv":       newUdiv,
-	"sdiv":       newSdiv,
-	"smulh":      newSmulh,
-	"umulh":      newUmulh,
-	"adc":        newAdc,
-	"ccmp":       newCcmp,
-	"extr":       newExtr,
-	"madd":       newMadd,
-	"msub":       newMsub,
-	"csel":       newCselArm,
-	"csinc":      newCsinc,
-	"csinv":      newCsinv,
-	"csneg":      newCsneg,
-	"movz":       newMovz,
-	"movn":       newMovn,
-	"movk":       newMovk,
-	"add":        newAddArm,
-	"adds":       newAddsArm,
-	"sub":        newSubArm,
-	"subs":       newSubsArm,
-	"and":        newAndArm,
-	"ands":       newAndsArm,
-	"orr":        newOrrArm,
-	"eor":        newEorArm,
-	"bic":        newBicArm,
-	"bics":       newBicsArm,
-	"orn":        newOrnArm,
-	"eon":        newEonArm,
-	"ldr":        newLdrArm,
-	"ldrb":       newLdrbArm,
-	"ldrh":       newLdrhArm,
-	"str":        newStrArm,
-	"strb":       newStrbArm,
-	"strh":       newStrhArm,
-	"ldur":       newLdursArm,
-	"stur":       newStursArm,
-	"ldurb":      newLdurbArm,
-	"ldurh":      newLdurhArm,
-	"sturb":      newSturbArm,
-	"sturh":      newSturhArm,
-	"ldrsw":      newLdrswArm,
-	"ldrsb":      newLdrsbArm,
-	"ldrsh":      newLdrshArm,
-	"ldp":        newLdpArm,
-	"stp":        newStpArm,
-	"ldar":       newLdarArm,
-	"stlr":       newStlrArm,
-	"stlxr":      newStlxrArm,
-	"stxrb":      newStxrbArm,
-	"lsl":        newLslArm,
-	"lsr":        newLsrArm,
-	"asr":        newAsrArm,
-	"ror":        newRorArm2,
-	"adr":        newAdr,
-	"adrp":       newAdrp,
-	"tbz":        newTbzArm(false),
-	"tbnz":       newTbzArm(true),
-	"svc":        newSvc,
-	"brk":        newBrkArm,
-	"udf":        newUdfArm,
-	"hlt":        newHlt,
-	"hvc":        newHvc,
-	"mrs":        newMrsArm,
-	"msr":        newMsrArm,
-	"fadd":       newFp3Arm("fadd", 0x1E602800, 0x1E202800),
-	"fsub":       newFp3Arm("fsub", 0x1E603800, 0x1E203800),
-	"fmul":       newFp3Arm("fmul", 0x1E600800, 0x1E200800),
-	"fdiv":       newFp3Arm("fdiv", 0x1E601800, 0x1E201800),
-	"fmax":       newFp3Arm("fmax", 0x1E604800, 0x1E204800),
-	"fmin":       newFp3Arm("fmin", 0x1E605800, 0x1E205800),
-	"fneg":       newFp2Arm("fneg", 0x1E614000),
-	"fmov":       newFmov,
-	"fcmp":       newFcmpArm,
-	"fmadd":      newFmadd("fmadd", 0x1F000000),
-	"fnmsub":     newFmadd("fnmsub", 0x1F200000),
-	"and.16b":    newSimd3("and", 0x0E201C00),
-	"and.8b":     newSimd3("and", 0x0E201C00),
-	"bic.16b":    newSimd3("bic", 0x0E601C00),
-	"bic.8b":     newSimd3("bic", 0x0E601C00),
-	"orr.16b":    newSimd3("orr", 0x0EA01C00),
-	"orr.8b":     newSimd3("orr", 0x0EA01C00),
-	"orn.16b":    newSimd3("orn", 0x0EE01C00),
-	"orn.8b":     newSimd3("orn", 0x0EE01C00),
-	"eor.16b":    newSimd3("eor", 0x2E201C00),
-	"eor.8b":     newSimd3("eor", 0x2E201C00),
-	"bsl.16b":    newSimd3("bsl", 0x2E601C00),
-	"bsl.8b":     newSimd3("bsl", 0x2E601C00),
-	"bit.16b":    newSimd3("bit", 0x2EA01C00),
-	"bit.8b":     newSimd3("bit", 0x2EA01C00),
-	"bif.16b":    newSimd3("bif", 0x2EE01C00),
-	"bif.8b":     newSimd3("bif", 0x2EE01C00),
-	"add.16b":    newSimd3("add", 0x0E208400),
-	"add.8b":     newSimd3("add", 0x0E208400),
-	"cmeq.16b":   newSimd3("cmeq", 0x2E208C00),
-	"addp.16b":   newSimd3("addp", 0x0E20BC00),
-	"sqrshl.16b": newSimd3("sqrshl", 0x0E205C00),
-	"cnt.8b":     newSimd2("cnt", 0x0E205800),
-	"cnt.16b":    newSimd2("cnt", 0x0E205800),
-	"rev32.8b":   newSimd2("rev32", 0x2E200800),
-	"rev32.16b":  newSimd2("rev32", 0x2E200800),
-	"not.16b":    newSimd2("not", 0x2E205800),
-	"not.8b":     newSimd2("not", 0x2E205800),
-	"abs.16b":    newSimd2("abs", 0x0E20B800),
-	"abs.8b":     newSimd2("abs", 0x0E20B800),
-	"rbit.16b":   newSimd2("rbit", 0x2E205800),
-	"rbit.8b":    newSimd2("rbit", 0x2E205800),
-	"shl.16b":    newSimdShift("shl", 0x0F004000),
-	"shl.8b":     newSimdShift("shl", 0x0F004000),
-	"sri.16b":    newSimdShift("sri", 0x2F004000),
-	"ushr.16b":   newSimdShift("ushr", 0x2F000000),
-	"sshr.16b":   newSimdShift("sshr", 0x0F000000),
-	"aese":       newAes("aese", 0x4E284800),
-	"aesmc":      newAes("aesmc", 0x4E286800),
-	"dup.16b":    newDupArm,
-	"dup.8b":     newDupArm,
-	"dup.4s":     newDupArm,
-	"dup.2s":     newDupArm,
-	"dup.2d":     newDupArm,
-	"dup.4h":     newDupArm,
-	"dup.8h":     newDupArm,
-	"mov.b":      newMovInsArm(0),
-	"mov.h":      newMovInsArm(1), // INS: mov.sz vd[idx], wn
-	"mov.s":      newMovInsArm(2),
-	"mov.d":      newMovInsArm(3),
-	"ins.b":      newInsElemArm(0),
-	"ins.h":      newInsElemArm(1), // INS (element): ins.sz vd[idx], vn[idx]
-	"ins.s":      newInsElemArm(2),
-	"ins.d":      newInsElemArm(3),
-	"smov":       newSmovUmovArm("smov"),
-	"umov":       newSmovUmovArm("umov"),
-	"saddw.4h": newSimdWidenArm(
-		"saddw",
-		0x0E201000,
-	),
-	"saddw.2s": newSimdWidenArm("saddw", 0x0E201000),
-	"saddw.1d": newSimdWidenArm("saddw", 0x0E201000),
-	"saddw2.8h": newSimdWidenArm(
-		"saddw2",
-		0x0E201000,
-	),
-	"saddw2.4s": newSimdWidenArm("saddw2", 0x0E201000),
-	"saddw2.2d": newSimdWidenArm("saddw2", 0x0E201000),
-	"ssubw.4h": newSimdWidenArm(
-		"ssubw",
-		0x0E203000,
-	),
-	"ssubw.2s": newSimdWidenArm("ssubw", 0x0E203000),
-	"ssubw.1d": newSimdWidenArm("ssubw", 0x0E203000),
-	"ssubw2.8h": newSimdWidenArm(
-		"ssubw2",
-		0x0E203000,
-	),
-	"ssubw2.4s": newSimdWidenArm("ssubw2", 0x0E203000),
-	"ssubw2.2d": newSimdWidenArm("ssubw2", 0x0E203000),
-	"uaddw.4h": newSimdWidenArm(
-		"uaddw",
-		0x2E201000,
-	),
-	"uaddw.2s": newSimdWidenArm("uaddw", 0x2E201000),
-	"uaddw.1d": newSimdWidenArm("uaddw", 0x2E201000),
-	"uaddw2.8h": newSimdWidenArm(
-		"uaddw2",
-		0x2E201000,
-	),
-	"uaddw2.4s": newSimdWidenArm("uaddw2", 0x2E201000),
-	"uaddw2.2d": newSimdWidenArm("uaddw2", 0x2E201000),
-	"usubw.4h": newSimdWidenArm(
-		"usubw",
-		0x2E203000,
-	),
-	"usubw.2s": newSimdWidenArm("usubw", 0x2E203000),
-	"usubw.1d": newSimdWidenArm("usubw", 0x2E203000),
-	"usubw2.8h": newSimdWidenArm(
-		"usubw2",
-		0x2E203000,
-	),
-	"usubw2.4s":  newSimdWidenArm("usubw2", 0x2E203000),
-	"usubw2.2d":  newSimdWidenArm("usubw2", 0x2E203000),
-	"tbl.16b":    newTblArm,
-	"uaddlv.16b": newUaddlv,
-	"uaddlv.8b":  newUaddlv,
-	"uaddlv.4h":  newUaddlv,
-	"uaddlv.8h":  newUaddlv,
-	"dmb":        newDmb,
-	"yield":      newYield,
-	"dc":         newDc,
-	"prfm":       newPrfmArm,
-	"ld1.16b":    newLdStruct("ld1"),
-	"ld1.8b":     newLdStruct("ld1"),
-	"ld1.4s":     newLdStruct("ld1"),
-	"ld1.2s":     newLdStruct("ld1"),
-	"ld1.2d":     newLdStruct("ld1"),
-	"ld1.4h":     newLdStruct("ld1"),
-	"ld1.8h":     newLdStruct("ld1"),
-	"ld1r.16b":   newLdStruct("ld1r"),
-	"ld1r.8b":    newLdStruct("ld1r"),
-	"ld1r.4s":    newLdStruct("ld1r"),
-	"ld1r.2s":    newLdStruct("ld1r"),
-	"ld1r.2d":    newLdStruct("ld1r"),
-	"ld1r.4h":    newLdStruct("ld1r"),
-	"ld1r.8h":    newLdStruct("ld1r"),
-	"ld2.16b":    newLdStruct("ld2"),
-	"ld2.8b":     newLdStruct("ld2"),
-	"ld3.16b":    newLdStruct("ld3"),
-	"ld3.8b":     newLdStruct("ld3"),
-	"ld4.16b":    newLdStruct("ld4"),
-	"ld4.8b":     newLdStruct("ld4"),
-	"st1.16b":    newLdStruct("st1"),
-	"st1.8b":     newLdStruct("st1"),
-	"st2.16b":    newLdStruct("st2"),
-	"st3.16b":    newLdStruct("st3"),
-	"st4.16b":    newLdStruct("st4"),
-	"mov.16b":    newMovSimd("16b"),
-	"mov.8b":     newMovSimd("8b"),
-	"b.eq":       newBcondOf("eq"),
-	"b.ne":       newBcondOf("ne"),
-	"b.hs":       newBcondOf("hs"),
-	"b.lo":       newBcondOf("lo"),
-	"b.mi":       newBcondOf("mi"),
-	"b.pl":       newBcondOf("pl"),
-	"b.vs":       newBcondOf("vs"),
-	"b.vc":       newBcondOf("vc"),
-	"b.hi":       newBcondOf("hi"),
-	"b.ls":       newBcondOf("ls"),
-	"b.ge":       newBcondOf("ge"),
-	"b.lt":       newBcondOf("lt"),
-	"b.gt":       newBcondOf("gt"),
-	"b.le":       newBcondOf("le"),
-	"b.al":       newBcondOf("al"),
-	"b.nv":       newBcondOf("nv"),
+//
+// Built once by buildArmCtors (literal entries + the by-element
+// registrations); a data table, immutable after construction.
+var armCtors = buildArmCtors()
+
+func buildArmCtors() map[string]func(ops []vOp) (Instr, error) {
+	m := map[string]func(ops []vOp) (Instr, error){
+		"b":          newB,
+		"bl":         newBl,
+		"cbz":        newCbz,
+		"cbnz":       newCbnz,
+		"nop":        newNop,
+		"ret":        newRet,
+		"br":         newBr,
+		"blr":        newBlr,
+		"rbit":       newRbit,
+		"rev16":      newRev16,
+		"rev32":      newRev32,
+		"rev":        newRev,
+		"clz":        newClz,
+		"cls":        newCls,
+		"udiv":       newUdiv,
+		"sdiv":       newSdiv,
+		"smulh":      newSmulh,
+		"umulh":      newUmulh,
+		"adc":        newAdc,
+		"ccmp":       newCcmp,
+		"extr":       newExtr,
+		"madd":       newMadd,
+		"msub":       newMsub,
+		"csel":       newCselArm,
+		"csinc":      newCsinc,
+		"csinv":      newCsinv,
+		"csneg":      newCsneg,
+		"movz":       newMovz,
+		"movn":       newMovn,
+		"movk":       newMovk,
+		"add":        newAddArm,
+		"adds":       newAddsArm,
+		"sub":        newSubArm,
+		"subs":       newSubsArm,
+		"and":        newAndArm,
+		"ands":       newAndsArm,
+		"orr":        newOrrArm,
+		"eor":        newEorArm,
+		"bic":        newBicArm,
+		"bics":       newBicsArm,
+		"orn":        newOrnArm,
+		"eon":        newEonArm,
+		"ldr":        newLdrArm,
+		"ldrb":       newLdrbArm,
+		"ldrh":       newLdrhArm,
+		"str":        newStrArm,
+		"strb":       newStrbArm,
+		"strh":       newStrhArm,
+		"ldur":       newLdursArm,
+		"stur":       newStursArm,
+		"ldurb":      newLdurbArm,
+		"ldurh":      newLdurhArm,
+		"sturb":      newSturbArm,
+		"sturh":      newSturhArm,
+		"ldrsw":      newLdrswArm,
+		"ldrsb":      newLdrsbArm,
+		"ldrsh":      newLdrshArm,
+		"ldp":        newLdpArm,
+		"stp":        newStpArm,
+		"ldar":       newLdarArm,
+		"stlr":       newStlrArm,
+		"stlxr":      newStlxrArm,
+		"stxrb":      newStxrbArm,
+		"lsl":        newLslArm,
+		"lsr":        newLsrArm,
+		"asr":        newAsrArm,
+		"ror":        newRorArm2,
+		"adr":        newAdr,
+		"adrp":       newAdrp,
+		"tbz":        newTbzArm(false),
+		"tbnz":       newTbzArm(true),
+		"svc":        newSvc,
+		"brk":        newBrkArm,
+		"udf":        newUdfArm,
+		"hlt":        newHlt,
+		"hvc":        newHvc,
+		"mrs":        newMrsArm,
+		"msr":        newMsrArm,
+		"fadd":       newFp3Arm("fadd", 0x1E602800, 0x1E202800),
+		"fsub":       newFp3Arm("fsub", 0x1E603800, 0x1E203800),
+		"fmul":       newFp3Arm("fmul", 0x1E600800, 0x1E200800),
+		"fdiv":       newFp3Arm("fdiv", 0x1E601800, 0x1E201800),
+		"fmax":       newFp3Arm("fmax", 0x1E604800, 0x1E204800),
+		"fmin":       newFp3Arm("fmin", 0x1E605800, 0x1E205800),
+		"fneg":       newFp2Arm("fneg", 0x1E614000),
+		"fmov":       newFmov,
+		"fcmp":       newFcmpArm,
+		"fmadd":      newFmadd("fmadd", 0x1F000000),
+		"fnmsub":     newFmadd("fnmsub", 0x1F200000),
+		"and.16b":    newSimd3("and", 0x0E201C00),
+		"and.8b":     newSimd3("and", 0x0E201C00),
+		"bic.16b":    newSimd3("bic", 0x0E601C00),
+		"bic.8b":     newSimd3("bic", 0x0E601C00),
+		"orr.16b":    newSimd3("orr", 0x0EA01C00),
+		"orr.8b":     newSimd3("orr", 0x0EA01C00),
+		"orn.16b":    newSimd3("orn", 0x0EE01C00),
+		"orn.8b":     newSimd3("orn", 0x0EE01C00),
+		"eor.16b":    newSimd3("eor", 0x2E201C00),
+		"eor.8b":     newSimd3("eor", 0x2E201C00),
+		"bsl.16b":    newSimd3("bsl", 0x2E601C00),
+		"bsl.8b":     newSimd3("bsl", 0x2E601C00),
+		"bit.16b":    newSimd3("bit", 0x2EA01C00),
+		"bit.8b":     newSimd3("bit", 0x2EA01C00),
+		"bif.16b":    newSimd3("bif", 0x2EE01C00),
+		"bif.8b":     newSimd3("bif", 0x2EE01C00),
+		"add.16b":    newSimd3("add", 0x0E208400),
+		"add.8b":     newSimd3("add", 0x0E208400),
+		"cmeq.16b":   newSimd3("cmeq", 0x2E208C00),
+		"addp.16b":   newSimd3("addp", 0x0E20BC00),
+		"sqrshl.16b": newSimd3("sqrshl", 0x0E205C00),
+		"cnt.8b":     newSimd2("cnt", 0x0E205800),
+		"cnt.16b":    newSimd2("cnt", 0x0E205800),
+		"rev32.8b":   newSimd2("rev32", 0x2E200800),
+		"rev32.16b":  newSimd2("rev32", 0x2E200800),
+		"not.16b":    newSimd2("not", 0x2E205800),
+		"not.8b":     newSimd2("not", 0x2E205800),
+		"abs.16b":    newSimd2("abs", 0x0E20B800),
+		"abs.8b":     newSimd2("abs", 0x0E20B800),
+		"rbit.16b":   newSimd2("rbit", 0x2E205800),
+		"rbit.8b":    newSimd2("rbit", 0x2E205800),
+		"shl.16b":    newSimdShift("shl", 0x0F004000),
+		"shl.8b":     newSimdShift("shl", 0x0F004000),
+		"sri.16b":    newSimdShift("sri", 0x2F004000),
+		"ushr.16b":   newSimdShift("ushr", 0x2F000000),
+		"sshr.16b":   newSimdShift("sshr", 0x0F000000),
+		"aese":       newAes("aese", 0x4E284800),
+		"aesmc":      newAes("aesmc", 0x4E286800),
+		"dup.16b":    newDupArm,
+		"dup.8b":     newDupArm,
+		"dup.4s":     newDupArm,
+		"dup.2s":     newDupArm,
+		"dup.2d":     newDupArm,
+		"dup.4h":     newDupArm,
+		"dup.8h":     newDupArm,
+		"mov.b":      newMovInsArm(0),
+		"mov.h":      newMovInsArm(1), // INS: mov.sz vd[idx], wn
+		"mov.s":      newMovInsArm(2),
+		"mov.d":      newMovInsArm(3),
+		"ins.b":      newInsElemArm(0),
+		"ins.h":      newInsElemArm(1), // INS (element): ins.sz vd[idx], vn[idx]
+		"ins.s":      newInsElemArm(2),
+		"ins.d":      newInsElemArm(3),
+		"smov":       newSmovUmovArm("smov"),
+		"umov":       newSmovUmovArm("umov"),
+		"saddw.4h": newSimdWidenArm(
+			"saddw",
+			0x0E201000,
+		),
+		"saddw.2s": newSimdWidenArm("saddw", 0x0E201000),
+		"saddw.1d": newSimdWidenArm("saddw", 0x0E201000),
+		"saddw2.8h": newSimdWidenArm(
+			"saddw2",
+			0x0E201000,
+		),
+		"saddw2.4s": newSimdWidenArm("saddw2", 0x0E201000),
+		"saddw2.2d": newSimdWidenArm("saddw2", 0x0E201000),
+		"ssubw.4h": newSimdWidenArm(
+			"ssubw",
+			0x0E203000,
+		),
+		"ssubw.2s": newSimdWidenArm("ssubw", 0x0E203000),
+		"ssubw.1d": newSimdWidenArm("ssubw", 0x0E203000),
+		"ssubw2.8h": newSimdWidenArm(
+			"ssubw2",
+			0x0E203000,
+		),
+		"ssubw2.4s": newSimdWidenArm("ssubw2", 0x0E203000),
+		"ssubw2.2d": newSimdWidenArm("ssubw2", 0x0E203000),
+		"uaddw.4h": newSimdWidenArm(
+			"uaddw",
+			0x2E201000,
+		),
+		"uaddw.2s": newSimdWidenArm("uaddw", 0x2E201000),
+		"uaddw.1d": newSimdWidenArm("uaddw", 0x2E201000),
+		"uaddw2.8h": newSimdWidenArm(
+			"uaddw2",
+			0x2E201000,
+		),
+		"uaddw2.4s": newSimdWidenArm("uaddw2", 0x2E201000),
+		"uaddw2.2d": newSimdWidenArm("uaddw2", 0x2E201000),
+		"usubw.4h": newSimdWidenArm(
+			"usubw",
+			0x2E203000,
+		),
+		"usubw.2s": newSimdWidenArm("usubw", 0x2E203000),
+		"usubw.1d": newSimdWidenArm("usubw", 0x2E203000),
+		"usubw2.8h": newSimdWidenArm(
+			"usubw2",
+			0x2E203000,
+		),
+		"usubw2.4s":  newSimdWidenArm("usubw2", 0x2E203000),
+		"usubw2.2d":  newSimdWidenArm("usubw2", 0x2E203000),
+		"tbl.16b":    newTblArm,
+		"uaddlv.16b": newUaddlv,
+		"uaddlv.8b":  newUaddlv,
+		"uaddlv.4h":  newUaddlv,
+		"uaddlv.8h":  newUaddlv,
+		"dmb":        newDmb,
+		"yield":      newYield,
+		"dc":         newDc,
+		"prfm":       newPrfmArm,
+		"ld1.16b":    newLdStruct("ld1"),
+		"ld1.8b":     newLdStruct("ld1"),
+		"ld1.4s":     newLdStruct("ld1"),
+		"ld1.2s":     newLdStruct("ld1"),
+		"ld1.2d":     newLdStruct("ld1"),
+		"ld1.4h":     newLdStruct("ld1"),
+		"ld1.8h":     newLdStruct("ld1"),
+		"ld1r.16b":   newLdStruct("ld1r"),
+		"ld1r.8b":    newLdStruct("ld1r"),
+		"ld1r.4s":    newLdStruct("ld1r"),
+		"ld1r.2s":    newLdStruct("ld1r"),
+		"ld1r.2d":    newLdStruct("ld1r"),
+		"ld1r.4h":    newLdStruct("ld1r"),
+		"ld1r.8h":    newLdStruct("ld1r"),
+		"ld2.16b":    newLdStruct("ld2"),
+		"ld2.8b":     newLdStruct("ld2"),
+		"ld3.16b":    newLdStruct("ld3"),
+		"ld3.8b":     newLdStruct("ld3"),
+		"ld4.16b":    newLdStruct("ld4"),
+		"ld4.8b":     newLdStruct("ld4"),
+		"st1.16b":    newLdStruct("st1"),
+		"st1.8b":     newLdStruct("st1"),
+		"st2.16b":    newLdStruct("st2"),
+		"st3.16b":    newLdStruct("st3"),
+		"st4.16b":    newLdStruct("st4"),
+		"mov.16b":    newMovSimd("16b"),
+		"mov.8b":     newMovSimd("8b"),
+		"b.eq":       newBcondOf("eq"),
+		"b.ne":       newBcondOf("ne"),
+		"b.hs":       newBcondOf("hs"),
+		"b.lo":       newBcondOf("lo"),
+		"b.mi":       newBcondOf("mi"),
+		"b.pl":       newBcondOf("pl"),
+		"b.vs":       newBcondOf("vs"),
+		"b.vc":       newBcondOf("vc"),
+		"b.hi":       newBcondOf("hi"),
+		"b.ls":       newBcondOf("ls"),
+		"b.ge":       newBcondOf("ge"),
+		"b.lt":       newBcondOf("lt"),
+		"b.gt":       newBcondOf("gt"),
+		"b.le":       newBcondOf("le"),
+		"b.al":       newBcondOf("al"),
+		"b.nv":       newBcondOf("nv"),
+	}
+
+	registerByElem(m)
+
+	return m
 }
 
 // Exported for the alias layer (was arch api.go wrappers): the family
@@ -418,66 +438,230 @@ func LdpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) 
 	return arch.LdpOf(rt, rt2, rn, kind, off, scale, enc)
 }
 func LdrLitOf(rt string, lit int64, enc uint32) arch.Ldr { return arch.LdrLitOf(rt, lit, enc) }
-func LdrOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldr {
+
+func LdrOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldr {
 	return arch.LdrOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdrbOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldrb {
+
+func LdrbOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldrb {
 	return arch.LdrbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdrhOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldrh {
+
+func LdrhOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldrh {
 	return arch.LdrhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 func LdrsbOf(rt string, rn string, off int64) arch.Ldrsb { return arch.LdrsbOf(rt, rn, off) }
 func LdrshOf(rt string, rn string, off int64) arch.Ldrsh { return arch.LdrshOf(rt, rn, off) }
-func LdrswOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldrsw {
+
+func LdrswOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldrsw {
 	return arch.LdrswOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdurOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldur {
+
+func LdurOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldur {
 	return arch.LdurOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdurbOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldurb {
+
+func LdurbOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldurb {
 	return arch.LdurbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdurhOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Ldurh {
+
+func LdurhOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Ldurh {
 	return arch.LdurhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LslRegOf(rd string, rn string, rm string) arch.LslReg        { return arch.LslRegOf(rd, rn, rm) }
-func LsrRegOf(rd string, rn string, rm string) arch.LsrReg        { return arch.LsrRegOf(rd, rn, rm) }
-func MaddOf(rd string, rn string, rm string, ra string) arch.Madd { return arch.MaddOf(rd, rn, rm, ra) }
-func MovkOf(rd string, imm16 uint32, hw uint32) arch.Movk         { return arch.MovkOf(rd, imm16, hw) }
-func MrsOf(rd string, sysreg string) arch.Mrs                     { return arch.MrsOf(rd, sysreg) }
-func MsrOf(rt string, sysreg string) arch.Msr                     { return arch.MsrOf(rt, sysreg) }
-func MsubOf(rd, rn, rm, ra string) arch.Msub                      { return arch.MsubOf(rd, rn, rm, ra) }
-func PrfmOf(rn string) arch.Prfm                                  { return arch.PrfmOf(rn) }
-func RbitOf(rd string, rn string) arch.Rbit                       { return arch.RbitOf(rd, rn) }
-func RetOf(rn string) arch.Ret                                    { return arch.RetOf(rn) }
-func Rev16Of(rd string, rn string) arch.Rev16                     { return arch.Rev16Of(rd, rn) }
-func Rev32Of(rd string, rn string) arch.Rev32                     { return arch.Rev32Of(rd, rn) }
-func RevOf(rd string, rn string) arch.Rev                         { return arch.RevOf(rd, rn) }
-func RorRegOf(rd string, rn string, rm string) arch.RorReg        { return arch.RorRegOf(rd, rn, rm) }
-func SdivOf(rd string, rn string, rm string) arch.Sdiv            { return arch.SdivOf(rd, rn, rm) }
-func SmulhOf(rd string, rn string, rm string) arch.Smulh          { return arch.SmulhOf(rd, rn, rm) }
-func StlrOf(rt, rn string, enc uint32) arch.Stlr                  { return arch.StlrOf(rt, rn, enc) }
-func StlxrOf(rs, rt, rn string, enc uint32) arch.Stlxr            { return arch.StlxrOf(rs, rt, rn, enc) }
+
+func LslRegOf(
+	rd string,
+	rn string,
+	rm string,
+) arch.LslReg {
+	return arch.LslRegOf(rd, rn, rm)
+}
+
+func LsrRegOf(
+	rd string,
+	rn string,
+	rm string,
+) arch.LsrReg {
+	return arch.LsrRegOf(rd, rn, rm)
+}
+
+func MaddOf(
+	rd string,
+	rn string,
+	rm string,
+	ra string,
+) arch.Madd {
+	return arch.MaddOf(rd, rn, rm, ra)
+}
+
+func MovkOf(
+	rd string,
+	imm16 uint32,
+	hw uint32,
+) arch.Movk {
+	return arch.MovkOf(rd, imm16, hw)
+}
+func MrsOf(rd string, sysreg string) arch.Mrs { return arch.MrsOf(rd, sysreg) }
+func MsrOf(rt string, sysreg string) arch.Msr { return arch.MsrOf(rt, sysreg) }
+
+func MsubOf(
+	rd, rn, rm, ra string,
+) arch.Msub {
+	return arch.MsubOf(rd, rn, rm, ra)
+}
+func PrfmOf(rn string) arch.Prfm              { return arch.PrfmOf(rn) }
+func RbitOf(rd string, rn string) arch.Rbit   { return arch.RbitOf(rd, rn) }
+func RetOf(rn string) arch.Ret                { return arch.RetOf(rn) }
+func Rev16Of(rd string, rn string) arch.Rev16 { return arch.Rev16Of(rd, rn) }
+func Rev32Of(rd string, rn string) arch.Rev32 { return arch.Rev32Of(rd, rn) }
+func RevOf(rd string, rn string) arch.Rev     { return arch.RevOf(rd, rn) }
+
+func RorRegOf(
+	rd string,
+	rn string,
+	rm string,
+) arch.RorReg {
+	return arch.RorRegOf(rd, rn, rm)
+}
+func SdivOf(rd string, rn string, rm string) arch.Sdiv { return arch.SdivOf(rd, rn, rm) }
+
+func SmulhOf(
+	rd string,
+	rn string,
+	rm string,
+) arch.Smulh {
+	return arch.SmulhOf(rd, rn, rm)
+}
+
+func StlrOf(
+	rt, rn string,
+	enc uint32,
+) arch.Stlr {
+	return arch.StlrOf(rt, rn, enc)
+}
+
+func StlxrOf(
+	rs, rt, rn string,
+	enc uint32,
+) arch.Stlxr {
+	return arch.StlxrOf(rs, rt, rn, enc)
+}
 func StpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) arch.Stp {
 	return arch.StpOf(rt, rt2, rn, kind, off, scale, enc)
 }
-func StrOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Str {
+
+func StrOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Str {
 	return arch.StrOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func StrbOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Strb {
+
+func StrbOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Strb {
 	return arch.StrbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func StrhOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Strh {
+
+func StrhOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Strh {
 	return arch.StrhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func SturOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Stur {
+
+func SturOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Stur {
 	return arch.SturOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func SturbOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Sturb {
+
+func SturbOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Sturb {
 	return arch.SturbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func SturhOf(rt, rn string, kind arch.MemKind, off int64, enc uint32, rm, option string, amt uint32) arch.Sturh {
+
+func SturhOf(
+	rt, rn string,
+	kind arch.MemKind,
+	off int64,
+	enc uint32,
+	rm, option string,
+	amt uint32,
+) arch.Sturh {
 	return arch.SturhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 func StxrbOf(rs, rt, rn string, enc uint32) arch.Stxrb { return arch.StxrbOf(rs, rt, rn, enc) }

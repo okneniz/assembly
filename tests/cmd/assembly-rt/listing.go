@@ -68,7 +68,7 @@ func buildListing(
 	switch arch {
 	case file.ArchRISCV64:
 		textOf := firstInstrTextRISCV
-		insts, err := riscv.Parse()(parsecbytes.Buffer(data))
+		insts, err := riscv.MakeDecoder()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
@@ -101,7 +101,7 @@ func buildListing(
 		}
 	case file.ArchLOONGARCH64:
 		textOf := firstInstrTextLOONG
-		insts, err := loong64.Parse()(parsecbytes.Buffer(data))
+		insts, err := loong64.MakeDecoder()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
@@ -133,7 +133,7 @@ func buildListing(
 		}
 	default:
 		textOf := firstInstrTextARM
-		insts, err := arm64.Parse()(parsecbytes.Buffer(data))
+		insts, err := arm64.MakeDecoder()(parsecbytes.Buffer(data))
 		if err != nil {
 			panic(err) // unreachable: the buffer is in memory, backtracking always stays in bounds
 		}
@@ -266,7 +266,7 @@ func classifyLine(
 // firstInstrTextARM - the normalized text of the first instruction of a
 // buffer (arm64).
 func firstInstrTextARM(b []byte, addr uint64) string {
-	insts, err := arm64.Parse()(parsecbytes.Buffer(b))
+	insts, err := arm64.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -281,7 +281,7 @@ func firstInstrTextARM(b []byte, addr uint64) string {
 // firstInstrTextRISCV - the normalized text of the first instruction of a
 // buffer (riscv64, including compressed forms).
 func firstInstrTextRISCV(b []byte, addr uint64) string {
-	insts, err := riscv.Parse()(parsecbytes.Buffer(b))
+	insts, err := riscv.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -296,7 +296,7 @@ func firstInstrTextRISCV(b []byte, addr uint64) string {
 // firstInstrTextLOONG - the first instruction's text of a loong64 word
 // buffer.
 func firstInstrTextLOONG(b []byte, addr uint64) string {
-	insts, err := loong64.Parse()(parsecbytes.Buffer(b))
+	insts, err := loong64.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}

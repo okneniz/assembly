@@ -249,7 +249,7 @@ Conventions and trade-offs established for this codebase (ARM64, RISC-V and Loon
 
 **arch/\* is the model; asm/\* is the assembler.** `arch/arm64` contains the decode table, per-instruction structures (Encode/ObjDump), the Builder vocabulary (programmatic construction), and the shared operand interface (vOp) — nothing that exists only for the assembler. The assembler constructors, the legacy fallback, the alias layer, and the pseudo-instruction expanders all live in `asm/arm64` and below. The same separation holds for RISC-V and LoongArch.
 
-**No shared instruction type — instructions represent themselves.** Each arch owns its decode result with its own `Parse` and rendering; duplication between the arches is accepted as the lesser evil compared to a bad abstraction (a shared "universal instruction" model was tried and reverted). What crosses package boundaries are only small capability interfaces (`disasm.ObjDump`, `asm.Instr`); consumers `switch` on `file.ArchKind` and call the arch directly — no registry, no shared `Architecture` interface.
+**No shared instruction type — instructions represent themselves.** Each arch owns its decode result with its own `MakeDecoder` and rendering; duplication between the arches is accepted as the lesser evil compared to a bad abstraction (a shared "universal instruction" model was tried and reverted). What crosses package boundaries are only small capability interfaces (`disasm.ObjDump`, `asm.Instr`); consumers `switch` on `file.ArchKind` and call the arch directly — no registry, no shared `Architecture` interface.
 
 ## System register data
 

@@ -29,7 +29,7 @@ import (
 // instrText returns the normalized text of the first instruction of a binary
 // (for decode-equivalence comparison).
 func instrText(b []byte, addr uint64) string {
-	insts, err := arm64.Parse()(parsecbytes.Buffer(b))
+	insts, err := arm64.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -43,7 +43,7 @@ func instrText(b []byte, addr uint64) string {
 
 // loongInstrText - the same for LoongArch.
 func loongInstrText(b []byte, addr uint64) string {
-	insts, err := loong64.Parse()(parsecbytes.Buffer(b))
+	insts, err := loong64.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -57,7 +57,7 @@ func loongInstrText(b []byte, addr uint64) string {
 
 // riscvInstrText - the same for RISC-V.
 func riscvInstrText(b []byte, addr uint64) string {
-	insts, err := riscv.Parse()(parsecbytes.Buffer(b))
+	insts, err := riscv.MakeDecoder()(parsecbytes.Buffer(b))
 	if err != nil {
 		return ""
 	}
@@ -133,7 +133,7 @@ func TestHelloAsmExample(t *testing.T) {
 			var instrs []slot
 			switch {
 			case loongCase:
-				insts, err := loong64.Parse()(parsecbytes.Buffer(bin))
+				insts, err := loong64.MakeDecoder()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				off := uint64(0)
 				for _, in := range insts {
@@ -151,7 +151,7 @@ func TestHelloAsmExample(t *testing.T) {
 					off += uint64(in.Len())
 				}
 			case riscvCase:
-				insts, err := riscv.Parse()(parsecbytes.Buffer(bin))
+				insts, err := riscv.MakeDecoder()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				off := uint64(0)
 				for _, in := range insts {
@@ -169,7 +169,7 @@ func TestHelloAsmExample(t *testing.T) {
 					off += uint64(in.Len())
 				}
 			default:
-				insts, err := arm64.Parse()(parsecbytes.Buffer(bin))
+				insts, err := arm64.MakeDecoder()(parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				off := uint64(0)
 				for _, in := range insts {

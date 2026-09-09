@@ -15,36 +15,6 @@ type Ldurb struct {
 
 const ldurbEnc uint32 = 0x38400000 // ldurb wt, [xn, #±imm9]
 
-// Ldurb — ldurb rt, [rn, #off]: the unscaled form, byte access,
-// rt — w register only (register 31 reads as wzr), rn — x register or
-// SP (register 31 in the base reads as sp); the offset is a signed
-// imm9 (-0x100..0xff, any alignment).
-func (Builder) Ldurb(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldurb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldurb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireUnscaledOff("Ldurb", off); err != nil {
-		return nil, err
-	}
-
-	return Ldurb{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurbEnc, "", "", 0),
-	}, nil
-}
-
 func (i Ldurb) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("ldurb %s, %s", i.rt, i.lsText(ctx))
 }
@@ -101,4 +71,34 @@ func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
+}
+
+// Ldurb — ldurb rt, [rn, #off]: the unscaled form, byte access,
+// rt — w register only (register 31 reads as wzr), rn — x register or
+// SP (register 31 in the base reads as sp); the offset is a signed
+// imm9 (-0x100..0xff, any alignment).
+func (Builder) Ldurb(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Ldurb", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Ldurb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireUnscaledOff("Ldurb", off); err != nil {
+		return nil, err
+	}
+
+	return Ldurb{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurbEnc, "", "", 0),
+	}, nil
 }

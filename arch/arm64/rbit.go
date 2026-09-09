@@ -14,7 +14,35 @@ type Rbit struct {
 	rd, rn string
 }
 
+// newRbit - the Rbit constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newRbit(b base, rd string, rn string) Rbit {
+	return Rbit{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+	}
+}
+
 const RbitX uint32 = 0xDAC00000
+
+func (i Rbit) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rbit %s, %s", i.rd, i.rn)
+}
+
+func (i Rbit) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, RbitX, 0x5AC00000)
+	if err != nil {
+		return 0, fmt.Errorf("rbit: %w", err)
+	}
+
+	rd, rn, err := regNums2(i.rd, i.rn)
+	if err != nil {
+		return 0, fmt.Errorf("rbit: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5)
+}
 
 // Rbit — rbit rd, rn. Register 31 reads as zr (SP/WSP are not
 // allowed — use XZR/WZR); the width is shared by both registers.
@@ -33,34 +61,13 @@ func (Builder) Rbit(rd, rn Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Rbit{
-		rd: rd.name(),
-		rn: rn.name(),
-	}, nil
+	return newRbit(base{}, rd.name(), rn.name()), nil
 }
 
 func decodeRbit(w uint32) Instr {
-	return Rbit{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Rbit) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rbit %s, %s", i.rd, i.rn)
-}
-
-func (i Rbit) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, RbitX, 0x5AC00000)
-	if err != nil {
-		return 0, fmt.Errorf("rbit: %w", err)
-	}
-
-	rd, rn, err := regNums2(i.rd, i.rn)
-	if err != nil {
-		return 0, fmt.Errorf("rbit: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5)
+	return newRbit(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+	)
 }

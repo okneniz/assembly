@@ -34,8 +34,16 @@ func TestLookupCaseGenerate(t *testing.T) {
 func TestLookupCaseShrink(t *testing.T) {
 	base := Case{
 		Rules: []dtree.Rule[int]{
-			{Mask: 0b1100, Match: 0b1000, Payload: 0},
-			{Mask: 0b0110, Match: 0b0100, Payload: 1},
+			{
+				Mask:    0b1100,
+				Match:   0b1000,
+				Payload: 0,
+			},
+			{
+				Mask:    0b0110,
+				Match:   0b0100,
+				Payload: 1,
+			},
 		},
 		Word: 0b1010,
 	}
@@ -60,7 +68,11 @@ func TestLookupCaseShrink(t *testing.T) {
 func TestCaseString(t *testing.T) {
 	c := Case{
 		Rules: []dtree.Rule[int]{
-			{Mask: 0xC000, Match: 0x8000, Payload: 0},
+			{
+				Mask:    0xC000,
+				Match:   0x8000,
+				Payload: 0,
+			},
 		},
 		Word: 0x0040,
 	}

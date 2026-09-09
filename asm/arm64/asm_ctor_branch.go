@@ -1,8 +1,10 @@
 package arm64
 
-import arch "github.com/okneniz/assembly/arch/arm64"
+import (
+	"errors"
 
-import "errors"
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
 
 // Branch assembler constructors: b/bl label, cbz/cbnz rt, label,
 // br/blr xn, ret{ xn}, nop. Targets arrive computed (resolveOps of the

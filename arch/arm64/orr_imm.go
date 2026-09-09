@@ -13,43 +13,19 @@ type OrrImm struct {
 	logImm
 }
 
+// newOrrImm - the OrrImm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newOrrImm(b base, li logImm) OrrImm {
+	return OrrImm{
+		base:   b,
+		logImm: li,
+	}
+}
+
 const (
 	orrImmX uint32 = 0xB2000000
 	orrImmW uint32 = 0x32000000
 )
-
-// OrrImm — orr rd, rn, #bitmask (mov when Rn = zr). Register 31
-// reads as zr (SP/WSP are not allowed — use XZR/WZR); the mask must be
-// encodable as a logical immediate (see encodeBitMasks).
-func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
-	if err := requireClass(rd, "OrrImm", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "OrrImm", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("OrrImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
-	if !ok {
-		return nil, fmt.Errorf("arm64.NewOrrImm: operand imm: %#x not encodable as bitmask", imm)
-	}
-
-	return OrrImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
-}
-
-func decodeOrrImm(w uint32) Instr {
-	return OrrImm{
-		newBase(w),
-		decodeLogImm(w),
-	}
-}
 
 // movzRep/movnRep - whether the pattern is representable by a single
 // MOVZ/MOVN (set bits / in the MOVN case zero bits fit into a single
@@ -118,4 +94,34 @@ func (i OrrImm) immText() string {
 	}
 
 	return fmt.Sprintf("#0x%x", m)
+}
+
+// OrrImm — orr rd, rn, #bitmask (mov when Rn = zr). Register 31
+// reads as zr (SP/WSP are not allowed — use XZR/WZR); the mask must be
+// encodable as a logical immediate (see encodeBitMasks).
+func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
+	if err := requireClass(rd, "OrrImm", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "OrrImm", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("OrrImm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
+	if !ok {
+		return nil, fmt.Errorf("arm64.NewOrrImm: operand imm: %#x not encodable as bitmask", imm)
+	}
+
+	return newOrrImm(base{}, newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())), nil
+}
+
+func decodeOrrImm(w uint32) Instr {
+	return newOrrImm(newBase(w), decodeLogImm(w))
 }

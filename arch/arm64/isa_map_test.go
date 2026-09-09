@@ -182,7 +182,7 @@ func TestISATailCoverage(t *testing.T) {
 	}
 
 	var unknown, generic int
-	insts, err := Parse()(bytes.Buffer(ts.Data))
+	insts, err := MakeDecoder()(bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	for _, in := range insts {
 		switch in.(type) {

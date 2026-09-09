@@ -7,6 +7,7 @@ package arm64
 import (
 	"errors"
 	"fmt"
+
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -28,7 +29,7 @@ func newFp3Arm(op string, encD, encS uint32) func([]vOp) (Instr, error) {
 			enc = encD
 		}
 
-		return Builder{}.Fp3(op, fd, fn, fm, enc), nil
+		return arch.NewFp3(op, fd, fn, fm, enc), nil
 	}
 }
 
@@ -76,7 +77,7 @@ func newFp2Arm(op string, enc uint32) func([]vOp) (Instr, error) {
 		}
 
 		rdK, rnK := regKindOf(rd), regKindOf(rn)
-		return Builder{}.Fp2(op, rd, rn, enc, rdK, rnK), nil
+		return arch.NewFp2(op, rd, rn, enc, rdK, rnK), nil
 	}
 }
 
@@ -122,10 +123,10 @@ func newFmov(ops []vOp) (Instr, error) {
 		for imm8 := range uint32(256) {
 			if isS {
 				if fmt.Sprintf("%.8f", vfpExpandImm32(imm8)) == text {
-					return Builder{}.FmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
+					return arch.NewFmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
 				}
 			} else if fmt.Sprintf("%.8f", vfpExpandImm64(imm8)) == text {
-				return Builder{}.FmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
+				return arch.NewFmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
 			}
 		}
 
@@ -162,7 +163,7 @@ func newFmov(ops []vOp) (Instr, error) {
 		return nil, errors.New("fmov: bad register kinds")
 	}
 
-	return Builder{}.Fp2("fmov", rd, rn, enc, rdK, rnK), nil
+	return arch.NewFp2("fmov", rd, rn, enc, rdK, rnK), nil
 }
 
 // newFcmpArm — fcmp fn, fm | fcmp fn, #0.0.
@@ -183,14 +184,14 @@ func newFcmpArm(ops []vOp) (Instr, error) {
 	}
 
 	if ops[1].Kind() == arch.ArmOpFloat || ops[1].Kind() == arch.ArmOpImm {
-		return Builder{}.Fcmp(rn, "", false, enc, enc, k), nil
+		return arch.NewFcmp(rn, "", false, enc, enc, k), nil
 	}
 
 	if ops[1].Reg() == "" {
 		return nil, errors.New("fcmp: register or #0.0")
 	}
 
-	return Builder{}.Fcmp(rn, ops[1].Reg(), true, enc, enc, k), nil
+	return arch.NewFcmp(rn, ops[1].Reg(), true, enc, enc, k), nil
 }
 
 // newFmadd — fmadd fd, fn, fm, fa (d form).
@@ -213,6 +214,6 @@ func newFmadd(op string, enc uint32) func([]vOp) (Instr, error) {
 			regs[i] = ops[i].Reg()
 		}
 
-		return Builder{}.Fp4(op, regs[0], regs[1], regs[2], regs[3], enc), nil
+		return arch.NewFp4(op, regs[0], regs[1], regs[2], regs[3], enc), nil
 	}
 }

@@ -15,35 +15,6 @@ type Strb struct {
 
 const strbEnc uint32 = 0x39000000 // strb wt, [xn, #imm12]
 
-// Strb — strb rt, [rn, #off]: byte access, rt — w register only
-// (register 31 reads as wzr), rn — x register or SP (register 31 in the
-// base reads as sp); the offset is an unscaled imm12 (0..0xfff).
-func (Builder) Strb(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Strb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Strb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Strb", off, 0); err != nil {
-		return nil, err
-	}
-
-	return Strb{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strbEnc, "", "", 0),
-	}, nil
-}
-
 func (i Strb) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("strb %s, %s", i.rt, i.lsText(ctx))
 }
@@ -87,4 +58,33 @@ func decodeStrbOf(enc uint32, kind memKind) func(uint32) Instr {
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
+}
+
+// Strb — strb rt, [rn, #off]: byte access, rt — w register only
+// (register 31 reads as wzr), rn — x register or SP (register 31 in the
+// base reads as sp); the offset is an unscaled imm12 (0..0xfff).
+func (Builder) Strb(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Strb", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Strb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireOff("Strb", off, 0); err != nil {
+		return nil, err
+	}
+
+	return Strb{
+		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strbEnc, "", "", 0),
+	}, nil
 }

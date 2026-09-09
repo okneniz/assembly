@@ -54,9 +54,9 @@ func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position,
 	pad := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.String("pad", "pad"),
-			parsecstrings.SkipMany(expr.CSpace,
+			parsecstrings.SkipMany(expr.MakeSpaceParser(),
 				parsecstrings.Cast(
-					parsecstrings.Some(4, "operand", expr.CDecDigit()),
+					parsecstrings.Some(4, "operand", expr.MakeDigitParser()),
 					func(rs []rune) (string, error) {
 						return string(rs), nil
 					},
@@ -80,9 +80,9 @@ func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position,
 	pool := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.String("pool", "pool"),
-			parsecstrings.SkipMany(expr.CSpace,
+			parsecstrings.SkipMany(expr.MakeSpaceParser(),
 				parsecstrings.Cast(
-					parsecstrings.Some(4, "operand", expr.CDecDigit()),
+					parsecstrings.Some(4, "operand", expr.MakeDigitParser()),
 					func(rs []rune) (string, error) {
 						return string(rs), nil
 					},
@@ -132,7 +132,7 @@ func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, str
 	hash := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.Try(parsecstrings.Eq("comment", '#')),
-			parsecstrings.Many(4, cNotNL),
+			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
 		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
@@ -141,7 +141,7 @@ func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, str
 	slash := parsecstrings.Cast(
 		parsecstrings.Skip(
 			parsecstrings.Try(parsecstrings.String("comment", "//")),
-			parsecstrings.Many(4, cNotNL),
+			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
 		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil

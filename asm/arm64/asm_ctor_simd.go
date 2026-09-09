@@ -10,8 +10,9 @@ package arm64
 import (
 	"errors"
 	"fmt"
-	arch "github.com/okneniz/assembly/arch/arm64"
 	"strings"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
 // wantV — a vector operand (a v register with or without a suffix).
@@ -63,7 +64,7 @@ func newSimd3(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Builder{}.Simd3(op, rd, rn, rm, enc, q, size), nil
+		return arch.NewSimd3(op, rd, rn, rm, enc, q, size), nil
 	}
 }
 
@@ -93,7 +94,7 @@ func newSimd2(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Builder{}.Simd2(op, rd, rn, ops[0].Arr(), enc, q, size), nil
+		return arch.NewSimd2(op, rd, rn, ops[0].Arr(), enc, q, size), nil
 	}
 }
 
@@ -149,7 +150,7 @@ func newSimdShift(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Builder{}.SimdShift(op, rd, rn, immh, immb, q, enc), nil
+		return arch.NewSimdShift(op, rd, rn, immh, immb, q, enc), nil
 	}
 }
 
@@ -170,7 +171,7 @@ func newAes(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Builder{}.V1arr(op, rd, rn, enc), nil
+		return arch.NewV1arr(op, rd, rn, enc), nil
 	}
 }
 
@@ -217,7 +218,7 @@ func newDupArm(ops []vOp) (Instr, error) {
 			return nil, fmt.Errorf("dup: %w", err)
 		}
 
-		return Builder{}.DupElem("dup", size, uint32(idx), 0, q, rd, rn, rdN, rnN), nil
+		return arch.NewDupElem("dup", size, uint32(idx), 0, q, rd, rn, rdN, rnN), nil
 	}
 
 	rn, err := wantAReg(ops[1], "dup")
@@ -230,7 +231,7 @@ func newDupArm(ops []vOp) (Instr, error) {
 		return nil, fmt.Errorf("dup: %w", err)
 	}
 
-	return Builder{}.SimdCopyGPR("dup", rd, rn, size, 0, q, rdN, rnN, false), nil
+	return arch.NewSimdCopyGPR("dup", rd, rn, size, 0, q, rdN, rnN, false), nil
 }
 
 // newInsElemArm — INS (element): ins.sz vd[idx], vn[idx]. (The GPR-source
@@ -268,7 +269,7 @@ func newInsElemArm(size uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("ins: %w", err)
 		}
 
-		return Builder{}.DupElem("ins", size,
+		return arch.NewDupElem("ins", size,
 			uint32(ops[0].Num()), uint32(ops[1].Num()), 0, rd, rn, rdN, rnN), nil
 	}
 }
@@ -338,7 +339,17 @@ func newSmovUmovArm(op string) func([]vOp) (Instr, error) {
 				[...]string{"b", "h", "s", "d"}[size])
 		}
 
-		return Builder{}.SimdCopyGPR(op, vd, gpr, size, uint32(ops[1].Num()), q, vdN, gprN, true), nil
+		return arch.NewSimdCopyGPR(
+			op,
+			vd,
+			gpr,
+			size,
+			uint32(ops[1].Num()),
+			q,
+			vdN,
+			gprN,
+			true,
+		), nil
 	}
 }
 
@@ -363,7 +374,7 @@ func newTblArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Builder{}.Tbl(rd, rn, rm), nil
+	return arch.NewTbl(rd, rn, rm), nil
 }
 
 // newUaddlv — uaddlv.Arr hd/sd/dd, vn (dest scalar by size).
@@ -395,7 +406,7 @@ func newUaddlv(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Builder{}.Uaddlv(scalar, rn, q, size), nil
+	return arch.NewUaddlv(scalar, rn, q, size), nil
 }
 
 // newLdStruct — all structural load/store: ld1-ld4/st1-st4 (+ r forms
@@ -449,6 +460,7 @@ func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 		if !ops[1].IsMem() {
 			return nil, fmt.Errorf("%s: memory operand expected", mnem)
 		}
+
 		m := ops[1].Mem()
 
 		rn := m.Base()
@@ -478,7 +490,7 @@ func newLdStruct(mnem string) func([]vOp) (Instr, error) {
 		}
 
 		list := "{ " + regListStr(regIndex(rt0), count) + " }"
-		return Builder{}.Ld1(list, rn, dname, arr, "", postImm, hasPost, enc,
+		return arch.NewLd1(list, rn, dname, arr, "", postImm, hasPost, enc,
 			regIndex(rt0), count, opcode, size, q, false), nil
 	}
 }
@@ -506,7 +518,7 @@ func newMovSimd(arr string) func([]vOp) (Instr, error) {
 			enc &^= 1 << 30
 		}
 
-		return Builder{}.MovSimd(rd, rm, arr, enc), nil
+		return arch.NewMovSimd(rd, rm, arr, enc), nil
 	}
 }
 
@@ -552,7 +564,7 @@ func newSimdWidenArm(op string, enc uint32) func([]vOp) (Instr, error) {
 			return nil, fmt.Errorf("%s: %w", op, err)
 		}
 
-		return Builder{}.SimdWiden(op, q, size, rd, rn, rm, enc, rdN, rnN, rmN), nil
+		return arch.NewSimdWiden(op, q, size, rd, rn, rm, enc, rdN, rnN, rmN), nil
 	}
 }
 
@@ -587,7 +599,7 @@ func newMovInsArm(size uint32) func([]vOp) (Instr, error) {
 				return nil, fmt.Errorf("mov: %w", err)
 			}
 
-			return Builder{}.DupElem("mov", size, 0, 0, 0, rd, rn, rdN, rnN), nil
+			return arch.NewDupElem("mov", size, 0, 0, 0, rd, rn, rdN, rnN), nil
 		}
 
 		if len(ops) != 2 || ops[0].Kind() != arch.ArmOpReg {
@@ -623,6 +635,6 @@ func newMovInsArm(size uint32) func([]vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return Builder{}.SimdCopyGPR("ins", vd, rn, size, uint32(idx), 1, vdN, rnN, false), nil
+		return arch.NewSimdCopyGPR("ins", vd, rn, size, uint32(idx), 1, vdN, rnN, false), nil
 	}
 }

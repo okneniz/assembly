@@ -8,11 +8,8 @@ package arm64
 import (
 	"errors"
 	"fmt"
-	"strings"
-)
-
-import (
 	"math"
+	"strings"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
@@ -186,7 +183,7 @@ func isCondSuffix(s string) bool {
 }
 
 // armFieldsFor — operands → field values by format family.
-func armFieldsFor(s *Schema, in resolvedInstr, ctx ctx) (map[string]any, error) {
+func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 	switch s.Formatter {
 	case "op2":
 		rd, err := opRegOf(in, 0)
@@ -1985,8 +1982,8 @@ func opShiftOf(in resolvedInstr, from int) (name string, amt int64, ok bool) {
 // legacyBuild — legacy encoding of a candidate from computed operands:
 // format-family handlers + word assembly via inverse transforms (the
 // old arch.BuildLegacy seam, now local).
-func legacyBuild(s *Schema, mnem string, ops []vOp, pc uint64) (uint32, error) {
-	fields, err := armFieldsFor(s, resolvedInstr{mnem: mnem, ops: ops}, ctx{Addr: pc})
+func legacyBuild(s *Schema, mnem string, ops []vOp) (uint32, error) {
+	fields, err := armFieldsFor(s, newResolvedInstr(mnem, ops))
 	if err != nil {
 		return 0, err
 	}

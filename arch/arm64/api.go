@@ -90,102 +90,47 @@ func EncodeBitMasks(is64 bool, value uint64) (n, immr, imms uint32, ok bool) {
 // --- alias struct builders (struct fields stay unexported) ---
 
 func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return SubShift{
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+	return newSubShift(base{}, rd, rn, rm, imm6, shift, isf)
 }
 
 func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return SubsShift{
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+	return newSubsShift(base{}, rd, rn, rm, imm6, shift, isf)
 }
 
 func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
-	return AndsImm{logImm: newLogImm(rd, rn, immr, imms, n, is64)}
+	return newAndsImm(base{}, newLogImm(rd, rn, immr, imms, n, is64))
 }
 
 func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return AndsShift{
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+	return newAndsShift(base{}, rd, rn, rm, imm6, shift, isf)
 }
 
 func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return OrnShift{
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+	return newOrnShift(base{}, rd, rn, rm, imm6, shift, isf)
 }
 
 func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return OrrShift{
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+	return newOrrShift(base{}, rd, rn, rm, imm6, shift, isf)
 }
 
 func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
-	return OrrImm{logImm: newLogImm(rd, rn, immr, imms, n, is64)}
+	return newOrrImm(base{}, newLogImm(rd, rn, immr, imms, n, is64))
 }
 
 func MovzOf(rd string, imm16, hw uint32) Instr {
-	return Movz{
-		rd:    rd,
-		imm16: imm16,
-		hw:    hw,
-	}
+	return newMovz(base{}, rd, imm16, hw)
 }
 
 func MovnOf(rd string, imm16, hw uint32) Instr {
-	return Movn{
-		rd:    rd,
-		imm16: imm16,
-		hw:    hw,
-	}
+	return newMovn(base{}, rd, imm16, hw)
 }
 
 func SbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
-	return Sbfm{
-		rd:   rd,
-		rn:   rn,
-		immr: immr,
-		imms: imms,
-		isf:  isf,
-	}
+	return newSbfm(base{}, rd, rn, immr, imms, 0, isf)
 }
 
 func UbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
-	return Ubfm{
-		rd:   rd,
-		rn:   rn,
-		immr: immr,
-		imms: imms,
-		isf:  isf,
-	}
+	return newUbfm(base{}, rd, rn, immr, imms, isf)
 }
 
 // VerifyBitMasks — a self-test of logical immediate encoding
@@ -208,7 +153,7 @@ func AddSubRegName(n uint32, isf bool, is64 bool) string { return addSubRegName(
 func ArmReg3(ops []ArmOp, name string) (string, string, string, error) { return armReg3(ops, name) }
 
 // NewCsel — the Csel base of the conditional-select family.
-func NewCsel(rd, rn, rm, cond string) Csel { return newCsel(rd, rn, rm, cond) }
+func NewCsel(rd, rn, rm, cond string) Csel { return newCsel(base{}, rd, rn, rm, cond) }
 
 // CondNum — a condition name to its 4-bit index.
 func CondNum(name string) (uint32, error) { return condNum(name) }

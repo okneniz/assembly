@@ -114,10 +114,7 @@ func loRequireImageEqual(t *testing.T, src string, ours, want []byte) {
 		return
 	}
 
-	n := len(ours)
-	if len(want) < n {
-		n = len(want)
-	}
+	n := min(len(ours), len(want))
 	off := n
 	for i := range n {
 		if ours[i] != want[i] {
@@ -204,6 +201,7 @@ func TestLoongVsLlvmLink(t *testing.T) {
 	if llvmMcPath() == "" {
 		t.Skip("no llvm-mc found on this host")
 	}
+
 	if ldLldPath() == "" || llvmObjcopyPath() == "" {
 		t.Skip("no ld.lld/llvm-objcopy found on this host")
 	}

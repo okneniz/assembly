@@ -1,8 +1,6 @@
 package arm64
 
 import (
-	"encoding/binary"
-
 	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 
@@ -28,11 +26,7 @@ func schemaRules() []dtree.Rule[decodeCtor] {
 			match, mask = e.Match, e.Mask
 		}
 
-		rules = append(rules, dtree.Rule[decodeCtor]{
-			Mask:    mask,
-			Match:   match,
-			Payload: s.ctor,
-		})
+		rules = append(rules, dtree.NewRule(mask, match, s.ctor))
 	}
 
 	return rules
@@ -47,13 +41,9 @@ func tailRules() []dtree.Rule[decodeCtor] {
 
 	for k := 0; isaTailEntry(k) != nil; k++ {
 		e := isaTailEntry(k)
-		rules = append(rules, dtree.Rule[decodeCtor]{
-			Mask:  e.Mask,
-			Match: e.Match,
-			Payload: func(w uint32) Instr {
-				return decodeGeneric(e, w)
-			},
-		})
+		rules = append(rules, dtree.NewRule(e.Mask, e.Match, func(w uint32) Instr {
+			return decodeGeneric(e, w)
+		}))
 	}
 
 	return rules
@@ -86,17 +76,17 @@ func decodeOne(word uint32) Instr {
 
 // Parse — constructor of a combinator that decodes ARM64 machine code
 // (fixed 32-bit width, little-endian) from a parsec buffer into []Instr.
-// The word sub-combinator is built once per assembly; Try rolls the
-// position back on a truncated tail (<4 bytes), Many swallows its error
-// and drives the loop to the end of the buffer. Every 32-bit word reaches
-// the output: unrecognized encodings become a .word instruction so the
-// total line count matches objdump. The instructions are
-// position-independent: addresses live in the view context (disasm),
-// not in the structures.
-func Parse() parsec.Combinator[byte, int, []Instr] {
-	word := bytes.ReadAs[uint32](4, "arm64: word", binary.LittleEndian)
+// The word reader is a plain function: unlike bytes.ReadAs (which rebuilds
+// its Count combinator on every invocation) it allocates nothing per word.
+// Try rolls the position back on a truncated tail (<4 bytes), Many
+// swallows its error and drives the loop to the end of the buffer.
+// Every 32-bit word reaches the output: unrecognized encodings become a
+// .word instruction so the total line count matches objdump. The
+// instructions are position-independent: addresses live in the view
+// context (disasm), not in the structures.
+func MakeDecoder() parsec.Combinator[byte, int, []Instr] {
 	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		w, err := word(buf)
+		w, err := decodeWordLE(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -105,4 +95,20 @@ func Parse() parsec.Combinator[byte, int, []Instr] {
 	}
 
 	return parsec.Many(0, bytes.Try(instr))
+}
+
+// decodeWordLE reads a 4-byte little-endian word; a truncated tail is an
+// error (the caller's Try rolls the position back).
+func decodeWordLE(buf parsec.Buffer[byte, int]) (uint32, parsec.Error[int]) {
+	var w uint32
+	for i := range 4 {
+		b, err := buf.Read(true)
+		if err != nil {
+			return 0, parsec.NewParseError(buf.Position(), "arm64: word")
+		}
+
+		w |= uint32(b) << (8 * i)
+	}
+
+	return w, nil
 }

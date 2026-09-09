@@ -75,7 +75,7 @@ func TestAliasRoundTrip(t *testing.T) {
 	}
 	for _, src := range cases {
 		word := assembleOne(t, src, 0)
-		insts, err := arch.Parse()(bytes.Buffer(binary.LittleEndian.AppendUint32(nil, word)))
+		insts, err := arch.MakeDecoder()(bytes.Buffer(binary.LittleEndian.AppendUint32(nil, word)))
 		require.NoError(t, err)
 		require.Len(t, insts, 1, "%q → %#08x: nothing decoded", src, word)
 		text := insts[0].ObjDump(disasm.DefaultViewCtx())

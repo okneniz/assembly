@@ -41,6 +41,11 @@ func (i sysFixed) Encode(w io.Writer) (int64, error) {
 }
 
 // SysFixedOf — the fixed system instruction (dmb/dsb/yield/...).
-func SysFixedOf(name, ops, group string, enc uint32) sysFixed {
-	return sysFixed{name: name, ops: ops, group: group, enc: enc}
+func SysFixedOf(name, ops, group string, enc uint32) Instr {
+	return sysFixed{
+		name:  name,
+		ops:   ops,
+		group: group,
+		enc:   enc,
+	}
 }

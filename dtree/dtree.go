@@ -23,6 +23,16 @@ type Rule[T any] struct {
 	Payload T
 }
 
+// NewRule - a rule from its parts (declarative rule tables may keep the
+// literal form).
+func NewRule[T any](mask, match uint32, payload T) Rule[T] {
+	return Rule[T]{
+		Mask:    mask,
+		Match:   match,
+		Payload: payload,
+	}
+}
+
 // Tree is a decision tree; built by New, safe for reading from goroutines.
 type Tree[T any] struct {
 	root *node[T]

@@ -15,6 +15,14 @@ type Adr struct {
 	off int64
 }
 
+func (i Adr) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("adr %s, #%d", i.rd, i.off)
+}
+
+func (i Adr) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
+}
+
 // Adr — adr rd, #off: off — the signed byte offset from the address
 // of the instruction (the imm21 form, -0x100000..0xfffff). rd — only x
 // registers (register 31 reads as zr).
@@ -47,12 +55,4 @@ func decodeAdr(w uint32) Instr {
 		rd:   regNameX(w & 0x1f),
 		off:  signExtendN(raw, 21),
 	}
-}
-
-func (i Adr) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("adr %s, #%d", i.rd, i.off)
-}
-
-func (i Adr) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }

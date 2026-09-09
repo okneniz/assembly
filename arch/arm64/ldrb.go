@@ -15,35 +15,6 @@ type Ldrb struct {
 
 const ldrbEnc uint32 = 0x39400000 // ldrb wt, [xn, #imm12]
 
-// Ldrb — ldrb rt, [rn, #off]: byte access, rt — w register only
-// (register 31 reads as wzr), rn — x register or SP (register 31 in the
-// base reads as sp); the offset is an unscaled imm12 (0..0xfff).
-func (Builder) Ldrb(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldrb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldrb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Ldrb", off, 0); err != nil {
-		return nil, err
-	}
-
-	return Ldrb{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrbEnc, "", "", 0),
-	}, nil
-}
-
 func (i Ldrb) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("ldrb %s, %s", i.rt, i.lsText(ctx))
 }
@@ -87,4 +58,33 @@ func decodeLdrbOf(enc uint32, kind memKind) func(uint32) Instr {
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
+}
+
+// Ldrb — ldrb rt, [rn, #off]: byte access, rt — w register only
+// (register 31 reads as wzr), rn — x register or SP (register 31 in the
+// base reads as sp); the offset is an unscaled imm12 (0..0xfff).
+func (Builder) Ldrb(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Ldrb", "rt", "w register (register 31 in rt reads as wzr)",
+		classW, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Ldrb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireOff("Ldrb", off, 0); err != nil {
+		return nil, err
+	}
+
+	return Ldrb{
+		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrbEnc, "", "", 0),
+	}, nil
 }

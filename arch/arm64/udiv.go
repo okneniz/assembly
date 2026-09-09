@@ -14,7 +14,36 @@ type Udiv struct {
 	rd, rn, rm string
 }
 
+// newUdiv - the Udiv constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newUdiv(b base, rd string, rn string, rm string) Udiv {
+	return Udiv{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		rm:   rm,
+	}
+}
+
 const UdivX uint32 = 0x9AC00800
+
+func (i Udiv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("udiv %s, %s, %s", i.rd, i.rn, i.rm)
+}
+
+func (i Udiv) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, UdivX, 0x1AC00800)
+	if err != nil {
+		return 0, fmt.Errorf("udiv: %w", err)
+	}
+
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("udiv: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
 
 // Udiv — udiv rd, rn, rm. Register 31 reads as zr (SP/WSP are not
 // allowed — use XZR/WZR); the width is shared by all three registers.
@@ -38,36 +67,14 @@ func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Udiv{
-		rd: rd.name(),
-		rn: rn.name(),
-		rm: rm.name(),
-	}, nil
+	return newUdiv(base{}, rd.name(), rn.name(), rm.name()), nil
 }
 
 func decodeUdiv(w uint32) Instr {
-	return Udiv{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Udiv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("udiv %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
-func (i Udiv) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, UdivX, 0x1AC00800)
-	if err != nil {
-		return 0, fmt.Errorf("udiv: %w", err)
-	}
-
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("udiv: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|rm<<16)
+	return newUdiv(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+	)
 }

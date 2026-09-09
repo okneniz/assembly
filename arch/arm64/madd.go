@@ -14,56 +14,22 @@ type Madd struct {
 	rd, rn, rm, ra string
 }
 
+// newMadd - the Madd constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newMadd(b base, rd string, rn string, ra string, rm string) Madd {
+	return Madd{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		ra:   ra,
+		rm:   rm,
+	}
+}
+
 const (
 	maddX uint32 = 0x9B000000
 	maddW uint32 = 0x1B000000
 )
-
-// Madd — madd rd, rn, rm, ra (mul when Ra = zr). Register 31
-// reads as zr (SP/WSP are not allowed — use XZR/WZR); the width is
-// shared by all four registers.
-func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
-	if err := requireClass(rd, "Madd", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Madd", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "Madd", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(ra, "Madd", "ra", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Madd", rd, rn, rm, ra); err != nil {
-		return nil, err
-	}
-
-	return Madd{
-		rd: rd.name(),
-		rn: rn.name(),
-		rm: rm.name(),
-		ra: ra.name(),
-	}, nil
-}
-
-func decodeMadd(w uint32) Instr {
-	return Madd{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		ra:   armRegName(w>>10&0x1f, w>>31&1 == 1),
-		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
-	}
-}
 
 func (i Madd) ObjDump(_ disasm.ViewCtx) string {
 	zr := "xzr"
@@ -100,4 +66,45 @@ func msubWrite(w io.Writer, match uint32, i Madd) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
+}
+
+// Madd — madd rd, rn, rm, ra (mul when Ra = zr). Register 31
+// reads as zr (SP/WSP are not allowed — use XZR/WZR); the width is
+// shared by all four registers.
+func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
+	if err := requireClass(rd, "Madd", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "Madd", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "Madd", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(ra, "Madd", "ra", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("Madd", rd, rn, rm, ra); err != nil {
+		return nil, err
+	}
+
+	return newMadd(base{}, rd.name(), rn.name(), ra.name(), rm.name()), nil
+}
+
+func decodeMadd(w uint32) Instr {
+	return newMadd(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>10&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+	)
 }

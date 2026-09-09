@@ -17,7 +17,31 @@ type Adc struct {
 	rd, rn, rm string
 }
 
+// newAdc - the Adc constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newAdc(b base, rd string, rn string, rm string) Adc {
+	return Adc{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		rm:   rm,
+	}
+}
+
 const adcX uint32 = 0x9A000000
+
+func (i Adc) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("adc %s, %s, %s", i.rd, i.rn, i.rm)
+}
+
+func (i Adc) Encode(w io.Writer) (int64, error) {
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("adc: %w", err)
+	}
+
+	return writeWord(w, adcX|rd|rn<<5|rm<<16)
+}
 
 // Adc — adc rd, rn, rm. Only the 64-bit form; register 31 reads
 // as zr (SP/WSP are not allowed — use XZR).
@@ -37,31 +61,14 @@ func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Adc{
-		rd: rd.name(),
-		rn: rn.name(),
-		rm: rm.name(),
-	}, nil
+	return newAdc(base{}, rd.name(), rn.name(), rm.name()), nil
 }
 
 func decodeAdc(w uint32) Instr {
-	return Adc{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Adc) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("adc %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
-func (i Adc) Encode(w io.Writer) (int64, error) {
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("adc: %w", err)
-	}
-
-	return writeWord(w, adcX|rd|rn<<5|rm<<16)
+	return newAdc(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+	)
 }

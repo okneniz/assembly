@@ -36,7 +36,7 @@ func NewMacro(name string, value uint32) Macro {
 	}
 }
 
-// InsnDecl is a DECLARE_INSN line: a mnemonic linked to a pair of macros.
+// InsnDecl is a DECLARE_INSN parseLine: a mnemonic linked to a pair of macros.
 type InsnDecl struct {
 	Name      string // "addi"
 	MatchName string // "MATCH_ADDI"
@@ -83,47 +83,143 @@ func newParsedLine(kind lineKind, macro Macro, decl InsnDecl) parsedLine {
 	}
 }
 
-// --- atomic combinators (Try wrappers are mandatory: a failed greedy atom
-// leaves the position advanced; backtracking is the caller's responsibility). ---
-
-var (
-	cSpace    = strings.Try(strings.Space("whitespace"))
-	cNewline  = strings.Try(strings.Eq("newline", '\n'))
-	cNotNewl  = strings.Try(strings.NotEq("not a newline", '\n'))
-	cComma    = strings.Try(strings.Eq("comma", ','))
-	cLParen   = strings.Try(strings.Eq("'('", '('))
-	cRParen   = strings.Try(strings.Eq("')'", ')'))
-	cUndersc  = strings.Try(strings.Eq("'_'", '_'))
-	cDefine   = strings.Try(strings.String("expected #define", "#define"))
-	cDeclare  = strings.Try(strings.String("expected DECLARE_INSN", "DECLARE_INSN"))
-	cSpaces1  = strings.Some(4, "expected whitespace", cSpace)
-	cHexDigit = strings.Try(strings.OneOf("hex digit",
+// newLinesC builds the file grammar: a sequence of lines, each a
+// recognized form (define/declaration) or a skipped other line. The
+// combinators are values captured by the closures (Try wrappers are
+// mandatory: a failed greedy atom leaves the position advanced;
+// backtracking is the caller's responsibility).
+func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine] {
+	space := strings.Try(strings.Space("whitespace"))
+	newline := strings.Try(strings.Eq("newline", '\n'))
+	notNewl := strings.Try(strings.NotEq("not a newline", '\n'))
+	comma := strings.Try(strings.Eq("comma", ','))
+	lparen := strings.Try(strings.Eq("'('", '('))
+	rparen := strings.Try(strings.Eq("')'", ')'))
+	undersc := strings.Try(strings.Eq("'_'", '_'))
+	define := strings.Try(strings.String("expected #define", "#define"))
+	declare := strings.Try(strings.String("expected DECLARE_INSN", "DECLARE_INSN"))
+	spaces1 := strings.Some(4, "expected whitespace", space)
+	hexDigit := strings.Try(strings.OneOf("hex digit",
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
 		'A', 'B', 'C', 'D', 'E', 'F',
 	))
-	cKind = strings.MapStrings("expected MATCH, MASK or CSR", map[string]lineKind{
+	kind := strings.MapStrings("expected MATCH, MASK or CSR", map[string]lineKind{
 		"MATCH": kindMatch,
 		"MASK":  kindMask,
 		"CSR":   kindCSR,
 	})
-	cHexValue = strings.Cast(
+	hexValue := strings.Cast(
 		strings.Skip(
 			strings.String("expected 0x prefix", "0x"),
-			strings.Some(8, "expected hex number", cHexDigit),
+			strings.Some(8, "expected hex number", hexDigit),
 		),
 		castUInt32,
 	)
-	// to end of line: everything except '\n', then an optional newline
+	// to end of parseLine: everything except '\n', then an optional newline
 	// (EOF without a trailing '\n' is not an error).
-	cToEOL = strings.SkipMany(cNotNewl, strings.Optional(cNewline, rune(0)))
-	cOther = strings.Cast(
-		strings.SkipMany(cNotNewl, strings.Optional(cNewline, rune(0))),
+	toEOL := strings.SkipMany(notNewl, strings.Optional(newline, rune(0)))
+	other := strings.Cast(
+		strings.SkipMany(notNewl, strings.Optional(newline, rune(0))),
 		func(rune) (parsedLine, error) {
 			return newParsedLine(kindOther, Macro{}, InsnDecl{}), nil
 		},
 	)
-)
+
+	upperIdent := ident("expected macro name", isUpperIdent)
+	lowerIdent := ident("expected instruction name", isLowerIdent)
+
+	// defineLine is "#define" (MATCH|MASK|CSR)_NAME 0xVALUE [rest of line].
+	defineLine := func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
+		if _, err := define(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := spaces1(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		k, err := kind(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := undersc(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		name, err := upperIdent(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := spaces1(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		value, err := hexValue(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := toEOL(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		return newParsedLine(k, NewMacro(name, value), InsnDecl{}), nil
+	}
+
+	// declLine is DECLARE_INSN(name, MATCH_X, MASK_X) [rest of line].
+	declLine := func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
+		if _, err := declare(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		open := strings.SkipMany(space, lparen)
+		if _, err := open(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		insnName, err := strings.SkipMany(space, lowerIdent)(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := strings.SkipMany(space, comma)(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		matchName, err := strings.SkipMany(space, upperIdent)(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := strings.SkipMany(space, comma)(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		maskName, err := strings.SkipMany(space, upperIdent)(buf)
+		if err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := strings.SkipMany(space, rparen)(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		if _, err := toEOL(buf); err != nil {
+			return parsedLine{}, err
+		}
+
+		return newParsedLine(kindDecl, Macro{}, NewInsnDecl(insnName, matchName, maskName)), nil
+	}
+
+	return strings.Many(64, strings.Choice("unrecognized line",
+		strings.Try(defineLine),
+		strings.Try(declLine),
+		other,
+	))
+}
 
 var lineKindPrefix = map[lineKind]string{
 	kindMatch: "MATCH",
@@ -157,109 +253,10 @@ func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Posi
 	)
 }
 
-var cUpperIdent = ident("expected macro name", isUpperIdent)
-var cLowerIdent = ident("expected instruction name", isLowerIdent)
-
-// defineLineC is "#define" (MATCH|MASK|CSR)_NAME 0xVALUE [rest of line].
-var defineLineC = func() parsec.Combinator[rune, strings.Position, parsedLine] {
-	return func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
-		if _, err := cDefine(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := cSpaces1(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		kind, err := cKind(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := cUndersc(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		name, err := cUpperIdent(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := cSpaces1(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		value, err := cHexValue(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := cToEOL(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		return newParsedLine(kind, NewMacro(name, value), InsnDecl{}), nil
-	}
-}()
-
-// declLineC is DECLARE_INSN(name, MATCH_X, MASK_X) [rest of line].
-var declLineC = func() parsec.Combinator[rune, strings.Position, parsedLine] {
-	return func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
-		if _, err := cDeclare(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		open := strings.SkipMany(cSpace, cLParen)
-		if _, err := open(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		insnName, err := strings.SkipMany(cSpace, cLowerIdent)(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := strings.SkipMany(cSpace, cComma)(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		matchName, err := strings.SkipMany(cSpace, cUpperIdent)(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := strings.SkipMany(cSpace, cComma)(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		maskName, err := strings.SkipMany(cSpace, cUpperIdent)(buf)
-		if err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := strings.SkipMany(cSpace, cRParen)(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		if _, err := cToEOL(buf); err != nil {
-			return parsedLine{}, err
-		}
-
-		return newParsedLine(kindDecl, Macro{}, NewInsnDecl(insnName, matchName, maskName)), nil
-	}
-}()
-
-// linesC is the file as a sequence of lines: recognized forms or skip.
-var linesC = strings.Many(64, strings.Choice("unrecognized line",
-	strings.Try(defineLineC),
-	strings.Try(declLineC),
-	cOther,
-))
-
 // Parse parses encoding.h text. Unrecognized lines are ignored; the result
 // preserves appearance order for consumers' first-wins policies.
 func Parse(data []rune) (Header, parsec.Error[strings.Position]) {
-	lines, err := strings.Parse(data, linesC)
+	lines, err := strings.Parse(data, makeLinesParser())
 	if err != nil {
 		return Header{}, err
 	}

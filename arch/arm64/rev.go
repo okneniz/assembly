@@ -14,7 +14,35 @@ type Rev struct {
 	rd, rn string
 }
 
+// newRev - the Rev constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newRev(b base, rd string, rn string) Rev {
+	return Rev{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+	}
+}
+
 const RevX uint32 = 0xDAC00C00
+
+func (i Rev) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rev %s, %s", i.rd, i.rn)
+}
+
+func (i Rev) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, RevX, 0)
+	if err != nil {
+		return 0, fmt.Errorf("rev: %w", err)
+	}
+
+	rd, rn, err := regNums2(i.rd, i.rn)
+	if err != nil {
+		return 0, fmt.Errorf("rev: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5)
+}
 
 // Rev — rev rd, rn. Only the 64-bit form: the package's Encode
 // does not emit the 32-bit rev word (that encoding decodes as rev w,
@@ -42,34 +70,9 @@ func (Builder) Rev(rd, rn Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Rev{
-		rd: rd.name(),
-		rn: rn.name(),
-	}, nil
+	return newRev(base{}, rd.name(), rn.name()), nil
 }
 
 func decodeRev(w uint32) Instr {
-	return Rev{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Rev) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rev %s, %s", i.rd, i.rn)
-}
-
-func (i Rev) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, RevX, 0)
-	if err != nil {
-		return 0, fmt.Errorf("rev: %w", err)
-	}
-
-	rd, rn, err := regNums2(i.rd, i.rn)
-	if err != nil {
-		return 0, fmt.Errorf("rev: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5)
+	return newRev(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), armRegName(w>>5&0x1f, w>>31&1 == 1))
 }

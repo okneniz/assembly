@@ -54,9 +54,52 @@ func New() *Program {
 	return &Program{}
 }
 
+func newLabelLine(name string) line {
+	return line{
+		label:  name,
+		source: name + ":",
+	}
+}
+
+func newDataLine(data []byte, src string) line {
+	return line{
+		data:   data,
+		source: src,
+	}
+}
+
+func newInstrLine(i arch.Instr, src string) line {
+	return line{
+		instr:  i,
+		source: src,
+	}
+}
+
+func newBranchLine(
+	src, target string,
+	ctor func(target, pc uint64) (arch.Instr, error),
+) line {
+	return line{
+		branch: ctor,
+		target: target,
+		source: src,
+	}
+}
+
+func newLaLine(
+	target string,
+	ctor func(target, pc uint64) ([]arch.Instr, error),
+) line {
+	return line{
+		la:     ctor,
+		target: target,
+		source: "la",
+	}
+}
+
 // Label - define a label at the current position.
 func (p *Program) Label(name string) *Program {
-	p.lines = append(p.lines, line{label: name, source: name + ":"})
+	p.lines = append(p.lines, newLabelLine(name))
 	return p
 }
 
@@ -68,20 +111,20 @@ func (p *Program) Entry(name string) *Program {
 
 // Ascii - string data appended verbatim (no terminating zero).
 func (p *Program) Ascii(s string) *Program {
-	p.lines = append(p.lines, line{data: []byte(s), source: ".ascii"})
+	p.lines = append(p.lines, newDataLine([]byte(s), ".ascii"))
 	return p
 }
 
 // Bytes - raw data bytes.
 func (p *Program) Bytes(b ...byte) *Program {
-	p.lines = append(p.lines, line{data: b, source: ".byte"})
+	p.lines = append(p.lines, newDataLine(b, ".byte"))
 	return p
 }
 
 // Instr - append an already computed instruction (the escape hatch when
 // no chain twin exists yet).
 func (p *Program) Instr(i arch.Instr, src string) *Program {
-	p.lines = append(p.lines, line{instr: i, source: src})
+	p.lines = append(p.lines, newInstrLine(i, src))
 	return p
 }
 
@@ -112,13 +155,9 @@ func (p *Program) Bnez(rj arch.Reg, label string) *Program {
 // pcalau12i+addi.d pair (a fixed 8 bytes; the split is computed against
 // the page-aligned pc, exactly as the text-path pseudo).
 func (p *Program) La(rd arch.Reg, label string) *Program {
-	p.lines = append(p.lines, line{
-		la: func(t, pc uint64) ([]arch.Instr, error) {
-			return laPair(p.b, rd, int64(t), int64(pc))
-		},
-		target: label,
-		source: "la",
-	})
+	p.lines = append(p.lines, newLaLine(label, func(t, pc uint64) ([]arch.Instr, error) {
+		return laPair(p.b, rd, int64(t), int64(pc))
+	}))
 	return p
 }
 
@@ -304,7 +343,7 @@ func (b *Binary) materialize(l line, syms map[string]uint64, pc uint64) (arch.In
 // --- internals ---------------------------------------------------------------
 
 func (p *Program) instrLine(src string, i arch.Instr, _ error) *Program {
-	p.lines = append(p.lines, line{instr: i, source: src})
+	p.lines = append(p.lines, newInstrLine(i, src))
 	return p
 }
 
@@ -312,7 +351,7 @@ func (p *Program) branchLine(
 	src, label string,
 	ctor func(target, pc uint64) (arch.Instr, error),
 ) *Program {
-	p.lines = append(p.lines, line{branch: ctor, target: label, source: src})
+	p.lines = append(p.lines, newBranchLine(src, label, ctor))
 	return p
 }
 

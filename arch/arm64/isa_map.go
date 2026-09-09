@@ -24,33 +24,39 @@ import (
 //     to invalid words;
 //   - families (ldp also covers the XML stlp classes) and aliases (XML has none);
 //   - conflicts (5 of them, handled per-case).
-var (
-	isaBitsOnce sync.Once
-	isaBitsIdx  []int // schema index → armISA index; -1 = handwritten bits
-	isaTail     []int // armISA indexes: entries not mapped to schema bits (tail B)
-)
+//
+// isaBits is the schema→armISA mapping, built lazily once: the build
+// is expensive (a 284×20k match, tens of ms) and not every program run
+// decodes - sync.OnceValue hides the state inside the closure, the var
+// itself is an immutable function value.
+var isaBits = sync.OnceValue(buildISAOverride)
+
+// isaOverride is the ready mapping: schema indexes → armISA indexes and
+// the generated tail (entries not mapped to schema bits, tail B).
+type isaOverride struct {
+	idx  []int // schema index → armISA index; -1 = handwritten bits
+	tail []int // armISA indexes: entries not mapped to schema bits
+}
 
 // isaTailEntry returns the tail entry at position (0..isaTailLen-1) or nil.
 func isaTailEntry(k int) *armISAEntry {
-	isaBitsOnce.Do(buildISAOverride)
-	if k < 0 || k >= len(isaTail) {
+	m := isaBits()
+	if k < 0 || k >= len(m.tail) {
 		return nil
 	}
 
-	return &armISA[isaTail[k]]
+	return &armISA[m.tail[k]]
 }
 
 // isaTailLen — the size of the generated tail (diagnostics for tests).
 func isaTailLen() int {
-	isaBitsOnce.Do(buildISAOverride)
-	return len(isaTail)
+	return len(isaBits().tail)
 }
 
 // schemaISAEntry returns the generated armISA entry whose {Match, Mask} are
 // used for matching the i-th schema, or nil (handwritten bits).
 func schemaISAEntry(i int) *armISAEntry {
-	isaBitsOnce.Do(buildISAOverride)
-	if j := isaBitsIdx[i]; j >= 0 {
+	if j := isaBits().idx[i]; j >= 0 {
 		return &armISA[j]
 	}
 
@@ -60,9 +66,8 @@ func schemaISAEntry(i int) *armISAEntry {
 // overriddenCount — how many schemas are decoded with generated bits
 // (diagnostics for tests).
 func overriddenCount() int {
-	isaBitsOnce.Do(buildISAOverride)
 	n := 0
-	for _, j := range isaBitsIdx {
+	for _, j := range isaBits().idx {
 		if j >= 0 {
 			n++
 		}
@@ -113,27 +118,27 @@ func widenAcceptable(s *Schema, g *armISAEntry) bool {
 	return true
 }
 
-func buildISAOverride() {
+func buildISAOverride() isaOverride {
 	byName := make(map[string][]int, len(armISA))
 	for i := range armISA {
 		byName[armISA[i].Name] = append(byName[armISA[i].Name], i)
 	}
 
-	isaBitsIdx = make([]int, len(arm64Schemas))
+	m := isaOverride{idx: make([]int, len(arm64Schemas))}
 	for si := range arm64Schemas {
-		isaBitsIdx[si] = -1
+		m.idx[si] = -1
 		s := &arm64Schemas[si]
 		cands := byName[s.Meta.Name]
 		// Pass 1: exact match (priority — deterministic choice).
 		for _, gi := range cands {
 			g := &armISA[gi]
 			if g.Mask == s.Mask && g.Match == s.Value {
-				isaBitsIdx[si] = gi
+				m.idx[si] = gi
 				break
 			}
 		}
 
-		if isaBitsIdx[si] >= 0 {
+		if m.idx[si] >= 0 {
 			continue
 		}
 
@@ -156,12 +161,12 @@ func buildISAOverride() {
 				continue
 			}
 
-			if isaBitsIdx[si] >= 0 && armISA[isaBitsIdx[si]].Mask != g.Mask {
+			if m.idx[si] >= 0 && armISA[m.idx[si]].Mask != g.Mask {
 				continue
 			}
 
 			if widenAcceptable(s, g) {
-				isaBitsIdx[si] = gi
+				m.idx[si] = gi
 			}
 		}
 	}
@@ -177,7 +182,7 @@ func buildISAOverride() {
 	// ordering-overlaps from the A2 failure are excluded by the tail's
 	// placement alone).
 	mapped := make(map[int]struct{}, len(arm64Schemas))
-	for _, gi := range isaBitsIdx {
+	for _, gi := range m.idx {
 		if gi >= 0 {
 			mapped[gi] = struct{}{}
 		}
@@ -185,12 +190,12 @@ func buildISAOverride() {
 
 	for i := range armISA {
 		if _, redundant := mapped[i]; !redundant {
-			isaTail = append(isaTail, i)
+			m.tail = append(m.tail, i)
 		}
 	}
 
-	sort.Slice(isaTail, func(a, b int) bool {
-		ga, gb := &armISA[isaTail[a]], &armISA[isaTail[b]]
+	sort.Slice(m.tail, func(a, b int) bool {
+		ga, gb := &armISA[m.tail[a]], &armISA[m.tail[b]]
 		na, nb := popcount(ga.Mask), popcount(gb.Mask)
 		if na != nb {
 			return na > nb
@@ -198,6 +203,8 @@ func buildISAOverride() {
 
 		return ga.Match < gb.Match
 	})
+
+	return m
 }
 
 // popcount — the number of set bits (for sorting the tail by specificity).

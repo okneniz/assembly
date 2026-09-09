@@ -16,10 +16,44 @@ type Ubfm struct {
 	isf        bool
 }
 
+// newUbfm - the Ubfm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newUbfm(b base, rd string, rn string, immr uint32, imms uint32, isf bool) Ubfm {
+	return Ubfm{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		immr: immr,
+		imms: imms,
+		isf:  isf,
+	}
+}
+
 const (
 	ubfmX uint32 = 0xD3400000
 	ubfmW uint32 = 0x53000000
 )
+
+func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
+	regsize := bfmRegsize(i.rd, i.immr, i.imms)
+	if i.imms != regsize-1 && i.imms+1 == i.immr { // LSL alias
+		return fmt.Sprintf("lsl %s, %s, #%d", i.rd, i.rn, regsize-i.immr)
+	}
+
+	if i.imms == regsize-1 { // LSR alias
+		return fmt.Sprintf("lsr %s, %s, #%d", i.rd, i.rn, i.immr)
+	}
+
+	if i.imms < i.immr { // UBFIZ: lsb = regsize-immr, width = imms+1
+		return fmt.Sprintf("ubfiz %s, %s, #%d, #%d", i.rd, i.rn, regsize-i.immr, i.imms+1)
+	}
+
+	return fmt.Sprintf("ubfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
+}
+
+func (i Ubfm) Encode(w io.Writer) (int64, error) {
+	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+}
 
 // Ubfm — ubfm rd, rn, #immr, #imms (lsl/lsr/ubfiz/ubfx aliases —
 // the printed form depends on immr/imms). Register 31 reads as zr (SP/WSP
@@ -49,43 +83,16 @@ func (Builder) Ubfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
 		)
 	}
 
-	return Ubfm{
-		rd:   rd.name(),
-		rn:   rn.name(),
-		immr: immr,
-		imms: imms,
-		isf:  rd.Is64(),
-	}, nil
+	return newUbfm(base{}, rd.name(), rn.name(), immr, imms, rd.Is64()), nil
 }
 
 func decodeUbfm(w uint32) Instr {
-	return Ubfm{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		immr: w >> 16 & 0x3f,
-		imms: w >> 10 & 0x3f,
-		isf:  w>>31&1 == 1,
-	}
-}
-
-func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
-	regsize := bfmRegsize(i.rd, i.immr, i.imms)
-	if i.imms != regsize-1 && i.imms+1 == i.immr { // LSL alias
-		return fmt.Sprintf("lsl %s, %s, #%d", i.rd, i.rn, regsize-i.immr)
-	}
-
-	if i.imms == regsize-1 { // LSR alias
-		return fmt.Sprintf("lsr %s, %s, #%d", i.rd, i.rn, i.immr)
-	}
-
-	if i.imms < i.immr { // UBFIZ: lsb = regsize-immr, width = imms+1
-		return fmt.Sprintf("ubfiz %s, %s, #%d, #%d", i.rd, i.rn, regsize-i.immr, i.imms+1)
-	}
-
-	return fmt.Sprintf("ubfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
-}
-
-func (i Ubfm) Encode(w io.Writer) (int64, error) {
-	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+	return newUbfm(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		w>>16&0x3f,
+		w>>10&0x3f,
+		w>>31&1 == 1,
+	)
 }

@@ -16,28 +16,12 @@ type Prfm struct {
 	rn string
 }
 
-// Prfm — prfm pldl1keep, [rn]: the prefetch op is fixed (this type
-// encodes the one form); rn — x register or SP (register 31 in the base
-// reads as sp).
-func (Builder) Prfm(rn Reg) (Instr, error) {
-	if err := requireClass(
-		rn,
-		"Prfm",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	return Prfm{rn: rn.name()}, nil
-}
-
-func decodePrfm(w uint32) Instr {
+// newPrfm - the Prfm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newPrfm(b base, rn string) Prfm {
 	return Prfm{
-		base: newBase(w),
-		rn:   regNameXSP(w >> 5 & 0x1f),
+		base: b,
+		rn:   rn,
 	}
 }
 
@@ -56,3 +40,25 @@ func (i Prfm) Encode(w io.Writer) (int64, error) {
 
 // SkipVerify — pldl1keep is a keyword, not an address.
 func (i Prfm) SkipVerify() {}
+
+// Prfm — prfm pldl1keep, [rn]: the prefetch op is fixed (this type
+// encodes the one form); rn — x register or SP (register 31 in the base
+// reads as sp).
+func (Builder) Prfm(rn Reg) (Instr, error) {
+	if err := requireClass(
+		rn,
+		"Prfm",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	return newPrfm(base{}, rn.name()), nil
+}
+
+func decodePrfm(w uint32) Instr {
+	return newPrfm(newBase(w), regNameXSP(w>>5&0x1f))
+}

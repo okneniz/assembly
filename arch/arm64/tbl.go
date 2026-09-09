@@ -14,16 +14,24 @@ type Tbl struct {
 	rd, rn, rm string
 }
 
-const tblEnc uint32 = 0x0E000000
-
-func decodeTbl(w uint32) Instr {
+// newTbl - the Tbl constructor: the struct is assembled only
+// here (NewTbl and the decoder call it).
+func newTbl(b base, rd string, rn string, rm string) Tbl {
 	return Tbl{
-		base: newBase(w),
-		rd:   vReg(w & 0x1f),
-		rn:   vReg(w >> 5 & 0x1f),
-		rm:   vReg(w >> 16 & 0x1f),
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		rm:   rm,
 	}
 }
+
+// NewTbl - tbl.16b vd, { vn }, vm (the assembler ctor form; the word
+// base is filled at decode time).
+func NewTbl(rd, rn, rm string) Tbl {
+	return newTbl(base{}, rd, rn, rm)
+}
+
+const tblEnc uint32 = 0x0E000000
 
 func (i Tbl) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("tbl.16b %s, { %s }, %s", i.rd, i.rn, i.rm)
@@ -36,4 +44,8 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, tblEnc|rd|rn<<5|rm<<16)
+}
+
+func decodeTbl(w uint32) Instr {
+	return newTbl(newBase(w), vReg(w&0x1f), vReg(w>>5&0x1f), vReg(w>>16&0x1f))
 }

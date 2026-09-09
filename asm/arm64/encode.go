@@ -27,6 +27,30 @@ type ctx struct {
 	extra   map[string]arch.ArmCtor
 }
 
+// newCtx - the encode environment: address + resolver + injected alias
+// constructors (nil extra for the pure backend).
+func newCtx(addr uint64, resolve func(string) (uint64, bool), extra map[string]arch.ArmCtor) ctx {
+	return ctx{
+		Addr:    addr,
+		Resolve: resolve,
+		extra:   extra,
+	}
+}
+
+// resolvedInstr is an instruction with evaluated operands.
+type resolvedInstr struct {
+	mnem string
+	ops  []arch.VOp
+}
+
+// newResolvedInstr - an evaluated instruction.
+func newResolvedInstr(mnem string, ops []arch.VOp) resolvedInstr {
+	return resolvedInstr{
+		mnem: mnem,
+		ops:  ops,
+	}
+}
+
 // encodeARM picks a candidate scheme, encodes, and verifies with the
 // decoder.
 func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
@@ -38,7 +62,7 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		return 0, fmt.Errorf("%s: %w", in.mnem, rerr)
 	}
 
-	res := resolvedInstr{mnem: in.mnem, ops: ops}
+	res := newResolvedInstr(in.mnem, ops)
 	rendered := renderInstr(res, ctx.Addr)
 	loose := looseNormalize(rendered)
 
@@ -97,7 +121,7 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	encoded := false
 	var firstWord uint32
 	for _, cand := range candidatesFor(res.mnem) {
-		w, err := legacyBuild(cand, res.mnem, res.ops, ctx.Addr)
+		w, err := legacyBuild(cand, res.mnem, res.ops)
 		if err != nil {
 			if lastErr == nil {
 				lastErr = err
@@ -126,13 +150,6 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	}
 
 	return 0, fmt.Errorf("%q: %w", rendered, lastErr)
-}
-
-// resolvedInstr is an instruction with evaluated operands (arch.VOp):
-// the input of the self-verify render.
-type resolvedInstr struct {
-	mnem string
-	ops  []arch.VOp
 }
 
 // verifyWord is encoding + self-verify (the SkipVerify marker is for

@@ -14,21 +14,16 @@ type Bl struct {
 	off imm // pc-relative byte offset
 }
 
-const blMatch = 0x94000000
-
-// Bl — bl off: off — the pc-relative byte offset of the call
-// destination (the ±128MB imm26 range is checked at encode time; the
-// absolute target is off + the instruction address).
-func (Builder) Bl(off int64) Instr {
-	return Bl{off: immNum(off)}
-}
-
-func decodeBl(w uint32) Instr {
+// newBl - the Bl constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newBl(b base, off imm) Bl {
 	return Bl{
-		base: newBase(w),
-		off:  immNum(signExtendN(w&0x3ffffff, 26) * 4),
+		base: b,
+		off:  off,
 	}
 }
+
+const blMatch = 0x94000000
 
 func (i Bl) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
@@ -42,4 +37,15 @@ func (i Bl) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, blMatch|bits)
+}
+
+// Bl — bl off: off — the pc-relative byte offset of the call
+// destination (the ±128MB imm26 range is checked at encode time; the
+// absolute target is off + the instruction address).
+func (Builder) Bl(off int64) Instr {
+	return newBl(base{}, immNum(off))
+}
+
+func decodeBl(w uint32) Instr {
+	return newBl(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
 }

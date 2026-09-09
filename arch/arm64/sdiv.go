@@ -14,7 +14,36 @@ type Sdiv struct {
 	rd, rn, rm string
 }
 
+// newSdiv - the Sdiv constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newSdiv(b base, rd string, rn string, rm string) Sdiv {
+	return Sdiv{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		rm:   rm,
+	}
+}
+
 const SdivX uint32 = 0x9AC00C00
+
+func (i Sdiv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sdiv %s, %s, %s", i.rd, i.rn, i.rm)
+}
+
+func (i Sdiv) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, SdivX, 0x1AC00C00)
+	if err != nil {
+		return 0, fmt.Errorf("sdiv: %w", err)
+	}
+
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("sdiv: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
 
 // Sdiv — sdiv rd, rn, rm. Register 31 reads as zr (SP/WSP are not
 // allowed — use XZR/WZR); the width is shared by all three registers.
@@ -38,36 +67,14 @@ func (Builder) Sdiv(rd, rn, rm Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Sdiv{
-		rd: rd.name(),
-		rn: rn.name(),
-		rm: rm.name(),
-	}, nil
+	return newSdiv(base{}, rd.name(), rn.name(), rm.name()), nil
 }
 
 func decodeSdiv(w uint32) Instr {
-	return Sdiv{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Sdiv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sdiv %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
-func (i Sdiv) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, SdivX, 0x1AC00C00)
-	if err != nil {
-		return 0, fmt.Errorf("sdiv: %w", err)
-	}
-
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("sdiv: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|rm<<16)
+	return newSdiv(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+	)
 }

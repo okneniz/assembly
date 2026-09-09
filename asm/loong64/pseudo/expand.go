@@ -14,6 +14,14 @@ type form struct {
 	ops  []loong64.Op
 }
 
+// newForm - a single expansion form (mnemonic + ready operands).
+func newForm(mnem string, ops []loong64.Op) form {
+	return form{
+		mnem: mnem,
+		ops:  ops,
+	}
+}
+
 // expandable lists the single-word pseudo-mnemonics (the expansion
 // table below); the li ladders are handled by the same machinery.
 var expandable = []string{
@@ -35,45 +43,45 @@ func zero() loong64.Op {
 func expandPseudo(mnem string, ops []loong64.Op, ctx asm.Ctx) ([]form, error) {
 	switch mnem {
 	case "nop":
-		return []form{{mnem: "andi", ops: []loong64.Op{zero(), zero(), loong64.OpNum(0)}}}, nil
+		return []form{newForm("andi", []loong64.Op{zero(), zero(), loong64.OpNum(0)})}, nil
 	case "move":
 		rd, rj, err := wantRR("move", ops)
 		if err != nil {
 			return nil, err
 		}
 
-		return []form{{mnem: "or", ops: []loong64.Op{rd, rj, zero()}}}, nil
+		return []form{newForm("or", []loong64.Op{rd, rj, zero()})}, nil
 	case "not":
 		rd, rj, err := wantRR("not", ops)
 		if err != nil {
 			return nil, err
 		}
 
-		return []form{{mnem: "nor", ops: []loong64.Op{rd, rj, zero()}}}, nil
+		return []form{newForm("nor", []loong64.Op{rd, rj, zero()})}, nil
 	case "ret":
-		return []form{{mnem: "jirl",
-			ops: []loong64.Op{zero(), loong64.OpReg("$ra"), loong64.OpNum(0)}}}, nil
+		return []form{newForm("jirl",
+			[]loong64.Op{zero(), loong64.OpReg("$ra"), loong64.OpNum(0)})}, nil
 	case "jr":
 		rj, err := wantOne(ops, "jr: want rj")
 		if err != nil {
 			return nil, err
 		}
 
-		return []form{{mnem: "jirl", ops: []loong64.Op{zero(), rj, loong64.OpNum(0)}}}, nil
+		return []form{newForm("jirl", []loong64.Op{zero(), rj, loong64.OpNum(0)})}, nil
 	case "call":
 		t, err := wantOne(ops, "call: want target")
 		if err != nil {
 			return nil, err
 		}
 
-		return []form{{mnem: "bl", ops: []loong64.Op{t}}}, nil
+		return []form{newForm("bl", []loong64.Op{t})}, nil
 	case "tail":
 		t, err := wantOne(ops, "tail: want target")
 		if err != nil {
 			return nil, err
 		}
 
-		return []form{{mnem: "b", ops: []loong64.Op{t}}}, nil
+		return []form{newForm("b", []loong64.Op{t})}, nil
 	case "bltz", "bgez":
 		rj, t, err := wantTwo(ops, mnem)
 		if err != nil {
@@ -85,7 +93,7 @@ func expandPseudo(mnem string, ops []loong64.Op, ctx asm.Ctx) ([]form, error) {
 			base = "bge"
 		}
 
-		return []form{{mnem: base, ops: []loong64.Op{rj, zero(), t}}}, nil
+		return []form{newForm(base, []loong64.Op{rj, zero(), t})}, nil
 	case "bgtz", "blez":
 		rd, t, err := wantTwo(ops, mnem)
 		if err != nil {
@@ -97,7 +105,7 @@ func expandPseudo(mnem string, ops []loong64.Op, ctx asm.Ctx) ([]form, error) {
 			base = "bge"
 		}
 
-		return []form{{mnem: base, ops: []loong64.Op{zero(), rd, t}}}, nil
+		return []form{newForm(base, []loong64.Op{zero(), rd, t})}, nil
 	case "li.w":
 		return expandLi(ops, false, ctx)
 	case "li.d":
@@ -142,19 +150,19 @@ func expandLi(ops []loong64.Op, is64 bool, ctx asm.Ctx) ([]form, error) {
 func li32(rd loong64.Op, v int64) ([]form, error) {
 	switch {
 	case v >= 0 && v <= 4095:
-		return []form{{mnem: "ori", ops: []loong64.Op{rd, zero(), loong64.OpNum(v)}}}, nil
+		return []form{newForm("ori", []loong64.Op{rd, zero(), loong64.OpNum(v)})}, nil
 	case v >= -2048 && v <= -1:
-		return []form{{mnem: "addi.w", ops: []loong64.Op{rd, zero(), loong64.OpNum(v)}}}, nil
+		return []form{newForm("addi.w", []loong64.Op{rd, zero(), loong64.OpNum(v)})}, nil
 	case int64(int32(v)) != v:
 		return nil, fmt.Errorf("li.w: value %#x does not fit 32 bits", v)
 	case v&0xfff == 0:
-		return []form{{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(v >> 12)}}}, nil
+		return []form{newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(v >> 12)})}, nil
 	default:
 		hi := (v - (v & 0xfff)) >> 12
 
 		return []form{
-			{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(hi)}},
-			{mnem: "ori", ops: []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}},
+			newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(hi)}),
+			newForm("ori", []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}),
 		}, nil
 	}
 }
@@ -163,23 +171,23 @@ func li32(rd loong64.Op, v int64) ([]form, error) {
 func li64(rd loong64.Op, v int64) ([]form, error) {
 	switch {
 	case v >= 0 && v <= 4095:
-		return []form{{mnem: "ori", ops: []loong64.Op{rd, zero(), loong64.OpNum(v)}}}, nil
+		return []form{newForm("ori", []loong64.Op{rd, zero(), loong64.OpNum(v)})}, nil
 	case v >= -2048 && v <= -1:
-		return []form{{mnem: "addi.w", ops: []loong64.Op{rd, zero(), loong64.OpNum(v)}}}, nil
+		return []form{newForm("addi.w", []loong64.Op{rd, zero(), loong64.OpNum(v)})}, nil
 	case int64(int32(v)) == v && v&0xfff == 0:
-		return []form{{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(v >> 12)}}}, nil
+		return []form{newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(v >> 12)})}, nil
 	case int64(int32(v)) == v:
 		hi := (v - (v & 0xfff)) >> 12
 
 		return []form{
-			{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(hi)}},
-			{mnem: "ori", ops: []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}},
+			newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(hi)}),
+			newForm("ori", []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}),
 		}, nil
 	case v&0xfff == 0:
 		return []form{
-			{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(sext20((v >> 12) & 0xfffff))}},
-			{mnem: "lu32i.d", ops: []loong64.Op{rd, loong64.OpNum(sext20((v >> 32) & 0xfffff))}},
-			{mnem: "lu52i.d", ops: []loong64.Op{rd, rd, loong64.OpNum(v >> 52)}},
+			newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(sext20((v >> 12) & 0xfffff))}),
+			newForm("lu32i.d", []loong64.Op{rd, loong64.OpNum(sext20((v >> 32) & 0xfffff))}),
+			newForm("lu52i.d", []loong64.Op{rd, rd, loong64.OpNum(v >> 52)}),
 		}, nil
 	default:
 		return liWorst64(rd, v), nil
@@ -189,10 +197,10 @@ func li64(rd loong64.Op, v int64) ([]form, error) {
 // liWorst64 - the fixed 4-word chain of li.d.
 func liWorst64(rd loong64.Op, v int64) []form {
 	return []form{
-		{mnem: "lu12i.w", ops: []loong64.Op{rd, loong64.OpNum(sext20((v >> 12) & 0xfffff))}},
-		{mnem: "ori", ops: []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}},
-		{mnem: "lu32i.d", ops: []loong64.Op{rd, loong64.OpNum(sext20((v >> 32) & 0xfffff))}},
-		{mnem: "lu52i.d", ops: []loong64.Op{rd, rd, loong64.OpNum(v >> 52)}},
+		newForm("lu12i.w", []loong64.Op{rd, loong64.OpNum(sext20((v >> 12) & 0xfffff))}),
+		newForm("ori", []loong64.Op{rd, rd, loong64.OpNum(v & 0xfff)}),
+		newForm("lu32i.d", []loong64.Op{rd, loong64.OpNum(sext20((v >> 32) & 0xfffff))}),
+		newForm("lu52i.d", []loong64.Op{rd, rd, loong64.OpNum(v >> 52)}),
 	}
 }
 

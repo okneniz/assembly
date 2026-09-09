@@ -19,29 +19,6 @@ const (
 	sturWEnc uint32 = 0xB8000000 // stur wt, [xn, #±imm9]
 )
 
-// Stur — stur rt, [rn, #off]: the unscaled form, rt — x/w register
-// (register 31 reads as zr), rn — x register or SP (register 31 in the
-// base reads as sp); the offset is a signed imm9 (-0x100..0xff, any
-// alignment).
-func (Builder) Stur(rt, rn Reg, off Off) (Instr, error) {
-	if err := lsOperand(rt, rn, "Stur"); err != nil {
-		return nil, err
-	}
-
-	enc := sturWEnc
-	if rt.Is64() {
-		enc = sturXEnc
-	}
-
-	if err := requireUnscaledOff("Stur", off); err != nil {
-		return nil, err
-	}
-
-	return Stur{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
-	}, nil
-}
-
 func (i Stur) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("stur %s, %s", i.rt, i.lsText(ctx))
 }
@@ -98,4 +75,27 @@ func decodeSturOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
+}
+
+// Stur — stur rt, [rn, #off]: the unscaled form, rt — x/w register
+// (register 31 reads as zr), rn — x register or SP (register 31 in the
+// base reads as sp); the offset is a signed imm9 (-0x100..0xff, any
+// alignment).
+func (Builder) Stur(rt, rn Reg, off Off) (Instr, error) {
+	if err := lsOperand(rt, rn, "Stur"); err != nil {
+		return nil, err
+	}
+
+	enc := sturWEnc
+	if rt.Is64() {
+		enc = sturXEnc
+	}
+
+	if err := requireUnscaledOff("Stur", off); err != nil {
+		return nil, err
+	}
+
+	return Stur{
+		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
+	}, nil
 }

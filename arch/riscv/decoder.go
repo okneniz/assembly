@@ -1,8 +1,6 @@
 package riscv
 
 import (
-	"encoding/binary"
-
 	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 
@@ -11,16 +9,17 @@ import (
 
 // Parse - builds a combinator decoding variable-length RISC-V machine code
 // (16-bit compressed RVC or 32-bit) from a parsec buffer
-// into []Instr. The halfword sub-combinator is assembled once per build;
-// Try rolls the position back on a truncated tail (a halfword shorter than
-// 2 bytes or the cut-off high halfword of a 32-bit instruction), Many
-// swallows its error and drives the loop to the end of the buffer.
+// into []Instr. The halfword reader is a plain function: unlike
+// bytes.ReadAs (which rebuilds its Count combinator on every invocation)
+// it allocates nothing per halfword. Try rolls the position back on a
+// truncated tail (a halfword shorter than 2 bytes or the cut-off high
+// halfword of a 32-bit instruction), Many swallows its error and drives
+// the loop to the end of the buffer.
 // The instructions are position-independent: addresses live in the view
 // context (disasm), not in the structures.
-func Parse() parsec.Combinator[byte, int, []Instr] {
-	half := bytes.ReadAs[uint16](2, "riscv: halfword", binary.LittleEndian)
+func MakeDecoder() parsec.Combinator[byte, int, []Instr] {
 	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		lo, err := half(buf)
+		lo, err := decodeHalfLE(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -29,7 +28,7 @@ func Parse() parsec.Combinator[byte, int, []Instr] {
 			return compressedInstruction(uint32(lo)), nil
 		}
 
-		hi, err := half(buf)
+		hi, err := decodeHalfLE(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -38,6 +37,22 @@ func Parse() parsec.Combinator[byte, int, []Instr] {
 	}
 
 	return parsec.Many(0, bytes.Try(instr))
+}
+
+// decodeHalfLE reads a 2-byte little-endian halfword; a truncated tail is
+// an error (the caller's Try rolls the position back).
+func decodeHalfLE(buf parsec.Buffer[byte, int]) (uint16, parsec.Error[int]) {
+	var w uint16
+	for i := range 2 {
+		b, err := buf.Read(true)
+		if err != nil {
+			return 0, parsec.NewParseError(buf.Position(), "riscv: halfword")
+		}
+
+		w |= uint16(b) << (8 * i)
+	}
+
+	return w, nil
 }
 
 // decodeCtor - the constructor of a table entry (the decision-tree payload).
@@ -54,11 +69,7 @@ func decodeRules() []dtree.Rule[decodeCtor] {
 			continue // entries without an encoding are unreachable
 		}
 
-		rules = append(rules, dtree.Rule[decodeCtor]{
-			Mask:    mm[1],
-			Match:   mm[0],
-			Payload: e.ctor,
-		})
+		rules = append(rules, dtree.NewRule(mm[1], mm[0], e.ctor))
 	}
 
 	return rules

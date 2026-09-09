@@ -26,57 +26,6 @@ type SimdCopy struct {
 	isDest  bool // gpr on the destination side (smov/umov)
 }
 
-func decodeSimdCopy(w uint32) Instr {
-	imm5 := w >> 16 & 0x1f
-	// imm5 = the size one-hot plus the index bits above it (size = ctz,
-	// index = imm5 >> size+1). ins/smov/umov of a NONZERO lane is legal
-	// (imm5 not one-hot); DUP (general) has no index, so its imm5 must be
-	// one-hot. Unencodable sizes go to the .word fallback (the schema
-	// mask does not express any of this).
-	if imm5 == 0 || bitsCtz(imm5) > 3 || (w>>12&3 == 0 && imm5&(imm5-1) != 0) {
-		return decodeUnknown(w)
-	}
-
-	size := uint32(bitsCtz(imm5))
-	idx := imm5 >> (size + 1)
-	q := w >> 30 & 1
-	var op string
-	isDest := false
-	switch w >> 12 & 3 { // bits [13:12]: 0=dup 1=ins 2=smov 3=umov
-	case 0:
-		op = "dup"
-	case 1:
-		op = "ins"
-	case 2:
-		op, isDest = "smov", true
-	default:
-		op, isDest = "umov", true
-	}
-
-	vdNum, gprNum := w&0x1f, w>>5&0x1f
-	if isDest {
-		// smov/umov: the GPR destination is in the Rd slot, the vector source in Rn
-		vdNum, gprNum = w>>5&0x1f, w&0x1f
-	}
-
-	gpr64 := size == 3 || (op == "smov" && q == 1)
-	vd := vReg(vdNum)
-	gpr := armRegName(gprNum, gpr64)
-	return SimdCopy{
-		base:   newBase(w),
-		op:     op,
-		size:   size,
-		idx:    idx,
-		q:      q,
-		vd:     vd,
-		gpr:    gpr,
-		enc:    0x0E000000,
-		vdNum:  vdNum,
-		gprNum: gprNum,
-		isDest: isDest,
-	}
-}
-
 // bitsCtz - the number of the lowest set bit.
 func bitsCtz(v uint32) int {
 	n := 0
@@ -131,4 +80,55 @@ func (i SimdCopy) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, i.enc|i.q<<30|0xC00|opBits<<12|imm5<<16|i.gprNum<<5|i.vdNum)
+}
+
+func decodeSimdCopy(w uint32) Instr {
+	imm5 := w >> 16 & 0x1f
+	// imm5 = the size one-hot plus the index bits above it (size = ctz,
+	// index = imm5 >> size+1). ins/smov/umov of a NONZERO lane is legal
+	// (imm5 not one-hot); DUP (general) has no index, so its imm5 must be
+	// one-hot. Unencodable sizes go to the .word fallback (the schema
+	// mask does not express any of this).
+	if imm5 == 0 || bitsCtz(imm5) > 3 || (w>>12&3 == 0 && imm5&(imm5-1) != 0) {
+		return decodeUnknown(w)
+	}
+
+	size := uint32(bitsCtz(imm5))
+	idx := imm5 >> (size + 1)
+	q := w >> 30 & 1
+	var op string
+	isDest := false
+	switch w >> 12 & 3 { // bits [13:12]: 0=dup 1=ins 2=smov 3=umov
+	case 0:
+		op = "dup"
+	case 1:
+		op = "ins"
+	case 2:
+		op, isDest = "smov", true
+	default:
+		op, isDest = "umov", true
+	}
+
+	vdNum, gprNum := w&0x1f, w>>5&0x1f
+	if isDest {
+		// smov/umov: the GPR destination is in the Rd slot, the vector source in Rn
+		vdNum, gprNum = w>>5&0x1f, w&0x1f
+	}
+
+	gpr64 := size == 3 || (op == "smov" && q == 1)
+	vd := vReg(vdNum)
+	gpr := armRegName(gprNum, gpr64)
+	return SimdCopy{
+		base:   newBase(w),
+		op:     op,
+		size:   size,
+		idx:    idx,
+		q:      q,
+		vd:     vd,
+		gpr:    gpr,
+		enc:    0x0E000000,
+		vdNum:  vdNum,
+		gprNum: gprNum,
+		isDest: isDest,
+	}
 }

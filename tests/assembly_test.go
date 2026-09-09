@@ -53,7 +53,7 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 	switch ff.ArchKind() {
 	case file.ArchARM64:
 		archName = arm64.Name
-		insts, err := arm64.Parse()(bytes.Buffer(sec.Data))
+		insts, err := arm64.MakeDecoder()(bytes.Buffer(sec.Data))
 		require.NoError(t, err)
 		off := uint64(0)
 		for _, inst := range insts {
@@ -63,7 +63,7 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 		}
 	case file.ArchRISCV64:
 		archName = riscv.Name
-		insts, err := riscv.Parse()(bytes.Buffer(sec.Data))
+		insts, err := riscv.MakeDecoder()(bytes.Buffer(sec.Data))
 		require.NoError(t, err)
 		off := uint64(0)
 		for _, inst := range insts {

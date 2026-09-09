@@ -148,7 +148,7 @@ func TestAssembleWords(t *testing.T) {
 	}
 	for _, c := range texts {
 		got := assembleOne(t, c.src, 0)
-		insts, err := arch.Parse()(bytes.Buffer(got))
+		insts, err := arch.MakeDecoder()(bytes.Buffer(got))
 		require.NoError(t, err)
 		require.NotEmpty(t, insts, "case %q: nothing decoded from % x", c.src, got)
 		for _, in := range insts {

@@ -7,9 +7,9 @@ package alias
 
 import (
 	"fmt"
-	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 )
 
 // newMul is the mul rd, rn, rm alias: madd with ra = zr.

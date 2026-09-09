@@ -8,9 +8,9 @@ package alias
 import (
 	"errors"
 	"fmt"
-	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 )
 
 // newTst is the tst rn, #bitmask | rn, rm{, shift} alias: ands with
@@ -137,13 +137,13 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 			size, q = 3, 1
 		}
 
-		var idx int64 = ops[1].Num()
+		idx := ops[1].Num()
 		if idx < 0 || idx >= 16>>size {
 			return nil, fmt.Errorf("mov: lane index out of range (0..%d)",
 				(16>>size)-1)
 		}
 
-		return arch.Builder{}.SimdCopyGPR("umov", vd, rd, size,
+		return arch.NewSimdCopyGPR("umov", vd, rd, size,
 			uint32(idx), q, vdN, rdN, true), nil
 	}
 

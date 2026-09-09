@@ -18,6 +18,14 @@ const (
 	stpWEnc uint32 = 0x29000000 // stp wt, wt2, [xn, #imm7<<2]
 )
 
+func (i Stp) ObjDump(_ disasm.ViewCtx) string {
+	return "stp " + i.pairText()
+}
+
+func (i Stp) Encode(w io.Writer) (int64, error) {
+	return i.pairWrite(w, "stp")
+}
+
 // Stp — stp rt, rt2, [rn, #off]: byte offset, scaling to the
 // access size is hidden here; the operand constraints are those of Ldp.
 func (Builder) Stp(rt, rt2, rn Reg, off Off) (Instr, error) {
@@ -58,12 +66,4 @@ func (Builder) Stp(rt, rt2, rn Reg, off Off) (Instr, error) {
 	return Stp{
 		pairBase: newPairBase(rt.name(), rt2.name(), rn.name(), memImm, int64(off), scale, enc),
 	}, nil
-}
-
-func (i Stp) ObjDump(_ disasm.ViewCtx) string {
-	return "stp " + i.pairText()
-}
-
-func (i Stp) Encode(w io.Writer) (int64, error) {
-	return i.pairWrite(w, "stp")
 }

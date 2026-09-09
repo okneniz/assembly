@@ -17,6 +17,19 @@ type Uaddlv struct {
 
 const uaddlvEnc uint32 = 0x2E303800
 
+func (i Uaddlv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("uaddlv.%s %s, %s", decodeArrangement(i.q, i.size), i.rd, i.rn)
+}
+
+func (i Uaddlv) Encode(w io.Writer) (int64, error) {
+	rd, rn, err := regNums2(fmt.Sprintf("v%d", regIndex(i.rd)), i.rn)
+	if err != nil {
+		return 0, fmt.Errorf("uaddlv: %w", err)
+	}
+
+	return writeWord(w, uaddlvEnc|rd|rn<<5)
+}
+
 func decodeUaddlv(w uint32) Instr {
 	rd := vReg(w & 0x1f)
 	size := w >> 22 & 3
@@ -34,17 +47,4 @@ func decodeUaddlv(w uint32) Instr {
 		q:    w >> 30 & 1,
 		size: size,
 	}
-}
-
-func (i Uaddlv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("uaddlv.%s %s, %s", decodeArrangement(i.q, i.size), i.rd, i.rn)
-}
-
-func (i Uaddlv) Encode(w io.Writer) (int64, error) {
-	rd, rn, err := regNums2(fmt.Sprintf("v%d", regIndex(i.rd)), i.rn)
-	if err != nil {
-		return 0, fmt.Errorf("uaddlv: %w", err)
-	}
-
-	return writeWord(w, uaddlvEnc|rd|rn<<5)
 }

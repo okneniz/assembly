@@ -18,39 +18,6 @@ type Tbz struct {
 	isTbnz bool
 }
 
-// Tbz — tbz rt, #bit, off: off — the pc-relative byte offset of the
-// branch destination (the ±32KB imm14 range is checked at encode time;
-// the absolute target is off + the instruction address). The register
-// width is dictated by the bit number — the sf bit
-// of the encoding is the bit's b5: bits 32..63 need an x register, bits
-// 0..31 — a w one (register 31 reads as zr — use XZR/WZR).
-func (Builder) Tbz(rt Reg, bit uint32, off int64) (Instr, error) {
-	if err := requireClass(rt, "Tbz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if bit > 63 {
-		return nil, fmt.Errorf("arm64.NewTbz: operand bit: %d is out of 0..63", bit)
-	}
-
-	if rt.Is64() != (bit >= 32) {
-		want := "w"
-		if bit >= 32 {
-			want = "x"
-		}
-
-		return nil, fmt.Errorf(
-			"arm64.NewTbz: operand bit: %d needs a %s register (the sf bit of the encoding is the bit's b5), got %s",
-			bit,
-			want,
-			rt.name(),
-		)
-	}
-
-	return Tbz{rt: rt.name(), bit: bit, off: immNum(off), isTbnz: false}, nil
-}
-
 func decodeTbzOf(isTbnz bool) func(uint32) Instr {
 	return func(w uint32) Instr {
 		x64 := w>>31&1 == 1
@@ -98,4 +65,42 @@ func (i Tbz) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, word|rt|bits<<5|i.bit&0x1f<<19)
+}
+
+// Tbz — tbz rt, #bit, off: off — the pc-relative byte offset of the
+// branch destination (the ±32KB imm14 range is checked at encode time;
+// the absolute target is off + the instruction address). The register
+// width is dictated by the bit number — the sf bit
+// of the encoding is the bit's b5: bits 32..63 need an x register, bits
+// 0..31 — a w one (register 31 reads as zr — use XZR/WZR).
+func (Builder) Tbz(rt Reg, bit uint32, off int64) (Instr, error) {
+	if err := requireClass(rt, "Tbz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if bit > 63 {
+		return nil, fmt.Errorf("arm64.NewTbz: operand bit: %d is out of 0..63", bit)
+	}
+
+	if rt.Is64() != (bit >= 32) {
+		want := "w"
+		if bit >= 32 {
+			want = "x"
+		}
+
+		return nil, fmt.Errorf(
+			"arm64.NewTbz: operand bit: %d needs a %s register (the sf bit of the encoding is the bit's b5), got %s",
+			bit,
+			want,
+			rt.name(),
+		)
+	}
+
+	return Tbz{
+		rt:     rt.name(),
+		bit:    bit,
+		off:    immNum(off),
+		isTbnz: false,
+	}, nil
 }

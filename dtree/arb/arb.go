@@ -26,6 +26,14 @@ type Case struct {
 	Word  uint32
 }
 
+// NewCase - a property case from its parts.
+func NewCase(rules []dtree.Rule[int], word uint32) Case {
+	return Case{
+		Rules: rules,
+		Word:  word,
+	}
+}
+
 func (c Case) String() string {
 	var sb strings.Builder
 	fmt.Fprintf(&sb, "word=%#08x rules=[", c.Word)
@@ -72,14 +80,10 @@ func (a lookupCase) Generate() iter.Seq[Case] {
 				match = a.rnd.Uint32() // dead rule
 			}
 
-			rules = append(rules, dtree.Rule[int]{
-				Mask:    mask,
-				Match:   match,
-				Payload: len(rules),
-			})
+			rules = append(rules, dtree.NewRule(mask, match, len(rules)))
 		}
 
-		return Case{Rules: rules, Word: a.rnd.Uint32()}
+		return NewCase(rules, a.rnd.Uint32())
 	})
 }
 
@@ -93,11 +97,11 @@ func (lookupCase) Shrink(c Case) iter.Seq[Case] {
 		shorter := make([]dtree.Rule[int], 0, len(c.Rules)-1)
 		shorter = append(shorter, c.Rules[:i]...)
 		shorter = append(shorter, c.Rules[i+1:]...)
-		out = append(out, Case{Rules: shorter, Word: c.Word})
+		out = append(out, NewCase(shorter, c.Word))
 	}
 
 	if c.Word != 0 {
-		out = append(out, Case{Rules: c.Rules, Word: c.Word & (c.Word - 1)})
+		out = append(out, NewCase(c.Rules, c.Word&(c.Word-1)))
 	}
 
 	for i, r := range c.Rules {
@@ -106,8 +110,8 @@ func (lookupCase) Shrink(c Case) iter.Seq[Case] {
 		}
 
 		zeroed := append([]dtree.Rule[int](nil), c.Rules...)
-		zeroed[i] = dtree.Rule[int]{Payload: r.Payload}
-		out = append(out, Case{Rules: zeroed, Word: c.Word})
+		zeroed[i] = dtree.NewRule(0, 0, r.Payload)
+		out = append(out, NewCase(zeroed, c.Word))
 	}
 
 	return slices.Values(out)

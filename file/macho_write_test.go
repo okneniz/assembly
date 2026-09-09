@@ -1,6 +1,7 @@
 package file
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -75,7 +76,7 @@ func TestMachoWriterExec(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "prog")
 	require.NoError(t, os.WriteFile(path, bin, 0o755))
 
-	cmd := exec.Command(path)
+	cmd := exec.CommandContext(context.Background(), path)
 	runErr := cmd.Run()
 
 	var exitErr *exec.ExitError

@@ -12,7 +12,7 @@ func TestParseInstrs(t *testing.T) {
 	data := binary.LittleEndian.AppendUint32(nil, 0x001039ac) // add.w $t0, $t1, $t2
 	data = binary.LittleEndian.AppendUint32(data, 0xffffffff) // no encoding
 
-	instrs, err := Parse()(parsecbytes.Buffer(data))
+	instrs, err := MakeDecoder()(parsecbytes.Buffer(data))
 	require.NoError(t, err)
 	require.Len(t, instrs, 2)
 
@@ -26,17 +26,17 @@ func TestParseTruncatedTail(t *testing.T) {
 	data := binary.LittleEndian.AppendUint32(nil, 0x1c000000)
 	data = append(data, 0x11, 0x22, 0x33)
 
-	instrs, err := Parse()(parsecbytes.Buffer(data))
+	instrs, err := MakeDecoder()(parsecbytes.Buffer(data))
 	require.NoError(t, err)
 	require.Len(t, instrs, 1)
 
 	// Only the tail.
-	instrs, err = Parse()(parsecbytes.Buffer([]byte{1, 2, 3}))
+	instrs, err = MakeDecoder()(parsecbytes.Buffer([]byte{1, 2, 3}))
 	require.NoError(t, err)
 	require.Empty(t, instrs)
 
 	// Nothing at all.
-	instrs, err = Parse()(parsecbytes.Buffer(nil))
+	instrs, err = MakeDecoder()(parsecbytes.Buffer(nil))
 	require.NoError(t, err)
 	require.Empty(t, instrs)
 }

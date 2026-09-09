@@ -15,18 +15,6 @@ type Bcond struct {
 	off  imm // pc-relative byte offset
 }
 
-// Bcond — b.cond off: off — the pc-relative byte offset of the branch
-// destination (the ±1MB imm19 range is checked at encode time; the
-// absolute target is off + the instruction address); cond — the
-// standard condition names (eq/ne/.../nv, see condNum).
-func (Builder) Bcond(cond string, off int64) (Instr, error) {
-	if _, err := condNum(cond); err != nil {
-		return nil, fmt.Errorf("arm64.NewBcond: operand cond: %w", err)
-	}
-
-	return Bcond{cond: cond, off: immNum(off)}, nil
-}
-
 func decodeBcondOf(cond string) func(uint32) Instr {
 	return func(w uint32) Instr {
 		return Bcond{
@@ -54,4 +42,16 @@ func (i Bcond) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, 0x54000000|c|bits<<5)
+}
+
+// Bcond — b.cond off: off — the pc-relative byte offset of the branch
+// destination (the ±1MB imm19 range is checked at encode time; the
+// absolute target is off + the instruction address); cond — the
+// standard condition names (eq/ne/.../nv, see condNum).
+func (Builder) Bcond(cond string, off int64) (Instr, error) {
+	if _, err := condNum(cond); err != nil {
+		return nil, fmt.Errorf("arm64.NewBcond: operand cond: %w", err)
+	}
+
+	return Bcond{cond: cond, off: immNum(off)}, nil
 }

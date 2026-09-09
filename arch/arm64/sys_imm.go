@@ -17,26 +17,6 @@ type sysImm struct {
 	shift uint // offset of the imm16 field (5 for svc/brk/udf, 21 for hlt/hvc)
 }
 
-// Svc — svc #imm16.
-func (Builder) Svc(imm Imm16) Instr {
-	return sysImm{
-		name:  "svc",
-		imm16: imm.v,
-		enc:   0xD4000001,
-		shift: 5,
-	}
-}
-
-// Brk — brk #imm16.
-func (Builder) Brk(imm Imm16) Instr {
-	return sysImm{
-		name:  "brk",
-		imm16: imm.v,
-		enc:   0xD4200000,
-		shift: 5,
-	}
-}
-
 func (i sysImm) ObjDump(_ disasm.ViewCtx) string {
 	if i.name == "brk" && i.imm16 == 0 {
 		return "brk #0"
@@ -66,6 +46,31 @@ func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) Instr {
 }
 
 // SysImmOf — the system instruction with imm16 (svc/brk/hlt/hvc/udf).
-func SysImmOf(name string, imm16 uint32, enc uint32, shift uint) sysImm {
-	return sysImm{name: name, imm16: imm16, enc: enc, shift: shift}
+func SysImmOf(name string, imm16 uint32, enc uint32, shift uint) Instr {
+	return sysImm{
+		name:  name,
+		imm16: imm16,
+		enc:   enc,
+		shift: shift,
+	}
+}
+
+// Svc — svc #imm16.
+func (Builder) Svc(imm Imm16) Instr {
+	return sysImm{
+		name:  "svc",
+		imm16: imm.v,
+		enc:   0xD4000001,
+		shift: 5,
+	}
+}
+
+// Brk — brk #imm16.
+func (Builder) Brk(imm Imm16) Instr {
+	return sysImm{
+		name:  "brk",
+		imm16: imm.v,
+		enc:   0xD4200000,
+		shift: 5,
+	}
 }

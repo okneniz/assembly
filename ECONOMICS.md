@@ -49,6 +49,42 @@ to full llvm print/input parity; the stale MovElem schema deleted and
 the legacy mov fallback hardened against vector operands. Audit at
 conflict=0; docker and rt-vm gates green throughout.
 
+## 09-09 — the style unification
+
+The whole codebase brought to one style under five owner rules: structs
+are created by constructors; literals name their fields; complex
+literals are multi-line; no vars outside functions; no heavy
+computation at call sites (parsec combinators nested inside calls,
+rebuilt per invocation). The rule-4/rule-5 conflict resolves with the
+owner's patterns: non-recursive combinators are built as LOCAL vars
+captured by the returned closure; mutually recursive grammars live in
+structs whose fields are assigned in the constructor (asm/expr's
+precedence ladder, the arm64 operand grammar, every backend). What
+remains at package level is data Go cannot make const: the generated
+and literal tables (built once by named constructors — armCtors now
+includes the by-element registrations without init() mutation), the Err
+sentinels, the register singletons of the public DSL, and the decode
+trees (the DecodeWord export and the assembler's self-verify need them
+globally). The per-call construction hot spots are gone: arch word
+readers are plain byte loops (bytes.ReadAs built a fresh Count per
+word), the elf/macho field readers likewise, and the rt harness holds
+one shared backend instead of assembling every line with a fresh
+grammar. Cost of the only API break (pre-1.0): the four exported expr
+combinator vars became functions. Net effect: arm64 Parse +67%
+instr/s at −77% allocations, riscv Parse ×5.1, the rt corpus run is
+faster than on main. The second pass set the vocabulary and file order:
+bytes combinators speak decoder (arch Parse→MakeDecoder, parser.go→
+decoder.go), rune combinators speak parser (every grammar), constructors
+carry the make prefix and combinator values are imperative (parseWord,
+decodeHalfLE); Backend methods live in backend.go, per-instruction types
+in instr.go, and the lint gate — funcorder, decorder, gochecknoinits
+newly enabled — runs at zero issues. The review pass finished the constructor
+program: every instruction struct is assembled ONLY in its newX constructor
+(the Builder method validates and delegates, the decoder extracts fields and
+delegates; the pass-through Builder{}.X calls are gone, replaced by exported
+NewX constructors for the assembler layer), and the per-instruction file order
+is type, constructor, methods, Builder method, decoder.
+
 ## Totals
 
 | Period | What | Days | Go lines | Go files | Sessions | Requests | Tokens in | Tokens out |
@@ -57,7 +93,8 @@ conflict=0; docker and rt-vm gates green throughout.
 | 08-28 … 08-29 | LoongArch: 248 instructions, pseudo layer, property suite, 3 VMs | 2 | 25,644 | 558 | 21 | 1,215 | ~321M | ~1.02M |
 | 09-03 … 09-08 | prog DSL, Mach-O writer, llvm-mc parity, arch exodus | 5 | 9,650 | 202 | 3 | ~90 | — | — |
 | 09-06 … 09-08 | arm64 ISA-audit closeout: 5 conflicts, SIMD copy family, MOV alias | 3 | 534 | 16 | 3 | — | — | — |
-| **total** | | **26** | **115,390** | **1,216** | **144** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-09 | style unification: constructors, grammar structs, decoder/parser vocabulary, lint at zero | 1 | +1,639 | 200 | 1 | — | — | — |
+| **total** | | **27** | **117,029** | **1,349** | **145** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

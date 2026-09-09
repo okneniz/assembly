@@ -76,7 +76,7 @@ func main() {
 	ours := map[uint64]string{}
 	switch kind {
 	case file.ArchARM64:
-		insts, err := arm64.Parse()(bytes.Buffer(sec.Data))
+		insts, err := arm64.MakeDecoder()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
@@ -89,7 +89,7 @@ func main() {
 			off += uint64(in.Len())
 		}
 	case file.ArchRISCV64:
-		insts, err := riscv.Parse()(bytes.Buffer(sec.Data))
+		insts, err := riscv.MakeDecoder()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)
@@ -102,7 +102,7 @@ func main() {
 			off += uint64(in.Len())
 		}
 	case file.ArchLOONGARCH64:
-		insts, err := loong64.Parse()(bytes.Buffer(sec.Data))
+		insts, err := loong64.MakeDecoder()(bytes.Buffer(sec.Data))
 		if err != nil {
 			fmt.Fprintln(os.Stderr, "decode:", err)
 			os.Exit(1)

@@ -16,37 +16,21 @@ type Movz struct {
 	imm16, hw uint32
 }
 
+// newMovz - the Movz constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newMovz(b base, rd string, imm16 uint32, hw uint32) Movz {
+	return Movz{
+		base:  b,
+		rd:    rd,
+		imm16: imm16,
+		hw:    hw,
+	}
+}
+
 const (
 	movzX uint32 = 0xD2800000
 	movzW uint32 = 0x52800000
 )
-
-// Movz — movz rd, #imm16, lsl #hw*16 (displayed as mov).
-// The 32-bit form allows only Hw0/Hw1 (shift up to #16).
-func (Builder) Movz(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Movz",
-		"rd",
-		"x/w register, sp not allowed (register 31 reads as zr)",
-		classX,
-		classW,
-		classXZR,
-		classWZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireHwW(rd, "Movz", hw); err != nil {
-		return nil, err
-	}
-
-	return Movz{
-		rd:    rd.name(),
-		imm16: imm.v,
-		hw:    uint32(hw),
-	}, nil
-}
 
 func (i Movz) ObjDump(_ disasm.ViewCtx) string {
 	is64 := i.rd[0] == 'x'
@@ -76,11 +60,29 @@ func (i Movz) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-func decodeMovz(w uint32) Instr {
-	return Movz{
-		base:  newBase(w),
-		rd:    armRegName(w&0x1f, w>>31&1 == 1),
-		imm16: w >> 5 & 0xffff,
-		hw:    w >> 21 & 0x3,
+// Movz — movz rd, #imm16, lsl #hw*16 (displayed as mov).
+// The 32-bit form allows only Hw0/Hw1 (shift up to #16).
+func (Builder) Movz(rd Reg, imm Imm16, hw Hw) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Movz",
+		"rd",
+		"x/w register, sp not allowed (register 31 reads as zr)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	); err != nil {
+		return nil, err
 	}
+
+	if err := requireHwW(rd, "Movz", hw); err != nil {
+		return nil, err
+	}
+
+	return newMovz(base{}, rd.name(), imm.v, uint32(hw)), nil
+}
+
+func decodeMovz(w uint32) Instr {
+	return newMovz(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), w>>5&0xffff, w>>21&0x3)
 }

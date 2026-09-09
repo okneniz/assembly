@@ -20,24 +20,6 @@ const (
 	ldarWEnc uint32 = 0x88DFFC00 // ldar wt, [xn]
 )
 
-// Ldar — ldar rt, [rn]: rt — x/w register (register 31 reads as
-// zr), rn — x register or SP (register 31 in the base reads as sp).
-func (Builder) Ldar(rt, rn Reg) (Instr, error) {
-	if err := lsOperand(rt, rn, "Ldar"); err != nil {
-		return nil, err
-	}
-
-	enc := ldarWEnc
-	if rt.Is64() {
-		enc = ldarXEnc
-	}
-
-	return Ldar{
-		atomic: newAtomic(rt.name(), rn.name()),
-		enc:    enc,
-	}, nil
-}
-
 func decodeLdarOf(enc uint32, x64 bool) func(uint32) Instr {
 	return func(w uint32) Instr {
 		return Ldar{
@@ -54,4 +36,22 @@ func (i Ldar) ObjDump(_ disasm.ViewCtx) string {
 
 func (i Ldar) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldar")
+}
+
+// Ldar — ldar rt, [rn]: rt — x/w register (register 31 reads as
+// zr), rn — x register or SP (register 31 in the base reads as sp).
+func (Builder) Ldar(rt, rn Reg) (Instr, error) {
+	if err := lsOperand(rt, rn, "Ldar"); err != nil {
+		return nil, err
+	}
+
+	enc := ldarWEnc
+	if rt.Is64() {
+		enc = ldarXEnc
+	}
+
+	return Ldar{
+		atomic: newAtomic(rt.name(), rn.name()),
+		enc:    enc,
+	}, nil
 }

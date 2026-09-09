@@ -13,10 +13,28 @@ type SubExt struct {
 	extBase
 }
 
+// newSubExt - the SubExt constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newSubExt(b base, eb extBase) SubExt {
+	return SubExt{
+		base:    b,
+		extBase: eb,
+	}
+}
+
 const (
 	SubExtX uint32 = 0xCB200000
 	SubExtW uint32 = 0x4B200000
 )
+
+func (i SubExt) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sub %s, %s, %s%s", addSubRegName(i.rdNum, i.isf, false),
+		addSubRegName(i.rnNum, i.isf, false), addSubRegName(i.rmNum, i.isf, false), i.extMod(false))
+}
+
+func (i SubExt) Encode(w io.Writer) (int64, error) {
+	return i.extWrite(w, SubExtX, SubExtW, "sub")
+}
 
 // SubExt — sub rd, rn, rm, ext #imm3. Register 31 reads as
 // sp/wsp; ext — uxtb/uxth/uxtw/uxtx/sxtb/sxth/sxtw/sxtx; imm3 — 0..7.
@@ -48,21 +66,9 @@ func (Builder) SubExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewSubExt: operand imm3: %d is out of 0..7", imm3)
 	}
 
-	return SubExt{extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64())}, nil
+	return newSubExt(base{}, newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64())), nil
 }
 
 func decodeSubExt(w uint32) Instr {
-	return SubExt{
-		base:    newBase(w),
-		extBase: decodeExtBase(w),
-	}
-}
-
-func (i SubExt) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sub %s, %s, %s%s", addSubRegName(i.rdNum, i.isf, false),
-		addSubRegName(i.rnNum, i.isf, false), addSubRegName(i.rmNum, i.isf, false), i.extMod(false))
-}
-
-func (i SubExt) Encode(w io.Writer) (int64, error) {
-	return i.extWrite(w, SubExtX, SubExtW, "sub")
+	return newSubExt(newBase(w), decodeExtBase(w))
 }

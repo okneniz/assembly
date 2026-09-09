@@ -54,7 +54,7 @@ func TestISADirectMatch(t *testing.T) {
 		name        string
 		mask, value uint32
 	}
-	cur, err := Parse()(bytes.Buffer(ts.Data))
+	cur, err := MakeDecoder()(bytes.Buffer(ts.Data))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}

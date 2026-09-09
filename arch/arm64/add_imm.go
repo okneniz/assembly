@@ -18,36 +18,23 @@ type AddImm struct {
 	isf          bool
 }
 
+// newAddImm - the AddImm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newAddImm(b base, rdNum uint32, rnNum uint32, imm12 uint32, shift bool, isf bool) AddImm {
+	return AddImm{
+		base:  b,
+		rdNum: rdNum,
+		rnNum: rnNum,
+		imm12: imm12,
+		shift: shift,
+		isf:   isf,
+	}
+}
+
 const (
 	AddImmX uint32 = 0x91000000
 	AddImmW uint32 = 0x11000000
 )
-
-// AddImm — add rd, rn, #imm12[, lsl #12]. Register 31 reads as
-// sp/wsp (XZR/WZR are not allowed — use SP/WSP).
-func (Builder) AddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	if err := requireClass(rd, "AddImm", "rd", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "AddImm", "rn", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("AddImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return AddImm{
-		rdNum: rd.bits(),
-		rnNum: rn.bits(),
-		imm12: imm.v,
-		shift: sh == LSL12,
-		isf:   rd.Is64(),
-	}, nil
-}
 
 func (i AddImm) ObjDump(_ disasm.ViewCtx) string {
 	rd := addSubRegName(i.rdNum, i.isf, false)
@@ -84,13 +71,26 @@ func (i AddImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-func decodeAddImm(w uint32) Instr {
-	return AddImm{
-		base:  newBase(w),
-		rdNum: w & 0x1f,
-		rnNum: w >> 5 & 0x1f,
-		imm12: w >> 10 & 0xfff,
-		shift: w>>22&1 == 1,
-		isf:   w>>31&1 == 1,
+// AddImm — add rd, rn, #imm12[, lsl #12]. Register 31 reads as
+// sp/wsp (XZR/WZR are not allowed — use SP/WSP).
+func (Builder) AddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
+	if err := requireClass(rd, "AddImm", "rd", "register 31 reads as sp/wsp — use SP/WSP",
+		classX, classW, classSP, classWSP); err != nil {
+		return nil, err
 	}
+
+	if err := requireClass(rn, "AddImm", "rn", "register 31 reads as sp/wsp — use SP/WSP",
+		classX, classW, classSP, classWSP); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("AddImm", rd, rn); err != nil {
+		return nil, err
+	}
+
+	return newAddImm(base{}, rd.bits(), rn.bits(), imm.v, sh == LSL12, rd.Is64()), nil
+}
+
+func decodeAddImm(w uint32) Instr {
+	return newAddImm(newBase(w), w&0x1f, w>>5&0x1f, w>>10&0xfff, w>>22&1 == 1, w>>31&1 == 1)
 }

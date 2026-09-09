@@ -106,7 +106,11 @@ type secBuf struct {
 }
 
 func newSecBuf(name string, nobits bool) *secBuf {
-	return &secBuf{name: name, nobits: nobits, subs: map[int]*subBuf{}}
+	return &secBuf{
+		name:   name,
+		nobits: nobits,
+		subs:   map[int]*subBuf{},
+	}
 }
 
 // secSize is the full section size (the sum of subsections; in the layout
@@ -182,6 +186,15 @@ type poolEntry struct {
 	name string
 	expr *expr.Expr
 	slot int
+}
+
+// newPoolEntry - a pool slot under its auto-name.
+func newPoolEntry(name string, expr *expr.Expr, slot int) poolEntry {
+	return poolEntry{
+		name: name,
+		expr: expr,
+		slot: slot,
+	}
 }
 
 type assembler struct {
@@ -346,8 +359,8 @@ func (a *assembler) finalizeLayout() {
 
 // maxLayoutIterations bounds the layout relaxation: consecutive walks must
 // agree on the sizes well before this (sizes stabilize once the value-driven
-// decisions stop flipping); a layout that still changes is an oscillation
-// bug, reported instead of looping forever.
+// decisions stop flipping); a layout that still changes is an oscillation -
+// reported as an error instead of looping forever.
 const maxLayoutIterations = 16
 
 // walkLayout is pass 1: the layout walk, relaxed to a fixpoint. Sizes may
@@ -439,6 +452,14 @@ type frozenLocal struct {
 	addr    uint64
 }
 
+// newFrozenLocal - a snapshot entry of a numeric local definition.
+func newFrozenLocal(stmtIdx int, addr uint64) frozenLocal {
+	return frozenLocal{
+		stmtIdx: stmtIdx,
+		addr:    addr,
+	}
+}
+
 // lookup resolves a symbol name against the snapshot; numeric local
 // references pick the nearest definition relative to statement refIdx (as
 // resolveLocal does against the live table).
@@ -494,8 +515,9 @@ func (a *assembler) snapshotSyms() *frozenSyms {
 	for n, defs := range a.numLabels {
 		lst := make([]frozenLocal, len(defs))
 		for i, d := range defs {
-			lst[i] = frozenLocal{stmtIdx: d.stmtIdx, addr: a.labelAddr(d.ref)}
+			lst[i] = newFrozenLocal(d.stmtIdx, a.labelAddr(d.ref))
 		}
+
 		f.local[n] = lst
 	}
 
@@ -512,7 +534,7 @@ func (a *assembler) poolAdd(val *expr.Expr, slot int) {
 		}
 	}
 
-	a.pools[a.curSub] = append(a.pools[a.curSub], poolEntry{name: name, expr: val, slot: slot})
+	a.pools[a.curSub] = append(a.pools[a.curSub], newPoolEntry(name, val, slot))
 }
 
 // emitPoolRecords appends the literal pools to the subsection data (after

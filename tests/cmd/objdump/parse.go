@@ -11,6 +11,10 @@ package objdump
 // other widths are not instructions - objdump prints those as data). The
 // grammar works on the normalized line (Normalize collapses whitespace), so
 // the separators inside columns are single spaces.
+//
+// The grammar is a struct built once per parse run (newLineGrammar, used
+// by ParseByAddr for the whole output): the combinators are values
+// captured by the fields' closures.
 
 import (
 	"bufio"
@@ -18,16 +22,6 @@ import (
 
 	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
-)
-
-var (
-	cHex = parsecstrings.Try(parsecstrings.OneOf("hex digit",
-		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-		'a', 'b', 'c', 'd', 'e', 'f',
-		'A', 'B', 'C', 'D', 'E', 'F'))
-	cSp    = parsecstrings.Try(parsecstrings.Space("space"))
-	cColon = parsecstrings.Try(parsecstrings.Eq("':'", ':'))
-	cByte  = parsecstrings.Count(2, "code byte", cHex)
 )
 
 func isHexRune(r rune) bool {
@@ -45,29 +39,65 @@ func hexVal(r rune) uint64 {
 	}
 }
 
-// cAddr - a hex address up to ':' (>=1 digit) → uint64.
-var cAddr = parsecstrings.Cast(
-	parsecstrings.Some(8, "address", cHex),
-	func(rs []rune) (uint64, error) {
-		var v uint64
-		for _, r := range rs {
-			v = v<<4 | hexVal(r)
-		}
+type runeC = parsec.Combinator[rune, parsecstrings.Position, rune]
 
-		return v, nil
-	},
-)
+// lineGrammar is the objdump output line grammar: the shared atoms and
+// the code-column alternatives.
+type lineGrammar struct {
+	parseHex       runeC
+	parseSpace     runeC
+	parseColon     runeC
+	parseCodeField parsec.Combinator[rune, parsecstrings.Position, []string]
+	parseAddr      parsec.Combinator[rune, parsecstrings.Position, uint64]
+}
+
+// makeLineGrammar builds the whole grammar once.
+func makeLineGrammar() *lineGrammar {
+	g := &lineGrammar{
+		parseHex: parsecstrings.Try(parsecstrings.OneOf("hex digit",
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'a', 'b', 'c', 'd', 'e', 'f',
+			'A', 'B', 'C', 'D', 'E', 'F')),
+		parseSpace: parsecstrings.Try(parsecstrings.Space("space")),
+		parseColon: parsecstrings.Try(parsecstrings.Eq("':'", ':')),
+	}
+
+	// a hex address up to ':' (>=1 digit) → uint64
+	g.parseAddr = parsecstrings.Cast(
+		parsecstrings.Some(8, "address", g.parseHex),
+		func(rs []rune) (uint64, error) {
+			var v uint64
+			for _, r := range rs {
+				v = v<<4 | hexVal(r)
+			}
+
+			return v, nil
+		},
+	)
+
+	codeByte := parsecstrings.Count(2, "code byte", g.parseHex)
+
+	// the machine-code column: bytes (2/4) or a hex word (8/4 digits)
+	g.parseCodeField = parsecstrings.Choice("code field",
+		parsecstrings.Try(g.makeBytesFieldParser(4, codeByte)),
+		parsecstrings.Try(g.makeBytesFieldParser(2, codeByte)),
+		parsecstrings.Try(g.makeWordFieldParser(8)),
+		parsecstrings.Try(g.makeWordFieldParser(4)),
+	)
+
+	return g
+}
 
 // noByteAfter - a guard check for the byte code field: skip spaces and make
 // sure the next token is NOT a two-digit hex byte (otherwise the code column
 // continues with a third/fifth byte - that is data, not an instruction).
 // Peek reads character by character; the position is restored.
-func noByteAfter(
+func (g *lineGrammar) noByteAfter(
 	buf parsec.Buffer[rune, parsecstrings.Position],
 ) parsec.Error[parsecstrings.Position] {
 	start := buf.Position()
 	for {
-		if _, err := cSp(buf); err != nil {
+		if _, err := g.parseSpace(buf); err != nil {
 			break
 		}
 	}
@@ -104,17 +134,20 @@ func noByteAfter(
 // is a separate token: after two hex digits there must be a space or the end
 // of the line (otherwise "ad" inside the mnemonic "add" would be swallowed
 // as a byte).
-func bytesField(n int) parsec.Combinator[rune, parsecstrings.Position, []string] {
+func (g *lineGrammar) makeBytesFieldParser(
+	n int,
+	codeByte parsec.Combinator[rune, parsecstrings.Position, []rune],
+) parsec.Combinator[rune, parsecstrings.Position, []string] {
 	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
 		toks := make([]string, 0, n)
 		for i := range n {
 			if i > 0 {
-				if _, err := cSp(buf); err != nil {
+				if _, err := g.parseSpace(buf); err != nil {
 					return nil, err
 				}
 			}
 
-			t, err := cByte(buf)
+			t, err := codeByte(buf)
 			if err != nil {
 				return nil, err
 			}
@@ -131,7 +164,7 @@ func bytesField(n int) parsec.Combinator[rune, parsecstrings.Position, []string]
 			toks = append(toks, string(t))
 		}
 
-		if err := noByteAfter(buf); err != nil {
+		if err := g.noByteAfter(buf); err != nil {
 			return nil, err
 		}
 
@@ -140,9 +173,13 @@ func bytesField(n int) parsec.Combinator[rune, parsecstrings.Position, []string]
 }
 
 // wordField - exactly n hex digits as a single word (4 or 8).
-func wordField(n int) parsec.Combinator[rune, parsecstrings.Position, []string] {
+func (g *lineGrammar) makeWordFieldParser(
+	n int,
+) parsec.Combinator[rune, parsecstrings.Position, []string] {
+	digits := parsecstrings.Count(n, "code word", g.parseHex)
+
 	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
-		rs, err := parsecstrings.Count(n, "code word", cHex)(buf)
+		rs, err := digits(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -160,43 +197,43 @@ func wordField(n int) parsec.Combinator[rune, parsecstrings.Position, []string] 
 	}
 }
 
-// cCodeField - the machine-code column: bytes (2/4) or a hex word (8/4
-// digits).
-var cCodeField = parsecstrings.Choice("code field",
-	parsecstrings.Try(bytesField(4)),
-	parsecstrings.Try(bytesField(2)),
-	parsecstrings.Try(wordField(8)),
-	parsecstrings.Try(wordField(4)),
-)
-
-// cInstrLine - the address, ':' and the code column; the tail (mnemonic and
+// parseInstrLine - the address, ':' and the code column; the tail (mnemonic and
 // operands) is not consumed by the grammar. Returns addr.
-var cInstrLine = func(buf parsec.Buffer[rune, parsecstrings.Position]) (uint64, parsec.Error[parsecstrings.Position]) {
-	addr, err := cAddr(buf)
+func (g *lineGrammar) parseInstrLine(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) (uint64, parsec.Error[parsecstrings.Position]) {
+	addr, err := g.parseAddr(buf)
 	if err != nil {
 		return 0, err
 	}
 
-	if _, err := cColon(buf); err != nil {
+	if _, err := g.parseColon(buf); err != nil {
 		return 0, err
 	}
 
-	if _, err := parsecstrings.SkipMany(cSp, cCodeField)(buf); err != nil {
+	if _, err := parsecstrings.SkipMany(g.parseSpace, g.parseCodeField)(buf); err != nil {
 		return 0, err
 	}
 
 	return addr, nil
 }
 
-// ParseLine recognizes a normalized line as an objdump instruction line and
+// parseLine recognizes a normalized line as an objdump instruction line and
 // returns its address.
-func ParseLine(s string) (uint64, bool) {
-	addr, err := parsecstrings.ParseString(s, cInstrLine)
+func (g *lineGrammar) parseLine(s string) (uint64, bool) {
+	addr, err := parsecstrings.ParseString(s, g.parseInstrLine)
 	if err != nil {
 		return 0, false
 	}
 
 	return addr, true
+}
+
+// ParseLine recognizes a normalized line as an objdump instruction line and
+// returns its address (one line: the grammar is built per call; for whole
+// outputs use ParseByAddr, which builds it once).
+func ParseLine(s string) (uint64, bool) {
+	return makeLineGrammar().parseLine(s)
 }
 
 // Normalize collapses whitespace sequences into single spaces and trims the
@@ -228,6 +265,8 @@ func StripComments(s string) string {
 // (instruction lines only; section headers and symbol tables are filtered out
 // by the grammar).
 func ParseByAddr(output string) map[uint64]string {
+	g := makeLineGrammar()
+
 	out := make(map[uint64]string)
 	scanner := bufio.NewScanner(strings.NewReader(output))
 	scanner.Buffer(make([]byte, 0, 1024), 10*1024*1024)
@@ -238,7 +277,7 @@ func ParseByAddr(output string) map[uint64]string {
 		}
 
 		norm := Normalize(raw)
-		addr, ok := ParseLine(norm)
+		addr, ok := g.parseLine(norm)
 		if !ok {
 			continue
 		}

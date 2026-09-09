@@ -16,6 +16,24 @@ type Ldarb struct {
 
 const ldarbEnc uint32 = 0x08DFFC00 // ldarb wt, [xn]
 
+func decodeLdarbOf(enc uint32, x64 bool) func(uint32) Instr {
+	return func(w uint32) Instr {
+		return Ldarb{
+			base:   newBase(w),
+			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
+			enc:    enc,
+		}
+	}
+}
+
+func (i Ldarb) ObjDump(_ disasm.ViewCtx) string {
+	return "ldarb " + i.atText()
+}
+
+func (i Ldarb) Encode(w io.Writer) (int64, error) {
+	return i.atWrite(w, i.enc, "ldarb")
+}
+
 // Ldarb — ldarb rt, [rn]: byte access, rt — w register only
 // (register 31 reads as wzr), rn — x register or SP (register 31 in the
 // base reads as sp).
@@ -40,22 +58,4 @@ func (Builder) Ldarb(rt, rn Reg) (Instr, error) {
 		atomic: newAtomic(rt.name(), rn.name()),
 		enc:    ldarbEnc,
 	}, nil
-}
-
-func decodeLdarbOf(enc uint32, x64 bool) func(uint32) Instr {
-	return func(w uint32) Instr {
-		return Ldarb{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}
-	}
-}
-
-func (i Ldarb) ObjDump(_ disasm.ViewCtx) string {
-	return "ldarb " + i.atText()
-}
-
-func (i Ldarb) Encode(w io.Writer) (int64, error) {
-	return i.atWrite(w, i.enc, "ldarb")
 }

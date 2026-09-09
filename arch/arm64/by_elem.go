@@ -47,49 +47,6 @@ var byElemLong = map[string]bool{
 	"smull": true, "sqdmull": true, "umlal": true, "umlsl": true, "umull": true,
 }
 
-func decodeByElem(w uint32) Instr {
-	u, size, opc, q := w>>29&1, w>>22&3, w>>12&0xf, w>>30&1
-	var name string
-	if size == 1 || size == 2 {
-		name = byElemIntNames[u][opc]
-	} else {
-		name = byElemFPNames[u][opc]
-	}
-
-	long := byElemLong[name]
-	// index: MSB-aligned bits of the field {b11,b21,b20,b19}
-	lanes := 4 - size // .b→4 .h→3 .s→2 .d→1
-	field := w>>11&1<<3 | w>>21&1<<2 | w>>20&1<<1 | w>>19&1
-	idx := field >> (4 - lanes)
-	var rmN uint32
-	if size == 1 {
-		rmN = w >> 16 & 0xf // .h source: Vm is 4-bit
-	} else {
-		rmN = w >> 16 & 0x1f
-	}
-
-	name2 := name
-	if long && q == 1 {
-		name2 += "2"
-	}
-
-	return ByElem{
-		base: newBase(w),
-		name: name2,
-		q:    q,
-		size: size,
-		idx:  idx,
-		rot:  opc / 2 * 90 % 360, // fcmla: 0001→0, 0011→90, 0101→180, 0111→270
-		rd:   vReg(w & 0x1f),
-		rn:   vReg(w >> 5 & 0x1f),
-		rm:   vReg(rmN),
-		rdN:  w & 0x1f,
-		rnN:  w >> 5 & 0x1f,
-		rmN:  rmN,
-		long: long,
-	}
-}
-
 func (i ByElem) ObjDump(_ disasm.ViewCtx) string {
 	var arr string
 	switch {
@@ -154,3 +111,46 @@ func (i ByElem) Encode(w io.Writer) (int64, error) {
 var ByElemIntNames = byElemIntNames
 var ByElemFPNames = byElemFPNames
 var ByElemLong = byElemLong
+
+func decodeByElem(w uint32) Instr {
+	u, size, opc, q := w>>29&1, w>>22&3, w>>12&0xf, w>>30&1
+	var name string
+	if size == 1 || size == 2 {
+		name = byElemIntNames[u][opc]
+	} else {
+		name = byElemFPNames[u][opc]
+	}
+
+	long := byElemLong[name]
+	// index: MSB-aligned bits of the field {b11,b21,b20,b19}
+	lanes := 4 - size // .b→4 .h→3 .s→2 .d→1
+	field := w>>11&1<<3 | w>>21&1<<2 | w>>20&1<<1 | w>>19&1
+	idx := field >> (4 - lanes)
+	var rmN uint32
+	if size == 1 {
+		rmN = w >> 16 & 0xf // .h source: Vm is 4-bit
+	} else {
+		rmN = w >> 16 & 0x1f
+	}
+
+	name2 := name
+	if long && q == 1 {
+		name2 += "2"
+	}
+
+	return ByElem{
+		base: newBase(w),
+		name: name2,
+		q:    q,
+		size: size,
+		idx:  idx,
+		rot:  opc / 2 * 90 % 360, // fcmla: 0001→0, 0011→90, 0101→180, 0111→270
+		rd:   vReg(w & 0x1f),
+		rn:   vReg(w >> 5 & 0x1f),
+		rm:   vReg(rmN),
+		rdN:  w & 0x1f,
+		rnN:  w >> 5 & 0x1f,
+		rmN:  rmN,
+		long: long,
+	}
+}

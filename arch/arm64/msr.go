@@ -14,6 +14,24 @@ type Msr struct {
 	rt, sysreg string
 }
 
+// newMsr - the Msr constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newMsr(b base, rt string, sysreg string) Msr {
+	return Msr{
+		base:   b,
+		rt:     rt,
+		sysreg: sysreg,
+	}
+}
+
+func (i Msr) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("msr %s, %s", i.sysreg, i.rt)
+}
+
+func (i Msr) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, 0xD5100000|regBitsX(i.rt)|invSysRegChecked(i.sysreg)<<5)
+}
+
 // Msr — msr sysreg, rt. rt — only x registers (register 31 reads
 // as zr); sysreg — an architectural name from the registry (SCTLR_EL1,
 // NZCV, ...) or the objdump form S<op0>_<op1>_C<CRn>_C<CRm>_<op2>
@@ -34,21 +52,9 @@ func (Builder) Msr(sysreg string, rt Reg) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewMsr: operand sysreg: %w", err)
 	}
 
-	return Msr{rt: rt.name(), sysreg: sysreg}, nil
+	return newMsr(base{}, rt.name(), sysreg), nil
 }
 
 func decodeMsr(w uint32) Instr {
-	return Msr{
-		base:   newBase(w),
-		rt:     regNameX(w & 0x1f),
-		sysreg: sysRegName(w >> 5 & 0x7fff),
-	}
-}
-
-func (i Msr) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("msr %s, %s", i.sysreg, i.rt)
-}
-
-func (i Msr) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, 0xD5100000|regBitsX(i.rt)|invSysRegChecked(i.sysreg)<<5)
+	return newMsr(newBase(w), regNameX(w&0x1f), sysRegName(w>>5&0x7fff))
 }

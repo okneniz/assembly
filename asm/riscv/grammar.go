@@ -4,6 +4,11 @@ package riscv
 // the arch decoding table) and operands - memory off(reg), a register
 // (ABI or xN/fN), an expression (asm/expr). It builds unevaluated
 // operands (Op): value slots are expressions, evaluated at resolution.
+//
+// The grammar is a struct built once per Backend (newGrammar): the
+// combinators are values captured by the closures; the mem-operand
+// branch refers to the register operand through the struct (lazily, the
+// fields are all assigned before the first parse).
 
 import (
 	"fmt"
@@ -12,15 +17,28 @@ import (
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
+	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 )
 
-// asmMnemonics is all accepted mnemonics (the arch decoding table;
-// pseudo adds its own layer). It is built by a function in a var
-// initialization: cMnemonic (MapStrings builds a trie at creation)
-// depends on asmMnemonics, while init() would run after the vars.
-var asmMnemonics = buildAsmMnemonics()
+type operand = parsec.Combinator[rune, parsecstrings.Position, Op]
 
+// asmReg is a register from the source: an ABI name or xN/fN.
+type asmReg struct {
+	num uint32
+	fp  bool
+}
+
+// newAsmReg - a register by number and kind.
+func newAsmReg(num uint32, fp bool) asmReg {
+	return asmReg{
+		num: num,
+		fp:  fp,
+	}
+}
+
+// buildAsmMnemonics is all accepted mnemonics (the arch decoding table;
+// pseudo adds its own layer).
 func buildAsmMnemonics() map[string]string {
 	m := map[string]string{}
 	for _, name := range arch.Mnemonics() {
@@ -30,59 +48,21 @@ func buildAsmMnemonics() map[string]string {
 	return m
 }
 
-// cMnemonic is the mnemonic table (longest-match).
-var cMnemonic = parsecstrings.MapStrings("mnemonic", asmMnemonics)
-
-// asmReg is a register from the source: an ABI name or xN/fN.
-type asmReg struct {
-	num uint32
-	fp  bool
-}
-
-// asmRegNum maps a name -> register (int + FP, both notations). It is
-// built in a var initialization: cRegOperand (MapStrings builds a
-// trie at creation) depends on it, while init() would run after the
-// vars.
-var asmRegNum = buildAsmRegNum()
-
+// buildAsmRegNum maps a name -> register (int + FP, both notations).
 func buildAsmRegNum() map[string]asmReg {
 	m := map[string]asmReg{}
 	for i, n := range arch.RegNames() {
-		m[n] = asmReg{num: uint32(i), fp: false}
-		m[fmt.Sprintf("x%d", i)] = asmReg{num: uint32(i), fp: false}
+		m[n] = newAsmReg(uint32(i), false)
+		m[fmt.Sprintf("x%d", i)] = newAsmReg(uint32(i), false)
 	}
 
 	for i, n := range arch.FpRegNames() {
-		m[n] = asmReg{num: uint32(i), fp: true}
-		m[fmt.Sprintf("f%d", i)] = asmReg{num: uint32(i), fp: true}
+		m[n] = newAsmReg(uint32(i), true)
+		m[fmt.Sprintf("f%d", i)] = newAsmReg(uint32(i), true)
 	}
 
 	return m
 }
-
-// cOperand parses an operand: memory | register | expression.
-var cOperand = parsecstrings.Choice("operand",
-	parsecstrings.Try(cMemOperand),
-	parsecstrings.Try(cRegOperand),
-	parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, Op] {
-		return func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
-			e, err := expr.CExpr()(buf)
-			if err != nil {
-				return Op{}, err
-			}
-
-			return OpExpr(e), nil
-		}
-	}()),
-)
-
-// cRegOperand parses a register name (ABI or xN/fN).
-var cRegOperand = parsecstrings.Cast(
-	parsecstrings.MapStrings("register", asmRegNum),
-	func(r asmReg) (Op, error) {
-		return OpReg(regName(r)), nil
-	},
-)
 
 // regName restores the canonical name (the arch name tables are used
 // to match the decoder output).
@@ -94,18 +74,45 @@ func regName(r asmReg) string {
 	return arch.RegNames()[r.num]
 }
 
-// cMemOperand — [expr] '(' reg ')': "0x8(sp)", "(a0)".
-var cMemOperand = func() parsec.Combinator[rune, parsecstrings.Position, Op] {
+// grammar is the instruction grammar of the syntax layer: the mnemonic
+// trie (longest-match), the register operand, the full operand
+// alternative, the shared expression ladder and the comma atom.
+type grammar struct {
+	parseMnemonic   parsec.Combinator[rune, parsecstrings.Position, string]
+	parseRegOperand operand
+	parseOperand    operand
+	parseComma      parsec.Combinator[rune, parsecstrings.Position, rune]
+	parseExpr       parsec.Combinator[rune, parsecstrings.Position, *expr.Expr]
+}
+
+// newGrammar builds the whole grammar once; the ready combinators are
+// captured by the backend and reused for every line.
+func makeGrammar() *grammar {
+	g := &grammar{
+		parseMnemonic: parsecstrings.MapStrings("mnemonic", buildAsmMnemonics()),
+		parseComma:    expr.MakeCommaParser(),
+		parseExpr:     expr.MakeExprParser(),
+	}
+
+	g.parseRegOperand = parsecstrings.Cast(
+		parsecstrings.MapStrings("register", buildAsmRegNum()),
+		func(r asmReg) (Op, error) {
+			return OpReg(regName(r)), nil
+		},
+	)
+
 	lparen := parsecstrings.Try(parsecstrings.Eq("'('", '('))
 	rparen := parsecstrings.Try(parsecstrings.Eq("')'", ')'))
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
+
+	// memory parseOperand: [expr] '(' reg ')' - "0x8(sp)", "(a0)"
+	memOperand := func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
 		var off *expr.Expr
 		if r, ok := expr.PeekRune(buf); ok && r == '(' {
 			if _, err := lparen(buf); err != nil {
 				return Op{}, err
 			}
 		} else {
-			e, err := expr.CExpr()(buf)
+			e, err := g.parseExpr(buf)
 			if err != nil {
 				return Op{}, err
 			}
@@ -117,7 +124,7 @@ var cMemOperand = func() parsec.Combinator[rune, parsecstrings.Position, Op] {
 			}
 		}
 
-		r, err := cRegOperand(buf)
+		r, err := g.parseRegOperand(buf)
 		if err != nil {
 			return Op{}, err
 		}
@@ -128,7 +135,24 @@ var cMemOperand = func() parsec.Combinator[rune, parsecstrings.Position, Op] {
 
 		return OpMemExpr(r.Reg(), off), nil
 	}
-}()
+
+	exprOperand := func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
+		e, err := g.parseExpr(buf)
+		if err != nil {
+			return Op{}, err
+		}
+
+		return OpExpr(e), nil
+	}
+
+	g.parseOperand = parsecstrings.Choice("operand",
+		parsecstrings.Try(memOperand),
+		parsecstrings.Try(g.parseRegOperand),
+		parsecstrings.Try(exprOperand),
+	)
+
+	return g
+}
 
 // skipSpaces consumes spaces (except the newline).
 func skipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
@@ -143,16 +167,18 @@ func peekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 
 // ParseOps parses the operand list after the mnemonic (to the end of
 // the line, comma-separated) - the assembler's operand grammar.
-func ParseOps(
+func (b *Backend) ParseOps(
 	buf parsec.Buffer[rune, parsecstrings.Position],
 ) ([]Op, parsec.Error[parsecstrings.Position]) {
+	g := b.g
+
 	var ops []Op
 	expr.SkipSpaces(buf)
 	if expr.AtEOL(buf) {
 		return ops, nil
 	}
 
-	op, err := cOperand(buf)
+	op, err := g.parseOperand(buf)
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +187,7 @@ func ParseOps(
 	for {
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		if _, err := expr.CComma(buf); err != nil {
+		if _, err := g.parseComma(buf); err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return nil, rerr
 			}
@@ -170,7 +196,7 @@ func ParseOps(
 		}
 
 		expr.SkipSpaces(buf)
-		op, err := cOperand(buf)
+		op, err := g.parseOperand(buf)
 		if err != nil {
 			return nil, err
 		}
@@ -179,4 +205,59 @@ func ParseOps(
 	}
 
 	return ops, nil
+}
+
+// Instruction is the grammar "mnemonic operands" (comma-separated
+// operands); built once in New (b.newInstruction).
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+	return b.parseInstruction
+}
+
+// newInstruction builds the instruction combinator: mnemonic
+// (longest-match + boundary check) and the operand list.
+func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
+		pos := buf.Position()
+		skipSpaces(buf)
+		name, err := b.g.parseMnemonic(buf)
+		if err != nil {
+			return nil, err
+		}
+
+		// mnemonic boundary: followed by a space/comma/end of line
+		if r, ok := peekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' {
+			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", name))
+		}
+
+		ops, err := b.ParseOps(buf)
+		if err != nil {
+			return nil, err
+		}
+
+		return newInstr(name, ops, b), nil
+	}
+}
+
+// Comment parses '#' and '//' to the end of the line; built once in New.
+func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
+	return b.parseComment
+}
+
+// newComment builds the comment combinator ('#' and '//' to the end of
+// the line).
+func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
+	hash := parsecstrings.Cast(
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", '#')), body),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+	slash := parsecstrings.Cast(
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String("comment", "//")), body),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+	return parsecstrings.Choice("comment", parsecstrings.Try(slash), parsecstrings.Try(hash))
 }

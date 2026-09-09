@@ -1,13 +1,13 @@
 package arm64
 
-import arch "github.com/okneniz/assembly/arch/arm64"
+import (
+	"errors"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
 
 // Assembler constructors for hints and system hints: dmb st, yield,
 // dc zva, prfm pldl1keep (fixed forms, like the decode table).
-
-import (
-	"errors"
-)
 
 // newDmb — dmb st (fixed form, like the decode table).
 func newDmb(ops []vOp) (Instr, error) {

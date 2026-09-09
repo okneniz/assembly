@@ -98,10 +98,26 @@ func TestPropertyDepthBoundedByWordBits(t *testing.T) {
 // threshold and the choice of the cutting bit.)
 func TestPropertyDuplicatesCollapse(t *testing.T) {
 	protos := []dtree.Rule[int]{
-		{Mask: 0b1111_0000, Match: 0b1010_0000, Payload: 0},
-		{Mask: 0x8000_0000, Match: 0x8000_0000, Payload: 0},
-		{Mask: 0xF000_0F00, Match: 0x6000_0500, Payload: 0},
-		{Mask: 0, Match: 0, Payload: 0}, // catch-all
+		{
+			Mask:    0b1111_0000,
+			Match:   0b1010_0000,
+			Payload: 0,
+		},
+		{
+			Mask:    0x8000_0000,
+			Match:   0x8000_0000,
+			Payload: 0,
+		},
+		{
+			Mask:    0xF000_0F00,
+			Match:   0x6000_0500,
+			Payload: 0,
+		},
+		{
+			Mask:    0,
+			Match:   0,
+			Payload: 0,
+		}, // catch-all
 	}
 
 	for _, p := range protos {

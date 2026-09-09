@@ -5,32 +5,37 @@
 // symbols, passes).
 // Pseudo-instructions
 // (nop/li/mv/ret/call/la/...) are a layer above this package (pseudo).
-// A mirror of Parse: the operand grammar accepts both GNU-as syntax
+// A mirror of MakeDecoder: the operand grammar accepts both GNU-as syntax
 // and ObjDump()'s own output (round-trip).
 package riscv
 
 import (
-	"fmt"
-
 	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	asm "github.com/okneniz/assembly/asm"
-	"github.com/okneniz/assembly/asm/expr"
 )
 
 // New returns a RISC-V Syntax for asm.Assemble. An instance is
 // intended for a single assembly: ApplyOption mutates the (.option)
 // modes; create separate instances for parallel assemblies.
 func New() *Backend {
-	return &Backend{}
+	b := &Backend{g: makeGrammar()}
+	b.parseInstruction = b.makeInstructionParser()
+	b.parseComment = makeCommentParser()
+	return b
 }
 
 // Backend implements asm.Syntax; it owns the (.option) encoding modes:
 // noRVC disables auto-compression, optStack holds push/pop snapshots.
+// The grammar (mnemonic/operand combinators) is built once in New and
+// captured here - Instruction/Comment return the stored values.
 type Backend struct {
-	noRVC    bool
-	optStack []bool
+	noRVC            bool
+	optStack         []bool
+	g                *grammar
+	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved]
+	parseComment     parsec.Combinator[rune, parsecstrings.Position, string]
 }
 
 // ApplyOption handles .option values: norvc/rvc toggle auto-compression,
@@ -62,71 +67,4 @@ func (b *Backend) ApplyOption(name string) error {
 func (b *Backend) ResetOptions() {
 	b.noRVC = false
 	b.optStack = nil
-}
-
-// Instruction is the grammar "mnemonic operands" (comma-separated
-// operands).
-func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
-		pos := buf.Position()
-		skipSpaces(buf)
-		name, err := cMnemonic(buf)
-		if err != nil {
-			return nil, err
-		}
-
-		// mnemonic boundary: followed by a space/comma/end of line
-		if r, ok := peekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' {
-			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", name))
-		}
-
-		ops, err := ParseOps(buf)
-		if err != nil {
-			return nil, err
-		}
-
-		return instr{mnem: name, ops: ops, be: b}, nil
-	}
-}
-
-// Comment parses '#' and '//' to the end of the line.
-func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
-	body := parsecstrings.Many(4, expr.CNotNL)
-	hash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", '#')), body),
-		func(rs []rune) (string, error) {
-			return string(rs), nil
-		},
-	)
-	slash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String("comment", "//")), body),
-		func(rs []rune) (string, error) {
-			return string(rs), nil
-		},
-	)
-	return parsecstrings.Choice("comment", parsecstrings.Try(slash), parsecstrings.Try(hash))
-}
-
-// instr is an unevaluated instruction (mnemonic + operand slots); it
-// implements Unresolved: Resolve evaluates the expressions and builds
-// the evaluated form (expr -> numbers -> arch.BuildInstr; compression
-// is value-driven - see resolve.go).
-type instr struct {
-	mnem string
-	ops  []Op
-	be   *Backend
-}
-
-// Resolve evaluates the expressions and builds the evaluated
-// instruction; the current .option norvc mode -> NoRVC (compression
-// itself is value-driven, the core relaxes the layout).
-func (in instr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
-	return in.resolve(ctx, in.be != nil && in.be.noRVC)
-}
-
-// ResolveForm evaluates the "mnemonic + operands" form in the ctx
-// environment with the current .option modes (pseudo expansion: each
-// form starts from its own address, pass a derived ctx).
-func (b *Backend) ResolveForm(mnem string, ops []Op, ctx asm.Ctx) (asm.Resolved, error) {
-	return instr{mnem: mnem, ops: ops, be: b}.resolve(ctx, b.noRVC)
 }

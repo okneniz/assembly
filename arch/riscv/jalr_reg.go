@@ -9,8 +9,6 @@ import (
 // JalrReg - the "jalr rs" pseudo-instruction (indirect call): 32-bit jalr ra, 0(rs),
 // not compressed (c.jalr decodes back to different text).
 type JalrReg struct {
-	base
-
 	rs1 string
 }
 

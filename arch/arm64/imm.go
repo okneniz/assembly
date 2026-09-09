@@ -55,33 +55,6 @@ const (
 // instruction constructor.
 type Off int64
 
-// Imm12 — validated value; error when out of range.
-func (Builder) Imm12(v int64) (Imm12, error) {
-	if v < 0 || v > 0xfff {
-		return Imm12{}, fmt.Errorf("arm64.New().Imm12: value %d is out of 0..4095", v)
-	}
-
-	return Imm12{uint32(v)}, nil
-}
-
-// Imm16 — validated value; error when out of range.
-func (Builder) Imm16(v int64) (Imm16, error) {
-	if v < 0 || v > 0xffff {
-		return Imm16{}, fmt.Errorf("arm64.New().Imm16: value %d is out of 0..65535", v)
-	}
-
-	return Imm16{uint32(v)}, nil
-}
-
-// Imm6 — validated value; error when out of range.
-func (Builder) Imm6(v int64) (Imm6, error) {
-	if v < 0 || v > 63 {
-		return Imm6{}, fmt.Errorf("arm64.New().Imm6: value %d is out of 0..63", v)
-	}
-
-	return Imm6{uint32(v)}, nil
-}
-
 func (i Imm12) String() string {
 	return fmt.Sprintf("#0x%x", i.v)
 }
@@ -112,4 +85,31 @@ func (s Sh12) String() string {
 
 func (o Off) String() string {
 	return fmt.Sprintf("#%#x", int64(o))
+}
+
+// Imm12 — validated value; error when out of range.
+func (Builder) Imm12(v int64) (Imm12, error) {
+	if v < 0 || v > 0xfff {
+		return Imm12{}, fmt.Errorf("arm64.New().Imm12: value %d is out of 0..4095", v)
+	}
+
+	return Imm12{v: uint32(v)}, nil
+}
+
+// Imm16 — validated value; error when out of range.
+func (Builder) Imm16(v int64) (Imm16, error) {
+	if v < 0 || v > 0xffff {
+		return Imm16{}, fmt.Errorf("arm64.New().Imm16: value %d is out of 0..65535", v)
+	}
+
+	return Imm16{v: uint32(v)}, nil
+}
+
+// Imm6 — validated value; error when out of range.
+func (Builder) Imm6(v int64) (Imm6, error) {
+	if v < 0 || v > 63 {
+		return Imm6{}, fmt.Errorf("arm64.New().Imm6: value %d is out of 0..63", v)
+	}
+
+	return Imm6{v: uint32(v)}, nil
 }

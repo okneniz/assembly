@@ -154,24 +154,27 @@ func (e *Expr) Eval(resolve func(string) (uint64, bool)) (int64, error) {
 // (arm/riscv Comment), such an operator does not match (Try restores the
 // position).
 func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]] {
-	return parsecstrings.Cast(
-		parsecstrings.Try(func() parsec.Combinator[rune, parsecstrings.Position, string] {
-			return func(buf parsec.Buffer[rune, parsecstrings.Position]) (string, parsec.Error[parsecstrings.Position]) {
-				pos := buf.Position()
-				got, err := parsecstrings.String("operator "+sym, sym)(buf)
-				if err != nil {
-					return "", err
-				}
+	str := parsecstrings.String("operator "+sym, sym)
+	isDiv := sym == "/"
 
-				if sym == "/" {
-					if r, ok := peekRune(buf); ok && r == '/' {
-						return "", parsec.NewParseError(pos, "comment start //")
-					}
-				}
+	scan := func(buf parsec.Buffer[rune, parsecstrings.Position]) (string, parsec.Error[parsecstrings.Position]) {
+		pos := buf.Position()
+		got, err := str(buf)
+		if err != nil {
+			return "", err
+		}
 
-				return got, nil
+		if isDiv {
+			if r, ok := peekRune(buf); ok && r == '/' {
+				return "", parsec.NewParseError(pos, "comment start //")
 			}
-		}()),
+		}
+
+		return got, nil
+	}
+
+	return parsecstrings.Cast(
+		parsecstrings.Try(scan),
 		func(string) (parsec.BinaryOp[*Expr], error) {
 			return func(x, y *Expr) *Expr {
 				return NewExpr(ExprBinary, 0, "", sym, x, y)
@@ -181,9 +184,9 @@ func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.Bina
 }
 
 // binLevel is a precedence level: strictChainl1(term, op1 | op2).
-func binLevel(term parsec.Combinator[rune, parsecstrings.Position, *Expr],
+func binLevel(term Combinator,
 	ops ...parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
-) parsec.Combinator[rune, parsecstrings.Position, *Expr] {
+) Combinator {
 	return strictChainl1(term, parsecstrings.Choice("operator", ops...))
 }
 
@@ -191,9 +194,9 @@ func binLevel(term parsec.Combinator[rune, parsecstrings.Position, *Expr],
 // operand is an error, not silent absorption ("1+" must not assemble as
 // "1").
 func strictChainl1(
-	term parsec.Combinator[rune, parsecstrings.Position, *Expr],
+	term Combinator,
 	op parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
-) parsec.Combinator[rune, parsecstrings.Position, *Expr] {
+) Combinator {
 	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		x, err := term(buf)
 		if err != nil {
@@ -225,63 +228,74 @@ func strictChainl1(
 	}
 }
 
-// cPrimary is a primary expression: (expr) | number | symbol | '.'.
-// cUnary is unary -, ~, + (right-associative) | primary.
-// Precedence levels (low → high): | ^ & << >> + - * / %.
-// Built in init(): the grammar is mutually recursive (primary → parens →
-// expression), a var chain would create an initialization cycle.
-var (
-	cPrimary parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cUnary   parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cMul     parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cAdd     parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cShift   parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cAnd     parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cXor     parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cOr      parsec.Combinator[rune, parsecstrings.Position, *Expr]
-	cExpr    parsec.Combinator[rune, parsecstrings.Position, *Expr]
-)
+// grammar is the precedence ladder of the expression language: primary
+// (parenthesized expression, character literal, local reference, number,
+// symbol), unary - ~ +, then the binary levels from | (lowest) to * / %
+// (highest). It is a STRUCT because the grammar is mutually recursive:
+// primary -> "(expr)" -> expr -> ... -> primary; the inner closures
+// reference the fields, which are all assigned before the first parse.
+//
+// Precedences (low → high): | ^ & << >> + - * / %.
+type grammar struct {
+	primary Combinator
+	unary   Combinator
+	mul     Combinator
+	add     Combinator
+	shift   Combinator
+	and     Combinator
+	xor     Combinator
+	or      Combinator
+	expr    Combinator
+}
 
-func init() {
-	cPrimary = parsecstrings.Choice(
+// newGrammar builds the whole ladder once; the ready Combinators are then
+// reused (captured by the consumers' grammars).
+func makeGrammar() *grammar {
+	g := &grammar{}
+
+	lparen := parsecstrings.Try(parsecstrings.Eq("'('", '('))
+	rparen := parsecstrings.Try(parsecstrings.Eq("')'", ')'))
+
+	// the parenthesized body refers to the top level lazily (through the
+	// field): the ladder above it is assigned below
+	parenBody := func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+		return g.expr(buf)
+	}
+
+	g.primary = parsecstrings.Choice(
 		"operand",
 		parsecstrings.Try(parsecstrings.Between(
-			cLParen,
-			func() parsec.Combinator[rune, parsecstrings.Position, *Expr] {
-				return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
-					return cExpr(buf) // lazy reference for mutual recursion
-				}
-			}(),
-			parsecstrings.SkipMany(cSpace, cRParen),
+			lparen,
+			parenBody,
+			parsecstrings.SkipMany(MakeSpaceParser(), rparen),
 		)),
-		parsecstrings.Try(cCharLit),
+		parsecstrings.Try(makeCharLitParser()),
 		parsecstrings.Try(
-			cLocalRef,
-		), // "0b"/"1f" before the number: "0b1010" is cut off by the lookahead in cLocalRef
-		parsecstrings.Try(cNumber),
-		parsecstrings.Try(cSymbolExpr), // identifier; "." and ".+8" give Sym(".")/binary
+			makeLocalRefParser(),
+		), // "0b"/"1f" before the number: "0b1010" is cut off by the lookahead in newLocalRef
+		parsecstrings.Try(makeNumberParser()),
+		parsecstrings.Try(makeSymbolParser()), // identifier; "." and ".+8" give Sym(".")/binary
 	)
 
-	cUnary = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+	minus := parsecstrings.Try(parsecstrings.Eq("'-'", '-'))
+	tilde := parsecstrings.Try(parsecstrings.Eq("'~'", '~'))
+	plus := parsecstrings.Try(parsecstrings.Eq("'+'", '+'))
+
+	g.unary = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		skipWS(buf)
 		for _, u := range []struct {
 			op string
 			c  parsec.Combinator[rune, parsecstrings.Position, rune]
-		}{{
-			"-",
-			cMinus,
-		}, {
-			"~",
-			cTilde,
-		}, {
-			"+",
-			cPlus,
-		}} {
+		}{
+			{op: "-", c: minus},
+			{op: "~", c: tilde},
+			{op: "+", c: plus},
+		} {
 			if _, err := u.c(buf); err != nil {
 				continue
 			}
 
-			x, xerr := cUnary(buf)
+			x, xerr := g.unary(buf)
 			if xerr != nil {
 				return nil, xerr
 			}
@@ -289,27 +303,32 @@ func init() {
 			return NewExpr(ExprUnary, 0, "", u.op, x, nil), nil
 		}
 
-		return cPrimary(buf)
+		return g.primary(buf)
 	}
 
-	cMul = binLevel(cUnary, op2("*"), op2("/"), op2("%"))
-	cAdd = binLevel(cMul, op2("+"), op2("-"))
-	cShift = binLevel(cAdd, op2("<<"), op2(">>"))
-	cAnd = binLevel(cShift, op2("&"))
-	cXor = binLevel(cAnd, op2("^"))
-	cOr = binLevel(cXor, op2("|"))
-	cExpr = cOr
+	g.mul = binLevel(g.unary, op2("*"), op2("/"), op2("%"))
+	g.add = binLevel(g.mul, op2("+"), op2("-"))
+	g.shift = binLevel(g.add, op2("<<"), op2(">>"))
+	g.and = binLevel(g.shift, op2("&"))
+	g.xor = binLevel(g.and, op2("^"))
+	g.or = binLevel(g.xor, op2("|"))
+	g.expr = g.or
+
+	return g
 }
 
-// CExpr is the whole GAS expression grammar (numbers/symbols/operators).
-// A function, not a var: the levels are built in init() (mutual recursion).
-func CExpr() parsec.Combinator[rune, parsecstrings.Position, *Expr] {
-	return cExpr
+// CExpr is the whole GAS expression grammar (numbers/symbols/operators):
+// a fresh ladder per call; consumers capture the returned value once and
+// reuse it (it holds no mutable state).
+func MakeExprParser() Combinator {
+	return makeGrammar().expr
 }
 
 // ParseExpr parses an expression from a string (for tests and utilities);
 // the whole text must be consumed.
 func ParseExpr(s string) (*Expr, error) {
+	cExpr := MakeExprParser()
+
 	body := func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		e, err := cExpr(buf)
 		if err != nil {

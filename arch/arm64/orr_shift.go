@@ -18,55 +18,32 @@ type OrrShift struct {
 	isf        bool
 }
 
+// newOrrShift - the OrrShift constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newOrrShift(
+	b base,
+	rd string,
+	rn string,
+	rm string,
+	imm6 uint32,
+	shift string,
+	isf bool,
+) OrrShift {
+	return OrrShift{
+		base:  b,
+		rd:    rd,
+		rn:    rn,
+		rm:    rm,
+		imm6:  imm6,
+		shift: shift,
+		isf:   isf,
+	}
+}
+
 const (
 	OrrShiftX uint32 = 0xAA000000
 	OrrShiftW uint32 = 0x2A000000
 )
-
-// OrrShift — orr rd, rn, rm[, shift #imm6] (mov when Rn = zr).
-// Register 31 reads as zr (SP/WSP are not allowed — use XZR/WZR);
-// shift — lsl/lsr/asr/ror.
-func (Builder) OrrShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	if err := requireClass(rd, "OrrShift", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "OrrShift", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "OrrShift", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("OrrShift", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	return OrrShift{
-		rd:    rd.name(),
-		rn:    rn.name(),
-		rm:    rm.name(),
-		imm6:  imm.v,
-		shift: sh.String(),
-		isf:   rd.Is64(),
-	}, nil
-}
-
-func decodeOrrShift(w uint32) Instr {
-	return OrrShift{
-		base:  newBase(w),
-		rd:    armRegName(w&0x1f, w>>31&1 == 1),
-		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
-		imm6:  w >> 10 & 0x3f,
-		shift: shiftNames[w>>22&3],
-		isf:   w>>31&1 == 1,
-	}
-}
 
 func (i OrrShift) ObjDump(_ disasm.ViewCtx) string {
 	zr := zeroReg(i.rd)
@@ -106,4 +83,42 @@ func (i OrrShift) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
+// OrrShift — orr rd, rn, rm[, shift #imm6] (mov when Rn = zr).
+// Register 31 reads as zr (SP/WSP are not allowed — use XZR/WZR);
+// shift — lsl/lsr/asr/ror.
+func (Builder) OrrShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+	if err := requireClass(rd, "OrrShift", "rd", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rn, "OrrShift", "rn", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(rm, "OrrShift", "rm", "register 31 reads as zr — use XZR/WZR",
+		classX, classW, classXZR, classWZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireWidth("OrrShift", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	return newOrrShift(base{}, rd.name(), rn.name(), rm.name(), imm.v, sh.String(), rd.Is64()), nil
+}
+
+func decodeOrrShift(w uint32) Instr {
+	return newOrrShift(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		w>>10&0x3f,
+		shiftNames[w>>22&3],
+		w>>31&1 == 1,
+	)
 }

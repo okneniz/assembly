@@ -5,6 +5,7 @@ package tests
 // toolchain is the one assembly binary, no cc/ld/codesign anywhere.
 
 import (
+	"context"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -47,7 +48,7 @@ func TestMachoHelloExec(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "hello")
 	require.NoError(t, os.WriteFile(path, bin, 0o755))
 
-	out, err := exec.Command(path).Output()
+	out, err := exec.CommandContext(context.Background(), path).Output()
 	require.NoError(t, err, "the macho executable must run as-is")
 	require.Equal(t, "hello world\n", string(out))
 }

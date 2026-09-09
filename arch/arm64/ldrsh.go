@@ -15,7 +15,30 @@ type Ldrsh struct {
 	off    int64
 }
 
+// newLdrsh - the Ldrsh constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newLdrsh(b base, rt string, rn string, off int64) Ldrsh {
+	return Ldrsh{
+		base: b,
+		rt:   rt,
+		rn:   rn,
+		off:  off,
+	}
+}
+
 const ldrshEnc uint32 = 0x79800000
+
+func (i Ldrsh) ObjDump(_ disasm.ViewCtx) string {
+	if i.off == 0 {
+		return fmt.Sprintf("ldrsh %s, [%s]", i.rt, i.rn)
+	}
+
+	return fmt.Sprintf("ldrsh %s, [%s, #0x%x]", i.rt, i.rn, i.off)
+}
+
+func (i Ldrsh) Encode(w io.Writer) (int64, error) {
+	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
+}
 
 // Ldrsh — ldrsh rt, [rn, #off]: sign-extending halfword load, rt —
 // x register only (register 31 reads as xzr), rn — x register or SP
@@ -42,30 +65,9 @@ func (Builder) Ldrsh(rt, rn Reg, off Off) (Instr, error) {
 		return nil, err
 	}
 
-	return Ldrsh{
-		rt:  rt.name(),
-		rn:  rn.name(),
-		off: int64(off),
-	}, nil
+	return newLdrsh(base{}, rt.name(), rn.name(), int64(off)), nil
 }
 
 func decodeLdrsh(w uint32) Instr {
-	return Ldrsh{
-		base: newBase(w),
-		rt:   regNameX(w & 0x1f),
-		rn:   regNameXSP(w >> 5 & 0x1f),
-		off:  int64(w>>10&0xfff) << 1,
-	}
-}
-
-func (i Ldrsh) ObjDump(_ disasm.ViewCtx) string {
-	if i.off == 0 {
-		return fmt.Sprintf("ldrsh %s, [%s]", i.rt, i.rn)
-	}
-
-	return fmt.Sprintf("ldrsh %s, [%s, #0x%x]", i.rt, i.rn, i.off)
-}
-
-func (i Ldrsh) Encode(w io.Writer) (int64, error) {
-	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
+	return newLdrsh(newBase(w), regNameX(w&0x1f), regNameXSP(w>>5&0x1f), int64(w>>10&0xfff)<<1)
 }

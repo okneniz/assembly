@@ -127,14 +127,21 @@ func WriteMachO(text []byte, entry uint64) ([]byte, error) {
 	}
 
 	if entry >= uint64(len(text)) {
-		return nil, fmt.Errorf("macho: entry offset %#x is outside the text (%d bytes)", entry, len(text))
+		return nil, fmt.Errorf(
+			"macho: entry offset %#x is outside the text (%d bytes)",
+			entry,
+			len(text),
+		)
 	}
 
 	// The template holds the reference entry 696 as a 2-byte ULEB; a longer
 	// encoding would shift the trie (a patched value must stay < 8192).
 	entryAbs := uint64(MachoCodeOff) + entry
 	if entryAbs >= 8192 {
-		return nil, fmt.Errorf("macho: entry offset %#x does not fit the linkedit template", entryAbs)
+		return nil, fmt.Errorf(
+			"macho: entry offset %#x does not fit the linkedit template",
+			entryAbs,
+		)
 	}
 
 	// __TEXT: header + commands + code, padded to whole 16K pages.
@@ -148,9 +155,9 @@ func WriteMachO(text []byte, entry uint64) ([]byte, error) {
 	leOff := textSize
 	sigOff := leOff + machoLinkeditSize
 	sigLen := 12 + 8 + 88 + 9 + 32*((sigOff+machoHashPage-1)/machoHashPage)
-	leSize := machoLinkeditSize + int(sigLen)
+	leSize := machoLinkeditSize + sigLen
 
-	out := make([]byte, sigOff+int(sigLen))
+	out := make([]byte, sigOff+sigLen)
 	le := binary.LittleEndian
 
 	// mach_header_64.
@@ -341,14 +348,22 @@ func machoSignature(image []byte, codeLimit, execSegLimit uint32) []byte {
 		head = append(head, byte(v>>24), byte(v>>16), byte(v>>8), byte(v))
 	}
 
-	hput32(0x20400)                                             // version
-	hput32(0x20002)                                             // flags: CS_ADHOC | CS_LINKER_SIGNED
-	hput32(uint32(cdHdrLen + len(ident)))                       // hashOffset
-	hput32(cdHdrLen)                                            // identOffset
-	hput32(0)                                                   // nSpecialSlots
-	hput32(n)                                                   // nCodeSlots
-	hput32(codeLimit)                                           // codeLimit
-	head = append(head, 32, 2, 0, 12)                           // hashSize, hashType SHA-256, platform, pageSize 2^12
+	hput32(0x20400) // version
+	hput32(
+		0x20002,
+	) // flags: CS_ADHOC | CS_LINKER_SIGNED
+	hput32(uint32(cdHdrLen + len(ident))) // hashOffset
+	hput32(cdHdrLen)                      // identOffset
+	hput32(0)                             // nSpecialSlots
+	hput32(n)                             // nCodeSlots
+	hput32(codeLimit)                     // codeLimit
+	head = append(
+		head,
+		32,
+		2,
+		0,
+		12,
+	) // hashSize, hashType SHA-256, platform, pageSize 2^12
 	hput32(0)                                                   // spare2
 	hput32(0)                                                   // scatterOffset
 	hput32(0)                                                   // teamOffset

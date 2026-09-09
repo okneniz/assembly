@@ -26,6 +26,45 @@ type DupElem struct {
 	rnN    uint32
 }
 
+func (i DupElem) ObjDump(_ disasm.ViewCtx) string {
+	sz := [...]string{"b", "h", "s", "d"}[i.size]
+	switch i.op {
+	case "dup":
+		return fmt.Sprintf("dup.%s %s, %s[%d]",
+			decodeArrangement(i.q, i.size), i.rd, i.rn, i.idx)
+	case "ins":
+		return fmt.Sprintf("ins.%s %s[%d], %s[%d]", sz, i.rd, i.idx, i.rn, i.srcIdx)
+	default:
+		return fmt.Sprintf("mov.%s %s, %s", sz, i.rd, i.rn)
+	}
+}
+
+func (i DupElem) Encode(w io.Writer) (int64, error) {
+	maxIdx := uint32(16 >> i.size)
+	var word uint32
+	switch i.op {
+	case "dup":
+		if i.idx >= maxIdx {
+			return 0, fmt.Errorf("dup: lane index %d out of range (0..%d)",
+				i.idx, maxIdx-1)
+		}
+
+		word = 0x0E000400 | i.q<<30 | (1<<i.size|i.idx<<(i.size+1))<<16 |
+			i.rnN<<5 | i.rdN
+	case "ins":
+		if i.idx >= maxIdx || i.srcIdx >= maxIdx {
+			return 0, fmt.Errorf("ins: lane index out of range (0..%d)", maxIdx-1)
+		}
+
+		word = 0x6E000400 | (1<<i.size|i.idx<<(i.size+1))<<16 |
+			i.srcIdx<<11 | i.rnN<<5 | i.rdN
+	default:
+		word = 0x5E000400 | 1<<i.size<<16 | i.rnN<<5 | i.rdN
+	}
+
+	return writeWord(w, word)
+}
+
 // decodeSimdDupElem — DUP (element): 0x0E000400/0xBFE0FC00.
 func decodeSimdDupElem(w uint32) Instr {
 	imm5 := w >> 16 & 0x1f
@@ -79,43 +118,4 @@ func decodeSimdDupScalar(w uint32) Instr {
 		rdN:  w & 0x1f,
 		rnN:  w >> 5 & 0x1f,
 	}
-}
-
-func (i DupElem) ObjDump(_ disasm.ViewCtx) string {
-	sz := [...]string{"b", "h", "s", "d"}[i.size]
-	switch i.op {
-	case "dup":
-		return fmt.Sprintf("dup.%s %s, %s[%d]",
-			decodeArrangement(i.q, i.size), i.rd, i.rn, i.idx)
-	case "ins":
-		return fmt.Sprintf("ins.%s %s[%d], %s[%d]", sz, i.rd, i.idx, i.rn, i.srcIdx)
-	default:
-		return fmt.Sprintf("mov.%s %s, %s", sz, i.rd, i.rn)
-	}
-}
-
-func (i DupElem) Encode(w io.Writer) (int64, error) {
-	maxIdx := uint32(16 >> i.size)
-	var word uint32
-	switch i.op {
-	case "dup":
-		if i.idx >= maxIdx {
-			return 0, fmt.Errorf("dup: lane index %d out of range (0..%d)",
-				i.idx, maxIdx-1)
-		}
-
-		word = 0x0E000400 | i.q<<30 | (1<<i.size|i.idx<<(i.size+1))<<16 |
-			i.rnN<<5 | i.rdN
-	case "ins":
-		if i.idx >= maxIdx || i.srcIdx >= maxIdx {
-			return 0, fmt.Errorf("ins: lane index out of range (0..%d)", maxIdx-1)
-		}
-
-		word = 0x6E000400 | (1<<i.size|i.idx<<(i.size+1))<<16 |
-			i.srcIdx<<11 | i.rnN<<5 | i.rdN
-	default:
-		word = 0x5E000400 | 1<<i.size<<16 | i.rnN<<5 | i.rdN
-	}
-
-	return writeWord(w, word)
 }

@@ -87,6 +87,7 @@ linters:
     - revive
     - unparam
     # --- step 5: the rest that fits the project ---
+    - gochecknoinits
     - arangolint
     - clickhouselint
     - containedctx
@@ -117,8 +118,15 @@ linters:
     #   varnamelen     — short domain names (w, p, off, sh) are a tradition.
     #   ireturn        — the Instr interface is the architectural backbone of the packages.
     #   exhaustruct    — partial struct initialization is deliberate.
-    #   gochecknoglobals — parsec combinators are package-level var by nature.
-    #   gochecknoinits — an init() that registers transforms is legitimate.
+    #   gochecknoglobals — the remaining package-level vars are deliberate
+    #                    data: generated/literal tables built once by named
+    #                    constructors, Err sentinels, the register singletons
+    #                    of the public DSL, and the decode trees (the
+    #                    DecodeWord export and the assembler self-verify
+    #                    need them globally). Combinators are no longer
+    #                    package vars (built in constructors, captured by
+    #                    backends).
+    #   gochecknoinits is ENABLED since 2026-09-09: no init() remains.
     #   err113, wrapcheck — terminal errors with context are the project
     #                    style (CLI/tests, errors are not propagated outside the API).
     #   nonamedreturns, noinlineerr — named returns (writeOutput) and
@@ -243,6 +251,10 @@ linters:
         path: _test\.go
       - linters: [dupword]
         path: arch/riscv/pseudo/la\.go
+      # The loong la.abs ladder comments quote real assembly ("ori rd, rd,
+      # v & 0xfff") - the register repetition is the instruction itself.
+      - linters: [dupword]
+        path: asm/loong64/pseudo/la\.go
       # The frontend's existing HTTP API uses camelCase tags (baseAddr):
       # the contract must not change; the new json: snake convention is for new code.
       - linters: [tagliatelle]

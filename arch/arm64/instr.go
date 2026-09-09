@@ -169,10 +169,12 @@ type Unknown struct {
 	word uint32
 }
 
-func decodeUnknown(w uint32) Instr {
+// newUnknown - the Unknown constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newUnknown(b base, word uint32) Unknown {
 	return Unknown{
-		base: newBase(w),
-		word: w,
+		base: b,
+		word: word,
 	}
 }
 
@@ -213,4 +215,8 @@ func invSysRegChecked(name string) uint32 {
 	}
 
 	return k
+}
+
+func decodeUnknown(w uint32) Instr {
+	return newUnknown(newBase(w), w)
 }

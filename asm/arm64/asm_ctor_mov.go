@@ -1,11 +1,13 @@
 package arm64
 
-import arch "github.com/okneniz/assembly/arch/arm64"
+import (
+	"fmt"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
 
 // Mov wide assembler constructors: movz/movn/movk rd, #imm16
 // [, lsl #N]. movn — arithmetic inversion of imm16 at encoding time.
-
-import "fmt"
 
 // movWideOps — rd, #imm16[, lsl #N] → rd, imm16, hw.
 func movWideOps(ops []vOp, name string) (string, uint32, uint32, error) {

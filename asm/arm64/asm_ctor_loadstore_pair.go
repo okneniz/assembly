@@ -1,13 +1,13 @@
 package arm64
 
-import arch "github.com/okneniz/assembly/arch/arm64"
+import (
+	"fmt"
+
+	arch "github.com/okneniz/assembly/arch/arm64"
+)
 
 // Load/store pair assembler constructors: ldp/stp rt, rt2, [rn{, #imm7}{!}]
 // | ldp rt, rt2, [rn], #imm.
-
-import (
-	"fmt"
-)
 
 // newLdpArm — ldp rt, rt2, [rn{, #imm7}{!}] | ldp rt, rt2, [rn], #imm.
 func newLdpArm(ops []vOp) (Instr, error) {
@@ -31,6 +31,7 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 	if !ops[2].IsMem() {
 		return nil, fmt.Errorf("%s: memory operand expected", name)
 	}
+
 	m := ops[2].Mem()
 
 	rn := m.Base()

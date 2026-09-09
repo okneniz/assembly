@@ -2,14 +2,18 @@ package arm64
 
 // The by-element ctor registrations and constructor (moved from
 // arch/arm64/by_elem.go: asm-layer code registering into armCtors).
+// registerByElem is called from buildArmCtors: the map is assembled in
+// one place, no post-init mutation.
 
 import (
 	"errors"
 	"fmt"
+
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
-func init() {
+// registerByElem adds the by-element mnemonics (name.arr keys) to m.
+func registerByElem(m map[string]func(ops []vOp) (Instr, error)) {
 	// int: long × {"", "2"} × 3 arrangements; the rest × 2q × size
 	for u := range 2 {
 		for _, name := range arch.ByElemIntNames[u] {
@@ -22,14 +26,14 @@ func init() {
 				// arrangement; the keys differ by the "2" suffix
 				for size := range uint32(3) {
 					arr := decodeArrangement(1, size+1)
-					armCtors[name+"."+arr] = newByElemArm(name, 0, size, true)
-					armCtors[name+"2."+arr] = newByElemArm(name, 1, size, true)
+					m[name+"."+arr] = newByElemArm(name, 0, size, true)
+					m[name+"2."+arr] = newByElemArm(name, 1, size, true)
 				}
 			} else {
 				for q := range uint32(2) {
 					for size := uint32(1); size < 3; size++ {
 						k := name + "." + decodeArrangement(q, size)
-						armCtors[k] = newByElemArm(name, q, size, false)
+						m[k] = newByElemArm(name, q, size, false)
 					}
 				}
 			}
@@ -41,10 +45,10 @@ func init() {
 		for _, name := range arch.ByElemFPNames[u] {
 			for q := range uint32(2) {
 				k := name + "." + decodeArrangement(q, 2)
-				armCtors[k] = newByElemArm(name, q, 0, false)
+				m[k] = newByElemArm(name, q, 0, false)
 			}
 
-			armCtors[name+".2d"] = newByElemArm(name, 1, 3, false)
+			m[name+".2d"] = newByElemArm(name, 1, 3, false)
 		}
 	}
 
@@ -52,7 +56,7 @@ func init() {
 	// at encoding time)
 	for q := range uint32(2) {
 		for size := uint32(1); size < 3; size++ {
-			armCtors["fcmla."+decodeArrangement(q, size)] = newByElemArm("fcmla", q, size, false)
+			m["fcmla."+decodeArrangement(q, size)] = newByElemArm("fcmla", q, size, false)
 		}
 	}
 }
@@ -108,6 +112,6 @@ func newByElemArm(name string, q, size uint32, long bool) func([]vOp) (Instr, er
 			rot = uint32(r)
 		}
 
-		return arch.Builder{}.ByElem(name2, q, size, rd, rn, rm, idx, long, rot, rdN, rnN, rmN), nil
+		return arch.NewByElem(name2, q, size, rd, rn, rm, idx, long, rot, rdN, rnN, rmN), nil
 	}
 }

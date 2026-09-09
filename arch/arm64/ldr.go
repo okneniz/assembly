@@ -20,27 +20,6 @@ const (
 	ldrWEnc uint32 = 0xB9400000 // ldr wt, [xn, #imm12<<2]
 )
 
-// Ldr — ldr rt, [rn, #off]: byte offset, scaling to the access size is
-// hidden here.
-func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
-	if err := lsOperand(rt, rn, "Ldr"); err != nil {
-		return nil, err
-	}
-
-	enc, scale := ldrXEnc, uint32(3)
-	if !rt.Is64() {
-		enc, scale = ldrWEnc, 2
-	}
-
-	if err := requireOff("Ldr", off, scale); err != nil {
-		return nil, err
-	}
-
-	return Ldr{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
-	}, nil
-}
-
 func (i Ldr) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("ldr %s, %s", i.rt, i.lsText(ctx))
 }
@@ -110,6 +89,27 @@ func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 
 // LdrPoolWrapOf — the pool-wrapped literal ldr (PoolUser); lit — the
 // pc-relative byte offset of the pool slot.
-func LdrPoolWrapOf(rt string, lit int64, enc uint32) ldrPoolWrap {
+func LdrPoolWrapOf(rt string, lit int64, enc uint32) Instr {
 	return ldrPoolWrap{Ldr{lsBase: newLsBase(rt, "", memLiteral, 0, lit, enc, "", "", 0)}}
+}
+
+// Ldr — ldr rt, [rn, #off]: byte offset, scaling to the access size is
+// hidden here.
+func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
+	if err := lsOperand(rt, rn, "Ldr"); err != nil {
+		return nil, err
+	}
+
+	enc, scale := ldrXEnc, uint32(3)
+	if !rt.Is64() {
+		enc, scale = ldrWEnc, 2
+	}
+
+	if err := requireOff("Ldr", off, scale); err != nil {
+		return nil, err
+	}
+
+	return Ldr{
+		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
+	}, nil
 }

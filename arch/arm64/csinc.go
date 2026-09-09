@@ -18,6 +18,24 @@ type Csinc struct {
 	Csel
 }
 
+func (i Csinc) ObjDump(_ disasm.ViewCtx) string {
+	zr := zeroReg(i.rd)
+	inv := invertCond(i.cond)
+	if i.rn == zr && i.rm == zr {
+		return fmt.Sprintf("cset %s, %s", i.rd, inv)
+	}
+
+	if i.rn == i.rm {
+		return fmt.Sprintf("cinc %s, %s, %s", i.rd, i.rm, inv)
+	}
+
+	return fmt.Sprintf("csinc %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
+}
+
+func (i Csinc) Encode(w io.Writer) (int64, error) {
+	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
+}
+
 // Csinc — csinc rd, rn, rm, cond (cset/cinc pseudos); the operand
 // constraints are those of Csel.
 func (Builder) Csinc(rd, rn, rm Reg, cond string) (Instr, error) {
@@ -42,22 +60,4 @@ func decodeCsinc(w uint32) Instr {
 	}
 
 	return Csinc{Csel: c}
-}
-
-func (i Csinc) ObjDump(_ disasm.ViewCtx) string {
-	zr := zeroReg(i.rd)
-	inv := invertCond(i.cond)
-	if i.rn == zr && i.rm == zr {
-		return fmt.Sprintf("cset %s, %s", i.rd, inv)
-	}
-
-	if i.rn == i.rm {
-		return fmt.Sprintf("cinc %s, %s, %s", i.rd, i.rm, inv)
-	}
-
-	return fmt.Sprintf("csinc %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
-}
-
-func (i Csinc) Encode(w io.Writer) (int64, error) {
-	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
 }

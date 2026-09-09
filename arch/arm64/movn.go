@@ -21,39 +21,14 @@ type Movn struct {
 	imm16, hw uint32
 }
 
-// Movn — movn rd, #imm16, lsl #hw*16 (displayed as mov). The 32-bit
-// form allows only Hw0/Hw1 (shift up to #16).
-func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Movn",
-		"rd",
-		"x/w register, sp not allowed (register 31 reads as zr)",
-		classX,
-		classW,
-		classXZR,
-		classWZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireHwW(rd, "Movn", hw); err != nil {
-		return nil, err
-	}
-
+// newMovn - the Movn constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newMovn(b base, rd string, imm16 uint32, hw uint32) Movn {
 	return Movn{
-		rd:    rd.name(),
-		imm16: imm.v,
-		hw:    uint32(hw),
-	}, nil
-}
-
-func decodeMovn(w uint32) Instr {
-	return Movn{
-		base:  newBase(w),
-		rd:    armRegName(w&0x1f, w>>31&1 == 1),
-		imm16: w >> 5 & 0xffff,
-		hw:    w >> 21 & 0x3,
+		base:  b,
+		rd:    rd,
+		imm16: imm16,
+		hw:    hw,
 	}
 }
 
@@ -96,4 +71,31 @@ func (i Movn) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
+}
+
+// Movn — movn rd, #imm16, lsl #hw*16 (displayed as mov). The 32-bit
+// form allows only Hw0/Hw1 (shift up to #16).
+func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
+	if err := requireClass(
+		rd,
+		"Movn",
+		"rd",
+		"x/w register, sp not allowed (register 31 reads as zr)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireHwW(rd, "Movn", hw); err != nil {
+		return nil, err
+	}
+
+	return newMovn(base{}, rd.name(), imm.v, uint32(hw)), nil
+}
+
+func decodeMovn(w uint32) Instr {
+	return newMovn(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), w>>5&0xffff, w>>21&0x3)
 }

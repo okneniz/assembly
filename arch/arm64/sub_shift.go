@@ -18,59 +18,32 @@ type SubShift struct {
 	isf        bool
 }
 
+// newSubShift - the SubShift constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newSubShift(
+	b base,
+	rd string,
+	rn string,
+	rm string,
+	imm6 uint32,
+	shift string,
+	isf bool,
+) SubShift {
+	return SubShift{
+		base:  b,
+		rd:    rd,
+		rn:    rn,
+		rm:    rm,
+		imm6:  imm6,
+		shift: shift,
+		isf:   isf,
+	}
+}
+
 const (
 	SubShiftX uint32 = 0xCB000000
 	SubShiftW uint32 = 0x4B000000
 )
-
-// SubShift — sub rd, rn, rm[, shift #imm6]. Register 31 reads as zr
-// (SP/WSP are not allowed - use XZR/WZR). The shift is lsl/lsr/asr only;
-// the 32-bit form limits the amount to 0..31 (see requireShift).
-func (Builder) SubShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	for _, r := range []struct {
-		reg Reg
-		op  string
-	}{{
-		rd,
-		"rd",
-	}, {
-		rn,
-		"rn",
-	}, {
-		rm,
-		"rm",
-	}} {
-		if err := requireClass(
-			r.reg,
-			"SubShift",
-			r.op,
-			"register 31 reads as zr - use XZR/WZR",
-			classX,
-			classW,
-			classXZR,
-			classWZR,
-		); err != nil {
-			return nil, err
-		}
-	}
-
-	if err := requireWidth("SubShift", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	if err := requireShift(rd, "SubShift", imm, sh); err != nil {
-		return nil, err
-	}
-
-	return SubShift{
-		rd:    rd.name(),
-		rn:    rn.name(),
-		rm:    rm.name(),
-		imm6:  imm.v,
-		shift: sh.String(),
-		isf:   rd.Is64(),
-	}, nil
-}
 
 func (i SubShift) ObjDump(_ disasm.ViewCtx) string {
 	zr := zeroReg(i.rd)
@@ -112,14 +85,56 @@ func (i SubShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func decodeSubShift(w uint32) Instr {
-	return SubShift{
-		base:  newBase(w),
-		rd:    armRegName(w&0x1f, w>>31&1 == 1),
-		rn:    armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:    armRegName(w>>16&0x1f, w>>31&1 == 1),
-		imm6:  w >> 10 & 0x3f,
-		shift: shiftNames[w>>22&3],
-		isf:   w>>31&1 == 1,
+// SubShift — sub rd, rn, rm[, shift #imm6]. Register 31 reads as zr
+// (SP/WSP are not allowed - use XZR/WZR). The shift is lsl/lsr/asr only;
+// the 32-bit form limits the amount to 0..31 (see requireShift).
+func (Builder) SubShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
+	for _, r := range []struct {
+		reg Reg
+		op  string
+	}{{
+		rd,
+		"rd",
+	}, {
+		rn,
+		"rn",
+	}, {
+		rm,
+		"rm",
+	}} {
+		if err := requireClass(
+			r.reg,
+			"SubShift",
+			r.op,
+			"register 31 reads as zr - use XZR/WZR",
+			classX,
+			classW,
+			classXZR,
+			classWZR,
+		); err != nil {
+			return nil, err
+		}
 	}
+
+	if err := requireWidth("SubShift", rd, rn, rm); err != nil {
+		return nil, err
+	}
+
+	if err := requireShift(rd, "SubShift", imm, sh); err != nil {
+		return nil, err
+	}
+
+	return newSubShift(base{}, rd.name(), rn.name(), rm.name(), imm.v, sh.String(), rd.Is64()), nil
+}
+
+func decodeSubShift(w uint32) Instr {
+	return newSubShift(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		w>>10&0x3f,
+		shiftNames[w>>22&3],
+		w>>31&1 == 1,
+	)
 }

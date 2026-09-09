@@ -23,8 +23,8 @@ func NewField(lo, width int) Field {
 }
 
 // Imm is one immediate slot: a signedness plus one or more segments whose
-// fields concatenate MSB-first (Sd5k16: [4:0] is imm[20:16], [25:10] is
-// imm[15:0]).
+// fields concatenate MSB-first (Sd5k16: [4:0] is parseImm[20:16], [25:10] is
+// parseImm[15:0]).
 type Imm struct {
 	Signed   bool
 	Segments []Field
@@ -52,8 +52,8 @@ func NewSlots(regs []rune, imms []Imm) Slots {
 	}
 }
 
-// regSlots - the fixed positions of the integer register slots.
-var regSlots = map[rune]Field{
+// parseRegSlots - the fixed positions of the integer register slots.
+var parseRegSlots = map[rune]Field{
 	'D': NewField(0, 5),
 	'J': NewField(5, 5),
 	'K': NewField(10, 5),
@@ -72,50 +72,63 @@ var immStart = map[rune]int{
 
 // --- format notation grammar. ---
 
-var (
-	cRegSlot   = strings.Try(strings.OneOf("register slot", 'D', 'J', 'K', 'A'))
-	cImmSign   = strings.Try(strings.OneOf("immediate signedness", 'S', 'U'))
-	cSegIndex  = strings.Try(strings.OneOf("segment index", 'd', 'j', 'k', 'a', 'm', 'n'))
-	cSegDigits = strings.Cast(
+// formatGrammar is the format-notation grammar: the register-slot,
+// immediate-sign and segment atoms. Built once per ParseFormat call (the
+// generators are cold tools); the combinators are values captured by the
+// closures.
+type formatGrammar struct {
+	parseRegSlot parsec.Combinator[rune, strings.Position, rune]
+	parseImm     parsec.Combinator[rune, strings.Position, Imm]
+}
+
+// newFormatGrammar builds the whole notation grammar once.
+func makeFormatGrammar() *formatGrammar {
+	g := &formatGrammar{
+		parseRegSlot: strings.Try(strings.OneOf("register slot", 'D', 'J', 'K', 'A')),
+	}
+
+	segIndex := strings.Try(strings.OneOf("segment index", 'd', 'j', 'k', 'a', 'm', 'n'))
+	segDigits := strings.Cast(
 		strings.Some(2, "segment width", strings.Try(strings.Digit("decimal digit"))),
 		castWidth,
 	)
 
-	// cSegment - one index-width piece: 'k' + 12 -> {10, 12}.
-	cSegment = func() parsec.Combinator[rune, strings.Position, Field] {
-		return func(buf parsec.Buffer[rune, strings.Position]) (Field, parsec.Error[strings.Position]) {
-			index, err := cSegIndex(buf)
-			if err != nil {
-				return Field{}, err
-			}
-
-			width, err := cSegDigits(buf)
-			if err != nil {
-				return Field{}, err
-			}
-
-			return NewField(immStart[index], width), nil
+	// one index-width piece: 'k' + 12 -> {10, 12}
+	segment := func(buf parsec.Buffer[rune, strings.Position]) (Field, parsec.Error[strings.Position]) {
+		index, err := segIndex(buf)
+		if err != nil {
+			return Field{}, err
 		}
-	}()
 
-	// cImm - one immediate slot: the signedness letter plus one or more
-	// segments.
-	cImm = strings.Try(func() parsec.Combinator[rune, strings.Position, Imm] {
-		return func(buf parsec.Buffer[rune, strings.Position]) (Imm, parsec.Error[strings.Position]) {
-			sign, err := cImmSign(buf)
+		width, err := segDigits(buf)
+		if err != nil {
+			return Field{}, err
+		}
+
+		return NewField(immStart[index], width), nil
+	}
+	segments := strings.Some(4, "expected segments", segment)
+
+	// one immediate slot: the signedness letter plus one or more segments
+	immSign := strings.Try(strings.OneOf("immediate signedness", 'S', 'U'))
+	g.parseImm = strings.Try(
+		func(buf parsec.Buffer[rune, strings.Position]) (Imm, parsec.Error[strings.Position]) {
+			sign, err := immSign(buf)
 			if err != nil {
 				return Imm{}, err
 			}
 
-			segments, err := strings.Some(4, "expected segments", cSegment)(buf)
-			if err != nil {
-				return Imm{}, err
+			ss, serr := segments(buf)
+			if serr != nil {
+				return Imm{}, serr
 			}
 
-			return NewImm(sign == 'S', segments), nil
-		}
-	}())
-)
+			return NewImm(sign == 'S', ss), nil
+		},
+	)
+
+	return g
+}
 
 // castWidth - the segment width in bits (1..2 digits; the bounds are
 // validated by Mask).
@@ -137,11 +150,12 @@ func ParseFormat(format string) (Slots, error) {
 		return NewSlots(nil, nil), nil
 	}
 
+	g := makeFormatGrammar()
 	buf := strings.Buffer([]rune(format))
 
 	slots := Slots{}
 	for {
-		if r, err := cRegSlot(buf); err == nil {
+		if r, err := g.parseRegSlot(buf); err == nil {
 			if len(slots.Imms) > 0 {
 				return Slots{}, fmt.Errorf("format %q: register after immediate", format)
 			}
@@ -151,8 +165,8 @@ func ParseFormat(format string) (Slots, error) {
 			continue
 		}
 
-		if imm, err := cImm(buf); err == nil {
-			slots.Imms = append(slots.Imms, imm)
+		if parseImm, err := g.parseImm(buf); err == nil {
+			slots.Imms = append(slots.Imms, parseImm)
 
 			continue
 		}
@@ -176,11 +190,11 @@ func ParseFormat(format string) (Slots, error) {
 func (s Slots) Fields() []Field {
 	fs := make([]Field, 0, len(s.Regs))
 	for _, r := range s.Regs {
-		fs = append(fs, regSlots[r])
+		fs = append(fs, parseRegSlots[r])
 	}
 
-	for _, imm := range s.Imms {
-		fs = append(fs, imm.Segments...)
+	for _, parseImm := range s.Imms {
+		fs = append(fs, parseImm.Segments...)
 	}
 
 	return fs

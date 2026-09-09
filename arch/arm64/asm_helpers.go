@@ -108,7 +108,10 @@ func shiftAmt(op vOp) int64 { return op.num }
 
 // invSysReg: system register name → 15-bit key (inverse of sysregNames;
 // the objdump form S<op0>_<op1>_C<n>_C<m>_<op2> is also accepted).
-var invSysRegNames = func() map[string]uint32 {
+// A derived data table, built once.
+var invSysRegNames = buildInvSysRegNames()
+
+func buildInvSysRegNames() map[string]uint32 {
 	m := map[string]uint32{}
 	for k, name := range sysregNames {
 		if _, exists := m[name]; !exists {
@@ -117,7 +120,7 @@ var invSysRegNames = func() map[string]uint32 {
 	}
 
 	return m
-}()
+}
 
 func invSysReg(v any) (uint32, error) {
 	s, ok := v.(string)

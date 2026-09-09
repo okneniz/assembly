@@ -145,7 +145,7 @@ func BenchmarkParse(b *testing.B) {
 
 	start := time.Now()
 	for range b.N {
-		if _, err := Parse()(bytes.Buffer(data)); err != nil {
+		if _, err := MakeDecoder()(bytes.Buffer(data)); err != nil {
 			b.Fatal(err)
 		}
 	}

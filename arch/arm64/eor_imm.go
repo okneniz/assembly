@@ -13,10 +13,41 @@ type EorImm struct {
 	logImm
 }
 
+// newEorImm - the EorImm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newEorImm(b base, li logImm) EorImm {
+	return EorImm{
+		base:   b,
+		logImm: li,
+	}
+}
+
 const (
 	eorImmX uint32 = 0xD2000000
 	eorImmW uint32 = 0x52000000
 )
+
+func (i EorImm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("eor %s, %s, #0x%x", i.rd, i.rn, i.mask())
+}
+
+func (i EorImm) Encode(w io.Writer) (int64, error) {
+	match := eorImmX
+	if !i.is64 {
+		match = eorImmW
+	}
+
+	if i.n {
+		match |= 1 << 22
+	}
+
+	rd, rn, err := i.bits()
+	if err != nil {
+		return 0, fmt.Errorf("eor: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
 
 // EorImm — eor rd, rn, #bitmask. Register 31 reads as zr
 // (SP/WSP are not allowed — use XZR/WZR); the mask must be encodable
@@ -41,34 +72,9 @@ func (Builder) EorImm(rd, rn Reg, imm uint64) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewEorImm: operand imm: %#x not encodable as bitmask", imm)
 	}
 
-	return EorImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
+	return newEorImm(base{}, newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())), nil
 }
 
 func decodeEorImm(w uint32) Instr {
-	return EorImm{
-		newBase(w),
-		decodeLogImm(w),
-	}
-}
-
-func (i EorImm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("eor %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
-func (i EorImm) Encode(w io.Writer) (int64, error) {
-	match := eorImmX
-	if !i.is64 {
-		match = eorImmW
-	}
-
-	if i.n {
-		match |= 1 << 22
-	}
-
-	rd, rn, err := i.bits()
-	if err != nil {
-		return 0, fmt.Errorf("eor: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+	return newEorImm(newBase(w), decodeLogImm(w))
 }

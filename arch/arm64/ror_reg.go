@@ -14,7 +14,36 @@ type RorReg struct {
 	rd, rn, rm string
 }
 
+// newRorReg - the RorReg constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newRorReg(b base, rd string, rn string, rm string) RorReg {
+	return RorReg{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		rm:   rm,
+	}
+}
+
 const RorRegX uint32 = 0x9A002C00
+
+func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)
+}
+
+func (i RorReg) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, RorRegX, 0)
+	if err != nil {
+		return 0, fmt.Errorf("ror: %w", err)
+	}
+
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("ror: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
 
 // RorReg — ror rd, rn, rm. Only the 64-bit form (the package's
 // decode/Encode cover the x register form). Register 31 reads as zr
@@ -53,36 +82,14 @@ func (Builder) RorReg(rd, rn, rm Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return RorReg{
-		rd: rd.name(),
-		rn: rn.name(),
-		rm: rm.name(),
-	}, nil
+	return newRorReg(base{}, rd.name(), rn.name(), rm.name()), nil
 }
 
 func decodeRorReg(w uint32) Instr {
-	return RorReg{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		rm:   armRegName(w>>16&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
-func (i RorReg) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, RorRegX, 0)
-	if err != nil {
-		return 0, fmt.Errorf("ror: %w", err)
-	}
-
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("ror: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|rm<<16)
+	return newRorReg(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		armRegName(w>>16&0x1f, w>>31&1 == 1),
+	)
 }

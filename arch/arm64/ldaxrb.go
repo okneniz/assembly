@@ -16,6 +16,24 @@ type Ldaxrb struct {
 
 const ldaxrbEnc uint32 = 0x085FFC00 // ldaxrb wt, [xn]
 
+func decodeLdaxrbOf(enc uint32, x64 bool) func(uint32) Instr {
+	return func(w uint32) Instr {
+		return Ldaxrb{
+			base:   newBase(w),
+			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
+			enc:    enc,
+		}
+	}
+}
+
+func (i Ldaxrb) ObjDump(_ disasm.ViewCtx) string {
+	return "ldaxrb " + i.atText()
+}
+
+func (i Ldaxrb) Encode(w io.Writer) (int64, error) {
+	return i.atWrite(w, i.enc, "ldaxrb")
+}
+
 // Ldaxrb — ldaxrb rt, [rn]: byte access, rt — w register only
 // (register 31 reads as wzr), rn — x register or SP (register 31 in the
 // base reads as sp).
@@ -40,22 +58,4 @@ func (Builder) Ldaxrb(rt, rn Reg) (Instr, error) {
 		atomic: newAtomic(rt.name(), rn.name()),
 		enc:    ldaxrbEnc,
 	}, nil
-}
-
-func decodeLdaxrbOf(enc uint32, x64 bool) func(uint32) Instr {
-	return func(w uint32) Instr {
-		return Ldaxrb{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}
-	}
-}
-
-func (i Ldaxrb) ObjDump(_ disasm.ViewCtx) string {
-	return "ldaxrb " + i.atText()
-}
-
-func (i Ldaxrb) Encode(w io.Writer) (int64, error) {
-	return i.atWrite(w, i.enc, "ldaxrb")
 }

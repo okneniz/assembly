@@ -17,6 +17,28 @@ type Msub struct {
 	Madd
 }
 
+func (i Msub) ObjDump(_ disasm.ViewCtx) string {
+	zr := "xzr"
+	if i.rd[0] == 'w' {
+		zr = "wzr"
+	}
+
+	if i.ra == zr {
+		return fmt.Sprintf("mneg %s, %s, %s", i.rd, i.rn, i.rm)
+	}
+
+	return fmt.Sprintf("msub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
+}
+
+func (i Msub) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, msubX, msubW)
+	if err != nil {
+		return 0, fmt.Errorf("msub: %w", err)
+	}
+
+	return msubWrite(w, match, i.Madd)
+}
+
 // Msub — msub rd, rn, rm, ra (mneg when Ra = zr); the operand
 // constraints are those of Madd.
 func (Builder) Msub(rd, rn, rm, ra Reg) (Instr, error) {
@@ -41,26 +63,4 @@ func decodeMsub(w uint32) Instr {
 	}
 
 	return Msub{Madd: m}
-}
-
-func (i Msub) ObjDump(_ disasm.ViewCtx) string {
-	zr := "xzr"
-	if i.rd[0] == 'w' {
-		zr = "wzr"
-	}
-
-	if i.ra == zr {
-		return fmt.Sprintf("mneg %s, %s, %s", i.rd, i.rn, i.rm)
-	}
-
-	return fmt.Sprintf("msub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
-}
-
-func (i Msub) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, msubX, msubW)
-	if err != nil {
-		return 0, fmt.Errorf("msub: %w", err)
-	}
-
-	return msubWrite(w, match, i.Madd)
 }

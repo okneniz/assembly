@@ -18,13 +18,23 @@ type ArmListReg = armListReg
 
 // VOpReg — a register (arr - the ".8b" suffix; lane/idx - the "v30[1]" suffix).
 func VOpReg(reg, arr string, lane bool, idx int64) VOp {
-	return VOp{kind: armOpReg, reg: reg, arr: arr, laneIdx: lane, num: idx}
+	return VOp{
+		kind:    armOpReg,
+		reg:     reg,
+		arr:     arr,
+		laneIdx: lane,
+		num:     idx,
+	}
 }
 
 // VOpImm — a number or name operand (condition/sysreg/prefetch hint; num
 // and sym are mutually exclusive).
 func VOpImm(num int64, sym string) VOp {
-	return VOp{kind: armOpImm, num: num, sym: sym}
+	return VOp{
+		kind: armOpImm,
+		num:  num,
+		sym:  sym,
+	}
 }
 
 // VOpLit — a literal pool slot (num - the computed slot address).
@@ -39,12 +49,22 @@ func VOpFloat(f float64) VOp {
 
 // VOpShift — a shift modifier (lsl/lsr/asr/ror #amt).
 func VOpShift(shift string, amt int64, has bool) VOp {
-	return VOp{kind: armOpShift, shift: shift, num: amt, hasAmt: has}
+	return VOp{
+		kind:   armOpShift,
+		shift:  shift,
+		num:    amt,
+		hasAmt: has,
+	}
 }
 
 // VOpExtend — an extension modifier (uxtw/sxtw...[#amt]).
 func VOpExtend(ext string, amt int64, has bool) VOp {
-	return VOp{kind: armOpExtend, shift: ext, num: amt, hasAmt: has}
+	return VOp{
+		kind:   armOpExtend,
+		shift:  ext,
+		num:    amt,
+		hasAmt: has,
+	}
 }
 
 // VOpMem — a memory operand off(reg).
@@ -104,55 +124,55 @@ const (
 type ArmOpKind = armOpKind
 
 // Kind — the operand kind.
-func (v VOp) Kind() armOpKind { return v.kind }
+func (v VOp) Kind() ArmOpKind { return v.kind }
 
 // Arr — the arrangement suffix ("" if absent).
-func (o VOp) Arr() string {
-	return o.arr
+func (v VOp) Arr() string {
+	return v.arr
 }
 
 // LaneIdx — the register has a lane index suffix v30[1] (Num is its value).
-func (o VOp) LaneIdx() bool {
-	return o.laneIdx
+func (v VOp) LaneIdx() bool {
+	return v.laneIdx
 }
 
 // HasAmt — shift/extend has an amount set.
-func (o VOp) HasAmt() bool {
-	return o.hasAmt
+func (v VOp) HasAmt() bool {
+	return v.hasAmt
 }
 
 // IsFloat — a floating-point numeric literal.
-func (o VOp) IsFloat() bool {
-	return o.kind == armOpFloat
+func (v VOp) IsFloat() bool {
+	return v.kind == armOpFloat
 }
 
 // Float — the value of a floating-point literal.
-func (o VOp) Float() float64 {
-	return o.fval
+func (v VOp) Float() float64 {
+	return v.fval
 }
 
 // IsList — a register list.
-func (o VOp) IsList() bool {
-	return o.kind == armOpList
+func (v VOp) IsList() bool {
+	return v.kind == armOpList
 }
 
 // List — elements of the register list.
-func (o VOp) List() []ArmListReg {
-	return o.list
+func (v VOp) List() []ArmListReg {
+	return v.list
 }
 
 // IsMem — a memory operand.
-func (o VOp) IsMem() bool {
-	return o.kind == armOpMem
+func (v VOp) IsMem() bool {
+	return v.kind == armOpMem
 }
 
 // Mem — the memory operand (a copy).
-func (o VOp) Mem() VMem {
-	if o.mem == nil {
+func (v VOp) Mem() VMem {
+	if v.mem == nil {
 		return VMem{}
 	}
 
-	return *o.mem
+	return *v.mem
 }
 
 // Base — the memory base register.

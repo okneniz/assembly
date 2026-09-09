@@ -8,9 +8,9 @@ package alias
 
 import (
 	"fmt"
-	arm64 "github.com/okneniz/assembly/asm/arm64"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	arm64 "github.com/okneniz/assembly/asm/arm64"
 )
 
 // newCmp is the cmp/cmn rn, op alias: base subs/adds with Rd = 31 (zr

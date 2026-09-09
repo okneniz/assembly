@@ -18,6 +18,40 @@ const (
 	ldpWEnc uint32 = 0x29400000 // ldp wt, wt2, [xn, #imm7<<2]
 )
 
+func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32) Instr {
+	kind := rtKind
+	if kind == "" {
+		if x64 {
+			kind = "x"
+		} else {
+			kind = "w"
+		}
+	}
+
+	return func(w uint32) Instr {
+		rt, rt2, rn, k, off, load := pairDecode(w, scale, kind)
+		if !load {
+			return Stp{
+				base:     newBase(w),
+				pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc&^1<<22),
+			}
+		}
+
+		return Ldp{
+			base:     newBase(w),
+			pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc|1<<22),
+		}
+	}
+}
+
+func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
+	return "ldp " + i.pairText()
+}
+
+func (i Ldp) Encode(w io.Writer) (int64, error) {
+	return i.pairWrite(w, "ldp")
+}
+
 // Ldp — ldp rt, rt2, [rn, #off]: byte offset, scaling to the
 // access size is hidden here. rt/rt2 — x/w registers (register 31 reads
 // as zr, the widths must match), rn — x register or SP (register 31 in
@@ -61,38 +95,4 @@ func (Builder) Ldp(rt, rt2, rn Reg, off Off) (Instr, error) {
 	return Ldp{
 		pairBase: newPairBase(rt.name(), rt2.name(), rn.name(), memImm, int64(off), scale, enc),
 	}, nil
-}
-
-func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32) Instr {
-	kind := rtKind
-	if kind == "" {
-		if x64 {
-			kind = "x"
-		} else {
-			kind = "w"
-		}
-	}
-
-	return func(w uint32) Instr {
-		rt, rt2, rn, k, off, load := pairDecode(w, scale, kind)
-		if !load {
-			return Stp{
-				base:     newBase(w),
-				pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc&^1<<22),
-			}
-		}
-
-		return Ldp{
-			base:     newBase(w),
-			pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc|1<<22),
-		}
-	}
-}
-
-func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
-	return "ldp " + i.pairText()
-}
-
-func (i Ldp) Encode(w io.Writer) (int64, error) {
-	return i.pairWrite(w, "ldp")
 }

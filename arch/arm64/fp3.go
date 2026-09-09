@@ -16,7 +16,7 @@ type Fp3 struct {
 	enc        uint32
 }
 
-func decodeFp3Of(op string, enc uint32, k fpKind) func(uint32) Instr {
+func decodeFp3Of(op string, k fpKind) func(uint32) Instr {
 	return func(w uint32) Instr {
 		// the sf convention for widenable families (see fp2.go): the
 		// operand type is read FROM THE WORD (type bits [22:21]: 01=s,

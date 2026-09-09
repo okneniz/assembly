@@ -52,24 +52,6 @@ func isSimd3Logical(op string) bool {
 	return false
 }
 
-// decodeSimd3Logical - the opcode and encoding are read FROM THE WORD: the
-// group's family schemas (and/eor) do not pin the size bits and each covers
-// 4 instructions, so the mnemonic cannot be baked in as an argument. The
-// arrangement of logical operations depends only on Q (8b/16b), size is
-// part of the opcode.
-func decodeSimd3Logical(w uint32) Instr {
-	return Simd3{
-		base: newBase(w),
-		op:   simd3Logical[w>>29&1][w>>22&3],
-		rd:   vReg(w & 0x1f),
-		rn:   vReg(w >> 5 & 0x1f),
-		rm:   vReg(w >> 16 & 0x1f),
-		enc:  w &^ 0x001F1F1F, // all encoding bits except Rd/Rn/Rm (Q included)
-		q:    w >> 30 & 1,
-		size: w >> 22 & 3,
-	}
-}
-
 func (i Simd3) ObjDump(_ disasm.ViewCtx) string {
 	if (i.op == "and" || i.op == "orr") && i.rn == i.rm {
 		arr := "16b"
@@ -107,4 +89,22 @@ func (i Simd3) Encode(w io.Writer) (int64, error) {
 
 func (i Simd3) size3() uint32 {
 	return i.raw >> 22 & 3
+}
+
+// decodeSimd3Logical - the opcode and encoding are read FROM THE WORD: the
+// group's family schemas (and/eor) do not pin the size bits and each covers
+// 4 instructions, so the mnemonic cannot be baked in as an argument. The
+// arrangement of logical operations depends only on Q (8b/16b), size is
+// part of the opcode.
+func decodeSimd3Logical(w uint32) Instr {
+	return Simd3{
+		base: newBase(w),
+		op:   simd3Logical[w>>29&1][w>>22&3],
+		rd:   vReg(w & 0x1f),
+		rn:   vReg(w >> 5 & 0x1f),
+		rm:   vReg(w >> 16 & 0x1f),
+		enc:  w &^ 0x001F1F1F, // all encoding bits except Rd/Rn/Rm (Q included)
+		q:    w >> 30 & 1,
+		size: w >> 22 & 3,
+	}
 }

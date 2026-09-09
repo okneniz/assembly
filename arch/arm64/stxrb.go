@@ -16,6 +16,24 @@ type Stxrb struct {
 
 const stxrbEnc uint32 = 0x08000000 // stxrb ws, wt, [xn]
 
+func decodeStxrbOf(enc uint32, x64 bool) func(uint32) Instr {
+	return func(w uint32) Instr {
+		return Stxrb{
+			base: newBase(w),
+			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
+			enc:  enc,
+		}
+	}
+}
+
+func (i Stxrb) ObjDump(_ disasm.ViewCtx) string {
+	return "stxrb " + i.exText()
+}
+
+func (i Stxrb) Encode(w io.Writer) (int64, error) {
+	return i.exWrite(w, i.enc, "stxrb")
+}
+
 // Stxrb — stxrb rs, rt, [rn]: byte access, rs — the w status
 // register (register 31 reads as wzr), rt — w register only (register 31
 // reads as wzr), rn — x register or SP (register 31 in the base reads
@@ -46,22 +64,4 @@ func (Builder) Stxrb(rs, rt, rn Reg) (Instr, error) {
 		excl: newExcl(rs.name(), rt.name(), rn.name()),
 		enc:  stxrbEnc,
 	}, nil
-}
-
-func decodeStxrbOf(enc uint32, x64 bool) func(uint32) Instr {
-	return func(w uint32) Instr {
-		return Stxrb{
-			base: newBase(w),
-			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:  enc,
-		}
-	}
-}
-
-func (i Stxrb) ObjDump(_ disasm.ViewCtx) string {
-	return "stxrb " + i.exText()
-}
-
-func (i Stxrb) Encode(w io.Writer) (int64, error) {
-	return i.exWrite(w, i.enc, "stxrb")
 }

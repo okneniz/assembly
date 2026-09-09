@@ -15,36 +15,6 @@ type Ldrsw struct {
 
 const ldrswEnc uint32 = 0xB9800000 // ldrsw xt, [xn, #imm12<<2]
 
-// Ldrsw — ldrsw rt, [rn, #off]: sign-extending word load, rt — x
-// register only (register 31 reads as xzr), rn — x register or SP
-// (register 31 in the base reads as sp); the offset is an imm12 scaled
-// by 4 (0..0xffc, alignment 4).
-func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldrsw", "rt", "x register (register 31 in rt reads as xzr)",
-		classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldrsw",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Ldrsw", off, 2); err != nil {
-		return nil, err
-	}
-
-	return Ldrsw{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrswEnc, "", "", 0),
-	}, nil
-}
-
 func (i Ldrsw) ObjDump(ctx disasm.ViewCtx) string {
 	return fmt.Sprintf("ldrsw %s, %s", i.rt, i.lsText(ctx))
 }
@@ -88,4 +58,34 @@ func decodeLdrswOf(enc uint32, kind memKind) func(uint32) Instr {
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}
 	}
+}
+
+// Ldrsw — ldrsw rt, [rn, #off]: sign-extending word load, rt — x
+// register only (register 31 reads as xzr), rn — x register or SP
+// (register 31 in the base reads as sp); the offset is an imm12 scaled
+// by 4 (0..0xffc, alignment 4).
+func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
+	if err := requireClass(rt, "Ldrsw", "rt", "x register (register 31 in rt reads as xzr)",
+		classX, classXZR); err != nil {
+		return nil, err
+	}
+
+	if err := requireClass(
+		rn,
+		"Ldrsw",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	); err != nil {
+		return nil, err
+	}
+
+	if err := requireOff("Ldrsw", off, 2); err != nil {
+		return nil, err
+	}
+
+	return Ldrsw{
+		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrswEnc, "", "", 0),
+	}, nil
 }

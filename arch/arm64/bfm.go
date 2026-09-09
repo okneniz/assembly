@@ -16,10 +16,31 @@ type Bfm struct {
 	isf        bool
 }
 
+// newBfm - the Bfm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newBfm(b base, rd string, rn string, immr uint32, imms uint32, isf bool) Bfm {
+	return Bfm{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+		immr: immr,
+		imms: imms,
+		isf:  isf,
+	}
+}
+
 const (
 	bfmX uint32 = 0xB3400000
 	bfmW uint32 = 0x33000000
 )
+
+func (i Bfm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bfm %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms)
+}
+
+func (i Bfm) Encode(w io.Writer) (int64, error) {
+	return bfmWrite(w, bfmX, bfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+}
 
 // Bfm — bfm rd, rn, #immr, #imms. Register 31 reads as zr (SP/WSP
 // are not allowed — use XZR/WZR); the width is shared by both registers;
@@ -48,30 +69,16 @@ func (Builder) Bfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
 		)
 	}
 
-	return Bfm{
-		rd:   rd.name(),
-		rn:   rn.name(),
-		immr: immr,
-		imms: imms,
-		isf:  rd.Is64(),
-	}, nil
+	return newBfm(base{}, rd.name(), rn.name(), immr, imms, rd.Is64()), nil
 }
 
 func decodeBfmInstr(w uint32) Instr {
-	return Bfm{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-		immr: w >> 16 & 0x3f,
-		imms: w >> 10 & 0x3f,
-		isf:  w>>31&1 == 1,
-	}
-}
-
-func (i Bfm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bfm %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms)
-}
-
-func (i Bfm) Encode(w io.Writer) (int64, error) {
-	return bfmWrite(w, bfmX, bfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+	return newBfm(
+		newBase(w),
+		armRegName(w&0x1f, w>>31&1 == 1),
+		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		w>>16&0x3f,
+		w>>10&0x3f,
+		w>>31&1 == 1,
+	)
 }

@@ -14,7 +14,35 @@ type Clz struct {
 	rd, rn string
 }
 
+// newClz - the Clz constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newClz(b base, rd string, rn string) Clz {
+	return Clz{
+		base: b,
+		rd:   rd,
+		rn:   rn,
+	}
+}
+
 const ClzX uint32 = 0xDAC01000
+
+func (i Clz) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("clz %s, %s", i.rd, i.rn)
+}
+
+func (i Clz) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, ClzX, 0x5AC01000)
+	if err != nil {
+		return 0, fmt.Errorf("clz: %w", err)
+	}
+
+	rd, rn, err := regNums2(i.rd, i.rn)
+	if err != nil {
+		return 0, fmt.Errorf("clz: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5)
+}
 
 // Clz — clz rd, rn. Register 31 reads as zr (SP/WSP are not
 // allowed — use XZR/WZR); the width is shared by both registers.
@@ -33,34 +61,9 @@ func (Builder) Clz(rd, rn Reg) (Instr, error) {
 		return nil, err
 	}
 
-	return Clz{
-		rd: rd.name(),
-		rn: rn.name(),
-	}, nil
+	return newClz(base{}, rd.name(), rn.name()), nil
 }
 
 func decodeClz(w uint32) Instr {
-	return Clz{
-		base: newBase(w),
-		rd:   armRegName(w&0x1f, w>>31&1 == 1),
-		rn:   armRegName(w>>5&0x1f, w>>31&1 == 1),
-	}
-}
-
-func (i Clz) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("clz %s, %s", i.rd, i.rn)
-}
-
-func (i Clz) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, ClzX, 0x5AC01000)
-	if err != nil {
-		return 0, fmt.Errorf("clz: %w", err)
-	}
-
-	rd, rn, err := regNums2(i.rd, i.rn)
-	if err != nil {
-		return 0, fmt.Errorf("clz: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5)
+	return newClz(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), armRegName(w>>5&0x1f, w>>31&1 == 1))
 }

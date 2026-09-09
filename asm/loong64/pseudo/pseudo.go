@@ -31,7 +31,10 @@ import (
 func NewASMBackend() asm.Syntax {
 	be := loong64.New()
 
-	return source{be: be}
+	return source{
+		be:                  be,
+		parsePseudoMnemonic: parsecstrings.MapStrings("mnemonic", buildPseudoMnemonics()),
+	}
 }
 
 // Assemble is the full LoongArch assembly (syntax layer + pseudo) by
@@ -42,8 +45,10 @@ func Assemble(src string, base uint64) (*asm.Result, []asm.AsmError) {
 
 // source is an asm.Syntax decorator: it parses pseudo-mnemonics
 // itself and delegates the rest to the syntax layer's inner grammar.
+// The pseudo-mnemonic trie is built once (NewASMBackend).
 type source struct {
-	be *loong64.Backend
+	be                  *loong64.Backend
+	parsePseudoMnemonic parsec.Combinator[rune, parsecstrings.Position, string]
 }
 
 // pInstr is an unevaluated pseudo-instruction (mnemonic + operands).
@@ -71,13 +76,6 @@ var ctors = map[string]func(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error)
 	"la.got":   resolveLaGot,
 }
 
-// cPseudoMnemonic is the trie of pseudo-mnemonics (longest-match).
-// Built in a var initialization (as in the syntax layer): MapStrings
-// builds a trie at creation.
-var cPseudoMnemonic = parsecstrings.MapStrings("mnemonic", pseudoMnemonics)
-
-var pseudoMnemonics = buildPseudoMnemonics()
-
 func buildPseudoMnemonics() map[string]string {
 	m := map[string]string{}
 	for p := range ctors {
@@ -98,11 +96,11 @@ func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, as
 	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		expr.SkipSpaces(buf)
-		if name, err := cPseudoMnemonic(buf); err == nil {
+		if name, err := s.parsePseudoMnemonic(buf); err == nil {
 			// mnemonic boundary: followed by a space/comma/end of
 			// line; otherwise - rewind to the inner grammar
 			if r, ok := expr.PeekRune(buf); !ok || r == ' ' || r == '\t' || r == ',' || r == '\n' {
-				ops, oerr := loong64.ParseOps(buf)
+				ops, oerr := s.be.ParseOps(buf)
 				if oerr != nil {
 					return nil, oerr
 				}
@@ -154,7 +152,7 @@ func (p pInstr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
 	var out bytes.Buffer
 	for _, f := range forms {
 		insAddr := ctx.Addr() + uint64(out.Len())
-		res, rerr := p.be.ResolveForm(f.mnem, f.ops, formCtx{base: ctx, addr: insAddr})
+		res, rerr := p.be.ResolveForm(f.mnem, f.ops, newFormCtx(ctx, insAddr))
 		if rerr != nil {
 			return nil, fmt.Errorf("%s: %w", f.mnem, rerr)
 		}
@@ -173,6 +171,14 @@ func (p pInstr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
 type formCtx struct {
 	base asm.Ctx
 	addr uint64
+}
+
+// newFormCtx - a derived environment for a form encoded at addr.
+func newFormCtx(base asm.Ctx, addr uint64) formCtx {
+	return formCtx{
+		base: base,
+		addr: addr,
+	}
 }
 
 func (c formCtx) Addr() uint64 {

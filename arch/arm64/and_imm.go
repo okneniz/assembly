@@ -13,9 +13,40 @@ type AndImm struct {
 	logImm
 }
 
+// newAndImm - the AndImm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newAndImm(b base, li logImm) AndImm {
+	return AndImm{
+		base:   b,
+		logImm: li,
+	}
+}
+
 const andImmX uint32 = 0x92000000
 
 const andImmW uint32 = 0x12000000
+
+func (i AndImm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("and %s, %s, #0x%x", i.rd, i.rn, i.mask())
+}
+
+func (i AndImm) Encode(w io.Writer) (int64, error) {
+	match := andImmX
+	if !i.is64 {
+		match = andImmW
+	}
+
+	if i.n {
+		match |= 1 << 22
+	}
+
+	rd, rn, err := i.bits()
+	if err != nil {
+		return 0, fmt.Errorf("and: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
 
 // AndImm — and rd, rn, #bitmask. Register 31 reads as zr
 // (SP/WSP are not allowed — use XZR/WZR); the mask must be encodable
@@ -40,34 +71,9 @@ func (Builder) AndImm(rd, rn Reg, imm uint64) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewAndImm: operand imm: %#x not encodable as bitmask", imm)
 	}
 
-	return AndImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
+	return newAndImm(base{}, newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())), nil
 }
 
 func decodeAndImm(w uint32) Instr {
-	return AndImm{
-		newBase(w),
-		decodeLogImm(w),
-	}
-}
-
-func (i AndImm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("and %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
-func (i AndImm) Encode(w io.Writer) (int64, error) {
-	match := andImmX
-	if !i.is64 {
-		match = andImmW
-	}
-
-	if i.n {
-		match |= 1 << 22
-	}
-
-	rd, rn, err := i.bits()
-	if err != nil {
-		return 0, fmt.Errorf("and: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+	return newAndImm(newBase(w), decodeLogImm(w))
 }

@@ -141,9 +141,15 @@ func run(binPath string, iterations int, rebuildPath string) (*report, error) {
 	}
 
 	arch := ff.ArchKind()
-	assemble, err := backendFor(arch)
+	be, err := backendFor(arch)
 	if err != nil {
 		return nil, err
+	}
+
+	// the shared backend: the grammar is built once, every assemble call
+	// (per line classification + the whole listing) reuses it
+	assemble := func(src string, base uint64) (*asm.Result, []asm.AsmError) {
+		return asm.Assemble(src, base, be)
 	}
 
 	if rebuildPath != "" && ff.Name() != "ELF" {
@@ -187,18 +193,20 @@ func run(binPath string, iterations int, rebuildPath string) (*report, error) {
 }
 
 // backendFor returns the assembler backend of the architecture (aliases/
-// pseudo - same as in assembly).
-func backendFor(arch file.ArchKind) (func(string, uint64) (*asm.Result, []asm.AsmError), error) {
+// pseudo - same as in assembly). ONE instance for the whole run: the
+// backend builds its grammar once; asm.Assemble resets the (.option)
+// state before every pass, so sequential reuse is safe.
+func backendFor(arch file.ArchKind) (asm.Syntax, error) {
 	if arch == file.ArchARM64 {
-		return alias.Assemble, nil
+		return alias.NewASMBackend(), nil
 	}
 
 	if arch == file.ArchRISCV64 {
-		return pseudo.Assemble, nil
+		return pseudo.NewASMBackend(), nil
 	}
 
 	if arch == file.ArchLOONGARCH64 {
-		return lpseudo.Assemble, nil
+		return lpseudo.NewASMBackend(), nil
 	}
 
 	return nil, fmt.Errorf("unsupported architecture %d", arch)

@@ -13,10 +13,50 @@ type AndsImm struct {
 	logImm
 }
 
+// newAndsImm - the AndsImm constructor: the struct is assembled only
+// here (the Builder method and the decoder call it).
+func newAndsImm(b base, li logImm) AndsImm {
+	return AndsImm{
+		base:   b,
+		logImm: li,
+	}
+}
+
 const (
 	andsImmX uint32 = 0xF2000000
 	andsImmW uint32 = 0x72000000
 )
+
+func (i AndsImm) ObjDump(_ disasm.ViewCtx) string {
+	zr := "xzr"
+	if !i.is64 {
+		zr = "wzr"
+	}
+
+	if i.rd == zr {
+		return fmt.Sprintf("tst %s, #0x%x", i.rn, i.mask())
+	}
+
+	return fmt.Sprintf("ands %s, %s, #0x%x", i.rd, i.rn, i.mask())
+}
+
+func (i AndsImm) Encode(w io.Writer) (int64, error) {
+	match := andsImmX
+	if !i.is64 {
+		match = andsImmW
+	}
+
+	if i.n {
+		match |= 1 << 22
+	}
+
+	rd, rn, err := i.bits()
+	if err != nil {
+		return 0, fmt.Errorf("ands: %w", err)
+	}
+
+	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
 
 // AndsImm — ands rd, rn, #bitmask (tst when Rd = zr). Register 31
 // reads as zr (SP/WSP are not allowed — use XZR/WZR); the mask must be
@@ -49,43 +89,9 @@ func (Builder) AndsImm(rd, rn Reg, imm uint64) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewAndsImm: operand imm: %#x not encodable as bitmask", imm)
 	}
 
-	return AndsImm{logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())}, nil
+	return newAndsImm(base{}, newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())), nil
 }
 
 func decodeAndsImm(w uint32) Instr {
-	return AndsImm{
-		newBase(w),
-		decodeLogImm(w),
-	}
-}
-
-func (i AndsImm) ObjDump(_ disasm.ViewCtx) string {
-	zr := "xzr"
-	if !i.is64 {
-		zr = "wzr"
-	}
-
-	if i.rd == zr {
-		return fmt.Sprintf("tst %s, #0x%x", i.rn, i.mask())
-	}
-
-	return fmt.Sprintf("ands %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
-func (i AndsImm) Encode(w io.Writer) (int64, error) {
-	match := andsImmX
-	if !i.is64 {
-		match = andsImmW
-	}
-
-	if i.n {
-		match |= 1 << 22
-	}
-
-	rd, rn, err := i.bits()
-	if err != nil {
-		return 0, fmt.Errorf("ands: %w", err)
-	}
-
-	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+	return newAndsImm(newBase(w), decodeLogImm(w))
 }

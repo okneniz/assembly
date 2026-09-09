@@ -7,7 +7,8 @@
 package file
 
 import (
-	"github.com/okneniz/parsec"
+	"fmt"
+
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/file/elf"
@@ -63,19 +64,23 @@ func Detect(path string) (FileFormat, error) {
 	return nil, errUnsupported(magic)
 }
 
-// readMagic reads the first 4 bytes of a file with a combinator (one buffer per file).
+// readMagic reads the first 4 bytes of a file (one buffer per file); a
+// plain byte loop - the fixed read needs no combinator machinery.
 func readMagic(path string) ([4]byte, error) {
 	buf, err := bytes.BufferFromFile(path)
 	if err != nil {
 		return [4]byte{}, err
 	}
 
-	raw, err := parsec.Count(4, "file: expected 4 magic bytes", bytes.Any())(buf)
-	if err != nil {
-		return [4]byte{}, err
+	var magic [4]byte
+	for i := range 4 {
+		b, rerr := buf.Read(true)
+		if rerr != nil {
+			return [4]byte{}, fmt.Errorf("file: expected 4 magic bytes: %w", rerr)
+		}
+
+		magic[i] = b
 	}
 
-	var magic [4]byte
-	copy(magic[:], raw)
 	return magic, nil
 }

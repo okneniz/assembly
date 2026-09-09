@@ -7,6 +7,7 @@ package arm64
 import (
 	"errors"
 	"fmt"
+
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -109,8 +110,11 @@ func invFpReg(prefix byte) func(any) (uint32, error) {
 }
 
 // invCond: condition name → index (inverse of condNames; the cs/cc
-// synonyms from GNU syntax are also accepted).
-var invCondNames = func() map[string]uint32 {
+// synonyms from GNU syntax are also accepted). A derived data table,
+// built once.
+var invCondNames = buildInvCondNames()
+
+func buildInvCondNames() map[string]uint32 {
 	m := map[string]uint32{}
 	for i, n := range arch.CondNames() {
 		m[n] = uint32(i)
@@ -119,7 +123,7 @@ var invCondNames = func() map[string]uint32 {
 	m["cs"] = 2 // hs
 	m["cc"] = 3 // lo
 	return m
-}()
+}
 
 func invCond(v any) (uint32, error) {
 	s, ok := v.(string)

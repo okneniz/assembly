@@ -7,6 +7,9 @@ package asm
 // grammar is built on it. All atoms are Try-wrapped: a failed greedy atom
 // leaves the position advanced, restoring it is the caller alternative's
 // job (the parsec library contract).
+//
+// The combinators are values built by their constructors (no package
+// vars); the line grammar (stmt.go) captures them once per source.
 
 import (
 	"github.com/okneniz/parsec"
@@ -15,44 +18,54 @@ import (
 	"github.com/okneniz/assembly/asm/expr"
 )
 
-var (
-	cNotNL  = expr.CNotNL
-	cNL     = expr.CNL
-	cComma  = expr.CComma
-	cDQuote = parsecstrings.Try(parsecstrings.Eq("double quote", '"'))
-)
-
-// cIdent is an identifier/directive or label name:
+// newIdent is an identifier/directive or label name:
 // [._$a-zA-Z][._$a-zA-Z0-9]* - the continuation may contain digits
 // ("p2align", "foo2").
-var cIdent = parsecstrings.Cast(
-	parsecstrings.Concat(8,
-		parsecstrings.Some(4, "identifier start",
-			parsecstrings.Try(parsecstrings.Satisfy("identifier start", true, expr.IsIdentStart))),
-		parsecstrings.Many(8,
-			parsecstrings.Try(parsecstrings.Satisfy("identifier char", true, expr.IsIdentCont))),
-	),
-	func(rs []rune) (string, error) {
-		return string(rs), nil
-	},
-)
+func makeIdentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+	return parsecstrings.Cast(
+		parsecstrings.Concat(8,
+			parsecstrings.Some(
+				4,
+				"identifier start",
+				parsecstrings.Try(
+					parsecstrings.Satisfy("identifier start", true, expr.IsIdentStart),
+				),
+			),
+			parsecstrings.Many(
+				8,
+				parsecstrings.Try(
+					parsecstrings.Satisfy("identifier char", true, expr.IsIdentCont),
+				),
+			),
+		),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+}
 
-// cStringLit is a "..." string literal with escape sequences.
-var cStringLit = parsecstrings.Cast(
-	parsecstrings.Between(cDQuote, stringBody(), cDQuote),
-	func(rs []rune) (string, error) {
-		return string(rs), nil
-	},
-)
+// newStringLit is a "..." string literal with escape sequences.
+func makeStringLitParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+	dquote := parsecstrings.Try(parsecstrings.Eq("double quote", '"'))
+
+	return parsecstrings.Cast(
+		parsecstrings.Between(dquote, makeStringBody(), dquote),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+}
 
 // stringBody is any characters except '"' and '\n'; escape sequences are
 // expanded.
-func stringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
+func makeStringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
+	anyRune := parsecstrings.Any()
+
 	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
 		for {
 			pos := buf.Position()
-			r, err := parsecstrings.Any()(buf)
+			r, err := anyRune(buf)
 			if err != nil {
 				return nil, parsec.NewParseError(pos, "unterminated string")
 			}
@@ -70,7 +83,7 @@ func stringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
 			}
 
 			if r == '\\' {
-				e, err := parsecstrings.Any()(buf)
+				e, err := anyRune(buf)
 				if err != nil {
 					return nil, parsec.NewParseError(pos, "unterminated escape")
 				}
@@ -101,8 +114,10 @@ func atEOL(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
 
 // consumeEOL consumes '\n' if present.
 func consumeEOL(buf parsec.Buffer[rune, parsecstrings.Position]) {
-	if _, err := cNL(buf); err != nil {
-		return // no '\n' - nothing to consume
+	if r, ok := expr.PeekRune(buf); ok && r == '\n' {
+		if err := expr.ConsumeRune(buf); err != nil {
+			return // the rune just peeked - unreadable only at I/O failure
+		}
 	}
 }
 
@@ -120,11 +135,21 @@ func consumeComment(
 // skipToEOL consumes everything up to end of line inclusive (recovery after
 // a line parse error).
 func skipToEOL(buf parsec.Buffer[rune, parsecstrings.Position]) {
+	skipLineBody(buf)
+	consumeEOL(buf)
+}
+
+// skipLineBody consumes everything up to end of line, NOT including the
+// newline (unlike skipToEOL - parseLine will eat it).
+func skipLineBody(buf parsec.Buffer[rune, parsecstrings.Position]) {
 	for {
-		if _, err := cNotNL(buf); err != nil {
-			break
+		r, ok := expr.PeekRune(buf)
+		if !ok || r == '\n' {
+			return
+		}
+
+		if err := expr.ConsumeRune(buf); err != nil {
+			return // the rune just peeked - unreadable only at I/O failure
 		}
 	}
-
-	consumeEOL(buf)
 }
