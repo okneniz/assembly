@@ -13,6 +13,55 @@ type Sturb struct {
 	lsBase
 }
 
+// newSturbBase - the Sturb constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newSturbBase(b base, e lsBase) Sturb {
+	return Sturb{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newSturb - the Sturb constructor: validates the operands,
+// delegates the assembly to newSturbBase.
+func newSturb(b base, rt, rn Reg, off Off) (Sturb, error) {
+	err := requireClass(
+		rt,
+		"Sturb",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Sturb{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Sturb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Sturb{}, err
+	}
+
+	if err = requireUnscaledOff("Sturb", off); err != nil {
+		return Sturb{}, err
+	}
+
+	return newSturbBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, sturbEnc, "", "", 0),
+	), nil
+}
+
 const sturbEnc uint32 = 0x38000000 // sturb wt, [xn, #±imm9]
 
 func (i Sturb) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Sturb) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "sturb")
 }
 
-func decodeSturbOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSturbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -69,36 +118,10 @@ func decodeSturbOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Sturb{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Sturb — sturb rt, [rn, #off]: the unscaled form, byte access,
-// rt — w register only (register 31 reads as wzr), rn — x register or
-// SP (register 31 in the base reads as sp); the offset is a signed
-// imm9 (-0x100..0xff, any alignment).
 func (Builder) Sturb(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Sturb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Sturb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireUnscaledOff("Sturb", off); err != nil {
-		return nil, err
-	}
-
-	return Sturb{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, sturbEnc, "", "", 0),
-	}, nil
+	return newSturb(base{}, rt, rn, off)
 }

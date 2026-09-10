@@ -23,7 +23,7 @@ func newRbit(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return RbitOf(rd, rn), nil
+	return RbitOf(rd, rn)
 }
 
 func newRev16(ops []vOp) (Instr, error) {
@@ -36,7 +36,7 @@ func newRev16(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Rev16Of(rd, rn), nil
+	return Rev16Of(rd, rn)
 }
 
 func newRev32(ops []vOp) (Instr, error) {
@@ -49,7 +49,7 @@ func newRev32(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return Rev32Of(rd, rn), nil
+	return Rev32Of(rd, rn)
 }
 
 func newRev(ops []vOp) (Instr, error) {
@@ -62,7 +62,7 @@ func newRev(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return RevOf(rd, rn), nil
+	return RevOf(rd, rn)
 }
 
 func newClz(ops []vOp) (Instr, error) {
@@ -75,7 +75,7 @@ func newClz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return ClzOf(rd, rn), nil
+	return ClzOf(rd, rn)
 }
 
 func newCls(ops []vOp) (Instr, error) {
@@ -88,7 +88,7 @@ func newCls(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return ClsOf(rd, rn), nil
+	return ClsOf(rd, rn)
 }
 
 func newLslReg(ops []vOp) (Instr, error) {
@@ -101,7 +101,7 @@ func newLslReg(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return LslRegOf(rd, rn, rm), nil
+	return LslRegOf(rd, rn, rm)
 }
 
 func newLsrReg(ops []vOp) (Instr, error) {
@@ -114,7 +114,7 @@ func newLsrReg(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return LsrRegOf(rd, rn, rm), nil
+	return LsrRegOf(rd, rn, rm)
 }
 
 func newAsrReg(ops []vOp) (Instr, error) {
@@ -127,7 +127,7 @@ func newAsrReg(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return AsrRegOf(rd, rn, rm), nil
+	return AsrRegOf(rd, rn, rm)
 }
 
 func newRorReg(ops []vOp) (Instr, error) {
@@ -140,7 +140,7 @@ func newRorReg(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return RorRegOf(rd, rn, rm), nil
+	return RorRegOf(rd, rn, rm)
 }
 
 func newUdiv(ops []vOp) (Instr, error) {
@@ -153,7 +153,7 @@ func newUdiv(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return UdivOf(rd, rn, rm), nil
+	return UdivOf(rd, rn, rm)
 }
 
 func newSdiv(ops []vOp) (Instr, error) {
@@ -166,7 +166,7 @@ func newSdiv(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return SdivOf(rd, rn, rm), nil
+	return SdivOf(rd, rn, rm)
 }
 
 func newSmulh(ops []vOp) (Instr, error) {
@@ -179,7 +179,7 @@ func newSmulh(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return SmulhOf(rd, rn, rm), nil
+	return SmulhOf(rd, rn, rm)
 }
 
 func newUmulh(ops []vOp) (Instr, error) {
@@ -192,7 +192,7 @@ func newUmulh(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return UmulhOf(rd, rn, rm), nil
+	return UmulhOf(rd, rn, rm)
 }
 
 func newAdc(ops []vOp) (Instr, error) {
@@ -205,7 +205,7 @@ func newAdc(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return AdcOf(rd, rn, rm), nil
+	return AdcOf(rd, rn, rm)
 }
 
 func newCcmp(ops []vOp) (Instr, error) {
@@ -223,7 +223,7 @@ func newCcmp(ops []vOp) (Instr, error) {
 		return nil, errors.New("ccmp: bad imm")
 	}
 
-	return CcmpOf(rn, rm, uint32(v), ops[3].Sym()), nil
+	return CcmpOf(rn, rm, uint32(v), ops[3].Sym())
 }
 
 func newExtr(ops []vOp) (Instr, error) {
@@ -241,7 +241,7 @@ func newExtr(ops []vOp) (Instr, error) {
 		return nil, errors.New("extr: bad lsb")
 	}
 
-	return ExtrOf(rd, rn, rm, uint32(v)), nil
+	return ExtrOf(rd, rn, rm, uint32(v))
 }
 
 // newMadd — madd rd, rn, rm, ra (mul/mneg with ra = zr — asm/arm64/alias).
@@ -261,7 +261,7 @@ func newMsub(ops []vOp) (Instr, error) {
 			return nil, err
 		}
 
-		return MsubOf(rd, rn, rm, ra), nil
+		return MsubOf(rd, rn, rm, ra)
 	}
 
 	return msub3(ops, "msub")
@@ -277,7 +277,7 @@ func msub3(ops []vOp, name string) (Instr, error) {
 		return nil, err
 	}
 
-	return MsubOf(rd, rn, rm, zeroReg(rd)), nil
+	return MsubOf(rd, rn, rm, zeroReg(rd))
 }
 
 func makeMaddCtor(ops []vOp, name string) (Instr, error) {
@@ -292,7 +292,7 @@ func makeMaddCtor(ops []vOp, name string) (Instr, error) {
 			return nil, err
 		}
 
-		return MaddOf(rd, rn, rm, ra), nil
+		return MaddOf(rd, rn, rm, ra)
 	}
 
 	if len(ops) != 3 {
@@ -304,7 +304,7 @@ func makeMaddCtor(ops []vOp, name string) (Instr, error) {
 		return nil, err
 	}
 
-	return MaddOf(rd, rn, rm, zeroReg(rd)), nil
+	return MaddOf(rd, rn, rm, zeroReg(rd))
 }
 
 func newCselArm(ops []vOp) (Instr, error) {
@@ -322,7 +322,7 @@ func newCselArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return CselOf(rd, rn, rm, cond), nil
+	return CselOf(rd, rn, rm, cond)
 }
 
 // csFam — the csinc/csinv/csneg constructor (full form rd, rn, rm, cond).
@@ -348,14 +348,18 @@ func csFam(ops []vOp, name string) (Instr, error) {
 
 // csOf — assemble a family struct by the base encoding name.
 func csOf(base string, rd, rn, rm, cond string) (Instr, error) {
-	c := newCsel(rd, rn, rm, cond)
+	c, cerr := newCsel(rd, rn, rm, cond)
 	switch base {
 	case "csinc":
-		return CsincOf(c), nil
+		return CsincOf(c)
 	case "csinv":
-		return CsinvOf(c), nil
+		return CsinvOf(c)
 	case "csneg":
-		return CsnegOf(c), nil
+		return CsnegOf(c)
+	}
+
+	if cerr != nil {
+		return nil, cerr
 	}
 
 	return c, nil

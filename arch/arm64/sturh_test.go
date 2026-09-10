@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSturhBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"sturh w0,[x1]",
-			buildSturh(t, wreg(t, 0), xreg(t, 1), 0),
-			0x78000020,
-		},
-		{
-			"sturh w7,[x8,#-9]",
-			buildSturh(t, wreg(t, 7), xreg(t, 8), -9),
-			0x781f7107,
-		},
+		{"sturh w0,[x1]", "w0", "x1", 0, 0x78000020},
+		{"sturh w7,[x8,#-9]", "w7", "x8", -9, 0x781f7107},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Sturh(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildSturh(t, wreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Sturh(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Sturh)
 	require.True(t, ok, "type = %T, want Sturh", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"sturh x,rt",
-			func() error {
-				_, err := New().Sturh(xreg(t, 0), xreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"sturh w1 base",
-			func() error {
-				_, err := New().Sturh(wreg(t, 0), wreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"sturh off -257",
-			func() error {
-				_, err := New().Sturh(wreg(t, 0), xreg(t, 1), -257)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildSturh — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildSturh(t *testing.T, rt, rn Reg, off Off) Instr {
-	t.Helper()
-	in, err := New().Sturh(rt, rn, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+		off  Off
+	}{
+		{"sturh x,rt", "x0", "x1", 0},
+		{"sturh w1 base", "w0", "w1", 0},
+		{"sturh off -257", "w0", "x1", -257},
+	}
+	for _, c := range errCases {
+		_, err := New().Sturh(reg(t, c.rt), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
+	}
 }

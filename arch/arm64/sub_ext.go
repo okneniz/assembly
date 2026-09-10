@@ -13,13 +13,87 @@ type SubExt struct {
 	extBase
 }
 
-// newSubExt - the SubExt constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newSubExt(b base, eb extBase) SubExt {
+// newSubExtBase - the SubExt constructor for a ready embedded base (the
+// string-operand layer): the struct is assembled only here.
+func newSubExtBase(b base, eb extBase) SubExt {
 	return SubExt{
 		base:    b,
 		extBase: eb,
 	}
+}
+
+// newSubExt - the SubExt constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newSubExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (SubExt, error) {
+	err := requireClass(
+		rd,
+		"SubExt",
+		"rd",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return SubExt{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"SubExt",
+		"rn",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return SubExt{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"SubExt",
+		"rm",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return SubExt{}, err
+	}
+
+	err = requireWidth(
+		"SubExt",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return SubExt{}, err
+	}
+
+	if _, err := extNum(ext); err != nil {
+		return SubExt{}, fmt.Errorf("arm64.NewSubExt: operand ext: %w", err)
+	}
+
+	if imm3 > 7 {
+		return SubExt{}, fmt.Errorf("arm64.NewSubExt: operand imm3: %d is out of 0..7", imm3)
+	}
+
+	return SubExt{
+		base:    b,
+		extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64()),
+	}, nil
 }
 
 const (
@@ -36,39 +110,22 @@ func (i SubExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, SubExtX, SubExtW, "sub")
 }
 
-// SubExt — sub rd, rn, rm, ext #imm3. Register 31 reads as
-// sp/wsp; ext — uxtb/uxth/uxtw/uxtx/sxtb/sxth/sxtw/sxtx; imm3 — 0..7.
 func (Builder) SubExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	if err := requireClass(rd, "SubExt", "rd", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "SubExt", "rn", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "SubExt", "rm", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("SubExt", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	if _, err := extNum(ext); err != nil {
-		return nil, fmt.Errorf("arm64.NewSubExt: operand ext: %w", err)
-	}
-
-	if imm3 > 7 {
-		return nil, fmt.Errorf("arm64.NewSubExt: operand imm3: %d is out of 0..7", imm3)
-	}
-
-	return newSubExt(base{}, newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64())), nil
+	return newSubExt(base{}, rd, rn, rm, ext, imm3)
 }
 
-func decodeSubExt(w uint32) Instr {
-	return newSubExt(newBase(w), decodeExtBase(w))
+func decodeSubExt(w uint32) (Instr, error) {
+	in, err := newSubExt(
+		newBase(w),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
+		extName(w>>13&7),
+		w>>10&7,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

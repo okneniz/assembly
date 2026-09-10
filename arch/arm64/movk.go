@@ -21,15 +21,35 @@ type Movk struct {
 	imm16, hw uint32
 }
 
-// newMovk - the Movk constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newMovk(b base, rd string, imm16 uint32, hw uint32) Movk {
+// newMovk - the Movk constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newMovk(b base, rd Reg, imm Imm16, hw Hw) (Movk, error) {
+	err := requireClass(
+		rd,
+		"Movk",
+		"rd",
+		"x/w register, sp not allowed (register 31 reads as zr)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Movk{}, err
+	}
+
+	if err = requireHwW(rd, "Movk", hw); err != nil {
+		return Movk{}, err
+	}
+
 	return Movk{
 		base:  b,
-		rd:    rd,
-		imm16: imm16,
-		hw:    hw,
-	}
+		rd:    rd.name(),
+		imm16: imm.v,
+		hw:    uint32(hw),
+	}, nil
 }
 
 func (i Movk) ObjDump(_ disasm.ViewCtx) string {
@@ -58,29 +78,20 @@ func (i Movk) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-// Movk — movk rd, #imm16, lsl #hw*16. The 32-bit form allows only
-// Hw0/Hw1 (shift up to #16).
 func (Builder) Movk(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Movk",
-		"rd",
-		"x/w register, sp not allowed (register 31 reads as zr)",
-		classX,
-		classW,
-		classXZR,
-		classWZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireHwW(rd, "Movk", hw); err != nil {
-		return nil, err
-	}
-
-	return newMovk(base{}, rd.name(), imm.v, uint32(hw)), nil
+	return newMovk(base{}, rd, imm, hw)
 }
 
-func decodeMovk(w uint32) Instr {
-	return newMovk(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), w>>5&0xffff, w>>21&0x3)
+func decodeMovk(w uint32) (Instr, error) {
+	in, err := newMovk(
+		newBase(w),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		imm16Of(w>>5&0xffff),
+		hwOf(w>>21&0x3),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

@@ -18,8 +18,8 @@ type Simd2 struct {
 	q, size uint32
 }
 
-func decodeSimd2Of(op string, enc uint32) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSimd2Of(op string, enc uint32) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		q, size := w>>30&1, w>>22&3
 		return Simd2{
 			base: newBase(w),
@@ -30,7 +30,7 @@ func decodeSimd2Of(op string, enc uint32) func(uint32) Instr {
 			enc:  enc,
 			q:    q,
 			size: size,
-		}
+		}, nil
 	}
 }
 

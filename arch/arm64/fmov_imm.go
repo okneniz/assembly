@@ -20,8 +20,8 @@ type FmovImm struct {
 	rdK  fpKind
 }
 
-func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		imm8 := w >> 13 & 0xff
 		rd := fpReg(w&0x1f, rdK)
 		if isS {
@@ -34,7 +34,7 @@ func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32) Instr {
 				isS:  true,
 				enc:  enc,
 				rdK:  rdK,
-			}
+			}, nil
 		}
 
 		v := vfpExpandImm64(imm8)
@@ -45,7 +45,7 @@ func decodeFmovImmOf(isS bool, enc uint32, rdK fpKind) func(uint32) Instr {
 			text: fmt.Sprintf("%.8f", v),
 			enc:  enc,
 			rdK:  rdK,
-		}
+		}, nil
 	}
 }
 

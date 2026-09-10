@@ -38,7 +38,7 @@ func newSxt(name string, imms uint32) arch.ArmCtor {
 		}
 
 		rn := arch.RegNameXOf(num) // the encoding uses the same number
-		return arch.SbfmOf(rd, rn, 0, imms, true), nil
+		return arch.SbfmOf(rd, rn, 0, imms, true)
 	}
 }
 
@@ -78,9 +78,9 @@ func newBf(name string, isU, isFiz bool) arch.ArmCtor {
 		}
 
 		if isU {
-			return arch.UbfmOf(rd, rn, immr, imms, isf), nil
+			return arch.UbfmOf(rd, rn, immr, imms, isf)
 		}
 
-		return arch.SbfmOf(rd, rn, immr, imms, isf), nil
+		return arch.SbfmOf(rd, rn, immr, imms, isf)
 	}
 }

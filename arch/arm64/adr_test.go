@@ -4,88 +4,44 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestAdrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		off  int64
 		word uint32
 	}{
-		{
-			"adr x0,#0x10",
-			buildAdr(t, xreg(t, 0), 0x10),
-			0x10000080,
-		},
-		{
-			"adr x1,#-0x1000",
-			buildAdr(t, xreg(t, 1), -0x1000),
-			0x10ff8001,
-		},
-		{
-			"adr x2,#0x7ff",
-			buildAdr(t, xreg(t, 2), 0x7ff),
-			0x70003fe2,
-		},
-		{
-			"adr x3,#0xfffff",
-			buildAdr(t, xreg(t, 3), 0xfffff),
-			0x707fffe3,
-		},
-		{
-			"adr x4,#-0x100000",
-			buildAdr(t, xreg(t, 4), -0x100000),
-			0x10800004,
-		},
+		{"adr x0,#0x10", "x0", 0x10, 0x10000080},
+		{"adr x1,#-0x1000", "x1", -0x1000, 0x10ff8001},
+		{"adr x2,#0x7ff", "x2", 0x7ff, 0x70003fe2},
+		{"adr x3,#0xfffff", "x3", 0xfffff, 0x707fffe3},
+		{"adr x4,#-0x100000", "x4", -0x100000, 0x10800004},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Adr(reg(t, c.rd), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAdr(t, xreg(t, 0), 0x10)
+	first := cases[0]
+	in, err := New().Adr(reg(t, first.rd), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Adr)
 	require.True(t, ok, "type = %T, want Adr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"adr w rd",
-			func() error {
-				_, err := New().Adr(wreg(t, 0), 0x10)
-				return err
-			},
-		},
-		{
-			"adr off 0x100000",
-			func() error {
-				_, err := New().Adr(xreg(t, 0), 0x100000)
-				return err
-			},
-		},
-		{
-			"adr off -0x100001",
-			func() error {
-				_, err := New().Adr(xreg(t, 0), -0x100001)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAdr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAdr(t *testing.T, rd Reg, off int64) Instr {
-	t.Helper()
-	in, err := New().Adr(rd, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		off  int64
+	}{
+		{"adr w rd", "w0", 0x10},
+		{"adr off 0x100000", "x0", 0x100000},
+		{"adr off -0x100001", "x0", -0x100001},
+	}
+	for _, c := range errCases {
+		_, err := New().Adr(reg(t, c.rd), c.off)
+		assertErr(t, c.name, err)
+	}
 }

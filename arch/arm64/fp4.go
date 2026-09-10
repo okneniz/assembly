@@ -16,8 +16,8 @@ type Fp4 struct {
 	enc            uint32
 }
 
-func decodeFp4Of(op string, enc uint32) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeFp4Of(op string, enc uint32) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return Fp4{
 			base: newBase(w),
 			op:   op,
@@ -26,7 +26,7 @@ func decodeFp4Of(op string, enc uint32) func(uint32) Instr {
 			rm:   fpReg(w>>16&0x1f, kD),
 			ra:   fpReg(w>>10&0x1f, kD),
 			enc:  enc,
-		}
+		}, nil
 	}
 }
 

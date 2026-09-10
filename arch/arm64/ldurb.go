@@ -13,6 +13,55 @@ type Ldurb struct {
 	lsBase
 }
 
+// newLdurbBase - the Ldurb constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newLdurbBase(b base, e lsBase) Ldurb {
+	return Ldurb{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newLdurb - the Ldurb constructor: validates the operands,
+// delegates the assembly to newLdurbBase.
+func newLdurb(b base, rt, rn Reg, off Off) (Ldurb, error) {
+	err := requireClass(
+		rt,
+		"Ldurb",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Ldurb{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Ldurb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Ldurb{}, err
+	}
+
+	if err = requireUnscaledOff("Ldurb", off); err != nil {
+		return Ldurb{}, err
+	}
+
+	return newLdurbBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurbEnc, "", "", 0),
+	), nil
+}
+
 const ldurbEnc uint32 = 0x38400000 // ldurb wt, [xn, #±imm9]
 
 func (i Ldurb) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Ldurb) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldurb")
 }
 
-func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -69,36 +118,10 @@ func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Ldurb{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Ldurb — ldurb rt, [rn, #off]: the unscaled form, byte access,
-// rt — w register only (register 31 reads as wzr), rn — x register or
-// SP (register 31 in the base reads as sp); the offset is a signed
-// imm9 (-0x100..0xff, any alignment).
 func (Builder) Ldurb(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldurb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldurb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireUnscaledOff("Ldurb", off); err != nil {
-		return nil, err
-	}
-
-	return Ldurb{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurbEnc, "", "", 0),
-	}, nil
+	return newLdurb(base{}, rt, rn, off)
 }

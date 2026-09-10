@@ -82,7 +82,7 @@ func (i SimdCopy) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.enc|i.q<<30|0xC00|opBits<<12|imm5<<16|i.gprNum<<5|i.vdNum)
 }
 
-func decodeSimdCopy(w uint32) Instr {
+func decodeSimdCopy(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
 	// imm5 = the size one-hot plus the index bits above it (size = ctz,
 	// index = imm5 >> size+1). ins/smov/umov of a NONZERO lane is legal
@@ -130,5 +130,5 @@ func decodeSimdCopy(w uint32) Instr {
 		vdNum:  vdNum,
 		gprNum: gprNum,
 		isDest: isDest,
-	}
+	}, nil
 }

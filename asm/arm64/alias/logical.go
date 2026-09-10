@@ -38,7 +38,7 @@ func newTst(ops []arch.ArmOp) (arch.Instr, error) {
 			return nil, errors.New("tst: not encodable as bitmask")
 		}
 
-		return arch.AndsImmOf(zr, rn, immr, imms, n == 1, is64), nil
+		return arch.AndsImmOf(zr, rn, immr, imms, n == 1, is64)
 	}
 
 	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {
@@ -56,7 +56,7 @@ func newTst(ops []arch.ArmOp) (arch.Instr, error) {
 			shift, amt = ops[2].ShiftName(), uint32(a)
 		}
 
-		return arch.AndsShiftOf(zr, rn, ops[1].Reg(), amt, shift, rn[0] == 'x'), nil
+		return arch.AndsShiftOf(zr, rn, ops[1].Reg(), amt, shift, rn[0] == 'x')
 	}
 
 	return nil, errors.New("tst: bad operand")
@@ -91,7 +91,7 @@ func newMvn(ops []arch.ArmOp) (arch.Instr, error) {
 		shift, amt = ops[2].ShiftName(), uint32(a)
 	}
 
-	return arch.OrnShiftOf(rd, arch.ZeroReg(rd), rm, amt, shift, rd[0] == 'x'), nil
+	return arch.OrnShiftOf(rd, arch.ZeroReg(rd), rm, amt, shift, rd[0] == 'x')
 }
 
 // newMov is the mov rd, rm (orr Rn=zr, byte-parity priority) |
@@ -148,7 +148,7 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 	}
 
 	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {
-		return arch.OrrShiftOf(rd, arch.ZeroReg(rd), ops[1].Reg(), 0, "", rd[0] == 'x'), nil
+		return arch.OrrShiftOf(rd, arch.ZeroReg(rd), ops[1].Reg(), 0, "", rd[0] == 'x')
 	}
 
 	if !ops[1].IsImm() || ops[1].Sym() != "" {
@@ -159,7 +159,7 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 	is64 := rd[0] == 'x'
 	if v >= 0 {
 		if v == 0 {
-			return arch.MovzOf(rd, 0, 0), nil
+			return arch.MovzOf(rd, 0, 0)
 		}
 
 		u := uint64(v)
@@ -170,7 +170,7 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 
 			lane := u >> (16 * hw)
 			if lane <= 0xffff && u == lane<<(16*hw) {
-				return arch.MovzOf(rd, uint32(lane), hw), nil
+				return arch.MovzOf(rd, uint32(lane), hw)
 			}
 		}
 
@@ -183,14 +183,14 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 
 			lane := ^u >> (16 * hw)
 			if lane <= 0xffff && ^u == lane<<(16*hw) && lane != 0 {
-				return arch.MovnOf(rd, uint32(lane), hw), nil
+				return arch.MovnOf(rd, uint32(lane), hw)
 			}
 		}
 
 		// not MOVZ/MOVN - an ORR bitmask (the xzr form of mov), as
 		// objdump does
 		if n, immr, imms, ok := arch.EncodeBitMasks(is64, u); ok {
-			return arch.OrrImmOf(rd, arch.ZeroReg(rd), immr, imms, n == 1, is64), nil
+			return arch.OrrImmOf(rd, arch.ZeroReg(rd), immr, imms, n == 1, is64)
 		}
 
 		return nil, fmt.Errorf("mov: %#x not encodable", v)
@@ -200,18 +200,18 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 	x := uint64(-v)
 	switch {
 	case x <= 0x10000:
-		return arch.MovnOf(rd, uint32(x-1), 0), nil
+		return arch.MovnOf(rd, uint32(x-1), 0)
 	case x <= 0x100000000 && x%0x10000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x10000-1), 1), nil
+		return arch.MovnOf(rd, uint32(x/0x10000-1), 1)
 	case x <= 0x1000000000000 && x%0x100000000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x100000000-1), 2), nil
+		return arch.MovnOf(rd, uint32(x/0x100000000-1), 2)
 	case x%0x1000000000000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x1000000000000), 3), nil
+		return arch.MovnOf(rd, uint32(x/0x1000000000000), 3)
 	}
 
 	// a negative not MOVN-encodable - an ORR bitmask (the xzr form of mov)
 	if n, immr, imms, ok := arch.EncodeBitMasks(is64, ^x); ok {
-		return arch.OrrImmOf(rd, arch.ZeroReg(rd), immr, imms, n == 1, is64), nil
+		return arch.OrrImmOf(rd, arch.ZeroReg(rd), immr, imms, n == 1, is64)
 	}
 
 	return nil, errors.New("mov: negative imm not encodable")

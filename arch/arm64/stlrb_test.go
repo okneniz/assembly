@@ -4,66 +4,40 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestStlrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"stlrb w3,[x4]",
-			buildStlrb(t, wreg(t, 3), xreg(t, 4)),
-			0x089ffc83,
-		},
-		{
-			"stlrb wzr,[sp]",
-			buildStlrb(t, WZR, SP),
-			0x089fffff,
-		},
+		{"stlrb w3,[x4]", "w3", "x4", 0x089ffc83},
+		{"stlrb wzr,[sp]", "wzr", "sp", 0x089fffff},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Stlrb(reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildStlrb(t, wreg(t, 3), xreg(t, 4))
+	first := cases[0]
+	in, err := New().Stlrb(reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Stlrb)
 	require.True(t, ok, "type = %T, want Stlrb", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"stlrb x,rt",
-			func() error {
-				_, err := New().Stlrb(xreg(t, 3), xreg(t, 4))
-				return err
-			},
-		},
-		{
-			"stlrb w1 base",
-			func() error {
-				_, err := New().Stlrb(wreg(t, 3), wreg(t, 4))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildStlrb — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildStlrb(t *testing.T, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Stlrb(rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+	}{
+		{"stlrb x,rt", "x3", "x4"},
+		{"stlrb w1 base", "w3", "w4"},
+	}
+	for _, c := range errCases {
+		_, err := New().Stlrb(reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

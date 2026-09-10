@@ -14,14 +14,55 @@ type Clz struct {
 	rd, rn string
 }
 
-// newClz - the Clz constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newClz(b base, rd string, rn string) Clz {
+// newClz - the Clz constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newClz(b base, rd Reg, rn Reg) (Clz, error) {
+	err := requireClass(
+		rd,
+		"Clz",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Clz{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Clz",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Clz{}, err
+	}
+
+	err = requireWidth(
+		"Clz",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return Clz{}, err
+	}
+
 	return Clz{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+	}, nil
 }
 
 const ClzX uint32 = 0xDAC01000
@@ -44,26 +85,15 @@ func (i Clz) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-// Clz — clz rd, rn. Register 31 reads as zr (SP/WSP are not
-// allowed — use XZR/WZR); the width is shared by both registers.
 func (Builder) Clz(rd, rn Reg) (Instr, error) {
-	if err := requireClass(rd, "Clz", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Clz", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Clz", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newClz(base{}, rd.name(), rn.name()), nil
+	return newClz(base{}, rd, rn)
 }
 
-func decodeClz(w uint32) Instr {
-	return newClz(newBase(w), armRegName(w&0x1f, w>>31&1 == 1), armRegName(w>>5&0x1f, w>>31&1 == 1))
+func decodeClz(w uint32) (Instr, error) {
+	in, err := newClz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

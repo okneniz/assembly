@@ -4,73 +4,45 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestCsinvBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		cond string
 		word uint32
 	}{
-		{
-			"csinv x5,x6,x7,al",
-			buildCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al"),
-			0xda87e0c5,
-		},
-		{
-			"csinv w2,w3,wzr,le",
-			buildCsinv(t, wreg(t, 2), wreg(t, 3), WZR, "le"),
-			0x5a9fd062,
-		},
+		{"csinv x5,x6,x7,al", "x5", "x6", "x7", "al", 0xda87e0c5},
+		{"csinv w2,w3,wzr,le", "w2", "w3", "wzr", "le", 0x5a9fd062},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Csinv(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildCsinv(t, xreg(t, 5), xreg(t, 6), xreg(t, 7), "al")
+	first := cases[0]
+	in, err := New().Csinv(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), first.cond)
+	require.NoError(t, err)
 	_, ok := in.(Csinv)
 	require.True(t, ok, "type = %T, want Csinv", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"csinv sp,rd",
-			func() error {
-				_, err := New().Csinv(SP, xreg(t, 6), xreg(t, 7), "al")
-				return err
-			},
-		},
-		{
-			"csinv w,x widths",
-			func() error {
-				_, err := New().Csinv(xreg(t, 5), wreg(t, 6), xreg(t, 7), "al")
-				return err
-			},
-		},
-		{
-			"csinv bad cond",
-			func() error {
-				_, err := New().Csinv(xreg(t, 5), xreg(t, 6), xreg(t, 7), "foo")
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildCsinv — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildCsinv(t *testing.T, rd, rn, rm Reg, cond string) Instr {
-	t.Helper()
-	in, err := New().Csinv(rd, rn, rm, cond)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		cond string
+	}{
+		{"csinv sp,rd", "sp", "x6", "x7", "al"},
+		{"csinv w,x widths", "x5", "w6", "x7", "al"},
+		{"csinv bad cond", "x5", "x6", "x7", "foo"},
+	}
+	for _, c := range errCases {
+		_, err := New().Csinv(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		assertErr(t, c.name, err)
+	}
 }

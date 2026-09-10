@@ -13,6 +13,38 @@ type Ldr struct {
 	lsBase
 }
 
+// newLdrBase - the Ldr constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newLdrBase(b base, e lsBase) Ldr {
+	return Ldr{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newLdr - the Ldr constructor: validates the operands,
+// delegates the assembly to newLdrBase.
+func newLdr(b base, rt, rn Reg, off Off) (Ldr, error) {
+	if err := lsOperand(rt, rn, "Ldr"); err != nil {
+		return Ldr{}, err
+	}
+
+	enc, scale := ldrXEnc, uint32(3)
+	if !rt.Is64() {
+		enc, scale = ldrWEnc, 2
+	}
+
+	if err := requireOff("Ldr", off, scale); err != nil {
+		return Ldr{}, err
+	}
+
+	return newLdrBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
+	), nil
+}
+
 // Encodings of the unsigned-offset form: the access size is set by rt, the
 // offset scale = log2 of the size.
 const (
@@ -37,8 +69,8 @@ type ldrPoolWrap struct {
 
 func (ldrPoolWrap) SkipVerify() {}
 
-func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -83,7 +115,7 @@ func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Ldr{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
@@ -93,23 +125,6 @@ func LdrPoolWrapOf(rt string, lit int64, enc uint32) Instr {
 	return ldrPoolWrap{Ldr{lsBase: newLsBase(rt, "", memLiteral, 0, lit, enc, "", "", 0)}}
 }
 
-// Ldr — ldr rt, [rn, #off]: byte offset, scaling to the access size is
-// hidden here.
 func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
-	if err := lsOperand(rt, rn, "Ldr"); err != nil {
-		return nil, err
-	}
-
-	enc, scale := ldrXEnc, uint32(3)
-	if !rt.Is64() {
-		enc, scale = ldrWEnc, 2
-	}
-
-	if err := requireOff("Ldr", off, scale); err != nil {
-		return nil, err
-	}
-
-	return Ldr{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
-	}, nil
+	return newLdr(base{}, rt, rn, off)
 }

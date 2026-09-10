@@ -16,15 +16,15 @@ type sysFixed struct {
 	enc   uint32
 }
 
-func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return sysFixed{
 			base:  newBase(w),
 			name:  name,
 			ops:   ops,
 			group: group,
 			enc:   enc,
-		}
+		}, nil
 	}
 }
 

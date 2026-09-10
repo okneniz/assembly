@@ -27,7 +27,8 @@ func TestBuilderDecodeRoundTripUnit(t *testing.T) {
 	}
 	for _, in := range ins {
 		w := buildWord(t, in)
-		back := decodeOne(w)
+		back, derr := decodeOne(w)
+		require.NoError(t, derr, "%#08x", w)
 		require.Equal(
 			t,
 			in.ObjDump(disasm.DefaultViewCtx()),

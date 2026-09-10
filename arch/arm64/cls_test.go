@@ -9,63 +9,36 @@ import (
 func TestClsBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
 		word uint32
 	}{
-		{
-			"cls x1,x2",
-			buildCls(t, xreg(t, 1), xreg(t, 2)),
-			0xdac01441,
-		},
-		{
-			"cls w1,w2",
-			buildCls(t, wreg(t, 1), wreg(t, 2)),
-			0x5ac01441,
-		},
+		{"cls x1,x2", "x1", "x2", 0xdac01441},
+		{"cls w1,w2", "w1", "w2", 0x5ac01441},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Cls(reg(t, c.rd), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildCls(t, xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Cls(reg(t, first.rd), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Cls)
 	require.True(t, ok, "type = %T, want Cls", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"cls x+w",
-			func() error {
-				_, err := New().Cls(xreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-		{
-			"cls sp",
-			func() error {
-				_, err := New().Cls(SP, xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"cls rn sp",
-			func() error {
-				_, err := New().Cls(xreg(t, 1), SP)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildCls — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildCls(t *testing.T, rd, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Cls(rd, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+	}{
+		{"cls x+w", "x1", "w2"},
+		{"cls sp", "sp", "x2"},
+		{"cls rn sp", "x1", "sp"},
+	}
+	for _, c := range errCases {
+		_, err := New().Cls(reg(t, c.rd), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

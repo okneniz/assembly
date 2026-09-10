@@ -14,13 +14,27 @@ type Ret struct {
 	rn string
 }
 
-// newRet - the Ret constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newRet(b base, rn string) Ret {
+// newRet - the Ret constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newRet(b base, rn Reg) (Ret, error) {
+	err := requireClass(
+		rn,
+		"Ret",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Ret{}, err
+	}
+
 	return Ret{
 		base: b,
-		rn:   rn,
-	}
+		rn:   rn.name(),
+	}, nil
 }
 
 const retMatch = 0xD65F0000
@@ -42,22 +56,15 @@ func (i Ret) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, retMatch|num<<5)
 }
 
-// Ret — ret rn (ret without an operand is Ret with the x30 register: X(30)).
 func (Builder) Ret(rn Reg) (Instr, error) {
-	if err := requireClass(
-		rn,
-		"Ret",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newRet(base{}, rn)
+}
+
+func decodeRet(w uint32) (Instr, error) {
+	in, err := newRet(newBase(w), gprOf(w>>5&0x1f, true))
+	if err != nil {
 		return nil, err
 	}
 
-	return newRet(base{}, rn.name()), nil
-}
-
-func decodeRet(w uint32) Instr {
-	return newRet(newBase(w), regNameX(w>>5&0x1f))
+	return in, nil
 }

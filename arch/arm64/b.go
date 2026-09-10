@@ -16,11 +16,11 @@ type B struct {
 
 // newB - the B constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newB(b base, off imm) B {
+func newB(b base, off imm) (B, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return B{
 		base: b,
 		off:  off,
-	}
+	}, nil
 }
 
 const bMatch = 0x14000000
@@ -42,9 +42,19 @@ func (i B) Encode(w io.Writer) (int64, error) {
 // B — b off (the pc-relative byte offset; the absolute target is off +
 // the instruction address).
 func (Builder) B(off int64) Instr {
-	return newB(base{}, immNum(off))
+	in, err := newB(base{}, immNum(off))
+	if err != nil {
+		panic(err) // a plain offset cannot fail
+	}
+
+	return in
 }
 
-func decodeB(w uint32) Instr {
-	return newB(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+func decodeB(w uint32) (Instr, error) {
+	in, err := newB(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

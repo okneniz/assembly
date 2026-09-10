@@ -9,78 +9,42 @@ import (
 func TestLdrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"ldr x0,[x1]",
-			buildLdr(t, xreg(t, 0), xreg(t, 1), 0),
-			0xf9400020,
-		},
-		{
-			"ldr x0,[x1,#8]",
-			buildLdr(t, xreg(t, 0), xreg(t, 1), 8),
-			0xf9400420,
-		},
-		{
-			"ldr w2,[sp,#0x10]",
-			buildLdr(t, wreg(t, 2), SP, 0x10),
-			0xb94013e2,
-		},
-		{
-			"ldr xzr,[x1,#0x7ff8]",
-			buildLdr(t, XZR, xreg(t, 1), 0x7ff8),
-			0xf97ffc3f,
-		},
+		{"ldr x0,[x1]", "x0", "x1", 0, 0xf9400020},
+		{"ldr x0,[x1,#8]", "x0", "x1", 8, 0xf9400420},
+		{"ldr w2,[sp,#0x10]", "w2", "sp", 0x10, 0xb94013e2},
+		{"ldr xzr,[x1,#0x7ff8]", "xzr", "x1", 0x7ff8, 0xf97ffc3f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Ldr(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdr(t, xreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Ldr(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Ldr)
 	require.True(t, ok, "type = %T, want Ldr", in)
-	for _, c := range []struct {
+
+	errCases := []struct {
 		name string
-		call func() error
+		rt   string
+		rn   string
+		off  Off
 	}{
-		{
-			"ldr sp,rt",
-			func() error {
-				_, err := New().Ldr(SP, xreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldr w,[w1]",
-			func() error {
-				_, err := New().Ldr(wreg(t, 0), wreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldr xzr base",
-			func() error {
-				_, err := New().Ldr(xreg(t, 0), XZR, 0)
-				return err
-			},
-		},
-		{
-			"ldr off 4 in x form",
-			func() error {
-				_, err := New().Ldr(xreg(t, 0), xreg(t, 1), 4)
-				return err
-			},
-		},
-		{
-			"ldr off 0x8000 in w form",
-			func() error {
-				_, err := New().Ldr(wreg(t, 0), xreg(t, 1), 0x8000)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
+		{"ldr sp,rt", "sp", "x1", 0},
+		{"ldr w,[w1]", "w0", "w1", 0},
+		{"ldr xzr base", "x0", "xzr", 0},
+		{"ldr off 4 in x form", "x0", "x1", 4},
+		{"ldr off 0x8000 in w form", "w0", "x1", 0x8000},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldr(reg(t, c.rt), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
 	}
 }

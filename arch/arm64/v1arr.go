@@ -16,15 +16,15 @@ type V1arr struct {
 	enc    uint32
 }
 
-func decodeV1arrOf(op string, enc uint32) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeV1arrOf(op string, enc uint32) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return V1arr{
 			base: newBase(w),
 			op:   op,
 			rd:   vReg(w & 0x1f),
 			rn:   vReg(w >> 5 & 0x1f),
 			enc:  enc,
-		}
+		}, nil
 	}
 }
 

@@ -16,11 +16,11 @@ type Bl struct {
 
 // newBl - the Bl constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newBl(b base, off imm) Bl {
+func newBl(b base, off imm) (Bl, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return Bl{
 		base: b,
 		off:  off,
-	}
+	}, nil
 }
 
 const blMatch = 0x94000000
@@ -43,9 +43,19 @@ func (i Bl) Encode(w io.Writer) (int64, error) {
 // destination (the ±128MB imm26 range is checked at encode time; the
 // absolute target is off + the instruction address).
 func (Builder) Bl(off int64) Instr {
-	return newBl(base{}, immNum(off))
+	in, err := newBl(base{}, immNum(off))
+	if err != nil {
+		panic(err) // a plain offset cannot fail
+	}
+
+	return in
 }
 
-func decodeBl(w uint32) Instr {
-	return newBl(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+func decodeBl(w uint32) (Instr, error) {
+	in, err := newBl(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

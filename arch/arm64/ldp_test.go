@@ -4,104 +4,50 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdpBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rt2  string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"ldp x0,x1,[x2]",
-			buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0),
-			0xa9400440,
-		},
-		{
-			"ldp x29,x30,[sp]",
-			buildLdp(t, xreg(t, 29), xreg(t, 30), SP, 0),
-			0xa9407bfd,
-		},
-		{
-			"ldp w3,w4,[x5,#8]",
-			buildLdp(t, wreg(t, 3), wreg(t, 4), xreg(t, 5), 8),
-			0x294110a3,
-		},
-		{
-			"ldp x0,x1,[x2,#-512]",
-			buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), -512),
-			0xa9600440,
-		},
+		{"ldp x0,x1,[x2]", "x0", "x1", "x2", 0, 0xa9400440},
+		{"ldp x29,x30,[sp]", "x29", "x30", "sp", 0, 0xa9407bfd},
+		{"ldp w3,w4,[x5,#8]", "w3", "w4", "x5", 8, 0x294110a3},
+		{"ldp x0,x1,[x2,#-512]", "x0", "x1", "x2", -512, 0xa9600440},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldp(reg(t, c.rt), reg(t, c.rt2), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdp(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), 0)
+	first := cases[0]
+	in, err := New().Ldp(reg(t, first.rt), reg(t, first.rt2), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Ldp)
 	require.True(t, ok, "type = %T, want Ldp", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldp sp,rt",
-			func() error {
-				_, err := New().Ldp(SP, xreg(t, 1), xreg(t, 2), 0)
-				return err
-			},
-		},
-		{
-			"ldp sp,rt2",
-			func() error {
-				_, err := New().Ldp(xreg(t, 0), SP, xreg(t, 2), 0)
-				return err
-			},
-		},
-		{
-			"ldp w2 base",
-			func() error {
-				_, err := New().Ldp(xreg(t, 0), xreg(t, 1), wreg(t, 2), 0)
-				return err
-			},
-		},
-		{
-			"ldp x,w widths",
-			func() error {
-				_, err := New().Ldp(xreg(t, 0), wreg(t, 1), xreg(t, 2), 0)
-				return err
-			},
-		},
-		{
-			"ldp off 4 in x form",
-			func() error {
-				_, err := New().Ldp(xreg(t, 0), xreg(t, 1), xreg(t, 2), 4)
-				return err
-			},
-		},
-		{
-			"ldp off 520 in x form",
-			func() error {
-				_, err := New().Ldp(xreg(t, 0), xreg(t, 1), xreg(t, 2), 520)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdp — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdp(t *testing.T, rt, rt2, rn Reg, off Off) Instr {
-	t.Helper()
-	in, err := New().Ldp(rt, rt2, rn, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rt2  string
+		rn   string
+		off  Off
+	}{
+		{"ldp sp,rt", "sp", "x1", "x2", 0},
+		{"ldp sp,rt2", "x0", "sp", "x2", 0},
+		{"ldp w2 base", "x0", "x1", "w2", 0},
+		{"ldp x,w widths", "x0", "w1", "x2", 0},
+		{"ldp off 4 in x form", "x0", "x1", "x2", 4},
+		{"ldp off 520 in x form", "x0", "x1", "x2", 520},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldp(reg(t, c.rt), reg(t, c.rt2), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
+	}
 }

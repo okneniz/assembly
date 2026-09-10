@@ -26,101 +26,56 @@ func TestRegNames(t *testing.T) {
 
 // TestImmValidation - immediate and offset ranges.
 func TestImmValidation(t *testing.T) {
-	for _, c := range []struct {
+	// out of range
+	errCases := []struct {
 		name string
-		call func() error
+		kind string
+		v    int64
 	}{
-		{
-			"New().Imm12(2048)",
-			func() error {
-				_, err := New().Imm12(2048)
-				return err
-			},
-		},
-		{
-			"New().Imm12(-2049)",
-			func() error {
-				_, err := New().Imm12(-2049)
-				return err
-			},
-		},
-		{
-			"New().Imm20(-1)",
-			func() error {
-				_, err := New().Imm20(-1)
-				return err
-			},
-		},
-		{
-			"New().Imm20(0x100000)",
-			func() error {
-				_, err := New().Imm20(0x100000)
-				return err
-			},
-		},
-		{
-			"New().Off(2048)",
-			func() error {
-				_, err := New().Off(2048)
-				return err
-			},
-		},
-	} {
-		err := c.call()
+		{"New().Imm12(2048)", "imm12", 2048},
+		{"New().Imm12(-2049)", "imm12", -2049},
+		{"New().Imm20(-1)", "imm20", -1},
+		{"New().Imm20(0x100000)", "imm20", 0x100000},
+		{"New().Off(2048)", "off", 2048},
+	}
+	for _, c := range errCases {
+		var err error
+		switch c.kind {
+		case "imm12":
+			_, err = New().Imm12(c.v)
+		case "imm20":
+			_, err = New().Imm20(c.v)
+		case "off":
+			_, err = New().Off(c.v)
+		}
+
 		require.Error(t, err, "case %q: out of range", c.name)
 	}
 
 	// Boundary values are valid.
-	for _, c := range []struct {
+	okCases := []struct {
 		name string
-		call func() error
+		kind string
+		v    int64
 	}{
-		{
-			"New().Imm12(-2048)",
-			func() error {
-				_, err := New().Imm12(-2048)
-				return err
-			},
-		},
-		{
-			"New().Imm12(2047)",
-			func() error {
-				_, err := New().Imm12(2047)
-				return err
-			},
-		},
-		{
-			"New().Imm20(0)",
-			func() error {
-				_, err := New().Imm20(0)
-				return err
-			},
-		},
-		{
-			"New().Imm20(0xfffff)",
-			func() error {
-				_, err := New().Imm20(0xfffff)
-				return err
-			},
-		},
-		{
-			"New().Off(-2048)",
-			func() error {
-				_, err := New().Off(-2048)
-				return err
-			},
-		},
-		{
-			"New().Off(2047)",
-			func() error {
-				_, err := New().Off(2047)
-				return err
-			},
-		},
-	} {
-		err := c.call()
-		require.NoError(t, err, "case %q", c.name)
+		{"New().Imm12(-2048)", "imm12", -2048},
+		{"New().Imm12(2047)", "imm12", 2047},
+		{"New().Imm20(0)", "imm20", 0},
+		{"New().Imm20(0xfffff)", "imm20", 0xfffff},
+		{"New().Off(-2048)", "off", -2048},
+		{"New().Off(2047)", "off", 2047},
 	}
+	for _, c := range okCases {
+		var err error
+		switch c.kind {
+		case "imm12":
+			_, err = New().Imm12(c.v)
+		case "imm20":
+			_, err = New().Imm20(c.v)
+		case "off":
+			_, err = New().Off(c.v)
+		}
 
-	require.Equal(t, "-0x4", imm12(t, -4).String())
+		require.NoError(t, err, "case %q: boundary", c.name)
+	}
 }

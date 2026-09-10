@@ -26,6 +26,14 @@ func assertErr(t *testing.T, name string, err error) {
 	require.Error(t, err, "%s: error expected", name)
 }
 
+// reg — a register by its source name (x0, w3, sp, wsp, xzr, wzr).
+func reg(t *testing.T, name string) Reg {
+	t.Helper()
+	r, err := RegOf(name)
+	require.NoError(t, err)
+	return r
+}
+
 // xreg/wreg/imm12/imm16/imm6 — valid operand values for table literals
 // (an error is impossible by construction).
 func xreg(t *testing.T, n int) Reg {

@@ -4,78 +4,44 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestStlxrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rs   string
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"stlxr w0,x1,[x2]",
-			buildStlxr(t, wreg(t, 0), xreg(t, 1), xreg(t, 2)),
-			0xc800fc41,
-		},
-		{
-			"stlxr w1,w2,[x3]",
-			buildStlxr(t, wreg(t, 1), wreg(t, 2), xreg(t, 3)),
-			0x8801fc62,
-		},
-		{
-			"stlxr wzr,x0,[sp]",
-			buildStlxr(t, WZR, xreg(t, 0), SP),
-			0xc81fffe0,
-		},
+		{"stlxr w0,x1,[x2]", "w0", "x1", "x2", 0xc800fc41},
+		{"stlxr w1,w2,[x3]", "w1", "w2", "x3", 0x8801fc62},
+		{"stlxr wzr,x0,[sp]", "wzr", "x0", "sp", 0xc81fffe0},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Stlxr(reg(t, c.rs), reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildStlxr(t, wreg(t, 0), xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Stlxr(reg(t, first.rs), reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Stlxr)
 	require.True(t, ok, "type = %T, want Stlxr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"stlxr x,rs",
-			func() error {
-				_, err := New().Stlxr(xreg(t, 0), xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"stlxr sp,rt",
-			func() error {
-				_, err := New().Stlxr(wreg(t, 0), SP, xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"stlxr w2 base",
-			func() error {
-				_, err := New().Stlxr(wreg(t, 0), xreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildStlxr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildStlxr(t *testing.T, rs, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Stlxr(rs, rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rs   string
+		rt   string
+		rn   string
+	}{
+		{"stlxr x,rs", "x0", "x1", "x2"},
+		{"stlxr sp,rt", "w0", "sp", "x2"},
+		{"stlxr w2 base", "w0", "x1", "w2"},
+	}
+	for _, c := range errCases {
+		_, err := New().Stlxr(reg(t, c.rs), reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

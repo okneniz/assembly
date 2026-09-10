@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdurbBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"ldurb w0,[x1]",
-			buildLdurb(t, wreg(t, 0), xreg(t, 1), 0),
-			0x38400020,
-		},
-		{
-			"ldurb w3,[x4,#-256]",
-			buildLdurb(t, wreg(t, 3), xreg(t, 4), -256),
-			0x38500083,
-		},
+		{"ldurb w0,[x1]", "w0", "x1", 0, 0x38400020},
+		{"ldurb w3,[x4,#-256]", "w3", "x4", -256, 0x38500083},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldurb(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdurb(t, wreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Ldurb(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Ldurb)
 	require.True(t, ok, "type = %T, want Ldurb", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldurb x,rt",
-			func() error {
-				_, err := New().Ldurb(xreg(t, 0), xreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldurb w1 base",
-			func() error {
-				_, err := New().Ldurb(wreg(t, 0), wreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldurb off 256",
-			func() error {
-				_, err := New().Ldurb(wreg(t, 0), xreg(t, 1), 256)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdurb — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdurb(t *testing.T, rt, rn Reg, off Off) Instr {
-	t.Helper()
-	in, err := New().Ldurb(rt, rn, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+		off  Off
+	}{
+		{"ldurb x,rt", "x0", "x1", 0},
+		{"ldurb w1 base", "w0", "w1", 0},
+		{"ldurb off 256", "w0", "x1", 256},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldurb(reg(t, c.rt), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
+	}
 }

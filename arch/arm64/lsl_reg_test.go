@@ -9,70 +9,39 @@ import (
 func TestLslRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"lsl x1,x2,x3",
-			buildLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
-			0x9a032041,
-		},
-		{
-			"lsl w1,w2,w3",
-			buildLslReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
-			0x1a032041,
-		},
+		{"lsl x1,x2,x3", "x1", "x2", "x3", 0x9a032041},
+		{"lsl w1,w2,w3", "w1", "w2", "w3", 0x1a032041},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().LslReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLslReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
+	first := cases[0]
+	in, err := New().LslReg(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(LslReg)
 	require.True(t, ok, "type = %T, want LslReg", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"lsl x+w",
-			func() error {
-				_, err := New().LslReg(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"lsl sp",
-			func() error {
-				_, err := New().LslReg(xreg(t, 0), xreg(t, 1), SP)
-				return err
-			},
-		},
-		{
-			"lsl rd sp",
-			func() error {
-				_, err := New().LslReg(SP, xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"lsl rn sp",
-			func() error {
-				_, err := New().LslReg(xreg(t, 0), SP, xreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLslReg — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLslReg(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().LslReg(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"lsl x+w", "x0", "w1", "x2"},
+		{"lsl sp", "x0", "x1", "sp"},
+		{"lsl rd sp", "sp", "x1", "x2"},
+		{"lsl rn sp", "x0", "sp", "x2"},
+	}
+	for _, c := range errCases {
+		_, err := New().LslReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

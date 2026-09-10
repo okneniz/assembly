@@ -9,70 +9,39 @@ import (
 func TestAdcBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"adc x0,x1,x2",
-			buildAdc(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
-			0x9a020020,
-		},
-		{
-			"adc x5,xzr,x7",
-			buildAdc(t, xreg(t, 5), XZR, xreg(t, 7)),
-			0x9a0703e5,
-		},
+		{"adc x0,x1,x2", "x0", "x1", "x2", 0x9a020020},
+		{"adc x5,xzr,x7", "x5", "xzr", "x7", 0x9a0703e5},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Adc(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAdc(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Adc(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(Adc)
 	require.True(t, ok, "type = %T, want Adc", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"adc w form",
-			func() error {
-				_, err := New().Adc(wreg(t, 0), xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"adc sp",
-			func() error {
-				_, err := New().Adc(SP, xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"adc rn w form",
-			func() error {
-				_, err := New().Adc(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"adc rm sp",
-			func() error {
-				_, err := New().Adc(xreg(t, 0), xreg(t, 1), SP)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAdc — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAdc(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().Adc(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"adc w form", "w0", "x1", "x2"},
+		{"adc sp", "sp", "x1", "x2"},
+		{"adc rn w form", "x0", "w1", "x2"},
+		{"adc rm sp", "x0", "x1", "sp"},
+	}
+	for _, c := range errCases {
+		_, err := New().Adc(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

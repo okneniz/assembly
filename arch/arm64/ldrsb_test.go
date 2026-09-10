@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdrsbBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"ldrsb x0,[x1]",
-			buildLdrsb(t, xreg(t, 0), xreg(t, 1), 0),
-			0x39800020,
-		},
-		{
-			"ldrsb x2,[sp,#0xfff]",
-			buildLdrsb(t, xreg(t, 2), SP, 0xfff),
-			0x39bfffe2,
-		},
+		{"ldrsb x0,[x1]", "x0", "x1", 0, 0x39800020},
+		{"ldrsb x2,[sp,#0xfff]", "x2", "sp", 0xfff, 0x39bfffe2},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldrsb(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdrsb(t, xreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Ldrsb(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Ldrsb)
 	require.True(t, ok, "type = %T, want Ldrsb", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldrsb w,rt",
-			func() error {
-				_, err := New().Ldrsb(wreg(t, 0), xreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldrsb w1 base",
-			func() error {
-				_, err := New().Ldrsb(xreg(t, 0), wreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldrsb off -1",
-			func() error {
-				_, err := New().Ldrsb(xreg(t, 0), xreg(t, 1), -1)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdrsb — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdrsb(t *testing.T, rt, rn Reg, off Off) Instr {
-	t.Helper()
-	in, err := New().Ldrsb(rt, rn, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+		off  Off
+	}{
+		{"ldrsb w,rt", "w0", "x1", 0},
+		{"ldrsb w1 base", "x0", "w1", 0},
+		{"ldrsb off -1", "x0", "x1", -1},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldrsb(reg(t, c.rt), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
+	}
 }

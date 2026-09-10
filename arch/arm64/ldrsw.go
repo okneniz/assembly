@@ -13,6 +13,55 @@ type Ldrsw struct {
 	lsBase
 }
 
+// newLdrswBase - the Ldrsw constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newLdrswBase(b base, e lsBase) Ldrsw {
+	return Ldrsw{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newLdrsw - the Ldrsw constructor: validates the operands,
+// delegates the assembly to newLdrswBase.
+func newLdrsw(b base, rt, rn Reg, off Off) (Ldrsw, error) {
+	err := requireClass(
+		rt,
+		"Ldrsw",
+		"rt",
+		"x register (register 31 in rt reads as xzr)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Ldrsw{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Ldrsw",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Ldrsw{}, err
+	}
+
+	if err = requireOff("Ldrsw", off, 2); err != nil {
+		return Ldrsw{}, err
+	}
+
+	return newLdrswBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrswEnc, "", "", 0),
+	), nil
+}
+
 const ldrswEnc uint32 = 0xB9800000 // ldrsw xt, [xn, #imm12<<2]
 
 func (i Ldrsw) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Ldrsw) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldrsw")
 }
 
-func decodeLdrswOf(enc uint32, kind memKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeLdrswOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		rt := regNameX(w & 0x1f)
 		rn := regNameXSP(w >> 5 & 0x1f)
 		var off int64
@@ -56,36 +105,10 @@ func decodeLdrswOf(enc uint32, kind memKind) func(uint32) Instr {
 		return Ldrsw{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Ldrsw — ldrsw rt, [rn, #off]: sign-extending word load, rt — x
-// register only (register 31 reads as xzr), rn — x register or SP
-// (register 31 in the base reads as sp); the offset is an imm12 scaled
-// by 4 (0..0xffc, alignment 4).
 func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldrsw", "rt", "x register (register 31 in rt reads as xzr)",
-		classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldrsw",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Ldrsw", off, 2); err != nil {
-		return nil, err
-	}
-
-	return Ldrsw{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrswEnc, "", "", 0),
-	}, nil
+	return newLdrsw(base{}, rt, rn, off)
 }

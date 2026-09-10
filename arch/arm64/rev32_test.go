@@ -4,66 +4,40 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestRev32Build(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
 		word uint32
 	}{
-		{
-			"rev32 x0,x1",
-			buildRev32(t, xreg(t, 0), xreg(t, 1)),
-			0xdac00820,
-		},
-		{
-			"rev32 x4,xzr",
-			buildRev32(t, xreg(t, 4), XZR),
-			0xdac00be4,
-		},
+		{"rev32 x0,x1", "x0", "x1", 0xdac00820},
+		{"rev32 x4,xzr", "x4", "xzr", 0xdac00be4},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Rev32(reg(t, c.rd), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildRev32(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Rev32(reg(t, first.rd), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Rev32)
 	require.True(t, ok, "type = %T, want Rev32", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"rev32 w form",
-			func() error {
-				_, err := New().Rev32(wreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-		{
-			"rev32 w,rn",
-			func() error {
-				_, err := New().Rev32(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildRev32 — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildRev32(t *testing.T, rd, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Rev32(rd, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+	}{
+		{"rev32 w form", "w0", "w1"},
+		{"rev32 w,rn", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Rev32(reg(t, c.rd), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

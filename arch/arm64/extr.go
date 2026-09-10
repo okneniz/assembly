@@ -15,16 +15,56 @@ type Extr struct {
 	lsb        uint32
 }
 
-// newExtr - the Extr constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newExtr(b base, rd string, rn string, rm string, lsb uint32) Extr {
+// newExtr - the Extr constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newExtr(b base, rd Reg, rn Reg, rm Reg, lsb Imm6) (Extr, error) {
+	err := requireClass(
+		rd,
+		"Extr",
+		"rd",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Extr{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Extr",
+		"rn",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Extr{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Extr",
+		"rm",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Extr{}, err
+	}
+
 	return Extr{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-		lsb:  lsb,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+		lsb:  lsb.v,
+	}, nil
 }
 
 const extrX uint32 = 0x93000000
@@ -50,34 +90,21 @@ func (i Extr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, extrX|rd|rn<<5|i.lsb<<10|rm<<16)
 }
 
-// Extr — extr rd, rn, rm, #lsb (ror when Rn == Rm). Only the
-// 64-bit form; register 31 reads as zr (SP/WSP are not allowed — use XZR);
-// lsb — 0..63.
 func (Builder) Extr(rd, rn, rm Reg, lsb Imm6) (Instr, error) {
-	if err := requireClass(rd, "Extr", "rd",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Extr", "rn",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "Extr", "rm",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	return newExtr(base{}, rd.name(), rn.name(), rm.name(), lsb.v), nil
+	return newExtr(base{}, rd, rn, rm, lsb)
 }
 
-func decodeExtr(w uint32) Instr {
-	return newExtr(
+func decodeExtr(w uint32) (Instr, error) {
+	in, err := newExtr(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
-		w>>10&0x3f,
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
+		imm6Of(w>>10&0x3f),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

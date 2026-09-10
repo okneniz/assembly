@@ -18,17 +18,58 @@ type AddImm struct {
 	isf          bool
 }
 
-// newAddImm - the AddImm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newAddImm(b base, rdNum uint32, rnNum uint32, imm12 uint32, shift bool, isf bool) AddImm {
+// newAddImm - the AddImm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAddImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (AddImm, error) {
+	err := requireClass(
+		rd,
+		"AddImm",
+		"rd",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return AddImm{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"AddImm",
+		"rn",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return AddImm{}, err
+	}
+
+	err = requireWidth(
+		"AddImm",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return AddImm{}, err
+	}
+
 	return AddImm{
 		base:  b,
-		rdNum: rdNum,
-		rnNum: rnNum,
-		imm12: imm12,
-		shift: shift,
-		isf:   isf,
-	}
+		rdNum: rd.bits(),
+		rnNum: rn.bits(),
+		imm12: imm.v,
+		shift: sh == LSL12,
+		isf:   rd.Is64(),
+	}, nil
 }
 
 const (
@@ -71,26 +112,17 @@ func (i AddImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-// AddImm — add rd, rn, #imm12[, lsl #12]. Register 31 reads as
-// sp/wsp (XZR/WZR are not allowed — use SP/WSP).
 func (Builder) AddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	if err := requireClass(rd, "AddImm", "rd", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "AddImm", "rn", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("AddImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newAddImm(base{}, rd.bits(), rn.bits(), imm.v, sh == LSL12, rd.Is64()), nil
+	return newAddImm(base{}, rd, rn, imm, sh)
 }
 
-func decodeAddImm(w uint32) Instr {
-	return newAddImm(newBase(w), w&0x1f, w>>5&0x1f, w>>10&0xfff, w>>22&1 == 1, w>>31&1 == 1)
+func decodeAddImm(w uint32) (Instr, error) {
+	in, err := newAddImm(newBase(w),
+		numReg(w&0x1f, w>>31&1 == 1),
+		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

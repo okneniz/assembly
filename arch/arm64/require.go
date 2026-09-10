@@ -77,8 +77,18 @@ func requireOff(instr string, off Off, scale uint32) error {
 
 // lsOperand - rt: x/w register (sp not allowed), rn: x/sp base.
 func lsOperand(rt, rn Reg, instr string) error {
-	if err := requireClass(rt, instr, "rt", "x/w register (register 31 in rt reads as zr)",
-		classX, classW, classXZR, classWZR); err != nil {
+	err := requireClass(
+		rt,
+		instr,
+		"rt",
+		"x/w register (register 31 in rt reads as zr)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
 		return err
 	}
 

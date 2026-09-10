@@ -9,82 +9,43 @@ import (
 func TestMaddBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		ra   string
 		word uint32
 	}{
-		{
-			"madd x1,x2,x3,x4",
-			buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4)),
-			0x9b031041,
-		},
-		{
-			"mul x1,x2,x3",
-			buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), XZR),
-			0x9b037c41,
-		},
-		{
-			"madd w1,w2,w3,w4",
-			buildMadd(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), wreg(t, 4)),
-			0x1b031041,
-		},
+		{"madd x1,x2,x3,x4", "x1", "x2", "x3", "x4", 0x9b031041},
+		{"mul x1,x2,x3", "x1", "x2", "x3", "xzr", 0x9b037c41},
+		{"madd w1,w2,w3,w4", "w1", "w2", "w3", "w4", 0x1b031041},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Madd(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), reg(t, c.ra))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildMadd(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), xreg(t, 4))
+	first := cases[0]
+	in, err := New().Madd(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), reg(t, first.ra))
+	require.NoError(t, err)
 	_, ok := in.(Madd)
 	require.True(t, ok, "type = %T, want Madd", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"madd x+w",
-			func() error {
-				_, err := New().Madd(xreg(t, 1), wreg(t, 2), xreg(t, 3), xreg(t, 4))
-				return err
-			},
-		},
-		{
-			"madd sp",
-			func() error {
-				_, err := New().Madd(xreg(t, 1), xreg(t, 2), xreg(t, 3), SP)
-				return err
-			},
-		},
-		{
-			"madd rd sp",
-			func() error {
-				_, err := New().Madd(SP, xreg(t, 2), xreg(t, 3), xreg(t, 4))
-				return err
-			},
-		},
-		{
-			"madd rn sp",
-			func() error {
-				_, err := New().Madd(xreg(t, 1), SP, xreg(t, 3), xreg(t, 4))
-				return err
-			},
-		},
-		{
-			"madd rm sp",
-			func() error {
-				_, err := New().Madd(xreg(t, 1), xreg(t, 2), SP, xreg(t, 4))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildMadd — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildMadd(t *testing.T, rd, rn, rm, ra Reg) Instr {
-	t.Helper()
-	in, err := New().Madd(rd, rn, rm, ra)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		ra   string
+	}{
+		{"madd x+w", "x1", "w2", "x3", "x4"},
+		{"madd sp", "x1", "x2", "x3", "sp"},
+		{"madd rd sp", "sp", "x2", "x3", "x4"},
+		{"madd rn sp", "x1", "sp", "x3", "x4"},
+		{"madd rm sp", "x1", "x2", "sp", "x4"},
+	}
+	for _, c := range errCases {
+		_, err := New().Madd(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), reg(t, c.ra))
+		assertErr(t, c.name, err)
+	}
 }

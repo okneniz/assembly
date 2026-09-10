@@ -16,16 +16,77 @@ type Csel struct {
 	cond       string
 }
 
-// newCsel - the Csel constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newCsel(b base, rd string, rn string, rm string, cond string) Csel {
+// newCsel - the Csel constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newCsel(b base, rd Reg, rn Reg, rm Reg, cond string) (Csel, error) {
+	err := requireClass(
+		rd,
+		"Csel",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Csel{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Csel",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Csel{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Csel",
+		"rm",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Csel{}, err
+	}
+
+	err = requireWidth(
+		"Csel",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return Csel{}, err
+	}
+
+	if _, err := condNum(cond); err != nil {
+		return Csel{}, fmt.Errorf("arm64.NewCsel: operand cond: %w", err)
+	}
+
 	return Csel{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
 		cond: cond,
-	}
+	}, nil
 }
 
 const (
@@ -61,43 +122,21 @@ func cselWrite(w io.Writer, i Csel, matchX, matchW uint32, name string) (int64, 
 	return writeWord(w, match|rd|rn<<5|c<<12|rm<<16)
 }
 
-// Csel — csel rd, rn, rm, cond. Register 31 reads as zr (SP/WSP
-// are not allowed — use XZR/WZR); the width is shared by all three
-// registers; cond — the standard condition names (eq/ne/.../nv, see
-// condNum).
 func (Builder) Csel(rd, rn, rm Reg, cond string) (Instr, error) {
-	if err := requireClass(rd, "Csel", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Csel", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "Csel", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Csel", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	if _, err := condNum(cond); err != nil {
-		return nil, fmt.Errorf("arm64.NewCsel: operand cond: %w", err)
-	}
-
-	return newCsel(base{}, rd.name(), rn.name(), rm.name(), cond), nil
+	return newCsel(base{}, rd, rn, rm, cond)
 }
 
-func decodeCsel(w uint32) Instr {
-	return newCsel(
+func decodeCsel(w uint32) (Instr, error) {
+	in, err := newCsel(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 		condName(w>>12&0xf),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

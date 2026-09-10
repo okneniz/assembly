@@ -16,8 +16,8 @@ type Fp3 struct {
 	enc        uint32
 }
 
-func decodeFp3Of(op string, k fpKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeFp3Of(op string, k fpKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		// the sf convention for widenable families (see fp2.go): the
 		// operand type is read FROM THE WORD (type bits [22:21]: 01=s,
 		// 11=d), not hard-coded - the isa-map widening frees the type
@@ -33,7 +33,7 @@ func decodeFp3Of(op string, k fpKind) func(uint32) Instr {
 			// widened schema may fire on either half of the s/d pair, so
 			// the encode base must come from the word, not the schema
 			enc: w &^ (0x1f | 0x1f<<5 | 0x1f<<16),
-		}
+		}, nil
 	}
 }
 

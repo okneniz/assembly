@@ -31,17 +31,6 @@ func newExtBase(
 	}
 }
 
-func decodeExtBase(w uint32) extBase {
-	return extBase{
-		rdNum:  w & 0x1f,
-		rnNum:  w >> 5 & 0x1f,
-		rmNum:  w >> 16 & 0x1f,
-		option: extName(w >> 13 & 7),
-		imm3:   w >> 10 & 7,
-		isf:    w>>31&1 == 1,
-	}
-}
-
 // extMod — the ", ext #imm3" modifier (empty when omitted).
 func (b extBase) extMod(omitLsl bool) string {
 	if b.imm3 == 0 {

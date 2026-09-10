@@ -14,15 +14,55 @@ type RorReg struct {
 	rd, rn, rm string
 }
 
-// newRorReg - the RorReg constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newRorReg(b base, rd string, rn string, rm string) RorReg {
+// newRorReg - the RorReg constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newRorReg(b base, rd Reg, rn Reg, rm Reg) (RorReg, error) {
+	err := requireClass(
+		rd,
+		"RorReg",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return RorReg{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"RorReg",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return RorReg{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"RorReg",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return RorReg{}, err
+	}
+
 	return RorReg{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const RorRegX uint32 = 0x9A002C00
@@ -45,51 +85,20 @@ func (i RorReg) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-// RorReg — ror rd, rn, rm. Only the 64-bit form (the package's
-// decode/Encode cover the x register form). Register 31 reads as zr
-// (SP/WSP are not allowed — use XZR).
 func (Builder) RorReg(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"RorReg",
-		"rd",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"RorReg",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rm,
-		"RorReg",
-		"rm",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	return newRorReg(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newRorReg(base{}, rd, rn, rm)
 }
 
-func decodeRorReg(w uint32) Instr {
-	return newRorReg(
+func decodeRorReg(w uint32) (Instr, error) {
+	in, err := newRorReg(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

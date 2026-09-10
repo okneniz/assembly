@@ -9,57 +9,39 @@ import (
 func TestMovzBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		imm  int64
+		hw   Hw
 		word uint32
 	}{
-		{
-			"movz x0,#0x1234",
-			buildMovz(t, xreg(t, 0), imm16(t, 0x1234), Hw0),
-			0xd2824680,
-		},
-		{
-			"movz x0,#1",
-			buildMovz(t, xreg(t, 0), imm16(t, 1), Hw0),
-			0xd2800020,
-		},
-		{
-			"movz w3,#0x42,hw1",
-			buildMovz(t, wreg(t, 3), imm16(t, 0x42), Hw1),
-			0x52a00843,
-		},
-		{
-			"movz xzr,#0,hw3",
-			buildMovz(t, XZR, imm16(t, 0), Hw3),
-			0xd2e0001f,
-		},
+		{"movz x0,#0x1234", "x0", 0x1234, Hw0, 0xd2824680},
+		{"movz x0,#1", "x0", 1, Hw0, 0xd2800020},
+		{"movz w3,#0x42,hw1", "w3", 0x42, Hw1, 0x52a00843},
+		{"movz xzr,#0,hw3", "xzr", 0, Hw3, 0xd2e0001f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Movz(reg(t, c.rd), imm16(t, c.imm), c.hw)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildMovz(t, xreg(t, 0), imm16(t, 1), Hw0)
+	first := cases[0]
+	in, err := New().Movz(reg(t, first.rd), imm16(t, first.imm), first.hw)
+	require.NoError(t, err)
 	_, ok := in.(Movz)
 	require.True(t, ok, "type = %T, want Movz", in)
-	for _, c := range []struct {
+
+	errCases := []struct {
 		name string
-		call func() error
+		rd   string
+		imm  int64
+		hw   Hw
 	}{
-		{
-			"movz sp",
-			func() error {
-				_, err := New().Movz(SP, imm16(t, 1), Hw0)
-				return err
-			},
-		},
-		{
-			"movz w0,hw2",
-			func() error {
-				_, err := New().Movz(wreg(t, 0), imm16(t, 1), Hw2)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
+		{"movz sp", "sp", 1, Hw0},
+		{"movz w0,hw2", "w0", 1, Hw2},
+	}
+	for _, c := range errCases {
+		_, err := New().Movz(reg(t, c.rd), imm16(t, c.imm), c.hw)
+		assertErr(t, c.name, err)
 	}
 }

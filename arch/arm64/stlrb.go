@@ -14,15 +14,57 @@ type Stlrb struct {
 	enc uint32
 }
 
+// newStlrbBase - the Stlrb constructor for a ready embedded base
+// (the decoder): the struct is assembled only here.
+func newStlrbBase(b base, e atomic, enc uint32) Stlrb {
+	return Stlrb{
+		base:   b,
+		atomic: e,
+		enc:    enc,
+	}
+}
+
+// newStlrb - the Stlrb constructor: validates the operands,
+// delegates the assembly to newStlrbBase.
+func newStlrb(b base, rt, rn Reg) (Stlrb, error) {
+	err := requireClass(
+		rt,
+		"Stlrb",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Stlrb{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Stlrb",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Stlrb{}, err
+	}
+
+	return newStlrbBase(b, newAtomic(rt.name(), rn.name()), stlrbEnc), nil
+}
+
 const stlrbEnc uint32 = 0x089FFC00 // stlrb wt, [xn]
 
-func decodeStlrbOf(enc uint32, x64 bool) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeStlrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return Stlrb{
 			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
-		}
+		}, nil
 	}
 }
 
@@ -34,28 +76,6 @@ func (i Stlrb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "stlrb")
 }
 
-// Stlrb — stlrb rt, [rn]: byte access, rt — w register only
-// (register 31 reads as wzr), rn — x register or SP (register 31 in the
-// base reads as sp).
 func (Builder) Stlrb(rt, rn Reg) (Instr, error) {
-	if err := requireClass(rt, "Stlrb", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Stlrb",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	return Stlrb{
-		atomic: newAtomic(rt.name(), rn.name()),
-		enc:    stlrbEnc,
-	}, nil
+	return newStlrb(base{}, rt, rn)
 }

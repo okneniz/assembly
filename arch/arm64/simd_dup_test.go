@@ -39,7 +39,8 @@ func TestSimdDupElem(t *testing.T) {
 		{0x4E183C20, "mov x0, v1.d[1]"},  // input umov/mov x0, v1.d[1]
 		{0x0E1E3C20, "umov w0, v1.h[7]"}, // no alias below esize 32
 	} {
-		in := decodeOne(c.word)
+		in, derr := decodeOne(c.word)
+		_ = derr
 		if got := in.ObjDump(disasm.DefaultViewCtx()); got != c.text {
 			t.Errorf("%#010x: got %q, want %q", c.word, got, c.text)
 		}
@@ -65,8 +66,13 @@ func TestSimdDupElemInvalid(t *testing.T) {
 		0x5E300420, // scalar imm5 not one-hot
 		0x0E030C20, // dup (general) imm5 not one-hot
 	} {
-		if _, ok := decodeOne(w).(Unknown); !ok {
-			t.Errorf("%#010x: expected the .word fallback, got %T", w, decodeOne(w))
+		dec, derr := decodeOne(w)
+		if derr != nil {
+			t.Fatalf("%#010x: %v", w, derr)
+		}
+
+		if _, ok := dec.(Unknown); !ok {
+			t.Errorf("%#010x: expected the .word fallback, got %T", w, dec)
 		}
 	}
 }

@@ -13,6 +13,55 @@ type Sturh struct {
 	lsBase
 }
 
+// newSturhBase - the Sturh constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newSturhBase(b base, e lsBase) Sturh {
+	return Sturh{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newSturh - the Sturh constructor: validates the operands,
+// delegates the assembly to newSturhBase.
+func newSturh(b base, rt, rn Reg, off Off) (Sturh, error) {
+	err := requireClass(
+		rt,
+		"Sturh",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Sturh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Sturh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Sturh{}, err
+	}
+
+	if err = requireUnscaledOff("Sturh", off); err != nil {
+		return Sturh{}, err
+	}
+
+	return newSturhBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, sturhEnc, "", "", 0),
+	), nil
+}
+
 const sturhEnc uint32 = 0x78000000 // sturh wt, [xn, #±imm9]
 
 func (i Sturh) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Sturh) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "sturh")
 }
 
-func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -69,36 +118,10 @@ func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Sturh{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Sturh — sturh rt, [rn, #off]: the unscaled form, halfword
-// access, rt — w register only (register 31 reads as wzr), rn — x
-// register or SP (register 31 in the base reads as sp); the offset is a
-// signed imm9 (-0x100..0xff, any alignment).
 func (Builder) Sturh(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Sturh", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Sturh",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireUnscaledOff("Sturh", off); err != nil {
-		return nil, err
-	}
-
-	return Sturh{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, sturhEnc, "", "", 0),
-	}, nil
+	return newSturh(base{}, rt, rn, off)
 }

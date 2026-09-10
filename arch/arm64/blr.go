@@ -14,13 +14,27 @@ type Blr struct {
 	rn string
 }
 
-// newBlr - the Blr constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newBlr(b base, rn string) Blr {
+// newBlr - the Blr constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newBlr(b base, rn Reg) (Blr, error) {
+	err := requireClass(
+		rn,
+		"Blr",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Blr{}, err
+	}
+
 	return Blr{
 		base: b,
-		rn:   rn,
-	}
+		rn:   rn.name(),
+	}, nil
 }
 
 const blrMatch = 0xD63F0000
@@ -38,22 +52,15 @@ func (i Blr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, blrMatch|num<<5)
 }
 
-// Blr — blr rn (indirect call). Only x registers (X/XZR).
 func (Builder) Blr(rn Reg) (Instr, error) {
-	if err := requireClass(
-		rn,
-		"Blr",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newBlr(base{}, rn)
+}
+
+func decodeBlr(w uint32) (Instr, error) {
+	in, err := newBlr(newBase(w), gprOf(w>>5&0x1f, true))
+	if err != nil {
 		return nil, err
 	}
 
-	return newBlr(base{}, rn.name()), nil
-}
-
-func decodeBlr(w uint32) Instr {
-	return newBlr(newBase(w), regNameX(w>>5&0x1f))
+	return in, nil
 }

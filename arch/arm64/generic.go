@@ -22,13 +22,13 @@ type Generic struct {
 	word   uint32
 }
 
-func decodeGeneric(e *armISAEntry, w uint32) Instr {
+func decodeGeneric(e *armISAEntry, w uint32) (Instr, error) {
 	return Generic{
 		base:   newBase(w),
 		name:   e.Name,
 		fields: e.Fields,
 		word:   w,
-	}
+	}, nil
 }
 
 // fieldValue — the raw value of a field in the word.

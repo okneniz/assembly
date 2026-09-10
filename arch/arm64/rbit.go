@@ -14,14 +14,55 @@ type Rbit struct {
 	rd, rn string
 }
 
-// newRbit - the Rbit constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newRbit(b base, rd string, rn string) Rbit {
+// newRbit - the Rbit constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newRbit(b base, rd Reg, rn Reg) (Rbit, error) {
+	err := requireClass(
+		rd,
+		"Rbit",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Rbit{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Rbit",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Rbit{}, err
+	}
+
+	err = requireWidth(
+		"Rbit",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return Rbit{}, err
+	}
+
 	return Rbit{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+	}, nil
 }
 
 const RbitX uint32 = 0xDAC00000
@@ -44,30 +85,15 @@ func (i Rbit) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-// Rbit — rbit rd, rn. Register 31 reads as zr (SP/WSP are not
-// allowed — use XZR/WZR); the width is shared by both registers.
 func (Builder) Rbit(rd, rn Reg) (Instr, error) {
-	if err := requireClass(rd, "Rbit", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Rbit", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Rbit", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newRbit(base{}, rd.name(), rn.name()), nil
+	return newRbit(base{}, rd, rn)
 }
 
-func decodeRbit(w uint32) Instr {
-	return newRbit(
-		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-	)
+func decodeRbit(w uint32) (Instr, error) {
+	in, err := newRbit(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

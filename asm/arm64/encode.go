@@ -135,7 +135,12 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		}
 
 		// verify: our decoder reproduces the source text
-		decText := instrTextOf(arch.DecodeWord(w), ctx.Addr)
+		dec, derr := arch.DecodeWord(w)
+		if derr != nil {
+			continue
+		}
+
+		decText := instrTextOf(dec, ctx.Addr)
 		if decText != "" && looseNormalize(decText) == loose {
 			return w, nil
 		}
@@ -163,8 +168,16 @@ func verifyWord(st arch.Instr, addr uint64, loose string) (uint32, bool) {
 	}
 
 	w := binary.LittleEndian.Uint32(sbuf.Bytes())
-	if _, skip := st.(interface{ SkipVerify() }); skip ||
-		looseNormalize(instrTextOf(arch.DecodeWord(w), addr)) == loose {
+	if _, skip := st.(interface{ SkipVerify() }); skip {
+		return w, true
+	}
+
+	dec, derr := arch.DecodeWord(w)
+	if derr != nil {
+		return 0, false
+	}
+
+	if looseNormalize(instrTextOf(dec, addr)) == loose {
 		return w, true
 	}
 

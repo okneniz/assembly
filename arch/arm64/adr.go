@@ -15,6 +15,37 @@ type Adr struct {
 	off int64
 }
 
+// newAdr - the Adr constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAdr(b base, rd Reg, off int64) (Adr, error) {
+	err := requireClass(
+		rd,
+		"Adr",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Adr{}, err
+	}
+
+	if off < -(1<<20) || off >= 1<<20 {
+		return Adr{}, fmt.Errorf(
+			"arm64.NewAdr: operand off: %d is out of the imm21 range (-0x100000..0xfffff)",
+			off,
+		)
+	}
+
+	return Adr{
+		base: b,
+		rd:   rd.name(),
+		off:  off,
+	}, nil
+}
+
 func (i Adr) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("adr %s, #%d", i.rd, i.off)
 }
@@ -27,32 +58,19 @@ func (i Adr) Encode(w io.Writer) (int64, error) {
 // of the instruction (the imm21 form, -0x100000..0xfffff). rd — only x
 // registers (register 31 reads as zr).
 func (Builder) Adr(rd Reg, off int64) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Adr",
-		"rd",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newAdr(base{}, rd, off)
+}
+
+func decodeAdr(w uint32) (Instr, error) {
+	raw := (w>>5&0x7ffff)<<2 | w>>29&3
+	in, err := newAdr(
+		newBase(w),
+		gprOf(w&0x1f, true),
+		signExtendN(raw, 21),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	if off < -(1<<20) || off >= 1<<20 {
-		return nil, fmt.Errorf(
-			"arm64.NewAdr: operand off: %d is out of the imm21 range (-0x100000..0xfffff)",
-			off,
-		)
-	}
-
-	return Adr{rd: rd.name(), off: off}, nil
-}
-
-func decodeAdr(w uint32) Instr {
-	raw := (w>>5&0x7ffff)<<2 | w>>29&3
-	return Adr{
-		base: newBase(w),
-		rd:   regNameX(w & 0x1f),
-		off:  signExtendN(raw, 21),
-	}
+	return in, nil
 }

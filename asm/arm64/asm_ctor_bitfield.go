@@ -26,7 +26,12 @@ func makeUbfmLSL(rd, rn string, sh uint32, isf bool) (arch.Ubfm, bool) {
 		return arch.Ubfm{}, false
 	}
 
-	return UbfmOfC(rd, rn, (regsize-sh)%regsize, regsize-1, isf), true
+	u, err := UbfmOfC(rd, rn, (regsize-sh)%regsize, regsize-1, isf)
+	if err != nil {
+		return arch.Ubfm{}, false
+	}
+
+	return u, true
 }
 
 // newLslArm — lsl rd, rn, #sh → UBFM (primary); reg form → LslReg;
@@ -69,7 +74,7 @@ func newLsrArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("lsr: imm out of range")
 	}
 
-	return UbfmOf(rd, rn, sh, regsize-1, isf), nil
+	return UbfmOf(rd, rn, sh, regsize-1, isf)
 }
 
 // newAsrArm — asr rd, rn, #sh → SBFM immr=sh, imms=regsize-1.
@@ -93,7 +98,7 @@ func newAsrArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("asr: imm out of range")
 	}
 
-	return SbfmOf(rd, rn, sh, regsize-1, isf), nil
+	return SbfmOf(rd, rn, sh, regsize-1, isf)
 }
 
 // rri — rd, rn, #imm parsing.
@@ -130,5 +135,5 @@ func newRorArm2(ops []vOp) (Instr, error) {
 		return nil, errors.New("ror: imm out of range")
 	}
 
-	return ExtrOf(rd, rn, rn, sh), nil
+	return ExtrOf(rd, rn, rn, sh)
 }

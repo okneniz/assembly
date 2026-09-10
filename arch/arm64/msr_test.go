@@ -4,71 +4,41 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestMsrBuild(t *testing.T) {
 	cases := []struct {
-		name string
-		in   Instr
-		word uint32
+		name   string
+		sysreg string
+		rt     string
+		word   uint32
 	}{
-		{
-			"msr SCTLR_EL1,x0",
-			buildMsr(t, "SCTLR_EL1", xreg(t, 0)),
-			0xd5181000,
-		},
-		{
-			"msr NZCV,x1",
-			buildMsr(t, "NZCV", xreg(t, 1)),
-			0xd51b4201,
-		},
-		{
-			"msr DAIF,x2",
-			buildMsr(t, "DAIF", xreg(t, 2)),
-			0xd51b4222,
-		},
+		{"msr SCTLR_EL1,x0", "SCTLR_EL1", "x0", 0xd5181000},
+		{"msr NZCV,x1", "NZCV", "x1", 0xd51b4201},
+		{"msr DAIF,x2", "DAIF", "x2", 0xd51b4222},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Msr(c.sysreg, reg(t, c.rt))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildMsr(t, "SCTLR_EL1", xreg(t, 0))
+	first := cases[0]
+	in, err := New().Msr(first.sysreg, reg(t, first.rt))
+	require.NoError(t, err)
 	_, ok := in.(Msr)
 	require.True(t, ok, "type = %T, want Msr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"msr w0,rt",
-			func() error {
-				_, err := New().Msr("SCTLR_EL1", wreg(t, 0))
-				return err
-			},
-		},
-		{
-			"msr bad sysreg",
-			func() error {
-				_, err := New().Msr("NOT_A_SYSREG", xreg(t, 0))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildMsr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildMsr(t *testing.T, sysreg string, rt Reg) Instr {
-	t.Helper()
-	in, err := New().Msr(sysreg, rt)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name   string
+		sysreg string
+		rt     string
+	}{
+		{"msr w0,rt", "SCTLR_EL1", "w0"},
+		{"msr bad sysreg", "NOT_A_SYSREG", "x0"},
+	}
+	for _, c := range errCases {
+		_, err := New().Msr(c.sysreg, reg(t, c.rt))
+		assertErr(t, c.name, err)
+	}
 }

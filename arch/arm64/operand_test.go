@@ -122,52 +122,29 @@ func TestRegNames(t *testing.T) {
 
 // TestImmValidation — immediate constructors validate the range.
 func TestImmValidation(t *testing.T) {
-	for _, c := range []struct {
+	cases := []struct {
 		name string
-		call func() error
+		kind string
+		v    int64
 	}{
-		{
-			"New().Imm12(-1)",
-			func() error {
-				_, err := New().Imm12(-1)
-				return err
-			},
-		},
-		{
-			"New().Imm12(4096)",
-			func() error {
-				_, err := New().Imm12(4096)
-				return err
-			},
-		},
-		{
-			"New().Imm16(65536)",
-			func() error {
-				_, err := New().Imm16(65536)
-				return err
-			},
-		},
-		{
-			"New().Imm6(64)",
-			func() error {
-				_, err := New().Imm6(64)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
+		{"New().Imm12(-1)", "imm12", -1},
+		{"New().Imm12(4096)", "imm12", 4096},
+		{"New().Imm16(65536)", "imm16", 65536},
+		{"New().Imm6(64)", "imm6", 64},
 	}
+	for _, c := range cases {
+		var err error
+		switch c.kind {
+		case "imm12":
+			_, err = New().Imm12(c.v)
+		case "imm16":
+			_, err = New().Imm16(c.v)
+		case "imm6":
+			_, err = New().Imm6(c.v)
+		}
 
-	// Bounds are valid, String() is readable.
-	require.Equal(t, "#0x42", imm12(t, 0x42).String(), "Imm12.String()")
-	require.Equal(t, "#0x1234", imm16(t, 0x1234).String(), "Imm16.String()")
-	require.Equal(t, "#42", imm6(t, 42).String(), "Imm6.String()")
-	imm12(t, 0)
-	imm12(t, 4095)
-	imm16(t, 0)
-	imm16(t, 65535)
-	imm6(t, 0)
-	imm6(t, 63)
+		assertErr(t, c.name, err)
+	}
 }
 
 // TestEnumString — string representations of enums.

@@ -14,14 +14,55 @@ type Rev16 struct {
 	rd, rn string
 }
 
-// newRev16 - the Rev16 constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newRev16(b base, rd string, rn string) Rev16 {
+// newRev16 - the Rev16 constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newRev16(b base, rd Reg, rn Reg) (Rev16, error) {
+	err := requireClass(
+		rd,
+		"Rev16",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Rev16{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Rev16",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Rev16{}, err
+	}
+
+	err = requireWidth(
+		"Rev16",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return Rev16{}, err
+	}
+
 	return Rev16{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+	}, nil
 }
 
 const Rev16X uint32 = 0xDAC00400
@@ -44,30 +85,15 @@ func (i Rev16) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-// Rev16 — rev16 rd, rn. Register 31 reads as zr (SP/WSP are not
-// allowed — use XZR/WZR); the width is shared by both registers.
 func (Builder) Rev16(rd, rn Reg) (Instr, error) {
-	if err := requireClass(rd, "Rev16", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Rev16", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Rev16", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newRev16(base{}, rd.name(), rn.name()), nil
+	return newRev16(base{}, rd, rn)
 }
 
-func decodeRev16(w uint32) Instr {
-	return newRev16(
-		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-	)
+func decodeRev16(w uint32) (Instr, error) {
+	in, err := newRev16(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

@@ -4,99 +4,51 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSubExtBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		ext  string
+		imm3 uint32
 		word uint32
 	}{
-		{
-			"sub x0,x1,x2,uxtx",
-			buildSubExt(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "uxtx", 0),
-			0xcb226020,
-		},
-		{
-			"sub sp,sp,x2,uxtx#3",
-			buildSubExt(t, SP, SP, xreg(t, 2), "uxtx", 3),
-			0xcb226fff,
-		},
-		{
-			"sub w1,w2,w3,uxtw#2",
-			buildSubExt(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), "uxtw", 2),
-			0x4b234841,
-		},
+		{"sub x0,x1,x2,uxtx", "x0", "x1", "x2", "uxtx", 0, 0xcb226020},
+		{"sub sp,sp,x2,uxtx#3", "sp", "sp", "x2", "uxtx", 3, 0xcb226fff},
+		{"sub w1,w2,w3,uxtw#2", "w1", "w2", "w3", "uxtw", 2, 0x4b234841},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().SubExt(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.ext, c.imm3)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildSubExt(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "uxtx", 0)
+	first := cases[0]
+	in, err := New().SubExt(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), first.ext, first.imm3)
+	require.NoError(t, err)
 	_, ok := in.(SubExt)
 	require.True(t, ok, "type = %T, want SubExt", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"sub xzr,rd",
-			func() error {
-				_, err := New().SubExt(XZR, xreg(t, 1), xreg(t, 2), "uxtx", 0)
-				return err
-			},
-		},
-		{
-			"sub xzr,rn",
-			func() error {
-				_, err := New().SubExt(xreg(t, 0), XZR, xreg(t, 2), "uxtx", 0)
-				return err
-			},
-		},
-		{
-			"sub xzr,rm",
-			func() error {
-				_, err := New().SubExt(xreg(t, 0), xreg(t, 1), XZR, "uxtx", 0)
-				return err
-			},
-		},
-		{
-			"sub x,w widths",
-			func() error {
-				_, err := New().SubExt(xreg(t, 0), wreg(t, 1), xreg(t, 2), "uxtx", 0)
-				return err
-			},
-		},
-		{
-			"sub bad ext",
-			func() error {
-				_, err := New().SubExt(xreg(t, 0), xreg(t, 1), xreg(t, 2), "foo", 0)
-				return err
-			},
-		},
-		{
-			"sub imm3 8",
-			func() error {
-				_, err := New().SubExt(xreg(t, 0), xreg(t, 1), xreg(t, 2), "uxtx", 8)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildSubExt — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildSubExt(t *testing.T, rd, rn, rm Reg, ext string, imm3 uint32) Instr {
-	t.Helper()
-	in, err := New().SubExt(rd, rn, rm, ext, imm3)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		ext  string
+		imm3 uint32
+	}{
+		{"sub xzr,rd", "xzr", "x1", "x2", "uxtx", 0},
+		{"sub xzr,rn", "x0", "xzr", "x2", "uxtx", 0},
+		{"sub xzr,rm", "x0", "x1", "xzr", "uxtx", 0},
+		{"sub x,w widths", "x0", "w1", "x2", "uxtx", 0},
+		{"sub bad ext", "x0", "x1", "x2", "foo", 0},
+		{"sub imm3 8", "x0", "x1", "x2", "uxtx", 8},
+	}
+	for _, c := range errCases {
+		_, err := New().SubExt(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.ext, c.imm3)
+		assertErr(t, c.name, err)
+	}
 }

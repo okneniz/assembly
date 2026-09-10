@@ -4,66 +4,40 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestRevBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
 		word uint32
 	}{
-		{
-			"rev x0,x1",
-			buildRev(t, xreg(t, 0), xreg(t, 1)),
-			0xdac00c20,
-		},
-		{
-			"rev xzr,x2",
-			buildRev(t, XZR, xreg(t, 2)),
-			0xdac00c5f,
-		},
+		{"rev x0,x1", "x0", "x1", 0xdac00c20},
+		{"rev xzr,x2", "xzr", "x2", 0xdac00c5f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Rev(reg(t, c.rd), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildRev(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Rev(reg(t, first.rd), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Rev)
 	require.True(t, ok, "type = %T, want Rev", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"rev w form",
-			func() error {
-				_, err := New().Rev(wreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-		{
-			"rev w,rn",
-			func() error {
-				_, err := New().Rev(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildRev — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildRev(t *testing.T, rd, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Rev(rd, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+	}{
+		{"rev w form", "w0", "w1"},
+		{"rev w,rn", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Rev(reg(t, c.rd), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

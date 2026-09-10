@@ -13,13 +13,87 @@ type AddsExt struct {
 	extBase
 }
 
-// newAddsExt - the AddsExt constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newAddsExt(b base, eb extBase) AddsExt {
+// newAddsExtBase - the AddsExt constructor for a ready embedded base (the
+// string-operand layer): the struct is assembled only here.
+func newAddsExtBase(b base, eb extBase) AddsExt {
 	return AddsExt{
 		base:    b,
 		extBase: eb,
 	}
+}
+
+// newAddsExt - the AddsExt constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAddsExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddsExt, error) {
+	err := requireClass(
+		rd,
+		"AddsExt",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR (the cmn form)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return AddsExt{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"AddsExt",
+		"rn",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return AddsExt{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"AddsExt",
+		"rm",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return AddsExt{}, err
+	}
+
+	err = requireWidth(
+		"AddsExt",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return AddsExt{}, err
+	}
+
+	if _, err := extNum(ext); err != nil {
+		return AddsExt{}, fmt.Errorf("arm64.NewAddsExt: operand ext: %w", err)
+	}
+
+	if imm3 > 7 {
+		return AddsExt{}, fmt.Errorf("arm64.NewAddsExt: operand imm3: %d is out of 0..7", imm3)
+	}
+
+	return AddsExt{
+		base:    b,
+		extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64()),
+	}, nil
 }
 
 const (
@@ -46,50 +120,22 @@ func (i AddsExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, AddsExtX, AddsExtW, "adds")
 }
 
-// AddsExt — adds rd, rn, rm, ext #imm3 (cmn when Rd = zr). Rd:
-// register 31 reads as zr; Rn/Rm — as sp/wsp; ext — uxtb..sxtx; imm3 — 0..7.
 func (Builder) AddsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"AddsExt",
-		"rd",
-		"register 31 reads as zr — use XZR/WZR (the cmn form)",
-		classX,
-		classW,
-		classXZR,
-		classWZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "AddsExt", "rn", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "AddsExt", "rm", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("AddsExt", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	if _, err := extNum(ext); err != nil {
-		return nil, fmt.Errorf("arm64.NewAddsExt: operand ext: %w", err)
-	}
-
-	if imm3 > 7 {
-		return nil, fmt.Errorf("arm64.NewAddsExt: operand imm3: %d is out of 0..7", imm3)
-	}
-
-	return newAddsExt(
-		base{},
-		newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64()),
-	), nil
+	return newAddsExt(base{}, rd, rn, rm, ext, imm3)
 }
 
-func decodeAddsExt(w uint32) Instr {
-	return newAddsExt(newBase(w), decodeExtBase(w))
+func decodeAddsExt(w uint32) (Instr, error) {
+	in, err := newAddsExt(
+		newBase(w),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
+		extName(w>>13&7),
+		w>>10&7,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

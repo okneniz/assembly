@@ -27,8 +27,8 @@ type Ld1 struct {
 	isElem  bool
 }
 
-func decodeLd1Of(enc uint32) func(w uint32) Instr {
-	return func(w uint32) Instr {
+func decodeLd1Of(enc uint32) func(w uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		opcode, size, q := w>>12&0xf, w>>10&3, w>>30&1
 		name, arr, count, isElem := ldStructDecode(opcode, size, q, w>>22&1)
 		rt := w & 0x1f
@@ -60,7 +60,7 @@ func decodeLd1Of(enc uint32) func(w uint32) Instr {
 			if rm := w >> 16 & 0x1f; rm != 0x1f {
 				i.hasPost = true
 				i.postReg = regNameX(rm)
-				return i
+				return i, nil
 			}
 
 			elemBytes := uint32(1) << size
@@ -92,7 +92,7 @@ func decodeLd1Of(enc uint32) func(w uint32) Instr {
 			i.hasPost, i.postImm = true, postImm
 		}
 
-		return i
+		return i, nil
 	}
 }
 

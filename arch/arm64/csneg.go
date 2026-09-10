@@ -45,12 +45,17 @@ func (Builder) Csneg(rd, rn, rm Reg, cond string) (Instr, error) {
 	return Csneg{Csel: c}, nil
 }
 
-func decodeCsneg(w uint32) Instr {
-	c, ok := decodeCsel(w).(Csel)
-	if !ok {
-		// decodeCsel always returns Csel; the branch guards against schema desynchronization
-		return Csneg{}
+func decodeCsneg(w uint32) (Instr, error) {
+	ci, cerr := decodeCsel(w)
+	if cerr != nil {
+		return nil, cerr
 	}
 
-	return Csneg{Csel: c}
+	c, ok := ci.(Csel)
+	if !ok {
+		// decodeCsel always returns Csel; the branch guards against schema desynchronization
+		return Csneg{}, nil
+	}
+
+	return Csneg{Csel: c}, nil
 }

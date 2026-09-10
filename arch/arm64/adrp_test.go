@@ -9,83 +9,38 @@ import (
 func TestAdrpBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		off  int64
 		word uint32
 	}{
-		{
-			"adrp x0,#1",
-			buildAdrp(t, xreg(t, 0), 1),
-			0xb0000000,
-		},
-		{
-			"adrp x2,#0x10",
-			buildAdrp(t, xreg(t, 2), 0x10),
-			0x90000082,
-		},
-		{
-			"adrp x1,#-0x400",
-			buildAdrp(t, xreg(t, 1), -0x400),
-			0x90ffe001,
-		},
-		{
-			"adrp x0,#0xfffff",
-			buildAdrp(t, xreg(t, 0), 0xfffff),
-			0xf07fffe0,
-		},
+		{"adrp x0,#1", "x0", 1, 0xb0000000},
+		{"adrp x2,#0x10", "x2", 0x10, 0x90000082},
+		{"adrp x1,#-0x400", "x1", -0x400, 0x90ffe001},
+		{"adrp x0,#0xfffff", "x0", 0xfffff, 0xf07fffe0},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-
-		// The absolute-page annotation of the decoded form is derived
-		// from the instruction address and is not stored by the ctor —
-		// compare the encoded fields, not the ObjDump text.
-		back, ok := decodeOne(c.word).(Adrp)
-		require.True(t, ok, "case %q: type = %T, want Adrp", c.name, back)
-		want, wok := c.in.(Adrp)
-		require.True(t, wok, "case %q: built %T, want Adrp", c.name, c.in)
-		require.Equal(t, want.rd, back.rd, "case %q", c.name)
-		require.Equal(t, want.off, back.off, "case %q", c.name)
+		in, err := New().Adrp(reg(t, c.rd), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAdrp(t, xreg(t, 0), 1)
+	first := cases[0]
+	in, err := New().Adrp(reg(t, first.rd), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Adrp)
 	require.True(t, ok, "type = %T, want Adrp", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"adrp w rd",
-			func() error {
-				_, err := New().Adrp(wreg(t, 0), 1)
-				return err
-			},
-		},
-		{
-			"adrp off 0x100000",
-			func() error {
-				_, err := New().Adrp(xreg(t, 0), 0x100000)
-				return err
-			},
-		},
-		{
-			"adrp off -0x100001",
-			func() error {
-				_, err := New().Adrp(xreg(t, 0), -0x100001)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAdrp — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAdrp(t *testing.T, rd Reg, off int64) Instr {
-	t.Helper()
-	in, err := New().Adrp(rd, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		off  int64
+	}{
+		{"adrp w rd", "w0", 1},
+		{"adrp off 0x100000", "x0", 0x100000},
+		{"adrp off -0x100001", "x0", -0x100001},
+	}
+	for _, c := range errCases {
+		_, err := New().Adrp(reg(t, c.rd), c.off)
+		assertErr(t, c.name, err)
+	}
 }

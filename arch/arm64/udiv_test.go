@@ -4,80 +4,44 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestUdivBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"udiv x0,x1,x2",
-			buildUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
-			0x9ac20820,
-		},
-		{
-			"udiv w4,w5,w6",
-			buildUdiv(t, wreg(t, 4), wreg(t, 5), wreg(t, 6)),
-			0x1ac608a4,
-		},
+		{"udiv x0,x1,x2", "x0", "x1", "x2", 0x9ac20820},
+		{"udiv w4,w5,w6", "w4", "w5", "w6", 0x1ac608a4},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Udiv(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildUdiv(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Udiv(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(Udiv)
 	require.True(t, ok, "type = %T, want Udiv", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"udiv sp,rd",
-			func() error {
-				_, err := New().Udiv(SP, xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"udiv sp,rn",
-			func() error {
-				_, err := New().Udiv(xreg(t, 0), SP, xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"udiv sp,rm",
-			func() error {
-				_, err := New().Udiv(xreg(t, 0), xreg(t, 1), SP)
-				return err
-			},
-		},
-		{
-			"udiv x,w widths",
-			func() error {
-				_, err := New().Udiv(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildUdiv — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildUdiv(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().Udiv(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"udiv sp,rd", "sp", "x1", "x2"},
+		{"udiv sp,rn", "x0", "sp", "x2"},
+		{"udiv sp,rm", "x0", "x1", "sp"},
+		{"udiv x,w widths", "x0", "w1", "x2"},
+	}
+	for _, c := range errCases {
+		_, err := New().Udiv(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

@@ -49,5 +49,5 @@ func newPrfmArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("prfm: pldl1keep expected")
 	}
 
-	return PrfmOf(ops[1].Mem().Base()), nil
+	return PrfmOf(ops[1].Mem().Base())
 }

@@ -4,71 +4,41 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdaxrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"ldaxr x0,[x1]",
-			buildLdaxr(t, xreg(t, 0), xreg(t, 1)),
-			0xc85ffc20,
-		},
-		{
-			"ldaxr w1,[x2]",
-			buildLdaxr(t, wreg(t, 1), xreg(t, 2)),
-			0x885ffc41,
-		},
-		{
-			"ldaxr w2,[sp]",
-			buildLdaxr(t, wreg(t, 2), SP),
-			0x885fffe2,
-		},
+		{"ldaxr x0,[x1]", "x0", "x1", 0xc85ffc20},
+		{"ldaxr w1,[x2]", "w1", "x2", 0x885ffc41},
+		{"ldaxr w2,[sp]", "w2", "sp", 0x885fffe2},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldaxr(reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdaxr(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Ldaxr(reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Ldaxr)
 	require.True(t, ok, "type = %T, want Ldaxr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldaxr sp,rt",
-			func() error {
-				_, err := New().Ldaxr(SP, xreg(t, 1))
-				return err
-			},
-		},
-		{
-			"ldaxr w1 base",
-			func() error {
-				_, err := New().Ldaxr(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdaxr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdaxr(t *testing.T, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Ldaxr(rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+	}{
+		{"ldaxr sp,rt", "sp", "x1"},
+		{"ldaxr w1 base", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldaxr(reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

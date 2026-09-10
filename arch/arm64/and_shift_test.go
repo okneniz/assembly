@@ -9,75 +9,44 @@ import (
 func TestAndShiftBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
 		word uint32
 	}{
-		{
-			"and x1,x2,x3",
-			buildAndShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 0), LSL),
-			0x8a030041,
-		},
-		{
-			"and x1,x2,x3,lsl#63",
-			buildAndShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63), LSL),
-			0x8a03fc41,
-		},
-		{
-			"and w1,w2,w3,ror#5",
-			buildAndShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 5), ROR),
-			0x0ac31441,
-		},
+		{"and x1,x2,x3", "x1", "x2", "x3", 0, LSL, 0x8a030041},
+		{"and x1,x2,x3,lsl#63", "x1", "x2", "x3", 63, LSL, 0x8a03fc41},
+		{"and w1,w2,w3,ror#5", "w1", "w2", "w3", 5, ROR, 0x0ac31441},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().AndShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAndShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
+	first := cases[0]
+	in, err := New().AndShift(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), imm6(t, first.imm), first.sh)
+	require.NoError(t, err)
 	_, ok := in.(AndShift)
 	require.True(t, ok, "type = %T, want AndShift", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"and x+w",
-			func() error {
-				_, err := New().AndShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"andshift sp",
-			func() error {
-				_, err := New().AndShift(SP, xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"andshift rn sp",
-			func() error {
-				_, err := New().AndShift(xreg(t, 0), SP, xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"andshift rm sp",
-			func() error {
-				_, err := New().AndShift(xreg(t, 0), xreg(t, 1), SP, imm6(t, 1), LSL)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAndShift — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAndShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
-	t.Helper()
-	in, err := New().AndShift(rd, rn, rm, imm, sh)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
+	}{
+		{"and x+w", "x0", "w1", "x2", 1, LSL},
+		{"andshift sp", "sp", "x1", "x2", 1, LSL},
+		{"andshift rn sp", "x0", "sp", "x2", 1, LSL},
+		{"andshift rm sp", "x0", "x1", "sp", 1, LSL},
+	}
+	for _, c := range errCases {
+		_, err := New().AndShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		assertErr(t, c.name, err)
+	}
 }

@@ -9,75 +9,40 @@ import (
 func TestAndImmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		imm  uint64
 		word uint32
 	}{
-		{
-			"and x0,x1,#0x7",
-			buildAndImm(t, xreg(t, 0), xreg(t, 1), 0x7),
-			0x92400820,
-		},
-		{
-			"and x0,x1,#0xffff",
-			buildAndImm(t, xreg(t, 0), xreg(t, 1), 0xffff),
-			0x92403c20,
-		},
-		{
-			"and w0,w1,#0x00ff00ff",
-			buildAndImm(t, wreg(t, 0), wreg(t, 1), 0x00ff00ff),
-			0x12009c20,
-		},
+		{"and x0,x1,#0x7", "x0", "x1", 0x7, 0x92400820},
+		{"and x0,x1,#0xffff", "x0", "x1", 0xffff, 0x92403c20},
+		{"and w0,w1,#0x00ff00ff", "w0", "w1", 0x00ff00ff, 0x12009c20},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().AndImm(reg(t, c.rd), reg(t, c.rn), c.imm)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAndImm(t, xreg(t, 0), xreg(t, 1), 0x7)
+	first := cases[0]
+	in, err := New().AndImm(reg(t, first.rd), reg(t, first.rn), first.imm)
+	require.NoError(t, err)
 	_, ok := in.(AndImm)
 	require.True(t, ok, "type = %T, want AndImm", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"and imm sp",
-			func() error {
-				_, err := New().AndImm(SP, xreg(t, 1), 0x7)
-				return err
-			},
-		},
-		{
-			"and imm rn sp",
-			func() error {
-				_, err := New().AndImm(xreg(t, 0), SP, 0x7)
-				return err
-			},
-		},
-		{
-			"and imm x+w",
-			func() error {
-				_, err := New().AndImm(xreg(t, 0), wreg(t, 1), 0x7)
-				return err
-			},
-		},
-		{
-			"and imm not encodable",
-			func() error {
-				_, err := New().AndImm(xreg(t, 0), xreg(t, 1), 0)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAndImm — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAndImm(t *testing.T, rd, rn Reg, imm uint64) Instr {
-	t.Helper()
-	in, err := New().AndImm(rd, rn, imm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		imm  uint64
+	}{
+		{"and imm sp", "sp", "x1", 0x7},
+		{"and imm rn sp", "x0", "sp", 0x7},
+		{"and imm x+w", "x0", "w1", 0x7},
+		{"and imm not encodable", "x0", "x1", 0},
+	}
+	for _, c := range errCases {
+		_, err := New().AndImm(reg(t, c.rd), reg(t, c.rn), c.imm)
+		assertErr(t, c.name, err)
+	}
 }

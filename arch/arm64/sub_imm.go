@@ -18,17 +18,58 @@ type SubImm struct {
 	isf          bool
 }
 
-// newSubImm - the SubImm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newSubImm(b base, rdNum uint32, rnNum uint32, imm12 uint32, shift bool, isf bool) SubImm {
+// newSubImm - the SubImm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newSubImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (SubImm, error) {
+	err := requireClass(
+		rd,
+		"SubImm",
+		"rd",
+		"register 31 reads as sp/wsp - use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return SubImm{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"SubImm",
+		"rn",
+		"register 31 reads as sp/wsp - use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return SubImm{}, err
+	}
+
+	err = requireWidth(
+		"SubImm",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return SubImm{}, err
+	}
+
 	return SubImm{
 		base:  b,
-		rdNum: rdNum,
-		rnNum: rnNum,
-		imm12: imm12,
-		shift: shift,
-		isf:   isf,
-	}
+		rdNum: rd.bits(),
+		rnNum: rn.bits(),
+		imm12: imm.v,
+		shift: sh == LSL12,
+		isf:   rd.Is64(),
+	}, nil
 }
 
 const (
@@ -66,26 +107,17 @@ func (i SubImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-// SubImm — sub rd, rn, #imm12[, lsl #12]. Register 31 reads as sp/wsp
-// (XZR/WZR are not allowed - use SP/WSP).
 func (Builder) SubImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	if err := requireClass(rd, "SubImm", "rd", "register 31 reads as sp/wsp - use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "SubImm", "rn", "register 31 reads as sp/wsp - use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("SubImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newSubImm(base{}, rd.bits(), rn.bits(), imm.v, sh == LSL12, rd.Is64()), nil
+	return newSubImm(base{}, rd, rn, imm, sh)
 }
 
-func decodeSubImm(w uint32) Instr {
-	return newSubImm(newBase(w), w&0x1f, w>>5&0x1f, w>>10&0xfff, w>>22&1 == 1, w>>31&1 == 1)
+func decodeSubImm(w uint32) (Instr, error) {
+	in, err := newSubImm(newBase(w),
+		numReg(w&0x1f, w>>31&1 == 1),
+		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

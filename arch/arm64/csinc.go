@@ -52,12 +52,17 @@ func (Builder) Csinc(rd, rn, rm Reg, cond string) (Instr, error) {
 	return Csinc{Csel: c}, nil
 }
 
-func decodeCsinc(w uint32) Instr {
-	c, ok := decodeCsel(w).(Csel)
-	if !ok {
-		// decodeCsel always returns Csel; the branch guards against schema desynchronization
-		return Csinc{}
+func decodeCsinc(w uint32) (Instr, error) {
+	ci, cerr := decodeCsel(w)
+	if cerr != nil {
+		return nil, cerr
 	}
 
-	return Csinc{Csel: c}
+	c, ok := ci.(Csel)
+	if !ok {
+		// decodeCsel always returns Csel; the branch guards against schema desynchronization
+		return Csinc{}, nil
+	}
+
+	return Csinc{Csel: c}, nil
 }

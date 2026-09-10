@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdurhBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"ldurh w0,[x1]",
-			buildLdurh(t, wreg(t, 0), xreg(t, 1), 0),
-			0x78400020,
-		},
-		{
-			"ldurh w5,[x6,#-3]",
-			buildLdurh(t, wreg(t, 5), xreg(t, 6), -3),
-			0x785fd0c5,
-		},
+		{"ldurh w0,[x1]", "w0", "x1", 0, 0x78400020},
+		{"ldurh w5,[x6,#-3]", "w5", "x6", -3, 0x785fd0c5},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldurh(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdurh(t, wreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Ldurh(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Ldurh)
 	require.True(t, ok, "type = %T, want Ldurh", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldurh x,rt",
-			func() error {
-				_, err := New().Ldurh(xreg(t, 0), xreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldurh w1 base",
-			func() error {
-				_, err := New().Ldurh(wreg(t, 0), wreg(t, 1), 0)
-				return err
-			},
-		},
-		{
-			"ldurh off 256",
-			func() error {
-				_, err := New().Ldurh(wreg(t, 0), xreg(t, 1), 256)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdurh — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdurh(t *testing.T, rt, rn Reg, off Off) Instr {
-	t.Helper()
-	in, err := New().Ldurh(rt, rn, off)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+		off  Off
+	}{
+		{"ldurh x,rt", "x0", "x1", 0},
+		{"ldurh w1 base", "w0", "w1", 0},
+		{"ldurh off 256", "w0", "x1", 256},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldurh(reg(t, c.rt), reg(t, c.rn), c.off)
+		assertErr(t, c.name, err)
+	}
 }

@@ -17,8 +17,8 @@ type Simd3 struct {
 	q, size    uint32
 }
 
-func decodeSimd3Of(op string, enc uint32) func(w uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSimd3Of(op string, enc uint32) func(w uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return Simd3{
 			base: newBase(w),
 			op:   op,
@@ -28,7 +28,7 @@ func decodeSimd3Of(op string, enc uint32) func(w uint32) Instr {
 			enc:  enc,
 			q:    w >> 30 & 1,
 			size: w >> 22 & 3,
-		}
+		}, nil
 	}
 }
 
@@ -96,7 +96,7 @@ func (i Simd3) size3() uint32 {
 // 4 instructions, so the mnemonic cannot be baked in as an argument. The
 // arrangement of logical operations depends only on Q (8b/16b), size is
 // part of the opcode.
-func decodeSimd3Logical(w uint32) Instr {
+func decodeSimd3Logical(w uint32) (Instr, error) {
 	return Simd3{
 		base: newBase(w),
 		op:   simd3Logical[w>>29&1][w>>22&3],
@@ -106,5 +106,5 @@ func decodeSimd3Logical(w uint32) Instr {
 		enc:  w &^ 0x001F1F1F, // all encoding bits except Rd/Rn/Rm (Q included)
 		q:    w >> 30 & 1,
 		size: w >> 22 & 3,
-	}
+	}, nil
 }

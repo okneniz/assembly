@@ -14,14 +14,32 @@ type Msr struct {
 	rt, sysreg string
 }
 
-// newMsr - the Msr constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newMsr(b base, rt string, sysreg string) Msr {
+// newMsr - the Msr constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newMsr(b base, sysreg string, rt Reg) (Msr, error) {
+	err := requireClass(
+		rt,
+		"Msr",
+		"rt",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Msr{}, err
+	}
+
+	if _, err := invSysReg(sysreg); err != nil {
+		return Msr{}, fmt.Errorf("arm64.NewMsr: operand sysreg: %w", err)
+	}
+
 	return Msr{
 		base:   b,
-		rt:     rt,
+		rt:     rt.name(),
 		sysreg: sysreg,
-	}
+	}, nil
 }
 
 func (i Msr) ObjDump(_ disasm.ViewCtx) string {
@@ -32,29 +50,19 @@ func (i Msr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0xD5100000|regBitsX(i.rt)|invSysRegChecked(i.sysreg)<<5)
 }
 
-// Msr — msr sysreg, rt. rt — only x registers (register 31 reads
-// as zr); sysreg — an architectural name from the registry (SCTLR_EL1,
-// NZCV, ...) or the objdump form S<op0>_<op1>_C<CRn>_C<CRm>_<op2>
-// (see invSysReg).
 func (Builder) Msr(sysreg string, rt Reg) (Instr, error) {
-	if err := requireClass(
-		rt,
-		"Msr",
-		"rt",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newMsr(base{}, sysreg, rt)
+}
+
+func decodeMsr(w uint32) (Instr, error) {
+	in, err := newMsr(
+		newBase(w),
+		sysRegName(w>>5&0x7fff),
+		gprOf(w&0x1f, true),
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	if _, err := invSysReg(sysreg); err != nil {
-		return nil, fmt.Errorf("arm64.NewMsr: operand sysreg: %w", err)
-	}
-
-	return newMsr(base{}, rt.name(), sysreg), nil
-}
-
-func decodeMsr(w uint32) Instr {
-	return newMsr(newBase(w), regNameX(w&0x1f), sysRegName(w>>5&0x7fff))
+	return in, nil
 }

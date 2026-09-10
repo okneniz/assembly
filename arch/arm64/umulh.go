@@ -14,15 +14,55 @@ type Umulh struct {
 	rd, rn, rm string
 }
 
-// newUmulh - the Umulh constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newUmulh(b base, rd string, rn string, rm string) Umulh {
+// newUmulh - the Umulh constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newUmulh(b base, rd Reg, rn Reg, rm Reg) (Umulh, error) {
+	err := requireClass(
+		rd,
+		"Umulh",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Umulh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Umulh",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Umulh{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Umulh",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Umulh{}, err
+	}
+
 	return Umulh{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const UmulhX uint32 = 0x9BC07C00
@@ -45,50 +85,20 @@ func (i Umulh) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-// Umulh — umulh rd, rn, rm. Only the 64-bit form (the architecture
-// has no 32-bit umulh); register 31 reads as zr (use XZR).
 func (Builder) Umulh(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Umulh",
-		"rd",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Umulh",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rm,
-		"Umulh",
-		"rm",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	return newUmulh(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newUmulh(base{}, rd, rn, rm)
 }
 
-func decodeUmulh(w uint32) Instr {
-	return newUmulh(
+func decodeUmulh(w uint32) (Instr, error) {
+	in, err := newUmulh(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

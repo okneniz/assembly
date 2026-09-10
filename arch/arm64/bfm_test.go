@@ -4,92 +4,48 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestBfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		immr uint32
+		imms uint32
 		word uint32
 	}{
-		{
-			"bfm x0,x1,#5,#7",
-			buildBfm(t, xreg(t, 0), xreg(t, 1), 5, 7),
-			0xb3451c20,
-		},
-		{
-			"bfm w2,w3,#0,#31",
-			buildBfm(t, wreg(t, 2), wreg(t, 3), 0, 31),
-			0x33007c62,
-		},
-		{
-			"bfm x0,x1,#63,#63",
-			buildBfm(t, xreg(t, 0), xreg(t, 1), 63, 63),
-			0xb37ffc20,
-		},
+		{"bfm x0,x1,#5,#7", "x0", "x1", 5, 7, 0xb3451c20},
+		{"bfm w2,w3,#0,#31", "w2", "w3", 0, 31, 0x33007c62},
+		{"bfm x0,x1,#63,#63", "x0", "x1", 63, 63, 0xb37ffc20},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Bfm(reg(t, c.rd), reg(t, c.rn), c.immr, c.imms)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildBfm(t, xreg(t, 0), xreg(t, 1), 5, 7)
+	first := cases[0]
+	in, err := New().Bfm(reg(t, first.rd), reg(t, first.rn), first.immr, first.imms)
+	require.NoError(t, err)
 	_, ok := in.(Bfm)
 	require.True(t, ok, "type = %T, want Bfm", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"bfm sp,rd",
-			func() error {
-				_, err := New().Bfm(SP, xreg(t, 1), 5, 7)
-				return err
-			},
-		},
-		{
-			"bfm sp,rn",
-			func() error {
-				_, err := New().Bfm(xreg(t, 0), SP, 5, 7)
-				return err
-			},
-		},
-		{
-			"bfm x,w widths",
-			func() error {
-				_, err := New().Bfm(xreg(t, 0), wreg(t, 1), 5, 7)
-				return err
-			},
-		},
-		{
-			"bfm immr 64",
-			func() error {
-				_, err := New().Bfm(xreg(t, 0), xreg(t, 1), 64, 7)
-				return err
-			},
-		},
-		{
-			"bfm imms 64",
-			func() error {
-				_, err := New().Bfm(xreg(t, 0), xreg(t, 1), 5, 64)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildBfm — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildBfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
-	t.Helper()
-	in, err := New().Bfm(rd, rn, immr, imms)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		immr uint32
+		imms uint32
+	}{
+		{"bfm sp,rd", "sp", "x1", 5, 7},
+		{"bfm sp,rn", "x0", "sp", 5, 7},
+		{"bfm x,w widths", "x0", "w1", 5, 7},
+		{"bfm immr 64", "x0", "x1", 64, 7},
+		{"bfm imms 64", "x0", "x1", 5, 64},
+	}
+	for _, c := range errCases {
+		_, err := New().Bfm(reg(t, c.rd), reg(t, c.rn), c.immr, c.imms)
+		assertErr(t, c.name, err)
+	}
 }

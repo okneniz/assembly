@@ -26,8 +26,8 @@ func fpTypeBits(v uint32) fpKind {
 	return kS
 }
 
-func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		// the sf convention for widenable families: operand types are read
 		// FROM THE WORD, not hard-coded by the ctor (fcvt/fcvtzs/fcvtzu —
 		// their XML entries free the type bits; see isa_map widenAcceptable)
@@ -59,7 +59,7 @@ func decodeFp2Of(op string, enc uint32, rdK, rnK fpKind) func(uint32) Instr {
 			enc:  enc,
 			rdK:  rdK,
 			rnK:  rnK,
-		}
+		}, nil
 	}
 }
 

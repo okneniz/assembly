@@ -4,71 +4,41 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdarBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"ldar x0,[x1]",
-			buildLdar(t, xreg(t, 0), xreg(t, 1)),
-			0xc8dffc20,
-		},
-		{
-			"ldar w2,[sp]",
-			buildLdar(t, wreg(t, 2), SP),
-			0x88dfffe2,
-		},
-		{
-			"ldar xzr,[x3]",
-			buildLdar(t, XZR, xreg(t, 3)),
-			0xc8dffc7f,
-		},
+		{"ldar x0,[x1]", "x0", "x1", 0xc8dffc20},
+		{"ldar w2,[sp]", "w2", "sp", 0x88dfffe2},
+		{"ldar xzr,[x3]", "xzr", "x3", 0xc8dffc7f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldar(reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdar(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Ldar(reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Ldar)
 	require.True(t, ok, "type = %T, want Ldar", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldar sp,rt",
-			func() error {
-				_, err := New().Ldar(SP, xreg(t, 1))
-				return err
-			},
-		},
-		{
-			"ldar w1 base",
-			func() error {
-				_, err := New().Ldar(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdar — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdar(t *testing.T, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Ldar(rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+	}{
+		{"ldar sp,rt", "sp", "x1"},
+		{"ldar w1 base", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldar(reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

@@ -14,15 +14,55 @@ type Smulh struct {
 	rd, rn, rm string
 }
 
-// newSmulh - the Smulh constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newSmulh(b base, rd string, rn string, rm string) Smulh {
+// newSmulh - the Smulh constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newSmulh(b base, rd Reg, rn Reg, rm Reg) (Smulh, error) {
+	err := requireClass(
+		rd,
+		"Smulh",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Smulh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Smulh",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Smulh{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Smulh",
+		"rm",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Smulh{}, err
+	}
+
 	return Smulh{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const SmulhX uint32 = 0x9B407C00
@@ -45,50 +85,20 @@ func (i Smulh) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-// Smulh — smulh rd, rn, rm. Only the 64-bit form (the architecture
-// has no 32-bit smulh); register 31 reads as zr (use XZR).
 func (Builder) Smulh(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Smulh",
-		"rd",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Smulh",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rm,
-		"Smulh",
-		"rm",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
-		return nil, err
-	}
-
-	return newSmulh(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newSmulh(base{}, rd, rn, rm)
 }
 
-func decodeSmulh(w uint32) Instr {
-	return newSmulh(
+func decodeSmulh(w uint32) (Instr, error) {
+	in, err := newSmulh(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

@@ -9,47 +9,33 @@ import (
 func TestRetBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rn   string
 		word uint32
 	}{
-		{
-			"ret",
-			buildRet(t, xreg(t, 30)),
-			0xd65f03c0,
-		},
-		{
-			"ret x8",
-			buildRet(t, xreg(t, 8)),
-			0xd65f0100,
-		},
+		{"ret", "x30", 0xd65f03c0},
+		{"ret x8", "x8", 0xd65f0100},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Ret(reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildRet(t, xreg(t, 30))
+	first := cases[0]
+	in, err := New().Ret(reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Ret)
 	require.True(t, ok, "type = %T, want Ret", in)
-	for _, c := range []struct {
+
+	errCases := []struct {
 		name string
-		call func() error
+		rn   string
 	}{
-		{
-			"ret sp",
-			func() error {
-				_, err := New().Ret(SP)
-				return err
-			},
-		},
-		{
-			"ret w0",
-			func() error {
-				_, err := New().Ret(wreg(t, 0))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
+		{"ret sp", "sp"},
+		{"ret w0", "w0"},
+	}
+	for _, c := range errCases {
+		_, err := New().Ret(reg(t, c.rn))
+		assertErr(t, c.name, err)
 	}
 }

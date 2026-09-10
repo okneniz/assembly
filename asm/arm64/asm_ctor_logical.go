@@ -51,7 +51,7 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 			return nil, fmt.Errorf("%s: %#x not encodable as bitmask", name, v)
 		}
 
-		return makeLogImmStruct(name, rd, rn, immr, imms, n == 1, is64), nil
+		return makeLogImmStruct(name, rd, rn, immr, imms, n == 1, is64)
 	}
 
 	if op.Kind() == arch.ArmOpReg && isGPR(op.Reg()) {
@@ -70,14 +70,14 @@ func logCtor(ops []vOp, name string) (Instr, error) {
 			shift, amt = ops[3].ShiftName(), uint32(a)
 		}
 
-		return makeLogShiftStruct(name, rd, rn, rm, shift, amt, rd[0] == 'x'), nil
+		return makeLogShiftStruct(name, rd, rn, rm, shift, amt, rd[0] == 'x')
 	}
 
 	return nil, fmt.Errorf("%s: bad operand", name)
 }
 
 // makeLogImmStruct/makeLogShiftStruct — assembly by the base name.
-func makeLogImmStruct(name, rd, rn string, immr, imms uint32, n, is64 bool) Instr {
+func makeLogImmStruct(name, rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
 	switch name {
 	case "orr":
 		return OrrImmOf(rd, rn, immr, imms, n, is64)
@@ -90,7 +90,7 @@ func makeLogImmStruct(name, rd, rn string, immr, imms uint32, n, is64 bool) Inst
 	}
 }
 
-func makeLogShiftStruct(name, rd, rn, rm, shift string, amt uint32, isf bool) Instr {
+func makeLogShiftStruct(name, rd, rn, rm, shift string, amt uint32, isf bool) (Instr, error) {
 	common := struct {
 		rd, rn, rm string
 		imm6       uint32

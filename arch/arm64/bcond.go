@@ -15,13 +15,22 @@ type Bcond struct {
 	off  imm // pc-relative byte offset
 }
 
-func decodeBcondOf(cond string) func(uint32) Instr {
-	return func(w uint32) Instr {
-		return Bcond{
-			base: newBase(w),
-			cond: cond,
-			off:  immNum(signExtendN(w>>5&0x7ffff, 19) * 4),
-		}
+// newBcond - the Bcond constructor: the struct is assembled only here.
+func newBcond(b base, cond string, off imm) Bcond {
+	return Bcond{
+		base: b,
+		cond: cond,
+		off:  off,
+	}
+}
+
+func decodeBcondOf(cond string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
+		return newBcond(
+			newBase(w),
+			cond,
+			immNum(signExtendN(w>>5&0x7ffff, 19)*4),
+		), nil
 	}
 }
 

@@ -18,26 +18,79 @@ type SubsShift struct {
 	isf        bool
 }
 
-// newSubsShift - the SubsShift constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newSubsShift(
-	b base,
-	rd string,
-	rn string,
-	rm string,
-	imm6 uint32,
-	shift string,
-	isf bool,
-) SubsShift {
+// newSubsShift - the SubsShift constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newSubsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubsShift, error) {
+	err := requireClass(
+		rd,
+		"SubsShift",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return SubsShift{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"SubsShift",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return SubsShift{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"SubsShift",
+		"rm",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return SubsShift{}, err
+	}
+
+	err = requireWidth(
+		"SubsShift",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return SubsShift{}, err
+	}
+
+	if err = requireShift(rd, "SubsShift", imm, sh); err != nil {
+		return SubsShift{}, err
+	}
+
 	return SubsShift{
 		base:  b,
-		rd:    rd,
-		rn:    rn,
-		rm:    rm,
-		imm6:  imm6,
-		shift: shift,
-		isf:   isf,
-	}
+		rd:    rd.name(),
+		rn:    rn.name(),
+		rm:    rm.name(),
+		imm6:  imm.v,
+		shift: sh.String(),
+		isf:   rd.Is64(),
+	}, nil
 }
 
 const (
@@ -93,45 +146,22 @@ func (i SubsShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-// SubsShift — subs rd, rn, rm[, shift #imm6] (cmp when Rd = zr,
-// negs when Rn = zr). Register 31 reads as zr (SP/WSP are not allowed —
-// use XZR/WZR). Shift — only lsl/lsr/asr; the 32-bit form limits the
-// amount to 0..31 (see requireShift).
 func (Builder) SubsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	if err := requireClass(rd, "SubsShift", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "SubsShift", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "SubsShift", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("SubsShift", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	if err := requireShift(rd, "SubsShift", imm, sh); err != nil {
-		return nil, err
-	}
-
-	return newSubsShift(base{}, rd.name(), rn.name(), rm.name(), imm.v, sh.String(), rd.Is64()), nil
+	return newSubsShift(base{}, rd, rn, rm, imm, sh)
 }
 
-func decodeSubsShift(w uint32) Instr {
-	return newSubsShift(
+func decodeSubsShift(w uint32) (Instr, error) {
+	in, err := newSubsShift(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
-		w>>10&0x3f,
-		shiftNames[w>>22&3],
-		w>>31&1 == 1,
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
+		imm6Of(w>>10&0x3f),
+		shiftOf(w>>22&3),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

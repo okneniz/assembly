@@ -17,18 +17,67 @@ type Sbfm struct {
 	isf        bool
 }
 
-// newSbfm - the Sbfm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newSbfm(b base, rd string, rn string, immr uint32, imms uint32, rnNum uint32, isf bool) Sbfm {
+// newSbfm - the Sbfm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newSbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Sbfm, error) {
+	err := requireClass(
+		rd,
+		"Sbfm",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Sbfm{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Sbfm",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Sbfm{}, err
+	}
+
+	err = requireWidth(
+		"Sbfm",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return Sbfm{}, err
+	}
+
+	if immr > 63 || imms > 63 {
+		return Sbfm{}, fmt.Errorf(
+			"arm64.NewSbfm: operands immr/imms: %d/%d are out of 0..63",
+			immr,
+			imms,
+		)
+	}
+
 	return Sbfm{
 		base:  b,
-		rd:    rd,
-		rn:    rn,
+		rd:    rd.name(),
+		rn:    rn.name(),
 		immr:  immr,
 		imms:  imms,
-		rnNum: rnNum,
-		isf:   isf,
-	}
+		rnNum: rn.bits(),
+		isf:   rd.Is64(),
+	}, nil
 }
 
 const (
@@ -68,45 +117,21 @@ func (i Sbfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, sbfmX, sbfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
 
-// Sbfm — sbfm rd, rn, #immr, #imms (asr/sxtb/sxth/sxtw/sbfiz/sbfx
-// aliases — the printed form depends on immr/imms). Register 31 reads as
-// zr (SP/WSP are not allowed — use XZR/WZR); the width is shared by both
-// registers; immr/imms — 0..63 (the top half of the range is
-// unpredictable in the 32-bit form, as in the architecture).
 func (Builder) Sbfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	if err := requireClass(rd, "Sbfm", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Sbfm", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Sbfm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	if immr > 63 || imms > 63 {
-		return nil, fmt.Errorf(
-			"arm64.NewSbfm: operands immr/imms: %d/%d are out of 0..63",
-			immr,
-			imms,
-		)
-	}
-
-	return newSbfm(base{}, rd.name(), rn.name(), immr, imms, rn.bits(), rd.Is64()), nil
+	return newSbfm(base{}, rd, rn, immr, imms)
 }
 
-func decodeSbfm(w uint32) Instr {
-	return newSbfm(
+func decodeSbfm(w uint32) (Instr, error) {
+	in, err := newSbfm(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		w>>16&0x3f,
 		w>>10&0x3f,
-		w>>5&0x1f,
-		w>>31&1 == 1,
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

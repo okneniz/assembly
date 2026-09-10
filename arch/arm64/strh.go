@@ -13,6 +13,55 @@ type Strh struct {
 	lsBase
 }
 
+// newStrhBase - the Strh constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newStrhBase(b base, e lsBase) Strh {
+	return Strh{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newStrh - the Strh constructor: validates the operands,
+// delegates the assembly to newStrhBase.
+func newStrh(b base, rt, rn Reg, off Off) (Strh, error) {
+	err := requireClass(
+		rt,
+		"Strh",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Strh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Strh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Strh{}, err
+	}
+
+	if err = requireOff("Strh", off, 1); err != nil {
+		return Strh{}, err
+	}
+
+	return newStrhBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strhEnc, "", "", 0),
+	), nil
+}
+
 const strhEnc uint32 = 0x79000000 // strh wt, [xn, #imm12<<1]
 
 func (i Strh) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Strh) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "strh")
 }
 
-func decodeStrhOf(enc uint32, kind memKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeStrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		rt := regNameW(w & 0x1f)
 		rn := regNameXSP(w >> 5 & 0x1f)
 		var off int64
@@ -56,36 +105,10 @@ func decodeStrhOf(enc uint32, kind memKind) func(uint32) Instr {
 		return Strh{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Strh — strh rt, [rn, #off]: halfword access, rt — w register
-// only (register 31 reads as wzr), rn — x register or SP (register 31
-// in the base reads as sp); the offset is an imm12 scaled by 2
-// (0..0x1ffe, alignment 2).
 func (Builder) Strh(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Strh", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Strh",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Strh", off, 1); err != nil {
-		return nil, err
-	}
-
-	return Strh{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strhEnc, "", "", 0),
-	}, nil
+	return newStrh(base{}, rt, rn, off)
 }

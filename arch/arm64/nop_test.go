@@ -23,7 +23,8 @@ func TestNopBuild(t *testing.T) {
 	for _, c := range cases {
 		got := buildWord(t, c.in)
 		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
+		back, derr := decodeOne(c.word)
+		_ = derr
 		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
 			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}

@@ -9,70 +9,41 @@ import (
 func TestCcmpBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rn   string
+		rm   string
+		nzcv uint32
+		cond string
 		word uint32
 	}{
-		{
-			"ccmp x1,x2,#3,eq",
-			buildCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq"),
-			0xfa420023,
-		},
-		{
-			"ccmp x0,xzr,#0xf,ne",
-			buildCcmp(t, xreg(t, 0), XZR, 0xf, "ne"),
-			0xfa5f100f,
-		},
+		{"ccmp x1,x2,#3,eq", "x1", "x2", 3, "eq", 0xfa420023},
+		{"ccmp x0,xzr,#0xf,ne", "x0", "xzr", 0xf, "ne", 0xfa5f100f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Ccmp(reg(t, c.rn), reg(t, c.rm), c.nzcv, c.cond)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildCcmp(t, xreg(t, 1), xreg(t, 2), 3, "eq")
+	first := cases[0]
+	in, err := New().Ccmp(reg(t, first.rn), reg(t, first.rm), first.nzcv, first.cond)
+	require.NoError(t, err)
 	_, ok := in.(Ccmp)
 	require.True(t, ok, "type = %T, want Ccmp", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ccmp w form",
-			func() error {
-				_, err := New().Ccmp(wreg(t, 1), xreg(t, 2), 3, "eq")
-				return err
-			},
-		},
-		{
-			"ccmp rm w form",
-			func() error {
-				_, err := New().Ccmp(xreg(t, 1), wreg(t, 2), 3, "eq")
-				return err
-			},
-		},
-		{
-			"ccmp nzcv=0x10",
-			func() error {
-				_, err := New().Ccmp(xreg(t, 1), xreg(t, 2), 0x10, "eq")
-				return err
-			},
-		},
-		{
-			"ccmp bad cond",
-			func() error {
-				_, err := New().Ccmp(xreg(t, 1), xreg(t, 2), 3, "foo")
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildCcmp — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildCcmp(t *testing.T, rn, rm Reg, nzcv uint32, cond string) Instr {
-	t.Helper()
-	in, err := New().Ccmp(rn, rm, nzcv, cond)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rn   string
+		rm   string
+		nzcv uint32
+		cond string
+	}{
+		{"ccmp w form", "w1", "x2", 3, "eq"},
+		{"ccmp rm w form", "x1", "w2", 3, "eq"},
+		{"ccmp nzcv=0x10", "x1", "x2", 0x10, "eq"},
+		{"ccmp bad cond", "x1", "x2", 3, "foo"},
+	}
+	for _, c := range errCases {
+		_, err := New().Ccmp(reg(t, c.rn), reg(t, c.rm), c.nzcv, c.cond)
+		assertErr(t, c.name, err)
+	}
 }

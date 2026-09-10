@@ -14,15 +14,72 @@ type Udiv struct {
 	rd, rn, rm string
 }
 
-// newUdiv - the Udiv constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newUdiv(b base, rd string, rn string, rm string) Udiv {
+// newUdiv - the Udiv constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newUdiv(b base, rd Reg, rn Reg, rm Reg) (Udiv, error) {
+	err := requireClass(
+		rd,
+		"Udiv",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Udiv{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Udiv",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Udiv{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Udiv",
+		"rm",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return Udiv{}, err
+	}
+
+	err = requireWidth(
+		"Udiv",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return Udiv{}, err
+	}
+
 	return Udiv{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const UdivX uint32 = 0x9AC00800
@@ -45,36 +102,20 @@ func (i Udiv) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-// Udiv — udiv rd, rn, rm. Register 31 reads as zr (SP/WSP are not
-// allowed — use XZR/WZR); the width is shared by all three registers.
 func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(rd, "Udiv", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Udiv", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "Udiv", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("Udiv", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	return newUdiv(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newUdiv(base{}, rd, rn, rm)
 }
 
-func decodeUdiv(w uint32) Instr {
-	return newUdiv(
+func decodeUdiv(w uint32) (Instr, error) {
+	in, err := newUdiv(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

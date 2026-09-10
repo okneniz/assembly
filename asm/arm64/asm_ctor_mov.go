@@ -48,7 +48,7 @@ func newMovz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return MovzOf(rd, imm, hw), nil
+	return MovzOf(rd, imm, hw)
 }
 
 func newMovn(ops []vOp) (Instr, error) {
@@ -57,7 +57,7 @@ func newMovn(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return MovnOf(rd, imm, hw), nil
+	return MovnOf(rd, imm, hw)
 }
 
 func newMovk(ops []vOp) (Instr, error) {
@@ -66,5 +66,5 @@ func newMovk(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return MovkOf(rd, imm, hw), nil
+	return MovkOf(rd, imm, hw)
 }

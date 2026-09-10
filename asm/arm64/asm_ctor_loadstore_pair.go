@@ -64,8 +64,8 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 	}
 
 	if name == "ldp" {
-		return LdpOf(rt, rt2, rn, kind, off, scale, enc), nil
+		return LdpOf(rt, rt2, rn, kind, off, scale, enc)
 	}
 
-	return StpOf(rt, rt2, rn, kind, off, scale, enc), nil
+	return StpOf(rt, rt2, rn, kind, off, scale, enc)
 }

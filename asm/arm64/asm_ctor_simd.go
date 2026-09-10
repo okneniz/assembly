@@ -374,7 +374,7 @@ func newTblArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return arch.NewTbl(rd, rn, rm), nil
+	return arch.NewTbl(rd, rn, rm)
 }
 
 // newUaddlv — uaddlv.Arr hd/sd/dd, vn (dest scalar by size).

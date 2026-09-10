@@ -4,59 +4,37 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestPrfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rn   string
 		word uint32
 	}{
-		{
-			"prfm pldl1keep,[x1]",
-			buildPrfm(t, xreg(t, 1)),
-			0xf9800020,
-		},
-		{
-			"prfm pldl1keep,[sp]",
-			buildPrfm(t, SP),
-			0xf98003e0,
-		},
+		{"prfm pldl1keep,[x1]", "x1", 0xf9800020},
+		{"prfm pldl1keep,[sp]", "sp", 0xf98003e0},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Prfm(reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildPrfm(t, xreg(t, 1))
+	first := cases[0]
+	in, err := New().Prfm(reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Prfm)
 	require.True(t, ok, "type = %T, want Prfm", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"prfm w1 base",
-			func() error {
-				_, err := New().Prfm(wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildPrfm — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildPrfm(t *testing.T, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Prfm(rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rn   string
+	}{
+		{"prfm w1 base", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Prfm(reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

@@ -16,18 +16,18 @@ type Tbl struct {
 
 // newTbl - the Tbl constructor: the struct is assembled only
 // here (NewTbl and the decoder call it).
-func newTbl(b base, rd string, rn string, rm string) Tbl {
+func newTbl(b base, rd, rn, rm string) (Tbl, error) {
 	return Tbl{
 		base: b,
 		rd:   rd,
 		rn:   rn,
 		rm:   rm,
-	}
+	}, nil
 }
 
 // NewTbl - tbl.16b vd, { vn }, vm (the assembler ctor form; the word
 // base is filled at decode time).
-func NewTbl(rd, rn, rm string) Tbl {
+func NewTbl(rd, rn, rm string) (Tbl, error) {
 	return newTbl(base{}, rd, rn, rm)
 }
 
@@ -46,6 +46,11 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, tblEnc|rd|rn<<5|rm<<16)
 }
 
-func decodeTbl(w uint32) Instr {
-	return newTbl(newBase(w), vReg(w&0x1f), vReg(w>>5&0x1f), vReg(w>>16&0x1f))
+func decodeTbl(w uint32) (Instr, error) {
+	in, err := newTbl(newBase(w), vReg(w&0x1f), vReg(w>>5&0x1f), vReg(w>>16&0x1f))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

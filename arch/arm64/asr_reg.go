@@ -14,15 +14,72 @@ type AsrReg struct {
 	rd, rn, rm string
 }
 
-// newAsrReg - the AsrReg constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newAsrReg(b base, rd string, rn string, rm string) AsrReg {
+// newAsrReg - the AsrReg constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAsrReg(b base, rd Reg, rn Reg, rm Reg) (AsrReg, error) {
+	err := requireClass(
+		rd,
+		"AsrReg",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return AsrReg{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"AsrReg",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return AsrReg{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"AsrReg",
+		"rm",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return AsrReg{}, err
+	}
+
+	err = requireWidth(
+		"AsrReg",
+		rd,
+		rn,
+		rm,
+	)
+
+	if err != nil {
+		return AsrReg{}, err
+	}
+
 	return AsrReg{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const AsrRegX uint32 = 0x9A002800
@@ -45,36 +102,20 @@ func (i AsrReg) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-// AsrReg — asr rd, rn, rm. Register 31 reads as zr (SP/WSP are
-// not allowed — use XZR/WZR); the width is shared by all three registers.
 func (Builder) AsrReg(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(rd, "AsrReg", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "AsrReg", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "AsrReg", "rm", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("AsrReg", rd, rn, rm); err != nil {
-		return nil, err
-	}
-
-	return newAsrReg(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newAsrReg(base{}, rd, rn, rm)
 }
 
-func decodeAsrReg(w uint32) Instr {
-	return newAsrReg(
+func decodeAsrReg(w uint32) (Instr, error) {
+	in, err := newAsrReg(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

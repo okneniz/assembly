@@ -14,13 +14,27 @@ type Br struct {
 	rn string
 }
 
-// newBr - the Br constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newBr(b base, rn string) Br {
+// newBr - the Br constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newBr(b base, rn Reg) (Br, error) {
+	err := requireClass(
+		rn,
+		"Br",
+		"rn",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Br{}, err
+	}
+
 	return Br{
 		base: b,
-		rn:   rn,
-	}
+		rn:   rn.name(),
+	}, nil
 }
 
 const brMatch = 0xD61F0000
@@ -38,22 +52,15 @@ func (i Br) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, brMatch|num<<5)
 }
 
-// Br — br xn (indirect branch). Only x registers (X/XZR).
 func (Builder) Br(rn Reg) (Instr, error) {
-	if err := requireClass(
-		rn,
-		"Br",
-		"rn",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newBr(base{}, rn)
+}
+
+func decodeBr(w uint32) (Instr, error) {
+	in, err := newBr(newBase(w), gprOf(w>>5&0x1f, true))
+	if err != nil {
 		return nil, err
 	}
 
-	return newBr(base{}, rn.name()), nil
-}
-
-func decodeBr(w uint32) Instr {
-	return newBr(newBase(w), regNameX(w>>5&0x1f))
+	return in, nil
 }

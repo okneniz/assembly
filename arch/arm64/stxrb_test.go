@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestStxrbBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rs   string
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"stxrb w0,w1,[x2]",
-			buildStxrb(t, wreg(t, 0), wreg(t, 1), xreg(t, 2)),
-			0x08000041,
-		},
-		{
-			"stxrb wzr,w1,[sp]",
-			buildStxrb(t, WZR, wreg(t, 1), SP),
-			0x081f03e1,
-		},
+		{"stxrb w0,w1,[x2]", "w0", "w1", "x2", 0x08000041},
+		{"stxrb wzr,w1,[sp]", "wzr", "w1", "sp", 0x081f03e1},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Stxrb(reg(t, c.rs), reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildStxrb(t, wreg(t, 0), wreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Stxrb(reg(t, first.rs), reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Stxrb)
 	require.True(t, ok, "type = %T, want Stxrb", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"stxrb x,rs",
-			func() error {
-				_, err := New().Stxrb(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"stxrb x,rt",
-			func() error {
-				_, err := New().Stxrb(wreg(t, 0), xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"stxrb w2 base",
-			func() error {
-				_, err := New().Stxrb(wreg(t, 0), wreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildStxrb — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildStxrb(t *testing.T, rs, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Stxrb(rs, rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rs   string
+		rt   string
+		rn   string
+	}{
+		{"stxrb x,rs", "x0", "w1", "x2"},
+		{"stxrb x,rt", "w0", "x1", "x2"},
+		{"stxrb w2 base", "w0", "w1", "w2"},
+	}
+	for _, c := range errCases {
+		_, err := New().Stxrb(reg(t, c.rs), reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

@@ -9,75 +9,40 @@ import (
 func TestEorImmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		imm  uint64
 		word uint32
 	}{
-		{
-			"eor x0,x1,#0x7",
-			buildEorImm(t, xreg(t, 0), xreg(t, 1), 0x7),
-			0xd2400820,
-		},
-		{
-			"eor x2,x3,#0xffff",
-			buildEorImm(t, xreg(t, 2), xreg(t, 3), 0xffff),
-			0xd2403c62,
-		},
-		{
-			"eor w0,w1,#0x00ff00ff",
-			buildEorImm(t, wreg(t, 0), wreg(t, 1), 0x00ff00ff),
-			0x52009c20,
-		},
+		{"eor x0,x1,#0x7", "x0", "x1", 0x7, 0xd2400820},
+		{"eor x2,x3,#0xffff", "x2", "x3", 0xffff, 0xd2403c62},
+		{"eor w0,w1,#0x00ff00ff", "w0", "w1", 0x00ff00ff, 0x52009c20},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().EorImm(reg(t, c.rd), reg(t, c.rn), c.imm)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildEorImm(t, xreg(t, 0), xreg(t, 1), 0x7)
+	first := cases[0]
+	in, err := New().EorImm(reg(t, first.rd), reg(t, first.rn), first.imm)
+	require.NoError(t, err)
 	_, ok := in.(EorImm)
 	require.True(t, ok, "type = %T, want EorImm", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"eor imm sp",
-			func() error {
-				_, err := New().EorImm(SP, xreg(t, 1), 0x7)
-				return err
-			},
-		},
-		{
-			"eor imm rn sp",
-			func() error {
-				_, err := New().EorImm(xreg(t, 0), SP, 0x7)
-				return err
-			},
-		},
-		{
-			"eor imm x+w",
-			func() error {
-				_, err := New().EorImm(xreg(t, 0), wreg(t, 1), 0x7)
-				return err
-			},
-		},
-		{
-			"eor imm not encodable",
-			func() error {
-				_, err := New().EorImm(xreg(t, 0), xreg(t, 1), 0x55)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildEorImm — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildEorImm(t *testing.T, rd, rn Reg, imm uint64) Instr {
-	t.Helper()
-	in, err := New().EorImm(rd, rn, imm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		imm  uint64
+	}{
+		{"eor imm sp", "sp", "x1", 0x7},
+		{"eor imm rn sp", "x0", "sp", 0x7},
+		{"eor imm x+w", "x0", "w1", 0x7},
+		{"eor imm not encodable", "x0", "x1", 0x55},
+	}
+	for _, c := range errCases {
+		_, err := New().EorImm(reg(t, c.rd), reg(t, c.rn), c.imm)
+		assertErr(t, c.name, err)
+	}
 }

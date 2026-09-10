@@ -29,22 +29,45 @@ func benchCtorOf(in Instr) benchCtor {
 
 // benchWordFor picks a word decoded by the required entry: the candidate is
 // match (free bits = 0), then up to 32 attempts with random free bits
-// (deterministic rnd). 0 - the entry is unreachable.
+// (deterministic rnd). 0 - the entry is unreachable. A word whose own
+// constructor rejects it (operand validation on a schema-matched word -
+// data, not an instruction) is skipped like any other non-match: in real
+// decoding such a word falls back to .word.
 func benchWordFor(
 	rnd *mrnd.Rand,
 	match, mask uint32,
-	ctor func(word uint32) Instr,
+	ctor func(word uint32) (Instr, error),
 ) uint32 {
-	ref := func(w uint32) benchCtor { return benchCtorOf(ctor(w)) }
+	try := func(w uint32) (benchCtor, bool) {
+		dm, derr := decodeOne(w)
+		if derr != nil {
+			return benchCtor{}, false // .word fallback territory - not this ctor
+		}
 
-	if benchCtorOf(decodeOne(match)) == ref(match) {
-		return match
+		return benchCtorOf(dm), true
+	}
+
+	ref := func(w uint32) (benchCtor, bool) {
+		in, cerr := ctor(w)
+		if cerr != nil {
+			return benchCtor{}, false
+		}
+
+		return benchCtorOf(in), true
+	}
+
+	if r, ok := ref(match); ok {
+		if d, ok2 := try(match); ok2 && d == r {
+			return match
+		}
 	}
 
 	for range 32 {
 		w := match | (rnd.Uint32() &^ mask)
-		if benchCtorOf(decodeOne(w)) == ref(w) {
-			return w
+		if r, ok := ref(w); ok {
+			if d, ok2 := try(w); ok2 && d == r {
+				return w
+			}
 		}
 	}
 
@@ -90,7 +113,7 @@ func benchWordsAll(b *testing.B) []uint32 {
 		tail++
 
 		e := isaTailEntry(k)
-		ctor := func(word uint32) Instr { return decodeGeneric(e, word) }
+		ctor := func(word uint32) (Instr, error) { return decodeGeneric(e, word) }
 
 		if w := benchWordFor(rnd, e.Match, e.Mask, ctor); w != 0 {
 			out = append(out, w)
@@ -107,7 +130,12 @@ func benchWordsAll(b *testing.B) []uint32 {
 	}
 
 	for _, w := range unknowns {
-		if _, ok := decodeOne(w).(Unknown); ok {
+		u, derr := decodeOne(w)
+		if derr != nil {
+			panic(derr)
+		}
+
+		if _, ok := u.(Unknown); ok {
 			out = append(out, w)
 			break
 		}

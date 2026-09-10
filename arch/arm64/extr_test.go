@@ -9,68 +9,41 @@ import (
 func TestExtrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		lsb  int64
 		word uint32
 	}{
-		{
-			"extr x1,x2,x3,#5",
-			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5)),
-			0x93031441,
-		},
-		{
-			"ror x1,x2,#4",
-			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 2), imm6(t, 4)),
-			0x93021041,
-		},
-		{
-			"extr x1,x2,x3,#63",
-			buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 63)),
-			0x9303fc41,
-		},
+		{"extr x1,x2,x3,#5", "x1", "x2", "x3", 5, 0x93031441},
+		{"ror x1,x2,#4", "x1", "x2", "x2", 4, 0x93021041},
+		{"extr x1,x2,x3,#63", "x1", "x2", "x3", 63, 0x9303fc41},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Extr(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.lsb))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildExtr(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5))
+	first := cases[0]
+	in, err := New().Extr(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), imm6(t, first.lsb))
+	require.NoError(t, err)
 	_, ok := in.(Extr)
 	require.True(t, ok, "type = %T, want Extr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"extr w form",
-			func() error {
-				_, err := New().Extr(wreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 5))
-				return err
-			},
-		},
-		{
-			"extr sp",
-			func() error {
-				_, err := New().Extr(xreg(t, 1), SP, xreg(t, 3), imm6(t, 5))
-				return err
-			},
-		},
-		{
-			"extr rm sp",
-			func() error {
-				_, err := New().Extr(xreg(t, 1), xreg(t, 2), SP, imm6(t, 5))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildExtr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildExtr(t *testing.T, rd, rn, rm Reg, lsb Imm6) Instr {
-	t.Helper()
-	in, err := New().Extr(rd, rn, rm, lsb)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		lsb  int64
+	}{
+		{"extr w form", "w1", "x2", "x3", 5},
+		{"extr sp", "x1", "sp", "x3", 5},
+		{"extr rm sp", "x1", "x2", "sp", 5},
+	}
+	for _, c := range errCases {
+		_, err := New().Extr(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.lsb))
+		assertErr(t, c.name, err)
+	}
 }

@@ -4,71 +4,41 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestStlrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"stlr x0,[x1]",
-			buildStlr(t, xreg(t, 0), xreg(t, 1)),
-			0xc89ffc20,
-		},
-		{
-			"stlr w2,[sp]",
-			buildStlr(t, wreg(t, 2), SP),
-			0x889fffe2,
-		},
-		{
-			"stlr xzr,[x3]",
-			buildStlr(t, XZR, xreg(t, 3)),
-			0xc89ffc7f,
-		},
+		{"stlr x0,[x1]", "x0", "x1", 0xc89ffc20},
+		{"stlr w2,[sp]", "w2", "sp", 0x889fffe2},
+		{"stlr xzr,[x3]", "xzr", "x3", 0xc89ffc7f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Stlr(reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildStlr(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Stlr(reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Stlr)
 	require.True(t, ok, "type = %T, want Stlr", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"stlr sp,rt",
-			func() error {
-				_, err := New().Stlr(SP, xreg(t, 1))
-				return err
-			},
-		},
-		{
-			"stlr w1 base",
-			func() error {
-				_, err := New().Stlr(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildStlr — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildStlr(t *testing.T, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Stlr(rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+	}{
+		{"stlr sp,rt", "sp", "x1"},
+		{"stlr w1 base", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Stlr(reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

@@ -66,7 +66,7 @@ func (i DupElem) Encode(w io.Writer) (int64, error) {
 }
 
 // decodeSimdDupElem — DUP (element): 0x0E000400/0xBFE0FC00.
-func decodeSimdDupElem(w uint32) Instr {
+func decodeSimdDupElem(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
 	// the size is the lowest set bit (0=b..3=d); unencodable sizes go to
 	// the .word fallback (the schema mask does not express this)
@@ -85,25 +85,30 @@ func decodeSimdDupElem(w uint32) Instr {
 		rn:   vReg(w >> 5 & 0x1f),
 		rdN:  w & 0x1f,
 		rnN:  w >> 5 & 0x1f,
-	}
+	}, nil
 }
 
 // decodeSimdInsElem — INS (element): 0x6E000400/0xFFE08400 (imm4 at
 // bits [14:11] is the source lane).
-func decodeSimdInsElem(w uint32) Instr {
-	d, ok := decodeSimdDupElem(w).(DupElem)
+func decodeSimdInsElem(w uint32) (Instr, error) {
+	d, err := decodeSimdDupElem(w)
+	if err != nil {
+		return nil, err
+	}
+
+	de, ok := d.(DupElem)
 	if !ok {
 		return decodeUnknown(w) // the .word fallback
 	}
 
-	d.op = "ins"
-	d.srcIdx = w >> 11 & 0xf
-	return d
+	de.op = "ins"
+	de.srcIdx = w >> 11 & 0xf
+	return de, nil
 }
 
 // decodeSimdDupScalar — the scalar DUP alias (llvm mov.d/mov.s):
 // 0x5E000400/0xFFE0FC00; imm5 is one-hot (size only).
-func decodeSimdDupScalar(w uint32) Instr {
+func decodeSimdDupScalar(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
 	if imm5 == 0 || imm5 > 8 || imm5&(imm5-1) != 0 {
 		return decodeUnknown(w)
@@ -117,5 +122,5 @@ func decodeSimdDupScalar(w uint32) Instr {
 		rn:   vReg(w >> 5 & 0x1f),
 		rdN:  w & 0x1f,
 		rnN:  w >> 5 & 0x1f,
-	}
+	}, nil
 }

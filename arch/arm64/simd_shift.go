@@ -18,8 +18,8 @@ type SimdShift struct {
 	enc        uint32
 }
 
-func decodeSimdShiftOf(op string, enc uint32) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSimdShiftOf(op string, enc uint32) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return SimdShift{
 			base: newBase(w),
 			op:   op,
@@ -29,7 +29,7 @@ func decodeSimdShiftOf(op string, enc uint32) func(uint32) Instr {
 			immb: w >> 16 & 7,
 			q:    w >> 30 & 1,
 			enc:  enc,
-		}
+		}, nil
 	}
 }
 

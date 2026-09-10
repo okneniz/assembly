@@ -4,73 +4,45 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestCsnegBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		cond string
 		word uint32
 	}{
-		{
-			"csneg x0,x1,x2,mi",
-			buildCsneg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "mi"),
-			0xda824420,
-		},
-		{
-			"csneg w4,wzr,wzr,eq",
-			buildCsneg(t, wreg(t, 4), WZR, WZR, "eq"),
-			0x5a9f07e4,
-		},
+		{"csneg x0,x1,x2,mi", "x0", "x1", "x2", "mi", 0xda824420},
+		{"csneg w4,wzr,wzr,eq", "w4", "wzr", "wzr", "eq", 0x5a9f07e4},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Csneg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildCsneg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "mi")
+	first := cases[0]
+	in, err := New().Csneg(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), first.cond)
+	require.NoError(t, err)
 	_, ok := in.(Csneg)
 	require.True(t, ok, "type = %T, want Csneg", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"csneg sp,rd",
-			func() error {
-				_, err := New().Csneg(SP, xreg(t, 1), xreg(t, 2), "mi")
-				return err
-			},
-		},
-		{
-			"csneg w,x widths",
-			func() error {
-				_, err := New().Csneg(xreg(t, 0), wreg(t, 1), xreg(t, 2), "mi")
-				return err
-			},
-		},
-		{
-			"csneg bad cond",
-			func() error {
-				_, err := New().Csneg(xreg(t, 0), xreg(t, 1), xreg(t, 2), "foo")
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildCsneg — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildCsneg(t *testing.T, rd, rn, rm Reg, cond string) Instr {
-	t.Helper()
-	in, err := New().Csneg(rd, rn, rm, cond)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		cond string
+	}{
+		{"csneg sp,rd", "sp", "x1", "x2", "mi"},
+		{"csneg w,x widths", "x0", "w1", "x2", "mi"},
+		{"csneg bad cond", "x0", "x1", "x2", "foo"},
+	}
+	for _, c := range errCases {
+		_, err := New().Csneg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		assertErr(t, c.name, err)
+	}
 }

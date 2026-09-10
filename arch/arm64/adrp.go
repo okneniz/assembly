@@ -16,6 +16,37 @@ type Adrp struct {
 	off int64
 }
 
+// newAdrp - the Adrp constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAdrp(b base, rd Reg, off int64) (Adrp, error) {
+	err := requireClass(
+		rd,
+		"Adrp",
+		"rd",
+		"only x registers (X/XZR)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Adrp{}, err
+	}
+
+	if off < -(1<<20) || off >= 1<<20 {
+		return Adrp{}, fmt.Errorf(
+			"arm64.NewAdrp: operand off: %d is out of the imm21 range (-0x100000..0xfffff)",
+			off,
+		)
+	}
+
+	return Adrp{
+		base: b,
+		rd:   rd.name(),
+		off:  off,
+	}, nil
+}
+
 func (i Adrp) ObjDump(ctx disasm.ViewCtx) string {
 	page := int64(ctx.Addr())&^int64(0xFFF) + i.off<<12
 	return fmt.Sprintf("adrp %s, %d ; 0x%x", i.rd, i.off, page)
@@ -31,33 +62,20 @@ func (i Adrp) Encode(w io.Writer) (int64, error) {
 // address and stays zero here. rd — only x registers (register 31 reads
 // as zr).
 func (Builder) Adrp(rd Reg, off int64) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"Adrp",
-		"rd",
-		"only x registers (X/XZR)",
-		classX,
-		classXZR,
-	); err != nil {
+	return newAdrp(base{}, rd, off)
+}
+
+func decodeAdrp(w uint32) (Instr, error) {
+	raw := (w>>5&0x7ffff)<<2 | w>>29&3
+	imm21 := signExtendN(raw, 21)
+	in, err := newAdrp(
+		newBase(w),
+		gprOf(w&0x1f, true),
+		imm21,
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	if off < -(1<<20) || off >= 1<<20 {
-		return nil, fmt.Errorf(
-			"arm64.NewAdrp: operand off: %d is out of the imm21 page range (-0x100000..0xfffff pages)",
-			off,
-		)
-	}
-
-	return Adrp{rd: rd.name(), off: off}, nil
-}
-
-func decodeAdrp(w uint32) Instr {
-	raw := (w>>5&0x7ffff)<<2 | w>>29&3
-	imm21 := signExtendN(raw, 21)
-	return Adrp{
-		base: newBase(w),
-		rd:   regNameX(w & 0x1f),
-		off:  imm21,
-	}
+	return in, nil
 }

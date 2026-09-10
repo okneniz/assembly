@@ -19,7 +19,12 @@ func BenchmarkDecodeOne(b *testing.B) {
 	start := time.Now()
 	for range b.N {
 		for _, w := range words {
-			benchSink = decodeOne(w) != nil
+			in, derr := decodeOne(w)
+			if derr != nil {
+				b.Fatal(derr)
+			}
+
+			benchSink = in != nil
 		}
 	}
 

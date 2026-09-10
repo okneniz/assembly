@@ -29,11 +29,97 @@ type Reg struct {
 	class regClass
 }
 
+// newReg - the register constructor: the struct is assembled only here.
 func newReg(num uint8, class regClass) Reg {
 	return Reg{
 		num:   num,
 		class: class,
 	}
+}
+
+// RegOf — a register by its source name (x0, w3, sp, wsp, xzr, wzr):
+// the inverse of (Reg).name.
+func RegOf(name string) (Reg, error) {
+	switch name {
+	case "sp":
+		return SP, nil
+	case "wsp":
+		return WSP, nil
+	case "xzr":
+		return XZR, nil
+	case "wzr":
+		return WZR, nil
+	}
+
+	if len(name) < 2 {
+		return Reg{}, fmt.Errorf("arm64.Reg: unknown register %q", name)
+	}
+
+	n, err := strconv.Atoi(name[1:])
+	if err != nil || n < 0 || n > 30 {
+		return Reg{}, fmt.Errorf("arm64.Reg: unknown register %q", name)
+	}
+
+	switch name[0] {
+	case 'x':
+		return X(n)
+	case 'w':
+		return W(n)
+	}
+
+	return Reg{}, fmt.Errorf("arm64.Reg: unknown register %q", name)
+}
+
+// gprOf - a general register from its decoded number and width (31
+// reads as the zero register): the decode-side counterpart of
+// armRegName; the class matches what the number prints as.
+func gprOf(n uint32, is64 bool) Reg {
+	if n == 31 {
+		if is64 {
+			return XZR
+		}
+
+		return WZR
+	}
+
+	if is64 {
+		return newReg(uint8(n), classX)
+	}
+
+	return newReg(uint8(n), classW)
+}
+
+// xspOf - the base register of an addressing operand from its decoded
+// number: 31 is SP, the rest are x registers (regNameXSP's counterpart).
+func xspOf(n uint32) Reg {
+	if n == 31 {
+		return SP
+	}
+
+	return newReg(uint8(n), classX)
+}
+
+// xOf - an x register from its decoded number (regNameX's counterpart).
+func xOf(n uint32) Reg {
+	return newReg(uint8(n), classX)
+}
+
+// numReg - a register from its NUMBER (31 reads as sp/wsp): the
+// string-operand layer's number form of add/sub immediate operands.
+func numReg(n uint32, is64 bool) Reg {
+	if n == 31 {
+		if is64 {
+			return SP
+		}
+
+		return WSP
+	}
+
+	if is64 {
+		return newReg(uint8(n), classX)
+	}
+
+	return newReg(uint8(n), classW)
 }
 
 // X — 64-bit register x0..x30.

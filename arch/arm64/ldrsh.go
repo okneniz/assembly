@@ -15,15 +15,46 @@ type Ldrsh struct {
 	off    int64
 }
 
-// newLdrsh - the Ldrsh constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newLdrsh(b base, rt string, rn string, off int64) Ldrsh {
+// newLdrsh - the Ldrsh constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newLdrsh(b base, rt Reg, rn Reg, off Off) (Ldrsh, error) {
+	err := requireClass(
+		rt,
+		"Ldrsh",
+		"rt",
+		"x register (register 31 in rt reads as xzr)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Ldrsh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Ldrsh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Ldrsh{}, err
+	}
+
+	if err = requireOff("Ldrsh", off, 1); err != nil {
+		return Ldrsh{}, err
+	}
+
 	return Ldrsh{
 		base: b,
-		rt:   rt,
-		rn:   rn,
-		off:  off,
-	}
+		rt:   rt.name(),
+		rn:   rn.name(),
+		off:  int64(off),
+	}, nil
 }
 
 const ldrshEnc uint32 = 0x79800000
@@ -40,34 +71,20 @@ func (i Ldrsh) Encode(w io.Writer) (int64, error) {
 	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
 }
 
-// Ldrsh — ldrsh rt, [rn, #off]: sign-extending halfword load, rt —
-// x register only (register 31 reads as xzr), rn — x register or SP
-// (register 31 in the base reads as sp); the offset is an imm12 scaled
-// by 2 (0..0x1ffe, alignment 2).
 func (Builder) Ldrsh(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldrsh", "rt", "x register (register 31 in rt reads as xzr)",
-		classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldrsh",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireOff("Ldrsh", off, 1); err != nil {
-		return nil, err
-	}
-
-	return newLdrsh(base{}, rt.name(), rn.name(), int64(off)), nil
+	return newLdrsh(base{}, rt, rn, off)
 }
 
-func decodeLdrsh(w uint32) Instr {
-	return newLdrsh(newBase(w), regNameX(w&0x1f), regNameXSP(w>>5&0x1f), int64(w>>10&0xfff)<<1)
+func decodeLdrsh(w uint32) (Instr, error) {
+	in, err := newLdrsh(
+		newBase(w),
+		xOf(w&0x1f),
+		xspOf(w>>5&0x1f),
+		Off(int64(w>>10&0xfff)<<1),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

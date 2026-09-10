@@ -133,39 +133,39 @@ func makeLSCtorTyped(ops []vOp, name string, enc uint32) (Instr, error) {
 
 	switch name {
 	case "ldr":
-		return LdrOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdrOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldrb":
-		return LdrbOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdrbOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldrh":
-		return LdrhOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdrhOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "str":
-		return StrOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return StrOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "strb":
-		return StrbOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return StrbOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "strh":
-		return StrhOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return StrhOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldur":
-		return LdurOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdurOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "stur":
-		return SturOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return SturOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldurb":
-		return LdurbOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdurbOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldurh":
-		return LdurhOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdurhOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "sturb":
-		return SturbOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return SturbOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "sturh":
-		return SturhOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return SturhOf(rt, rn, kind, off, enc, rm, option, amt)
 	case "ldrsw":
-		return LdrswOf(rt, rn, kind, off, enc, rm, option, amt), nil
+		return LdrswOf(rt, rn, kind, off, enc, rm, option, amt)
 	}
 
 	// ldrsb/ldrsh — own fields (imm12 scale), not lsBase
 	if name == "ldrsb" {
-		return LdrsbOf(rt, rn, off), nil
+		return LdrsbOf(rt, rn, off)
 	}
 
-	return LdrshOf(rt, rn, off), nil
+	return LdrshOf(rt, rn, off)
 }
 
 // newLdrPool — ldr rt, =literal: a literal-pool slot at the end of the
@@ -211,5 +211,5 @@ func newLdrLiteral(ops []vOp) (Instr, error) {
 		enc = 0x18000000
 	}
 
-	return LdrLitOf(rt, ops[1].Num(), enc), nil
+	return LdrLitOf(rt, ops[1].Num(), enc)
 }

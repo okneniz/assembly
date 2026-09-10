@@ -112,7 +112,7 @@ var ByElemIntNames = byElemIntNames
 var ByElemFPNames = byElemFPNames
 var ByElemLong = byElemLong
 
-func decodeByElem(w uint32) Instr {
+func decodeByElem(w uint32) (Instr, error) {
 	u, size, opc, q := w>>29&1, w>>22&3, w>>12&0xf, w>>30&1
 	var name string
 	if size == 1 || size == 2 {
@@ -152,5 +152,5 @@ func decodeByElem(w uint32) Instr {
 		rnN:  w >> 5 & 0x1f,
 		rmN:  rmN,
 		long: long,
-	}
+	}, nil
 }

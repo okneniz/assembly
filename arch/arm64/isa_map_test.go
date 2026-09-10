@@ -205,7 +205,12 @@ func TestISATailCoverage(t *testing.T) {
 	for k := 0; k < isaTailLen(); k += step {
 		e := isaTailEntry(k)
 		w := e.Match | (0x9e3779b9 &^ e.Mask) // fixed field bits
-		switch decodeOne(w).(type) {
+		dec, derr := decodeOne(w)
+		if derr != nil {
+			t.Fatalf("%#08x: %v", w, derr)
+		}
+
+		switch dec.(type) {
 		case Generic:
 			gen++
 		default:

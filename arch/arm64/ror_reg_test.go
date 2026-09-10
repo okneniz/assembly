@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestRorRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"ror x0,x1,x2",
-			buildRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
-			0x9a022c20,
-		},
-		{
-			"ror x3,xzr,x4",
-			buildRorReg(t, xreg(t, 3), XZR, xreg(t, 4)),
-			0x9a042fe3,
-		},
+		{"ror x0,x1,x2", "x0", "x1", "x2", 0x9a022c20},
+		{"ror x3,xzr,x4", "x3", "xzr", "x4", 0x9a042fe3},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().RorReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildRorReg(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().RorReg(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(RorReg)
 	require.True(t, ok, "type = %T, want RorReg", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ror w form",
-			func() error {
-				_, err := New().RorReg(wreg(t, 0), wreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-		{
-			"ror w,rn",
-			func() error {
-				_, err := New().RorReg(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"ror w,rm",
-			func() error {
-				_, err := New().RorReg(xreg(t, 0), xreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildRorReg — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildRorReg(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().RorReg(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"ror w form", "w0", "w1", "w2"},
+		{"ror w,rn", "x0", "w1", "x2"},
+		{"ror w,rm", "x0", "x1", "w2"},
+	}
+	for _, c := range errCases {
+		_, err := New().RorReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

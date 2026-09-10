@@ -20,7 +20,7 @@ func newB(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return BOf(t), nil
+	return BOf(t)
 }
 
 func newBl(ops []vOp) (Instr, error) {
@@ -33,7 +33,7 @@ func newBl(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return BlOf(t), nil
+	return BlOf(t)
 }
 
 func newCbz(ops []vOp) (Instr, error) {
@@ -51,7 +51,7 @@ func newCbz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return CbzOf(rt, t), nil
+	return CbzOf(rt, t)
 }
 
 func newCbnz(ops []vOp) (Instr, error) {
@@ -69,7 +69,7 @@ func newCbnz(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return CbnzOf(rt, t), nil
+	return CbnzOf(rt, t)
 }
 
 func newNop(ops []vOp) (Instr, error) {
@@ -95,7 +95,7 @@ func newRet(ops []vOp) (Instr, error) {
 		rn = r
 	}
 
-	return RetOf(rn), nil
+	return RetOf(rn)
 }
 
 func newBr(ops []vOp) (Instr, error) {
@@ -108,7 +108,7 @@ func newBr(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return BrOf(rn), nil
+	return BrOf(rn)
 }
 
 func newBlr(ops []vOp) (Instr, error) {
@@ -121,5 +121,5 @@ func newBlr(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return BlrOf(rn), nil
+	return BlrOf(rn)
 }

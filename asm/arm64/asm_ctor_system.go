@@ -29,7 +29,7 @@ func newAdr(ops []vOp) (Instr, error) {
 		return nil, errors.New("adr: offset out of range")
 	}
 
-	return AdrOf(rd, v), nil
+	return AdrOf(rd, v)
 }
 
 // newAdrp — adrp rd, #pageOff (the page offset as the formatter prints it;
@@ -49,7 +49,7 @@ func newAdrp(ops []vOp) (Instr, error) {
 		return nil, errors.New("adrp: offset out of range")
 	}
 
-	return AdrpOf(rd, v), nil
+	return AdrpOf(rd, v)
 }
 
 // newTbzArm — tbz/tbnz rt, #bit, target.
@@ -73,7 +73,7 @@ func newTbzArm(isTbnz bool) func([]vOp) (Instr, error) {
 			return nil, errors.New("tbz: target expected")
 		}
 
-		return TbzOf(rt, uint32(bit), ops[2].Num(), isTbnz), nil
+		return TbzOf(rt, uint32(bit), ops[2].Num(), isTbnz)
 	}
 }
 
@@ -151,7 +151,7 @@ func newMrsArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return MrsOf(rd, ops[1].Sym()), nil
+	return MrsOf(rd, ops[1].Sym())
 }
 
 // newMsrArm — msr sysreg, rt.
@@ -165,7 +165,7 @@ func newMsrArm(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return MsrOf(rt, ops[0].Sym()), nil
+	return MsrOf(rt, ops[0].Sym())
 }
 
 // newBcondOf — b.<cond> target: a numeric target — the absolute; a
@@ -178,6 +178,6 @@ func newBcondOf(cond string) func([]vOp) (Instr, error) {
 
 		v := ops[0].Num()
 
-		return BcondOf(cond, v), nil
+		return BcondOf(cond, v)
 	}
 }

@@ -18,8 +18,8 @@ type Tbz struct {
 	isTbnz bool
 }
 
-func decodeTbzOf(isTbnz bool) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeTbzOf(isTbnz bool) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		x64 := w>>31&1 == 1
 		return Tbz{
 			base:   newBase(w),
@@ -27,7 +27,7 @@ func decodeTbzOf(isTbnz bool) func(uint32) Instr {
 			bit:    w>>19&0x1f | w>>26&0x20,
 			off:    immNum(signExtendN(w>>5&0x3fff, 14) * 4),
 			isTbnz: isTbnz,
-		}
+		}, nil
 	}
 }
 
@@ -74,8 +74,18 @@ func (i Tbz) Encode(w io.Writer) (int64, error) {
 // of the encoding is the bit's b5: bits 32..63 need an x register, bits
 // 0..31 — a w one (register 31 reads as zr — use XZR/WZR).
 func (Builder) Tbz(rt Reg, bit uint32, off int64) (Instr, error) {
-	if err := requireClass(rt, "Tbz", "rt", "x/w register (register 31 reads as zr — use XZR/WZR)",
-		classX, classW, classXZR, classWZR); err != nil {
+	err := requireClass(
+		rt,
+		"Tbz",
+		"rt",
+		"x/w register (register 31 reads as zr — use XZR/WZR)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
 		return nil, err
 	}
 

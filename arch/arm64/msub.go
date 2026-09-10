@@ -55,12 +55,17 @@ func (Builder) Msub(rd, rn, rm, ra Reg) (Instr, error) {
 	return Msub{Madd: m}, nil
 }
 
-func decodeMsub(w uint32) Instr {
-	m, ok := decodeMadd(w).(Madd)
-	if !ok {
-		// decodeMadd always returns Madd; this branch guards against schema desynchronization
-		return Msub{}
+func decodeMsub(w uint32) (Instr, error) {
+	mi, merr := decodeMadd(w)
+	if merr != nil {
+		return nil, merr
 	}
 
-	return Msub{Madd: m}
+	m, ok := mi.(Madd)
+	if !ok {
+		// decodeMadd always returns Madd; this branch guards against schema desynchronization
+		return Msub{}, nil
+	}
+
+	return Msub{Madd: m}, nil
 }

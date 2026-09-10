@@ -9,64 +9,42 @@ import (
 func TestAddImmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		imm  int64
+		sh   Sh12
 		word uint32
 	}{
-		{
-			"add x0,x1,#0x42",
-			buildAddImm(t, xreg(t, 0), xreg(t, 1), imm12(t, 0x42), NoSh12),
-			0x91010820,
-		},
-		{
-			"add x0,x1,#1,lsl#12",
-			buildAddImm(t, xreg(t, 0), xreg(t, 1), imm12(t, 1), LSL12),
-			0x91400420,
-		},
-		{
-			"add w2,w3,#7",
-			buildAddImm(t, wreg(t, 2), wreg(t, 3), imm12(t, 7), NoSh12),
-			0x11001c62,
-		},
-		{
-			"add sp,sp,#0x10",
-			buildAddImm(t, SP, SP, imm12(t, 0x10), NoSh12),
-			0x910043ff,
-		},
+		{"add x0,x1,#0x42", "x0", "x1", 0x42, NoSh12, 0x91010820},
+		{"add x0,x1,#1,lsl#12", "x0", "x1", 1, LSL12, 0x91400420},
+		{"add w2,w3,#7", "w2", "w3", 7, NoSh12, 0x11001c62},
+		{"add sp,sp,#0x10", "sp", "sp", 0x10, NoSh12, 0x910043ff},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().AddImm(reg(t, c.rd), reg(t, c.rn), imm12(t, c.imm), c.sh)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAddImm(t, xreg(t, 0), xreg(t, 1), imm12(t, 1), NoSh12)
+	first := cases[0]
+	in, err := New().AddImm(reg(t, first.rd), reg(t, first.rn), imm12(t, first.imm), first.sh)
+	require.NoError(t, err)
 	_, ok := in.(AddImm)
 	require.True(t, ok, "type = %T, want AddImm", in)
-	for _, c := range []struct {
+
+	errCases := []struct {
 		name string
-		call func() error
+		rd   string
+		rn   string
+		imm  int64
+		sh   Sh12
 	}{
-		{
-			"add xzr",
-			func() error {
-				_, err := New().AddImm(XZR, xreg(t, 1), imm12(t, 1), NoSh12)
-				return err
-			},
-		},
-		{
-			"add rn xzr",
-			func() error {
-				_, err := New().AddImm(xreg(t, 0), XZR, imm12(t, 1), NoSh12)
-				return err
-			},
-		},
-		{
-			"add sp+w",
-			func() error {
-				_, err := New().AddImm(SP, wreg(t, 1), imm12(t, 1), NoSh12)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
+		{"add xzr", "xzr", "x1", 1, NoSh12},
+		{"add rn xzr", "x0", "xzr", 1, NoSh12},
+		{"add sp+w", "sp", "w1", 1, NoSh12},
+	}
+	for _, c := range errCases {
+		_, err := New().AddImm(reg(t, c.rd), reg(t, c.rn), imm12(t, c.imm), c.sh)
+		assertErr(t, c.name, err)
 	}
 }

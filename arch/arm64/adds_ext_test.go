@@ -9,89 +9,46 @@ import (
 func TestAddsExtBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		ext  string
+		imm3 uint32
 		word uint32
 	}{
-		{
-			"cmn x1,x2,uxtb#0",
-			buildAddsExt(t, XZR, xreg(t, 1), xreg(t, 2), "uxtb", 0),
-			0xab22003f,
-		},
-		{
-			"adds w1,w2,w3,sxtw#1",
-			buildAddsExt(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), "sxtw", 1),
-			0x2b23c441,
-		},
-		{
-			"adds x1,sp,x3,uxtx#0",
-			buildAddsExt(t, xreg(t, 1), SP, xreg(t, 3), "uxtx", 0),
-			0xab2363e1,
-		},
+		{"cmn x1,x2,uxtb#0", "xzr", "x1", "x2", "uxtb", 0, 0xab22003f},
+		{"adds w1,w2,w3,sxtw#1", "w1", "w2", "w3", "sxtw", 1, 0x2b23c441},
+		{"adds x1,sp,x3,uxtx#0", "x1", "sp", "x3", "uxtx", 0, 0xab2363e1},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().AddsExt(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.ext, c.imm3)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAddsExt(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), "uxtb", 0)
+	first := cases[0]
+	in, err := New().AddsExt(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), first.ext, first.imm3)
+	require.NoError(t, err)
 	_, ok := in.(AddsExt)
 	require.True(t, ok, "type = %T, want AddsExt", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"adds ext rd sp",
-			func() error {
-				_, err := New().AddsExt(SP, xreg(t, 1), xreg(t, 2), "uxtb", 0)
-				return err
-			},
-		},
-		{
-			"adds ext rn xzr",
-			func() error {
-				_, err := New().AddsExt(xreg(t, 0), XZR, xreg(t, 2), "uxtb", 0)
-				return err
-			},
-		},
-		{
-			"adds ext rm xzr",
-			func() error {
-				_, err := New().AddsExt(xreg(t, 0), xreg(t, 1), XZR, "uxtb", 0)
-				return err
-			},
-		},
-		{
-			"adds ext x+w",
-			func() error {
-				_, err := New().AddsExt(xreg(t, 0), wreg(t, 1), xreg(t, 2), "uxtb", 0)
-				return err
-			},
-		},
-		{
-			"adds ext bad ext",
-			func() error {
-				_, err := New().AddsExt(xreg(t, 0), xreg(t, 1), xreg(t, 2), "sxtb2", 0)
-				return err
-			},
-		},
-		{
-			"adds ext imm3=8",
-			func() error {
-				_, err := New().AddsExt(xreg(t, 0), xreg(t, 1), xreg(t, 2), "uxtx", 8)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAddsExt — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAddsExt(t *testing.T, rd, rn, rm Reg, ext string, imm3 uint32) Instr {
-	t.Helper()
-	in, err := New().AddsExt(rd, rn, rm, ext, imm3)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		ext  string
+		imm3 uint32
+	}{
+		{"adds ext rd sp", "sp", "x1", "x2", "uxtb", 0},
+		{"adds ext rn xzr", "x0", "xzr", "x2", "uxtb", 0},
+		{"adds ext rm xzr", "x0", "x1", "xzr", "uxtb", 0},
+		{"adds ext x+w", "x0", "w1", "x2", "uxtb", 0},
+		{"adds ext bad ext", "x0", "x1", "x2", "sxtb2", 0},
+		{"adds ext imm3=8", "x0", "x1", "x2", "uxtx", 8},
+	}
+	for _, c := range errCases {
+		_, err := New().AddsExt(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.ext, c.imm3)
+		assertErr(t, c.name, err)
+	}
 }

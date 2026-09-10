@@ -9,75 +9,40 @@ import (
 func TestAsrRegBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"asr x1,x2,x3",
-			buildAsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3)),
-			0x9a032841,
-		},
-		{
-			"asr w1,w2,w3",
-			buildAsrReg(t, wreg(t, 1), wreg(t, 2), wreg(t, 3)),
-			0x1a032841,
-		},
-		{
-			"asr x1,xzr,x3",
-			buildAsrReg(t, xreg(t, 1), XZR, xreg(t, 3)),
-			0x9a032be1,
-		},
+		{"asr x1,x2,x3", "x1", "x2", "x3", 0x9a032841},
+		{"asr w1,w2,w3", "w1", "w2", "w3", 0x1a032841},
+		{"asr x1,xzr,x3", "x1", "xzr", "x3", 0x9a032be1},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().AsrReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildAsrReg(t, xreg(t, 1), xreg(t, 2), xreg(t, 3))
+	first := cases[0]
+	in, err := New().AsrReg(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(AsrReg)
 	require.True(t, ok, "type = %T, want AsrReg", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"asr x+w",
-			func() error {
-				_, err := New().AsrReg(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"asr sp",
-			func() error {
-				_, err := New().AsrReg(SP, xreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"asr rn sp",
-			func() error {
-				_, err := New().AsrReg(xreg(t, 0), SP, xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"asr rm sp",
-			func() error {
-				_, err := New().AsrReg(xreg(t, 0), xreg(t, 1), SP)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildAsrReg — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildAsrReg(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().AsrReg(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"asr x+w", "x0", "w1", "x2"},
+		{"asr sp", "sp", "x1", "x2"},
+		{"asr rn sp", "x0", "sp", "x2"},
+		{"asr rm sp", "x0", "x1", "sp"},
+	}
+	for _, c := range errCases {
+		_, err := New().AsrReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

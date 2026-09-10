@@ -89,48 +89,198 @@ func EncodeBitMasks(is64 bool, value uint64) (n, immr, imms uint32, ok bool) {
 
 // --- alias struct builders (struct fields stay unexported) ---
 
-func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return newSubShift(base{}, rd, rn, rm, imm6, shift, isf)
+func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return nil, err
+	}
+
+	sh, err := shiftOfName(shift)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSubShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
 }
 
-func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return newSubsShift(base{}, rd, rn, rm, imm6, shift, isf)
+func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return nil, err
+	}
+
+	sh, err := shiftOfName(shift)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSubsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
 }
 
-func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
-	return newAndsImm(base{}, newLogImm(rd, rn, immr, imms, n, is64))
+func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	return newAndsImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
 }
 
-func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return newAndsShift(base{}, rd, rn, rm, imm6, shift, isf)
+func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return nil, err
+	}
+
+	sh, err := shiftOfName(shift)
+	if err != nil {
+		return nil, err
+	}
+
+	return newAndsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
 }
 
-func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return newOrnShift(base{}, rd, rn, rm, imm6, shift, isf)
+func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return nil, err
+	}
+
+	sh, err := shiftOfName(shift)
+	if err != nil {
+		return nil, err
+	}
+
+	return newOrnShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
 }
 
-func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
-	return newOrrShift(base{}, rd, rn, rm, imm6, shift, isf)
+func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return nil, err
+	}
+
+	sh, err := shiftOfName(shift)
+	if err != nil {
+		return nil, err
+	}
+
+	return newOrrShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
 }
 
-func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
-	return newOrrImm(base{}, newLogImm(rd, rn, immr, imms, n, is64))
+func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	return newOrrImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
 }
 
-func MovzOf(rd string, imm16, hw uint32) Instr {
-	return newMovz(base{}, rd, imm16, hw)
+func MovzOf(rd string, imm16, hw uint32) (Instr, error) {
+	r, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	return newMovz(base{}, r, imm16Of(imm16), Hw(hw))
 }
 
-func MovnOf(rd string, imm16, hw uint32) Instr {
-	return newMovn(base{}, rd, imm16, hw)
+func MovnOf(rd string, imm16, hw uint32) (Instr, error) {
+	r, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	return newMovn(base{}, r, imm16Of(imm16), Hw(hw))
 }
 
-func SbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
-	return newSbfm(base{}, rd, rn, immr, imms, 0, isf)
+func SbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	return newSbfm(base{}, r1, r2, immr, imms)
 }
 
-func UbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
-	return newUbfm(base{}, rd, rn, immr, imms, isf)
+func UbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return nil, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return nil, err
+	}
+
+	return newUbfm(base{}, r1, r2, immr, imms)
 }
 
 // VerifyBitMasks — a self-test of logical immediate encoding
@@ -153,7 +303,24 @@ func AddSubRegName(n uint32, isf bool, is64 bool) string { return addSubRegName(
 func ArmReg3(ops []ArmOp, name string) (string, string, string, error) { return armReg3(ops, name) }
 
 // NewCsel — the Csel base of the conditional-select family.
-func NewCsel(rd, rn, rm, cond string) Csel { return newCsel(base{}, rd, rn, rm, cond) }
+func NewCsel(rd, rn, rm, cond string) (Csel, error) {
+	r1, err := RegOf(rd)
+	if err != nil {
+		return Csel{}, err
+	}
+
+	r2, err := RegOf(rn)
+	if err != nil {
+		return Csel{}, err
+	}
+
+	r3, err := RegOf(rm)
+	if err != nil {
+		return Csel{}, err
+	}
+
+	return newCsel(base{}, r1, r2, r3, cond)
+}
 
 // CondNum — a condition name to its 4-bit index.
 func CondNum(name string) (uint32, error) { return condNum(name) }

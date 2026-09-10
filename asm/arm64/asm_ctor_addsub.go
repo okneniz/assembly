@@ -68,7 +68,7 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 		}
 
 		sh := hasMod
-		return makeImmStruct(base, rdN, rnN, uint32(v), sh, isf), nil
+		return makeImmStruct(base, rdN, rnN, uint32(v), sh, isf)
 	case arch.ArmOpReg:
 		rm, err := wantAReg(op, base)
 		if err != nil {
@@ -76,7 +76,7 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 		}
 
 		if !hasMod {
-			return makeShiftStruct(base, rdN, rnN, rm, "lsl", 0, isf), nil
+			return makeShiftStruct(base, rdN, rnN, rm, "lsl", 0, isf)
 		}
 
 		switch mod.Kind() {
@@ -86,7 +86,7 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 				return nil, fmt.Errorf("%s: bad shift", base)
 			}
 
-			return makeShiftStruct(base, rdN, rnN, rm, mod.ShiftName(), uint32(amt), isf), nil
+			return makeShiftStruct(base, rdN, rnN, rm, mod.ShiftName(), uint32(amt), isf)
 		case arch.ArmOpExtend:
 			ext := mod.ShiftName()
 			amt := mod.Num()
@@ -94,7 +94,7 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 				return nil, fmt.Errorf("%s: bad extend amount", base)
 			}
 
-			return makeExtStruct(base, rdN, rnN, rm, ext, uint32(amt), isf), nil
+			return makeExtStruct(base, rdN, rnN, rm, ext, uint32(amt), isf)
 		default:
 			return nil, fmt.Errorf("%s: bad modifier", base)
 		}
@@ -104,7 +104,7 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 }
 
 // makeImmStruct/makeShiftStruct/makeExtStruct — struct assembly by the base name.
-func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) Instr {
+func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) (Instr, error) {
 	switch base {
 	case "adds":
 		return AddsImmOf(rd, rn, imm12, sh, isf)
@@ -117,7 +117,13 @@ func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) Instr {
 	}
 }
 
-func makeShiftStruct(base string, rdN, rnN uint32, rm, shift string, amt uint32, isf bool) Instr {
+func makeShiftStruct(
+	base string,
+	rdN, rnN uint32,
+	rm, shift string,
+	amt uint32,
+	isf bool,
+) (Instr, error) {
 	rd := addSubRegName(rdN, isf, base == "adds" || base == "subs")
 	rn := addSubRegName(rnN, isf, false)
 	switch base {
@@ -132,7 +138,13 @@ func makeShiftStruct(base string, rdN, rnN uint32, rm, shift string, amt uint32,
 	}
 }
 
-func makeExtStruct(base string, rdN, rnN uint32, rm, ext string, amt uint32, isf bool) Instr {
+func makeExtStruct(
+	base string,
+	rdN, rnN uint32,
+	rm, ext string,
+	amt uint32,
+	isf bool,
+) (Instr, error) {
 	rmN, err := armRegNum(rm)
 	if err != nil {
 		rmN = 0

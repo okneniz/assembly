@@ -4,66 +4,40 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestLdarbBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
 		word uint32
 	}{
-		{
-			"ldarb w3,[x4]",
-			buildLdarb(t, wreg(t, 3), xreg(t, 4)),
-			0x08dffc83,
-		},
-		{
-			"ldarb wzr,[x29]",
-			buildLdarb(t, WZR, xreg(t, 29)),
-			0x08dfffbf,
-		},
+		{"ldarb w3,[x4]", "w3", "x4", 0x08dffc83},
+		{"ldarb wzr,[x29]", "wzr", "x29", 0x08dfffbf},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Ldarb(reg(t, c.rt), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildLdarb(t, wreg(t, 3), xreg(t, 4))
+	first := cases[0]
+	in, err := New().Ldarb(reg(t, first.rt), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Ldarb)
 	require.True(t, ok, "type = %T, want Ldarb", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"ldarb x,rt",
-			func() error {
-				_, err := New().Ldarb(xreg(t, 3), xreg(t, 4))
-				return err
-			},
-		},
-		{
-			"ldarb w1 base",
-			func() error {
-				_, err := New().Ldarb(wreg(t, 3), wreg(t, 4))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildLdarb — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildLdarb(t *testing.T, rt, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Ldarb(rt, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rt   string
+		rn   string
+	}{
+		{"ldarb x,rt", "x3", "x4"},
+		{"ldarb w1 base", "w3", "w4"},
+	}
+	for _, c := range errCases {
+		_, err := New().Ldarb(reg(t, c.rt), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

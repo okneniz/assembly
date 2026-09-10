@@ -16,13 +16,27 @@ type Prfm struct {
 	rn string
 }
 
-// newPrfm - the Prfm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newPrfm(b base, rn string) Prfm {
+// newPrfm - the Prfm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newPrfm(b base, rn Reg) (Prfm, error) {
+	err := requireClass(
+		rn,
+		"Prfm",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Prfm{}, err
+	}
+
 	return Prfm{
 		base: b,
-		rn:   rn,
-	}
+		rn:   rn.name(),
+	}, nil
 }
 
 func (i Prfm) ObjDump(_ disasm.ViewCtx) string {
@@ -41,24 +55,15 @@ func (i Prfm) Encode(w io.Writer) (int64, error) {
 // SkipVerify — pldl1keep is a keyword, not an address.
 func (i Prfm) SkipVerify() {}
 
-// Prfm — prfm pldl1keep, [rn]: the prefetch op is fixed (this type
-// encodes the one form); rn — x register or SP (register 31 in the base
-// reads as sp).
 func (Builder) Prfm(rn Reg) (Instr, error) {
-	if err := requireClass(
-		rn,
-		"Prfm",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
+	return newPrfm(base{}, rn)
+}
+
+func decodePrfm(w uint32) (Instr, error) {
+	in, err := newPrfm(newBase(w), xspOf(w>>5&0x1f))
+	if err != nil {
 		return nil, err
 	}
 
-	return newPrfm(base{}, rn.name()), nil
-}
-
-func decodePrfm(w uint32) Instr {
-	return newPrfm(newBase(w), regNameXSP(w>>5&0x1f))
+	return in, nil
 }

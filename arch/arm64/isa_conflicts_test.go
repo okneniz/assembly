@@ -34,7 +34,8 @@ func TestISAConflictFixes(t *testing.T) {
 		{0x1E625820, "fmin d0, d1, d2"},
 		{0x1E225820, "fmin s0, s1, s2"},
 	} {
-		in := decodeOne(c.word)
+		in, derr := decodeOne(c.word)
+		_ = derr
 		got := in.ObjDump(disasm.DefaultViewCtx())
 		if got != c.text {
 			t.Errorf("%#010x: got %q, want %q", c.word, got, c.text)

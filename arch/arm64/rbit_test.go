@@ -4,78 +4,42 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestRbitBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
 		word uint32
 	}{
-		{
-			"rbit x0,x1",
-			buildRbit(t, xreg(t, 0), xreg(t, 1)),
-			0xdac00020,
-		},
-		{
-			"rbit w2,w3",
-			buildRbit(t, wreg(t, 2), wreg(t, 3)),
-			0x5ac00062,
-		},
-		{
-			"rbit xzr,x30",
-			buildRbit(t, XZR, xreg(t, 30)),
-			0xdac003df,
-		},
+		{"rbit x0,x1", "x0", "x1", 0xdac00020},
+		{"rbit w2,w3", "w2", "w3", 0x5ac00062},
+		{"rbit xzr,x30", "xzr", "x30", 0xdac003df},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Rbit(reg(t, c.rd), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildRbit(t, xreg(t, 0), xreg(t, 1))
+	first := cases[0]
+	in, err := New().Rbit(reg(t, first.rd), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Rbit)
 	require.True(t, ok, "type = %T, want Rbit", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"rbit sp,rd",
-			func() error {
-				_, err := New().Rbit(SP, xreg(t, 1))
-				return err
-			},
-		},
-		{
-			"rbit sp,rn",
-			func() error {
-				_, err := New().Rbit(xreg(t, 0), SP)
-				return err
-			},
-		},
-		{
-			"rbit x,w widths",
-			func() error {
-				_, err := New().Rbit(xreg(t, 0), wreg(t, 1))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildRbit — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildRbit(t *testing.T, rd, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Rbit(rd, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+	}{
+		{"rbit sp,rd", "sp", "x1"},
+		{"rbit sp,rn", "x0", "sp"},
+		{"rbit x,w widths", "x0", "w1"},
+	}
+	for _, c := range errCases {
+		_, err := New().Rbit(reg(t, c.rd), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

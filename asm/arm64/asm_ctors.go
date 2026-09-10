@@ -66,7 +66,7 @@ func addSubRegName(
 
 func newCsel(
 	rd, rn, rm, cond string,
-) arch.Csel {
+) (arch.Csel, error) {
 	return arch.NewCsel(rd, rn, rm, cond)
 }
 func regIndex(reg string) uint32              { return arch.RegIndex(reg) }
@@ -369,75 +369,123 @@ func ldStructDecode(opcode, size, q, l uint32) (string, string, int, bool) {
 }
 
 // Shims to the arch *Of family constructors.
-func AdcOf(rd string, rn string, rm string) arch.Adc { return arch.AdcOf(rd, rn, rm) }
-func AddExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) arch.AddExt {
+func AdcOf(rd string, rn string, rm string) (arch.Adc, error) {
+	return arch.AdcOf(rd, rn, rm)
+}
+
+func AddExtOf(
+	rdNum, rnNum, rmNum uint32,
+	option string,
+	imm3 uint32,
+	isf bool,
+) (arch.AddExt, error) {
 	return arch.AddExtOf(rdNum, rnNum, rmNum, option, imm3, isf)
 }
-func AddImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) arch.AddImm {
+func AddImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (arch.AddImm, error) {
 	return arch.AddImmOf(rdNum, rnNum, imm12, shift, isf)
 }
-func AddShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.AddShift {
+func AddShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.AddShift, error) {
 	return arch.AddShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func AddsExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) arch.AddsExt {
+
+func AddsExtOf(
+	rdNum, rnNum, rmNum uint32,
+	option string,
+	imm3 uint32,
+	isf bool,
+) (arch.AddsExt, error) {
 	return arch.AddsExtOf(rdNum, rnNum, rmNum, option, imm3, isf)
 }
-func AddsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) arch.AddsImm {
+func AddsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (arch.AddsImm, error) {
 	return arch.AddsImmOf(rdNum, rnNum, imm12, shift, isf)
 }
-func AddsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.AddsShift {
+func AddsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.AddsShift, error) {
 	return arch.AddsShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func AdrOf(rd string, off int64) arch.Adr   { return arch.AdrOf(rd, off) }
-func AdrpOf(rd string, off int64) arch.Adrp { return arch.AdrpOf(rd, off) }
-func AndImmOf(rd, rn string, immr, imms uint32, n, is64 bool) arch.AndImm {
+func AdrOf(rd string, off int64) (arch.Adr, error) {
+	return arch.AdrOf(rd, off)
+}
+func AdrpOf(rd string, off int64) (arch.Adrp, error) {
+	return arch.AdrpOf(rd, off)
+}
+func AndImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (arch.AndImm, error) {
 	return arch.AndImmOf(rd, rn, immr, imms, n, is64)
 }
-func AndShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.AndShift {
+func AndShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.AndShift, error) {
 	return arch.AndShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func AsrRegOf(rd string, rn string, rm string) arch.AsrReg { return arch.AsrRegOf(rd, rn, rm) }
-func BOf(target int64) arch.B                              { return arch.BOf(target) }
-func BcondOf(cond string, target int64) arch.Bcond         { return arch.BcondOf(cond, target) }
-func BicShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.BicShift {
+func AsrRegOf(rd string, rn string, rm string) (arch.AsrReg, error) {
+	return arch.AsrRegOf(rd, rn, rm)
+}
+func BOf(target int64) (arch.B, error) {
+	return arch.BOf(target)
+}
+func BcondOf(cond string, target int64) (arch.Bcond, error) {
+	return arch.BcondOf(cond, target)
+}
+func BicShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.BicShift, error) {
 	return arch.BicShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func BicsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.BicsShift {
+func BicsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.BicsShift, error) {
 	return arch.BicsShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func BlOf(target int64) arch.Bl                { return arch.BlOf(target) }
-func BlrOf(rn string) arch.Blr                 { return arch.BlrOf(rn) }
-func BrOf(rn string) arch.Br                   { return arch.BrOf(rn) }
-func CbnzOf(rt string, target int64) arch.Cbnz { return arch.CbnzOf(rt, target) }
-func CbzOf(rt string, target int64) arch.Cbz   { return arch.CbzOf(rt, target) }
-func CcmpOf(rn string, rm string, immVal uint32, cond string) arch.Ccmp {
+func BlOf(target int64) (arch.Bl, error) {
+	return arch.BlOf(target)
+}
+func BlrOf(rn string) (arch.Blr, error) {
+	return arch.BlrOf(rn)
+}
+func BrOf(rn string) (arch.Br, error) {
+	return arch.BrOf(rn)
+}
+func CbnzOf(rt string, target int64) (arch.Cbnz, error) {
+	return arch.CbnzOf(rt, target)
+}
+func CbzOf(rt string, target int64) (arch.Cbz, error) {
+	return arch.CbzOf(rt, target)
+}
+func CcmpOf(rn string, rm string, immVal uint32, cond string) (arch.Ccmp, error) {
 	return arch.CcmpOf(rn, rm, immVal, cond)
 }
-func ClsOf(rd string, rn string) arch.Cls { return arch.ClsOf(rd, rn) }
-func ClzOf(rd string, rn string) arch.Clz { return arch.ClzOf(rd, rn) }
-func CselOf(rd string, rn string, rm string, cond string) arch.Csel {
+func ClsOf(rd string, rn string) (arch.Cls, error) {
+	return arch.ClsOf(rd, rn)
+}
+func ClzOf(rd string, rn string) (arch.Clz, error) {
+	return arch.ClzOf(rd, rn)
+}
+func CselOf(rd string, rn string, rm string, cond string) (arch.Csel, error) {
 	return arch.CselOf(rd, rn, rm, cond)
 }
-func CsincOf(c Csel) arch.Csinc { return arch.CsincOf(c) }
-func CsinvOf(c Csel) arch.Csinv { return arch.CsinvOf(c) }
-func CsnegOf(c Csel) arch.Csneg { return arch.CsnegOf(c) }
-func EonShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.EonShift {
+func CsincOf(c Csel) (arch.Csinc, error) {
+	return arch.CsincOf(c)
+}
+func CsinvOf(c Csel) (arch.Csinv, error) {
+	return arch.CsinvOf(c)
+}
+func CsnegOf(c Csel) (arch.Csneg, error) {
+	return arch.CsnegOf(c)
+}
+func EonShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.EonShift, error) {
 	return arch.EonShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func EorImmOf(rd, rn string, immr, imms uint32, n, is64 bool) arch.EorImm {
+func EorImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (arch.EorImm, error) {
 	return arch.EorImmOf(rd, rn, immr, imms, n, is64)
 }
-func EorShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) arch.EorShift {
+func EorShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (arch.EorShift, error) {
 	return arch.EorShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func ExtrOf(rd string, rn string, rm string, lsb uint32) arch.Extr {
+func ExtrOf(rd string, rn string, rm string, lsb uint32) (arch.Extr, error) {
 	return arch.ExtrOf(rd, rn, rm, lsb)
 }
-func LdarOf(rt, rn string, enc uint32) arch.Ldar { return arch.LdarOf(rt, rn, enc) }
-func LdpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) arch.Ldp {
+func LdarOf(rt, rn string, enc uint32) (arch.Ldar, error) {
+	return arch.LdarOf(rt, rn, enc)
+}
+func LdpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) (arch.Ldp, error) {
 	return arch.LdpOf(rt, rt2, rn, kind, off, scale, enc)
 }
-func LdrLitOf(rt string, lit int64, enc uint32) arch.Ldr { return arch.LdrLitOf(rt, lit, enc) }
+func LdrLitOf(rt string, lit int64, enc uint32) (arch.Ldr, error) {
+	return arch.LdrLitOf(rt, lit, enc)
+}
 
 func LdrOf(
 	rt, rn string,
@@ -446,7 +494,7 @@ func LdrOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldr {
+) (arch.Ldr, error) {
 	return arch.LdrOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -457,7 +505,7 @@ func LdrbOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldrb {
+) (arch.Ldrb, error) {
 	return arch.LdrbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -468,11 +516,15 @@ func LdrhOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldrh {
+) (arch.Ldrh, error) {
 	return arch.LdrhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func LdrsbOf(rt string, rn string, off int64) arch.Ldrsb { return arch.LdrsbOf(rt, rn, off) }
-func LdrshOf(rt string, rn string, off int64) arch.Ldrsh { return arch.LdrshOf(rt, rn, off) }
+func LdrsbOf(rt string, rn string, off int64) (arch.Ldrsb, error) {
+	return arch.LdrsbOf(rt, rn, off)
+}
+func LdrshOf(rt string, rn string, off int64) (arch.Ldrsh, error) {
+	return arch.LdrshOf(rt, rn, off)
+}
 
 func LdrswOf(
 	rt, rn string,
@@ -481,7 +533,7 @@ func LdrswOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldrsw {
+) (arch.Ldrsw, error) {
 	return arch.LdrswOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -492,7 +544,7 @@ func LdurOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldur {
+) (arch.Ldur, error) {
 	return arch.LdurOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -503,7 +555,7 @@ func LdurbOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldurb {
+) (arch.Ldurb, error) {
 	return arch.LdurbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -514,7 +566,7 @@ func LdurhOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Ldurh {
+) (arch.Ldurh, error) {
 	return arch.LdurhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -522,7 +574,7 @@ func LslRegOf(
 	rd string,
 	rn string,
 	rm string,
-) arch.LslReg {
+) (arch.LslReg, error) {
 	return arch.LslRegOf(rd, rn, rm)
 }
 
@@ -530,7 +582,7 @@ func LsrRegOf(
 	rd string,
 	rn string,
 	rm string,
-) arch.LsrReg {
+) (arch.LsrReg, error) {
 	return arch.LsrRegOf(rd, rn, rm)
 }
 
@@ -539,7 +591,7 @@ func MaddOf(
 	rn string,
 	rm string,
 	ra string,
-) arch.Madd {
+) (arch.Madd, error) {
 	return arch.MaddOf(rd, rn, rm, ra)
 }
 
@@ -547,55 +599,73 @@ func MovkOf(
 	rd string,
 	imm16 uint32,
 	hw uint32,
-) arch.Movk {
+) (arch.Movk, error) {
 	return arch.MovkOf(rd, imm16, hw)
 }
-func MrsOf(rd string, sysreg string) arch.Mrs { return arch.MrsOf(rd, sysreg) }
-func MsrOf(rt string, sysreg string) arch.Msr { return arch.MsrOf(rt, sysreg) }
+func MrsOf(rd string, sysreg string) (arch.Mrs, error) {
+	return arch.MrsOf(rd, sysreg)
+}
+func MsrOf(rt string, sysreg string) (arch.Msr, error) {
+	return arch.MsrOf(rt, sysreg)
+}
 
 func MsubOf(
 	rd, rn, rm, ra string,
-) arch.Msub {
+) (arch.Msub, error) {
 	return arch.MsubOf(rd, rn, rm, ra)
 }
-func PrfmOf(rn string) arch.Prfm              { return arch.PrfmOf(rn) }
-func RbitOf(rd string, rn string) arch.Rbit   { return arch.RbitOf(rd, rn) }
-func RetOf(rn string) arch.Ret                { return arch.RetOf(rn) }
-func Rev16Of(rd string, rn string) arch.Rev16 { return arch.Rev16Of(rd, rn) }
-func Rev32Of(rd string, rn string) arch.Rev32 { return arch.Rev32Of(rd, rn) }
-func RevOf(rd string, rn string) arch.Rev     { return arch.RevOf(rd, rn) }
+func PrfmOf(rn string) (arch.Prfm, error) {
+	return arch.PrfmOf(rn)
+}
+func RbitOf(rd string, rn string) (arch.Rbit, error) {
+	return arch.RbitOf(rd, rn)
+}
+func RetOf(rn string) (arch.Ret, error) {
+	return arch.RetOf(rn)
+}
+func Rev16Of(rd string, rn string) (arch.Rev16, error) {
+	return arch.Rev16Of(rd, rn)
+}
+func Rev32Of(rd string, rn string) (arch.Rev32, error) {
+	return arch.Rev32Of(rd, rn)
+}
+func RevOf(rd string, rn string) (arch.Rev, error) {
+	return arch.RevOf(rd, rn)
+}
 
 func RorRegOf(
 	rd string,
 	rn string,
 	rm string,
-) arch.RorReg {
+) (arch.RorReg, error) {
 	return arch.RorRegOf(rd, rn, rm)
 }
-func SdivOf(rd string, rn string, rm string) arch.Sdiv { return arch.SdivOf(rd, rn, rm) }
+func SdivOf(rd string, rn string, rm string) (arch.Sdiv, error) {
+	return arch.SdivOf(rd, rn, rm)
+}
 
 func SmulhOf(
 	rd string,
 	rn string,
 	rm string,
-) arch.Smulh {
+) (arch.Smulh, error) {
 	return arch.SmulhOf(rd, rn, rm)
 }
 
 func StlrOf(
 	rt, rn string,
 	enc uint32,
-) arch.Stlr {
+) (arch.Stlr, error) {
 	return arch.StlrOf(rt, rn, enc)
 }
 
 func StlxrOf(
 	rs, rt, rn string,
 	enc uint32,
-) arch.Stlxr {
+) (arch.Stlxr, error) {
 	return arch.StlxrOf(rs, rt, rn, enc)
 }
-func StpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) arch.Stp {
+func StpOf(rt, rt2, rn string, kind arch.MemKind, off int64, scale, enc uint32) (arch.Stp, error) {
 	return arch.StpOf(rt, rt2, rn, kind, off, scale, enc)
 }
 
@@ -606,7 +676,7 @@ func StrOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Str {
+) (arch.Str, error) {
 	return arch.StrOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -617,7 +687,7 @@ func StrbOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Strb {
+) (arch.Strb, error) {
 	return arch.StrbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -628,7 +698,7 @@ func StrhOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Strh {
+) (arch.Strh, error) {
 	return arch.StrhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -639,7 +709,7 @@ func SturOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Stur {
+) (arch.Stur, error) {
 	return arch.SturOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -650,7 +720,7 @@ func SturbOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Sturb {
+) (arch.Sturb, error) {
 	return arch.SturbOf(rt, rn, kind, off, enc, rm, option, amt)
 }
 
@@ -661,67 +731,85 @@ func SturhOf(
 	enc uint32,
 	rm, option string,
 	amt uint32,
-) arch.Sturh {
+) (arch.Sturh, error) {
 	return arch.SturhOf(rt, rn, kind, off, enc, rm, option, amt)
 }
-func StxrbOf(rs, rt, rn string, enc uint32) arch.Stxrb { return arch.StxrbOf(rs, rt, rn, enc) }
-func SubExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) arch.SubExt {
+func StxrbOf(rs, rt, rn string, enc uint32) (arch.Stxrb, error) {
+	return arch.StxrbOf(rs, rt, rn, enc)
+}
+
+func SubExtOf(
+	rdNum, rnNum, rmNum uint32,
+	option string,
+	imm3 uint32,
+	isf bool,
+) (arch.SubExt, error) {
 	return arch.SubExtOf(rdNum, rnNum, rmNum, option, imm3, isf)
 }
-func SubImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) arch.SubImm {
+func SubImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (arch.SubImm, error) {
 	return arch.SubImmOf(rdNum, rnNum, imm12, shift, isf)
 }
-func SubsExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) arch.SubsExt {
+
+func SubsExtOf(
+	rdNum, rnNum, rmNum uint32,
+	option string,
+	imm3 uint32,
+	isf bool,
+) (arch.SubsExt, error) {
 	return arch.SubsExtOf(rdNum, rnNum, rmNum, option, imm3, isf)
 }
-func SubsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) arch.SubsImm {
+func SubsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (arch.SubsImm, error) {
 	return arch.SubsImmOf(rdNum, rnNum, imm12, shift, isf)
 }
-func TbzOf(rt string, bit uint32, target int64, isTbnz bool) arch.Tbz {
+func TbzOf(rt string, bit uint32, target int64, isTbnz bool) (arch.Tbz, error) {
 	return arch.TbzOf(rt, bit, target, isTbnz)
 }
-func UdivOf(rd string, rn string, rm string) arch.Udiv   { return arch.UdivOf(rd, rn, rm) }
-func UmulhOf(rd string, rn string, rm string) arch.Umulh { return arch.UmulhOf(rd, rn, rm) }
+func UdivOf(rd string, rn string, rm string) (arch.Udiv, error) {
+	return arch.UdivOf(rd, rn, rm)
+}
+func UmulhOf(rd string, rn string, rm string) (arch.Umulh, error) {
+	return arch.UmulhOf(rd, rn, rm)
+}
 
-func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
+func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
 	return arch.SubShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
+func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
 	return arch.SubsShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func UbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
+func UbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
 	return arch.UbfmOf(rd, rn, immr, imms, isf)
 }
-func SbfmOf(rd, rn string, immr, imms uint32, isf bool) Instr {
+func SbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
 	return arch.SbfmOf(rd, rn, immr, imms, isf)
 }
 func regNums3(a, b, c string) (uint32, uint32, uint32, error) { return arch.RegNums3(a, b, c) }
-func UbfmOfC(rd, rn string, immr, imms uint32, isf bool) arch.Ubfm {
+func UbfmOfC(rd, rn string, immr, imms uint32, isf bool) (arch.Ubfm, error) {
 	return arch.UbfmOfC(rd, rn, immr, imms, isf)
 }
 
 func encodeBitMasks(is64 bool, value uint64) (uint32, uint32, uint32, bool) {
 	return arch.EncodeBitMasks(is64, value)
 }
-func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
+func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
 	return arch.OrrImmOf(rd, rn, immr, imms, n, is64)
 }
-func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) Instr {
+func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
 	return arch.AndsImmOf(rd, rn, immr, imms, n, is64)
 }
 
-func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
+func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
 	return arch.AndsShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
+func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
 	return arch.OrrShiftOf(rd, rn, rm, imm6, shift, isf)
 }
-func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) Instr {
+func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
 	return arch.OrnShiftOf(rd, rn, rm, imm6, shift, isf)
 }
 
-func MovzOf(rd string, imm16, hw uint32) Instr { return arch.MovzOf(rd, imm16, hw) }
-func MovnOf(rd string, imm16, hw uint32) Instr { return arch.MovnOf(rd, imm16, hw) }
+func MovzOf(rd string, imm16, hw uint32) (Instr, error) { return arch.MovzOf(rd, imm16, hw) }
+func MovnOf(rd string, imm16, hw uint32) (Instr, error) { return arch.MovnOf(rd, imm16, hw) }
 func armReg3(ops []vOp, name string) (string, string, string, error) {
 	return arch.ArmReg3(ops, name)
 }

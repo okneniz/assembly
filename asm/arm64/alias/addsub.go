@@ -62,9 +62,9 @@ func newNeg(base string) arch.ArmCtor {
 		}
 
 		if base == "sub" {
-			return arch.SubShiftOf(rd, arch.ZeroReg(rd), rm, imm6, sh, isf), nil
+			return arch.SubShiftOf(rd, arch.ZeroReg(rd), rm, imm6, sh, isf)
 		}
 
-		return arch.SubsShiftOf(rd, arch.ZeroReg(rd), rm, imm6, sh, isf), nil
+		return arch.SubsShiftOf(rd, arch.ZeroReg(rd), rm, imm6, sh, isf)
 	}
 }

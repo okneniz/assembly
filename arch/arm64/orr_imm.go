@@ -13,13 +13,62 @@ type OrrImm struct {
 	logImm
 }
 
-// newOrrImm - the OrrImm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newOrrImm(b base, li logImm) OrrImm {
+// newOrrImm - the OrrImm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newOrrImm(b base, rd Reg, rn Reg, imm uint64) (OrrImm, error) {
+	err := requireClass(
+		rd,
+		"OrrImm",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return OrrImm{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"OrrImm",
+		"rn",
+		"register 31 reads as zr — use XZR/WZR",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return OrrImm{}, err
+	}
+
+	err = requireWidth(
+		"OrrImm",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return OrrImm{}, err
+	}
+
+	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
+	if !ok {
+		return OrrImm{}, fmt.Errorf(
+			"arm64.NewOrrImm: operand imm: %#x not encodable as bitmask",
+			imm,
+		)
+	}
+
 	return OrrImm{
 		base:   b,
-		logImm: li,
-	}
+		logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64()),
+	}, nil
 }
 
 const (
@@ -96,32 +145,20 @@ func (i OrrImm) immText() string {
 	return fmt.Sprintf("#0x%x", m)
 }
 
-// OrrImm — orr rd, rn, #bitmask (mov when Rn = zr). Register 31
-// reads as zr (SP/WSP are not allowed — use XZR/WZR); the mask must be
-// encodable as a logical immediate (see encodeBitMasks).
 func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
-	if err := requireClass(rd, "OrrImm", "rd", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "OrrImm", "rn", "register 31 reads as zr — use XZR/WZR",
-		classX, classW, classXZR, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("OrrImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	n, immr, imms, ok := encodeBitMasks(rd.Is64(), imm)
-	if !ok {
-		return nil, fmt.Errorf("arm64.NewOrrImm: operand imm: %#x not encodable as bitmask", imm)
-	}
-
-	return newOrrImm(base{}, newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64())), nil
+	return newOrrImm(base{}, rd, rn, imm)
 }
 
-func decodeOrrImm(w uint32) Instr {
-	return newOrrImm(newBase(w), decodeLogImm(w))
+func decodeOrrImm(w uint32) (Instr, error) {
+	in, err := newOrrImm(
+		newBase(w),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

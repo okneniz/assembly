@@ -18,17 +18,58 @@ type AddsImm struct {
 	isf          bool
 }
 
-// newAddsImm - the AddsImm constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newAddsImm(b base, rdNum uint32, rnNum uint32, imm12 uint32, shift bool, isf bool) AddsImm {
+// newAddsImm - the AddsImm constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAddsImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (AddsImm, error) {
+	err := requireClass(
+		rd,
+		"AddsImm",
+		"rd",
+		"register 31 reads as zr — use XZR/WZR (the cmn form)",
+		classX,
+		classW,
+		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return AddsImm{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"AddsImm",
+		"rn",
+		"register 31 reads as sp/wsp — use SP/WSP",
+		classX,
+		classW,
+		classSP,
+		classWSP,
+	)
+
+	if err != nil {
+		return AddsImm{}, err
+	}
+
+	err = requireWidth(
+		"AddsImm",
+		rd,
+		rn,
+	)
+
+	if err != nil {
+		return AddsImm{}, err
+	}
+
 	return AddsImm{
 		base:  b,
-		rdNum: rdNum,
-		rnNum: rnNum,
-		imm12: imm12,
-		shift: shift,
-		isf:   isf,
-	}
+		rdNum: rd.bits(),
+		rnNum: rn.bits(),
+		imm12: imm.v,
+		shift: sh == LSL12,
+		isf:   rd.Is64(),
+	}, nil
 }
 
 const (
@@ -74,34 +115,17 @@ func (i AddsImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-// AddsImm — adds rd, rn, #imm12[, lsl #12] (cmn when Rd = zr).
-// Rd: register 31 reads as zr; Rn — as sp/wsp.
 func (Builder) AddsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	if err := requireClass(
-		rd,
-		"AddsImm",
-		"rd",
-		"register 31 reads as zr — use XZR/WZR (the cmn form)",
-		classX,
-		classW,
-		classXZR,
-		classWZR,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "AddsImm", "rn", "register 31 reads as sp/wsp — use SP/WSP",
-		classX, classW, classSP, classWSP); err != nil {
-		return nil, err
-	}
-
-	if err := requireWidth("AddsImm", rd, rn); err != nil {
-		return nil, err
-	}
-
-	return newAddsImm(base{}, rd.bits(), rn.bits(), imm.v, sh == LSL12, rd.Is64()), nil
+	return newAddsImm(base{}, rd, rn, imm, sh)
 }
 
-func decodeAddsImm(w uint32) Instr {
-	return newAddsImm(newBase(w), w&0x1f, w>>5&0x1f, w>>10&0xfff, w>>22&1 == 1, w>>31&1 == 1)
+func decodeAddsImm(w uint32) (Instr, error) {
+	in, err := newAddsImm(newBase(w),
+		numReg(w&0x1f, w>>31&1 == 1),
+		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

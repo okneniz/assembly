@@ -9,63 +9,36 @@ import (
 func TestClzBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
 		word uint32
 	}{
-		{
-			"clz x1,x2",
-			buildClz(t, xreg(t, 1), xreg(t, 2)),
-			0xdac01041,
-		},
-		{
-			"clz w1,w2",
-			buildClz(t, wreg(t, 1), wreg(t, 2)),
-			0x5ac01041,
-		},
+		{"clz x1,x2", "x1", "x2", 0xdac01041},
+		{"clz w1,w2", "w1", "w2", 0x5ac01041},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Clz(reg(t, c.rd), reg(t, c.rn))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildClz(t, xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Clz(reg(t, first.rd), reg(t, first.rn))
+	require.NoError(t, err)
 	_, ok := in.(Clz)
 	require.True(t, ok, "type = %T, want Clz", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"clz x+w",
-			func() error {
-				_, err := New().Clz(xreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-		{
-			"clz sp",
-			func() error {
-				_, err := New().Clz(xreg(t, 1), SP)
-				return err
-			},
-		},
-		{
-			"clz rd sp",
-			func() error {
-				_, err := New().Clz(SP, xreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildClz — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildClz(t *testing.T, rd, rn Reg) Instr {
-	t.Helper()
-	in, err := New().Clz(rd, rn)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+	}{
+		{"clz x+w", "x1", "w2"},
+		{"clz sp", "x1", "sp"},
+		{"clz rd sp", "sp", "x2"},
+	}
+	for _, c := range errCases {
+		_, err := New().Clz(reg(t, c.rd), reg(t, c.rn))
+		assertErr(t, c.name, err)
+	}
 }

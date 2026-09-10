@@ -154,7 +154,15 @@ func TestArmRoundTripExample(t *testing.T) {
 			// schema's Mask (e.g., bit 25 of FP pairs): the text cannot
 			// carry this information
 			dontCare++
-		} else if instrTextOf(arch.DecodeWord(gotW), addr) == instrTextOf(arch.DecodeWord(wantW), addr) {
+		} else if func() bool {
+			got, gerr := arch.DecodeWord(gotW)
+			if gerr != nil {
+				return false
+			}
+
+			want, werr := arch.DecodeWord(wantW)
+			return werr == nil && instrTextOf(got, addr) == instrTextOf(want, addr)
+		}() {
 			// an equivalent encoding of the same text (multiple legal
 			// encodings: the ubfm/sbfm form of lsl, immr canonicity)
 			equiv++

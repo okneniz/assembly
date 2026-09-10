@@ -33,15 +33,15 @@ func (i sysImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.enc|i.imm16<<i.shift)
 }
 
-func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return sysImm{
 			base:  newBase(w),
 			name:  name,
 			imm16: w >> shift & 0xffff,
 			enc:   enc,
 			shift: shift,
-		}
+		}, nil
 	}
 }
 

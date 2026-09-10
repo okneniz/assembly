@@ -6,7 +6,7 @@ package arm64
 
 // DecodeWord — decode a single word (self-verify of encodeARM: the decoder
 // must reproduce the source text).
-func DecodeWord(w uint32) Instr {
+func DecodeWord(w uint32) (Instr, error) {
 	return decodeOne(w)
 }
 

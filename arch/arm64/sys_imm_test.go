@@ -4,39 +4,41 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSvcBrkBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		imm  int64
 		word uint32
 	}{
-		{
-			"svc #0x80",
-			New().Svc(imm16(t, 0x80)),
-			0xd4001001,
-		},
-		{
-			"brk #1",
-			New().Brk(imm16(t, 1)),
-			0xd4200020,
-		},
-		{
-			"brk #0",
-			New().Brk(imm16(t, 0)),
-			0xd4200000,
-		},
+		{"svc #0x80", 0x80, 0xd4001001},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in := New().Svc(imm16(t, c.imm))
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
+		back, derr := decodeOne(c.word)
+		_ = derr
+		require.Equal(t, in.ObjDump(disasm.DefaultViewCtx()),
+			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 
-	svc := New().Svc(imm16(t, 1))
-	_, ok := svc.(sysImm)
-	require.True(t, ok, "type = %T, want sysImm", svc)
-	brk := New().Brk(imm16(t, 1))
-	_, ok = brk.(sysImm)
-	require.True(t, ok, "type = %T, want sysImm", brk)
+	brkCases := []struct {
+		name string
+		imm  int64
+		word uint32
+	}{
+		{"brk #1", 1, 0xd4200020},
+		{"brk #0", 0, 0xd4200000},
+	}
+	for _, c := range brkCases {
+		in := New().Brk(imm16(t, c.imm))
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
+		back, derr := decodeOne(c.word)
+		_ = derr
+		require.Equal(t, in.ObjDump(disasm.DefaultViewCtx()),
+			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+	}
 }

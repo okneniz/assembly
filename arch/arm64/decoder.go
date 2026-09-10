@@ -8,7 +8,7 @@ import (
 )
 
 // decodeCtor - constructor of a registry entry (decision tree payload).
-type decodeCtor = func(word uint32) Instr
+type decodeCtor = func(word uint32) (Instr, error)
 
 // schemaRules - rules of the curated schemas in priority order. The match
 // bits come from the generated armISA when the entry is mapped
@@ -41,7 +41,7 @@ func tailRules() []dtree.Rule[decodeCtor] {
 
 	for k := 0; isaTailEntry(k) != nil; k++ {
 		e := isaTailEntry(k)
-		rules = append(rules, dtree.NewRule(e.Mask, e.Match, func(w uint32) Instr {
+		rules = append(rules, dtree.NewRule(e.Mask, e.Match, func(w uint32) (Instr, error) {
 			return decodeGeneric(e, w)
 		}))
 	}
@@ -62,7 +62,7 @@ var (
 // builds its structure; a missing match or a barrier (schema without a
 // ctor) sends the word to the isaTail tail; the unrecognized becomes
 // Unknown (.word) so the total line count matches objdump.
-func decodeOne(word uint32) Instr {
+func decodeOne(word uint32) (Instr, error) {
 	if ctor, ok := schemaTree.Lookup(word); ok && ctor != nil {
 		return ctor(word)
 	}
@@ -91,7 +91,19 @@ func MakeDecoder() parsec.Combinator[byte, int, []Instr] {
 			return nil, err
 		}
 
-		return decodeOne(w), nil
+		in, derr := decodeOne(w)
+		if derr != nil {
+			// operand validation failed on a schema-matched word: data,
+			// not an instruction - the .word fallback keeps the line
+			// count identical to objdump; decodeUnknown cannot fail
+			// (no operands to validate)
+			in, derr = decodeUnknown(w)
+			if derr != nil {
+				return nil, parsec.NewParseError(buf.Position(), derr.Error())
+			}
+		}
+
+		return in, nil
 	}
 
 	return parsec.Many(0, bytes.Try(instr))

@@ -13,6 +13,55 @@ type Ldurh struct {
 	lsBase
 }
 
+// newLdurhBase - the Ldurh constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newLdurhBase(b base, e lsBase) Ldurh {
+	return Ldurh{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newLdurh - the Ldurh constructor: validates the operands,
+// delegates the assembly to newLdurhBase.
+func newLdurh(b base, rt, rn Reg, off Off) (Ldurh, error) {
+	err := requireClass(
+		rt,
+		"Ldurh",
+		"rt",
+		"w register (register 31 in rt reads as wzr)",
+		classW,
+		classWZR,
+	)
+
+	if err != nil {
+		return Ldurh{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Ldurh",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Ldurh{}, err
+	}
+
+	if err = requireUnscaledOff("Ldurh", off); err != nil {
+		return Ldurh{}, err
+	}
+
+	return newLdurhBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurhEnc, "", "", 0),
+	), nil
+}
+
 const ldurhEnc uint32 = 0x78400000 // ldurh wt, [xn, #±imm9]
 
 func (i Ldurh) ObjDump(ctx disasm.ViewCtx) string {
@@ -23,8 +72,8 @@ func (i Ldurh) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldurh")
 }
 
-func decodeLdurhOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeLdurhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -69,36 +118,10 @@ func decodeLdurhOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Ldurh{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Ldurh — ldurh rt, [rn, #off]: the unscaled form, halfword
-// access, rt — w register only (register 31 reads as wzr), rn — x
-// register or SP (register 31 in the base reads as sp); the offset is a
-// signed imm9 (-0x100..0xff, any alignment).
 func (Builder) Ldurh(rt, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldurh", "rt", "w register (register 31 in rt reads as wzr)",
-		classW, classWZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldurh",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requireUnscaledOff("Ldurh", off); err != nil {
-		return nil, err
-	}
-
-	return Ldurh{
-		lsBase: newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, ldurhEnc, "", "", 0),
-	}, nil
+	return newLdurh(base{}, rt, rn, off)
 }

@@ -51,12 +51,17 @@ func (Builder) Csinv(rd, rn, rm Reg, cond string) (Instr, error) {
 	return Csinv{Csel: c}, nil
 }
 
-func decodeCsinv(w uint32) Instr {
-	c, ok := decodeCsel(w).(Csel)
-	if !ok {
-		// decodeCsel always returns Csel; the branch guards against schema desynchronization
-		return Csinv{}
+func decodeCsinv(w uint32) (Instr, error) {
+	ci, cerr := decodeCsel(w)
+	if cerr != nil {
+		return nil, cerr
 	}
 
-	return Csinv{Csel: c}
+	c, ok := ci.(Csel)
+	if !ok {
+		// decodeCsel always returns Csel; the branch guards against schema desynchronization
+		return Csinv{}, nil
+	}
+
+	return Csinv{Csel: c}, nil
 }

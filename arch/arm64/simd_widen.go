@@ -24,8 +24,8 @@ type SimdWiden struct {
 	rmN      uint32
 }
 
-func decodeSimdWidenOf(op string, enc uint32) func(w uint32) Instr {
-	return func(w uint32) Instr {
+func decodeSimdWidenOf(op string, enc uint32) func(w uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		name := op
 		if w>>30&1 == 1 {
 			name += "2"
@@ -43,7 +43,7 @@ func decodeSimdWidenOf(op string, enc uint32) func(w uint32) Instr {
 			rdN:  w & 0x1f,
 			rnN:  w >> 5 & 0x1f,
 			rmN:  w >> 16 & 0x1f,
-		}
+		}, nil
 	}
 }
 

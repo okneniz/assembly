@@ -15,16 +15,60 @@ type Ldpsw struct {
 	off         int64
 }
 
-// newLdpsw - the Ldpsw constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newLdpsw(b base, rt string, rt2 string, rn string, off int64) Ldpsw {
+// newLdpsw - the Ldpsw constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newLdpsw(b base, rt Reg, rt2 Reg, rn Reg, off Off) (Ldpsw, error) {
+	err := requireClass(
+		rt,
+		"Ldpsw",
+		"rt",
+		"x register (register 31 in rt reads as xzr)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Ldpsw{}, err
+	}
+
+	err = requireClass(
+		rt2,
+		"Ldpsw",
+		"rt2",
+		"x register (register 31 in rt2 reads as xzr)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Ldpsw{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Ldpsw",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX,
+		classSP,
+	)
+
+	if err != nil {
+		return Ldpsw{}, err
+	}
+
+	if err = requirePairOff("Ldpsw", off, 2); err != nil {
+		return Ldpsw{}, err
+	}
+
 	return Ldpsw{
 		base: b,
-		rt:   rt,
-		rt2:  rt2,
-		rn:   rn,
-		off:  off,
-	}
+		rt:   rt.name(),
+		rt2:  rt2.name(),
+		rn:   rn.name(),
+		off:  int64(off),
+	}, nil
 }
 
 const ldpswEnc uint32 = 0x69400000
@@ -56,45 +100,21 @@ func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, ldpswEnc|rt|rn<<5|rt2<<10|uint32(i.off>>2&0x7f)<<15)
 }
 
-// Ldpsw — ldpsw rt, rt2, [rn, #off]: sign-extending word load, rt
-// and rt2 — x registers only (register 31 reads as zr), rn — x register
-// or SP (register 31 in the base reads as sp); off — the signed imm7
-// range scaled by 4.
 func (Builder) Ldpsw(rt, rt2, rn Reg, off Off) (Instr, error) {
-	if err := requireClass(rt, "Ldpsw", "rt", "x register (register 31 in rt reads as xzr)",
-		classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rt2, "Ldpsw", "rt2", "x register (register 31 in rt2 reads as xzr)",
-		classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(
-		rn,
-		"Ldpsw",
-		"rn",
-		"x register or SP (register 31 in the base reads as sp)",
-		classX,
-		classSP,
-	); err != nil {
-		return nil, err
-	}
-
-	if err := requirePairOff("Ldpsw", off, 2); err != nil {
-		return nil, err
-	}
-
-	return newLdpsw(base{}, rt.name(), rt2.name(), rn.name(), int64(off)), nil
+	return newLdpsw(base{}, rt, rt2, rn, off)
 }
 
-func decodeLdpsw(w uint32) Instr {
-	return newLdpsw(
+func decodeLdpsw(w uint32) (Instr, error) {
+	in, err := newLdpsw(
 		newBase(w),
-		regNameX(w&0x1f),
-		regNameX(w>>10&0x1f),
-		regNameXSP(w>>5&0x1f),
-		signExtendN(w>>15&0x7f, 7)<<2,
+		xOf(w&0x1f),
+		xOf(w>>10&0x1f),
+		xspOf(w>>5&0x1f),
+		Off(signExtendN(w>>15&0x7f, 7)<<2),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

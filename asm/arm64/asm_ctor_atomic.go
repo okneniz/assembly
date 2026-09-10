@@ -20,7 +20,7 @@ func newLdarArm(ops []vOp) (Instr, error) {
 		enc = 0x88DFFC00
 	}
 
-	return LdarOf(rt, rn, enc), nil
+	return LdarOf(rt, rn, enc)
 }
 
 // newStlrArm — stlr rt, [rn].
@@ -35,7 +35,7 @@ func newStlrArm(ops []vOp) (Instr, error) {
 		enc = 0x889FFC00
 	}
 
-	return StlrOf(rt, rn, enc), nil
+	return StlrOf(rt, rn, enc)
 }
 
 // rtMem — rt, [rn] without an offset.
@@ -82,8 +82,8 @@ func makeExclCtor(ops []vOp, enc uint32) (Instr, error) {
 	}
 
 	if enc == 0x08000000 {
-		return StxrbOf(rs, rt, ops[2].Mem().Base(), enc), nil
+		return StxrbOf(rs, rt, ops[2].Mem().Base(), enc)
 	}
 
-	return StlxrOf(rs, rt, ops[2].Mem().Base(), enc), nil
+	return StlxrOf(rs, rt, ops[2].Mem().Base(), enc)
 }

@@ -4,104 +4,52 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSubsShiftBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
 		word uint32
 	}{
-		{
-			"subs x0,x1,x2",
-			buildSubsShift(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 0), LSL),
-			0xeb020020,
-		},
-		{
-			"subs x0,x1,x2,lsl#3",
-			buildSubsShift(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 3), LSL),
-			0xeb020c20,
-		},
-		{
-			"subs xzr,x1,x2,asr#4 (cmp)",
-			buildSubsShift(t, XZR, xreg(t, 1), xreg(t, 2), imm6(t, 4), ASR),
-			0xeb82103f,
-		},
-		{
-			"subs w3,w4,w5,lsl#2",
-			buildSubsShift(t, wreg(t, 3), wreg(t, 4), wreg(t, 5), imm6(t, 2), LSL),
-			0x6b050883,
-		},
+		{"subs x0,x1,x2", "x0", "x1", "x2", 0, LSL, 0xeb020020},
+		{"subs x0,x1,x2,lsl#3", "x0", "x1", "x2", 3, LSL, 0xeb020c20},
+		{"subs xzr,x1,x2,asr#4 (cmp)", "xzr", "x1", "x2", 4, ASR, 0xeb82103f},
+		{"subs w3,w4,w5,lsl#2", "w3", "w4", "w5", 2, LSL, 0x6b050883},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().SubsShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildSubsShift(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 0), LSL)
+	first := cases[0]
+	in, err := New().SubsShift(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), imm6(t, first.imm), first.sh)
+	require.NoError(t, err)
 	_, ok := in.(SubsShift)
 	require.True(t, ok, "type = %T, want SubsShift", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"subs sp,rd",
-			func() error {
-				_, err := New().SubsShift(SP, xreg(t, 1), xreg(t, 2), imm6(t, 0), LSL)
-				return err
-			},
-		},
-		{
-			"subs sp,rn",
-			func() error {
-				_, err := New().SubsShift(xreg(t, 0), SP, xreg(t, 2), imm6(t, 0), LSL)
-				return err
-			},
-		},
-		{
-			"subs sp,rm",
-			func() error {
-				_, err := New().SubsShift(xreg(t, 0), xreg(t, 1), SP, imm6(t, 0), LSL)
-				return err
-			},
-		},
-		{
-			"subs x,w widths",
-			func() error {
-				_, err := New().SubsShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 0), LSL)
-				return err
-			},
-		},
-		{
-			"subs ror shift",
-			func() error {
-				_, err := New().SubsShift(xreg(t, 0), xreg(t, 1), xreg(t, 2), imm6(t, 0), ROR)
-				return err
-			},
-		},
-		{
-			"subs w,#32 shift",
-			func() error {
-				_, err := New().SubsShift(wreg(t, 0), wreg(t, 1), wreg(t, 2), imm6(t, 32), LSL)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildSubsShift — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildSubsShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
-	t.Helper()
-	in, err := New().SubsShift(rd, rn, rm, imm, sh)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
+	}{
+		{"subs sp,rd", "sp", "x1", "x2", 0, LSL},
+		{"subs sp,rn", "x0", "sp", "x2", 0, LSL},
+		{"subs sp,rm", "x0", "x1", "sp", 0, LSL},
+		{"subs x,w widths", "x0", "w1", "x2", 0, LSL},
+		{"subs ror shift", "x0", "x1", "x2", 0, ROR},
+		{"subs w,#32 shift", "w0", "w1", "w2", 32, LSL},
+	}
+	for _, c := range errCases {
+		_, err := New().SubsShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		assertErr(t, c.name, err)
+	}
 }

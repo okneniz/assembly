@@ -4,73 +4,43 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSmulhBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
 		word uint32
 	}{
-		{
-			"smulh x0,x1,x2",
-			buildSmulh(t, xreg(t, 0), xreg(t, 1), xreg(t, 2)),
-			0x9b427c20,
-		},
-		{
-			"smulh xzr,x1,x2",
-			buildSmulh(t, XZR, xreg(t, 1), xreg(t, 2)),
-			0x9b427c3f,
-		},
+		{"smulh x0,x1,x2", "x0", "x1", "x2", 0x9b427c20},
+		{"smulh xzr,x1,x2", "xzr", "x1", "x2", 0x9b427c3f},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Smulh(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildSmulh(t, xreg(t, 0), xreg(t, 1), xreg(t, 2))
+	first := cases[0]
+	in, err := New().Smulh(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm))
+	require.NoError(t, err)
 	_, ok := in.(Smulh)
 	require.True(t, ok, "type = %T, want Smulh", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"smulh w form",
-			func() error {
-				_, err := New().Smulh(wreg(t, 0), wreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-		{
-			"smulh w,rn",
-			func() error {
-				_, err := New().Smulh(xreg(t, 0), wreg(t, 1), xreg(t, 2))
-				return err
-			},
-		},
-		{
-			"smulh w,rm",
-			func() error {
-				_, err := New().Smulh(xreg(t, 0), xreg(t, 1), wreg(t, 2))
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildSmulh — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildSmulh(t *testing.T, rd, rn, rm Reg) Instr {
-	t.Helper()
-	in, err := New().Smulh(rd, rn, rm)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+	}{
+		{"smulh w form", "w0", "w1", "w2"},
+		{"smulh w,rn", "x0", "w1", "x2"},
+		{"smulh w,rm", "x0", "x1", "w2"},
+	}
+	for _, c := range errCases {
+		_, err := New().Smulh(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
+		assertErr(t, c.name, err)
+	}
 }

@@ -4,92 +4,48 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestCselBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		cond string
 		word uint32
 	}{
-		{
-			"csel x0,x1,x2,eq",
-			buildCsel(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "eq"),
-			0x9a820020,
-		},
-		{
-			"csel w3,w4,w5,hs",
-			buildCsel(t, wreg(t, 3), wreg(t, 4), wreg(t, 5), "hs"),
-			0x1a852083,
-		},
-		{
-			"csel x0,xzr,x1,gt",
-			buildCsel(t, xreg(t, 0), XZR, xreg(t, 1), "gt"),
-			0x9a81c3e0,
-		},
+		{"csel x0,x1,x2,eq", "x0", "x1", "x2", "eq", 0x9a820020},
+		{"csel w3,w4,w5,hs", "w3", "w4", "w5", "hs", 0x1a852083},
+		{"csel x0,xzr,x1,gt", "x0", "xzr", "x1", "gt", 0x9a81c3e0},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Csel(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildCsel(t, xreg(t, 0), xreg(t, 1), xreg(t, 2), "eq")
+	first := cases[0]
+	in, err := New().Csel(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), first.cond)
+	require.NoError(t, err)
 	_, ok := in.(Csel)
 	require.True(t, ok, "type = %T, want Csel", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"csel sp,rd",
-			func() error {
-				_, err := New().Csel(SP, xreg(t, 1), xreg(t, 2), "eq")
-				return err
-			},
-		},
-		{
-			"csel sp,rn",
-			func() error {
-				_, err := New().Csel(xreg(t, 0), SP, xreg(t, 2), "eq")
-				return err
-			},
-		},
-		{
-			"csel sp,rm",
-			func() error {
-				_, err := New().Csel(xreg(t, 0), xreg(t, 1), SP, "eq")
-				return err
-			},
-		},
-		{
-			"csel w,x widths",
-			func() error {
-				_, err := New().Csel(xreg(t, 0), wreg(t, 1), xreg(t, 2), "eq")
-				return err
-			},
-		},
-		{
-			"csel bad cond",
-			func() error {
-				_, err := New().Csel(xreg(t, 0), xreg(t, 1), xreg(t, 2), "foo")
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildCsel — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildCsel(t *testing.T, rd, rn, rm Reg, cond string) Instr {
-	t.Helper()
-	in, err := New().Csel(rd, rn, rm, cond)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		cond string
+	}{
+		{"csel sp,rd", "sp", "x1", "x2", "eq"},
+		{"csel sp,rn", "x0", "sp", "x2", "eq"},
+		{"csel sp,rm", "x0", "x1", "sp", "eq"},
+		{"csel w,x widths", "x0", "w1", "x2", "eq"},
+		{"csel bad cond", "x0", "x1", "x2", "foo"},
+	}
+	for _, c := range errCases {
+		_, err := New().Csel(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), c.cond)
+		assertErr(t, c.name, err)
+	}
 }

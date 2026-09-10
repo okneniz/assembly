@@ -138,7 +138,7 @@ type Schema struct {
 	FullFormat bool
 	// ctor — the constructor of the per-instruction struct: the decoding
 	// contract (all table entries carry it).
-	ctor func(word uint32) Instr
+	ctor func(word uint32) (Instr, error)
 }
 
 func NewSchema(
@@ -148,7 +148,7 @@ func NewSchema(
 	meta Meta,
 	formatter string,
 	fullFormat bool,
-	ctor func(word uint32) Instr,
+	ctor func(word uint32) (Instr, error),
 ) Schema {
 	return Schema{
 		Mask:       mask,
@@ -171,11 +171,13 @@ type Unknown struct {
 
 // newUnknown - the Unknown constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newUnknown(b base, word uint32) Unknown {
+func newUnknown(
+	w uint32,
+) (Unknown, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return Unknown{
-		base: b,
-		word: word,
-	}
+		base: newBase(w),
+		word: w,
+	}, nil
 }
 
 func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
@@ -217,6 +219,11 @@ func invSysRegChecked(name string) uint32 {
 	return k
 }
 
-func decodeUnknown(w uint32) Instr {
-	return newUnknown(newBase(w), w)
+func decodeUnknown(w uint32) (Instr, error) {
+	in, err := newUnknown(w)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

@@ -9,75 +9,44 @@ import (
 func TestBicsShiftBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
 		word uint32
 	}{
-		{
-			"bics x1,x2,x3",
-			buildBicsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 0), LSL),
-			0xea230041,
-		},
-		{
-			"bics w1,w2,w3,lsl#4",
-			buildBicsShift(t, wreg(t, 1), wreg(t, 2), wreg(t, 3), imm6(t, 4), LSL),
-			0x6a231041,
-		},
-		{
-			"bics x1,xzr,x3,ror#2",
-			buildBicsShift(t, xreg(t, 1), XZR, xreg(t, 3), imm6(t, 2), ROR),
-			0xeae30be1,
-		},
+		{"bics x1,x2,x3", "x1", "x2", "x3", 0, LSL, 0xea230041},
+		{"bics w1,w2,w3,lsl#4", "w1", "w2", "w3", 4, LSL, 0x6a231041},
+		{"bics x1,xzr,x3,ror#2", "x1", "xzr", "x3", 2, ROR, 0xeae30be1},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().BicsShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildBicsShift(t, xreg(t, 1), xreg(t, 2), xreg(t, 3), imm6(t, 1), LSL)
+	first := cases[0]
+	in, err := New().BicsShift(reg(t, first.rd), reg(t, first.rn), reg(t, first.rm), imm6(t, first.imm), first.sh)
+	require.NoError(t, err)
 	_, ok := in.(BicsShift)
 	require.True(t, ok, "type = %T, want BicsShift", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"bics x+w",
-			func() error {
-				_, err := New().BicsShift(xreg(t, 0), wreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"bicsshift sp",
-			func() error {
-				_, err := New().BicsShift(SP, xreg(t, 1), xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"bicsshift rn sp",
-			func() error {
-				_, err := New().BicsShift(xreg(t, 0), SP, xreg(t, 2), imm6(t, 1), LSL)
-				return err
-			},
-		},
-		{
-			"bicsshift rm sp",
-			func() error {
-				_, err := New().BicsShift(xreg(t, 0), xreg(t, 1), SP, imm6(t, 1), LSL)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildBicsShift — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildBicsShift(t *testing.T, rd, rn, rm Reg, imm Imm6, sh Shift) Instr {
-	t.Helper()
-	in, err := New().BicsShift(rd, rn, rm, imm, sh)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		rm   string
+		imm  int64
+		sh   Shift
+	}{
+		{"bics x+w", "x0", "w1", "x2", 1, LSL},
+		{"bicsshift sp", "sp", "x1", "x2", 1, LSL},
+		{"bicsshift rn sp", "x0", "sp", "x2", 1, LSL},
+		{"bicsshift rm sp", "x0", "x1", "sp", 1, LSL},
+	}
+	for _, c := range errCases {
+		_, err := New().BicsShift(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm), imm6(t, c.imm), c.sh)
+		assertErr(t, c.name, err)
+	}
 }

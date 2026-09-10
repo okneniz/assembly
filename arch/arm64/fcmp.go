@@ -18,8 +18,8 @@ type Fcmp struct {
 	k      fpKind
 }
 
-func decodeFcmpOf(withRM bool, enc uint32, k fpKind) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeFcmpOf(withRM bool, enc uint32, k fpKind) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		return Fcmp{
 			base:   newBase(w),
 			rn:     fpReg(w>>5&0x1f, k),
@@ -28,7 +28,7 @@ func decodeFcmpOf(withRM bool, enc uint32, k fpKind) func(uint32) Instr {
 			enc0:   enc,
 			encR:   enc,
 			k:      k,
-		}
+		}, nil
 	}
 }
 

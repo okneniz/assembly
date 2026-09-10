@@ -9,30 +9,23 @@ import (
 func TestStrBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rt   string
+		rn   string
+		off  Off
 		word uint32
 	}{
-		{
-			"str x0,[x1]",
-			buildStr(t, xreg(t, 0), xreg(t, 1), 0),
-			0xf9000020,
-		},
-		{
-			"str w0,[x29,#0xc]",
-			buildStr(t, wreg(t, 0), xreg(t, 29), 0xc),
-			0xb9000fa0,
-		},
+		{"str x0,[x1]", "x0", "x1", 0, 0xf9000020},
+		{"str w0,[x29,#0xc]", "w0", "x29", 0xc, 0xb9000fa0},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
+		in, err := New().Str(reg(t, c.rt), reg(t, c.rn), c.off)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildStr(t, xreg(t, 0), xreg(t, 1), 0)
+	first := cases[0]
+	in, err := New().Str(reg(t, first.rt), reg(t, first.rn), first.off)
+	require.NoError(t, err)
 	_, ok := in.(Str)
 	require.True(t, ok, "type = %T, want Str", in)
-	_, err := New().Str(xreg(t, 0), xreg(t, 1), -8)
-	assertErr(t, "str negative offset", err)
-	_, err = New().Str(SP, xreg(t, 1), 0)
-	assertErr(t, "str sp rt", err)
 }

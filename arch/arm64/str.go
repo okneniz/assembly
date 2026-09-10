@@ -13,6 +13,38 @@ type Str struct {
 	lsBase
 }
 
+// newStrBase - the Str constructor for a ready embedded base
+// (the decoder and the string-operand layer): the struct is
+// assembled only here.
+func newStrBase(b base, e lsBase) Str {
+	return Str{
+		base:   b,
+		lsBase: e,
+	}
+}
+
+// newStr - the Str constructor: validates the operands,
+// delegates the assembly to newStrBase.
+func newStr(b base, rt, rn Reg, off Off) (Str, error) {
+	if err := lsOperand(rt, rn, "Str"); err != nil {
+		return Str{}, err
+	}
+
+	enc, scale := strXEnc, uint32(3)
+	if !rt.Is64() {
+		enc, scale = strWEnc, 2
+	}
+
+	if err := requireOff("Str", off, scale); err != nil {
+		return Str{}, err
+	}
+
+	return newStrBase(
+		b,
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
+	), nil
+}
+
 // Encodings of the unsigned-offset form: the access size is set by rt, the
 // offset scale = log2 of the size.
 const (
@@ -28,8 +60,8 @@ func (i Str) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "str")
 }
 
-func decodeStrOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
-	return func(w uint32) Instr {
+func decodeStrOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error) {
+	return func(w uint32) (Instr, error) {
 		var rt string
 		switch fp {
 		case "s":
@@ -74,27 +106,10 @@ func decodeStrOf(enc uint32, kind memKind, fp string) func(uint32) Instr {
 		return Str{
 			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
-		}
+		}, nil
 	}
 }
 
-// Str — str rt, [rn, #off]: byte offset, scaling to the access size is
-// hidden here.
 func (Builder) Str(rt, rn Reg, off Off) (Instr, error) {
-	if err := lsOperand(rt, rn, "Str"); err != nil {
-		return nil, err
-	}
-
-	enc, scale := strXEnc, uint32(3)
-	if !rt.Is64() {
-		enc, scale = strWEnc, 2
-	}
-
-	if err := requireOff("Str", off, scale); err != nil {
-		return nil, err
-	}
-
-	return Str{
-		lsBase: newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
-	}, nil
+	return newStr(base{}, rt, rn, off)
 }

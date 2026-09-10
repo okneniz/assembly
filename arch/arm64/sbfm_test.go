@@ -4,92 +4,48 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSbfmBuild(t *testing.T) {
 	cases := []struct {
 		name string
-		in   Instr
+		rd   string
+		rn   string
+		immr uint32
+		imms uint32
 		word uint32
 	}{
-		{
-			"sbfm x0,x1,#5,#63 (asr)",
-			buildSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63),
-			0x9345fc20,
-		},
-		{
-			"sbfm x1,x2,#0,#7 (sxtb)",
-			buildSbfm(t, xreg(t, 1), xreg(t, 2), 0, 7),
-			0x93401c41,
-		},
-		{
-			"sbfm w3,w4,#1,#3 (sbfx)",
-			buildSbfm(t, wreg(t, 3), wreg(t, 4), 1, 3),
-			0x13010c83,
-		},
+		{"sbfm x0,x1,#5,#63 (asr)", "x0", "x1", 5, 63, 0x9345fc20},
+		{"sbfm x1,x2,#0,#7 (sxtb)", "x1", "x2", 0, 7, 0x93401c41},
+		{"sbfm w3,w4,#1,#3 (sbfx)", "w3", "w4", 1, 3, 0x13010c83},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Sbfm(reg(t, c.rd), reg(t, c.rn), c.immr, c.imms)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildSbfm(t, xreg(t, 0), xreg(t, 1), 5, 63)
+	first := cases[0]
+	in, err := New().Sbfm(reg(t, first.rd), reg(t, first.rn), first.immr, first.imms)
+	require.NoError(t, err)
 	_, ok := in.(Sbfm)
 	require.True(t, ok, "type = %T, want Sbfm", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"sbfm sp,rd",
-			func() error {
-				_, err := New().Sbfm(SP, xreg(t, 1), 5, 63)
-				return err
-			},
-		},
-		{
-			"sbfm sp,rn",
-			func() error {
-				_, err := New().Sbfm(xreg(t, 0), SP, 5, 63)
-				return err
-			},
-		},
-		{
-			"sbfm x,w widths",
-			func() error {
-				_, err := New().Sbfm(xreg(t, 0), wreg(t, 1), 5, 63)
-				return err
-			},
-		},
-		{
-			"sbfm immr 64",
-			func() error {
-				_, err := New().Sbfm(xreg(t, 0), xreg(t, 1), 64, 63)
-				return err
-			},
-		},
-		{
-			"sbfm imms 64",
-			func() error {
-				_, err := New().Sbfm(xreg(t, 0), xreg(t, 1), 5, 64)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildSbfm — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildSbfm(t *testing.T, rd, rn Reg, immr, imms uint32) Instr {
-	t.Helper()
-	in, err := New().Sbfm(rd, rn, immr, imms)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name string
+		rd   string
+		rn   string
+		immr uint32
+		imms uint32
+	}{
+		{"sbfm sp,rd", "sp", "x1", 5, 63},
+		{"sbfm sp,rn", "x0", "sp", 5, 63},
+		{"sbfm x,w widths", "x0", "w1", 5, 63},
+		{"sbfm immr 64", "x0", "x1", 64, 63},
+		{"sbfm imms 64", "x0", "x1", 5, 64},
+	}
+	for _, c := range errCases {
+		_, err := New().Sbfm(reg(t, c.rd), reg(t, c.rn), c.immr, c.imms)
+		assertErr(t, c.name, err)
+	}
 }

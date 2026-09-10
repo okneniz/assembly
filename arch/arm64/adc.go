@@ -17,15 +17,55 @@ type Adc struct {
 	rd, rn, rm string
 }
 
-// newAdc - the Adc constructor: the struct is assembled only
-// here (the Builder method and the decoder call it).
-func newAdc(b base, rd string, rn string, rm string) Adc {
+// newAdc - the Adc constructor: validates the operands and
+// assembles the struct (the Builder method delegates here; the
+// decoder calls it with values read from the word).
+func newAdc(b base, rd Reg, rn Reg, rm Reg) (Adc, error) {
+	err := requireClass(
+		rd,
+		"Adc",
+		"rd",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Adc{}, err
+	}
+
+	err = requireClass(
+		rn,
+		"Adc",
+		"rn",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Adc{}, err
+	}
+
+	err = requireClass(
+		rm,
+		"Adc",
+		"rm",
+		"register 31 reads as zr — use XZR (only the 64-bit form)",
+		classX,
+		classXZR,
+	)
+
+	if err != nil {
+		return Adc{}, err
+	}
+
 	return Adc{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
-	}
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
+	}, nil
 }
 
 const adcX uint32 = 0x9A000000
@@ -43,32 +83,20 @@ func (i Adc) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, adcX|rd|rn<<5|rm<<16)
 }
 
-// Adc — adc rd, rn, rm. Only the 64-bit form; register 31 reads
-// as zr (SP/WSP are not allowed — use XZR).
 func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
-	if err := requireClass(rd, "Adc", "rd",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rn, "Adc", "rn",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	if err := requireClass(rm, "Adc", "rm",
-		"register 31 reads as zr — use XZR (only the 64-bit form)", classX, classXZR); err != nil {
-		return nil, err
-	}
-
-	return newAdc(base{}, rd.name(), rn.name(), rm.name()), nil
+	return newAdc(base{}, rd, rn, rm)
 }
 
-func decodeAdc(w uint32) Instr {
-	return newAdc(
+func decodeAdc(w uint32) (Instr, error) {
+	in, err := newAdc(
 		newBase(w),
-		armRegName(w&0x1f, w>>31&1 == 1),
-		armRegName(w>>5&0x1f, w>>31&1 == 1),
-		armRegName(w>>16&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
+		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		gprOf(w>>16&0x1f, w>>31&1 == 1),
 	)
+	if err != nil {
+		return nil, err
+	}
+
+	return in, nil
 }

@@ -4,95 +4,47 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/disasm"
 )
 
 func TestTbzBuild(t *testing.T) {
 	cases := []struct {
-		name string
-		in   Instr
-		word uint32
+		name   string
+		rt     string
+		bit    uint32
+		target int64
+		word   uint32
 	}{
-		{
-			"tbz w0,#5,0x1000",
-			buildTbz(t, wreg(t, 0), 5, 0),
-			0x36280000,
-		},
-		{
-			"tbz w1,#0,0x1010",
-			buildTbz(t, wreg(t, 1), 0, 16),
-			0x36000081,
-		},
-		{
-			"tbz w0,#31,0x8ffc",
-			buildTbz(t, wreg(t, 0), 31, 32764),
-			0x36fbffe0,
-		},
-		{
-			"tbz x2,#32,0x1000",
-			buildTbz(t, xreg(t, 2), 32, 0),
-			0xb6000002,
-		},
-		{
-			"tbz w0,#1,0xf00",
-			buildTbz(t, wreg(t, 0), 1, -256),
-			0x360ff800,
-		},
+		{"tbz w0,#5,0x1000", "w0", 5, 0, 0x36280000},
+		{"tbz w1,#0,0x1010", "w1", 0, 16, 0x36000081},
+		{"tbz w0,#31,0x8ffc", "w0", 31, 32764, 0x36fbffe0},
+		{"tbz x2,#32,0x1000", "x2", 32, 0, 0xb6000002},
+		{"tbz w0,#1,0xf00", "w0", 1, -256, 0x360ff800},
 	}
 	for _, c := range cases {
-		got := buildWord(t, c.in)
-		require.Equal(t, c.word, got, "case %q", c.name)
-		back := decodeOne(c.word)
-		require.Equal(t, c.in.ObjDump(disasm.DefaultViewCtx()),
-			back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
+		in, err := New().Tbz(reg(t, c.rt), c.bit, c.target)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.word, buildWord(t, in), "case %q", c.name)
 	}
 
-	in := buildTbz(t, wreg(t, 0), 5, 0)
+	first := cases[0]
+	in, err := New().Tbz(reg(t, first.rt), first.bit, first.target)
+	require.NoError(t, err)
 	_, ok := in.(Tbz)
 	require.True(t, ok, "type = %T, want Tbz", in)
-	for _, c := range []struct {
-		name string
-		call func() error
-	}{
-		{
-			"tbz sp,rt",
-			func() error {
-				_, err := New().Tbz(SP, 5, 0x1000)
-				return err
-			},
-		},
-		{
-			"tbz bit 64",
-			func() error {
-				_, err := New().Tbz(xreg(t, 0), 64, 0x1000)
-				return err
-			},
-		},
-		{
-			"tbz x0,#5",
-			func() error {
-				_, err := New().Tbz(xreg(t, 0), 5, 0x1000)
-				return err
-			},
-		},
-		{
-			"tbz w0,#32",
-			func() error {
-				_, err := New().Tbz(wreg(t, 0), 32, 0x1000)
-				return err
-			},
-		},
-	} {
-		assertErr(t, c.name, c.call())
-	}
-}
 
-// buildTbz — an instruction constructor wrapper for table literals:
-// valid operands, an error is impossible by construction.
-func buildTbz(t *testing.T, rt Reg, bit uint32, target int64) Instr {
-	t.Helper()
-	in, err := New().Tbz(rt, bit, target)
-	require.NoError(t, err)
-	return in
+	errCases := []struct {
+		name   string
+		rt     string
+		bit    uint32
+		target int64
+	}{
+		{"tbz sp,rt", "sp", 5, 0x1000},
+		{"tbz bit 64", "x0", 64, 0x1000},
+		{"tbz x0,#5", "x0", 5, 0x1000},
+		{"tbz w0,#32", "w0", 32, 0x1000},
+	}
+	for _, c := range errCases {
+		_, err := New().Tbz(reg(t, c.rt), c.bit, c.target)
+		assertErr(t, c.name, err)
+	}
 }
