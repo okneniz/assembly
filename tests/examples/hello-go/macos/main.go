@@ -64,20 +64,20 @@ func main() {
 
 	// The raw program image at 0x1000 (the runner maps it there and
 	// jumps to the entry).
-	code, syms, errs := bin.Assemble(0x1000)
-	if len(errs) > 0 {
-		fail(errs)
+	res := bin.Assemble(0x1000)
+	if len(res.Errs) > 0 {
+		fail(res.Errs)
 	}
 
-	if _, ok := syms["start"]; !ok {
+	if _, ok := res.Syms["start"]; !ok {
 		fail([]error{errors.New("no start symbol")})
 	}
 
-	if err := os.WriteFile(*out, code, 0o755); err != nil {
+	if err := os.WriteFile(*out, res.Code, 0o755); err != nil {
 		fail([]error{err})
 	}
 
-	fmt.Printf("wrote %s (%d bytes, entry %#x)\n", *out, len(code), syms["start"])
+	fmt.Printf("wrote %s (%d bytes, entry %#x)\n", *out, len(res.Code), res.Syms["start"])
 }
 
 func fail(errs []error) {

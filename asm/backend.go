@@ -92,18 +92,40 @@ func NewNobitsSection(name string, addr uint64, reserve int) Section {
 	}
 }
 
-// Result is the assembly result: sections in order of appearance and the
-// symbol table.
+// LineEntry is one emitting statement at its final address: its bytes
+// start at Addr and occupy Size of them, emitted from the 1-based source
+// Line. The file is a property of the whole result (one source per
+// Assemble call), not of the entry. Instructions only; data directives
+// are not mapped.
+type LineEntry struct {
+	Addr uint64
+	Size int
+	Line uint
+}
+
+func NewLineEntry(addr uint64, size int, line uint) LineEntry {
+	return LineEntry{
+		Addr: addr,
+		Size: size,
+		Line: line,
+	}
+}
+
+// Result is the assembly result: sections in order of appearance, the
+// symbol table, and the line map (address → source line, sorted by Addr -
+// the debug view of the program).
 type Result struct {
 	Sections []Section
 	Symbols  map[string]uint64
 	Globals  []string // .global/.globl
+	Lines    []LineEntry
 }
 
-func NewResult(symbols map[string]uint64, globals []string) *Result {
+func NewResult(symbols map[string]uint64, globals []string, lines []LineEntry) *Result {
 	return &Result{
 		Symbols: symbols,
 		Globals: globals,
+		Lines:   lines,
 	}
 }
 

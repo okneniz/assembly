@@ -85,6 +85,55 @@ delegates; the pass-through Builder{}.X calls are gone, replaced by exported
 NewX constructors for the assembler layer), and the per-instruction file order
 is type, constructor, methods, Builder method, decoder.
 
+## 09-10 — the debugger
+
+The debugger as one more artifact of the toolkit: a single static Go
+binary over the qemu gdbstub — the RSP client (framing, acks,
+retransmits, stop replies), the executor (a frozen -S qemu-system per
+run, arch command lines from the debug targets), and the session
+engine (breakpoints by label, register and memory access, disassembly
+windows through the project's own decoders, address→source-line maps).
+The line maps close the loop to the sources: asm records them in pass
+2 from the parser positions; prog resolves them through an injectable
+position resolver (the default: runtime.Caller to the user's Go line).
+The engine is the library — a debugging script is an ordinary Go
+program over debug/session; the REPL (cmd/assembly-debug, batch via
+-e) is its first consumer. Three arches gated against real qemu.
+
+## 09-10 — the DAP adapter (VSCode)
+
+The editor frontend of the debugger, one protocol up from the session
+engine: a DAP server (the LSP-style Content-Length framing, stdio)
+translating the editor's vocabulary onto debug/session — launch
+assembles and boots the machine (continue/step run as goroutines and
+report back as stopped/terminated events, pause is the interrupt),
+source-line breakpoints resolve through the line map, label
+breakpoints through the symbol table, the register dump is the
+variables scope, the disassembly and memory windows go through the
+project's own decoders. The input path (the arch table, in-process
+assembly, the sym sidecar) left the REPL for the shared debug/load
+package — the two frontends are now thin. The VSCode extension is
+declarative only: no JavaScript, it declares the debug type and
+launches the adapter from PATH. Tested against a scripted RSP stub
+(the whole editor conversation, race-clean) and gated end-to-end
+against real qemu; the framing has its own property suite.
+
+## 09-11 — prog in the editor
+
+The prog programs joined the editor debugging: a launch `command`
+delegates the whole session to a program serving DAP itself — the
+adapter answers initialize, then relays the conversation byte for byte
+to the spawned program (the launch request replayed to it with the
+command attribute stripped, so the child serves instead of relaying
+again; its build errors surface as adapter stderr). The serving side
+is library: dap.NewImageLauncher boots the assembled image with its
+symbols and Go line map, dap.NewServer speaks stdio. The riscv
+hello-go example grew the -debug mode (WithPos caller resolver — the
+line map points at its own Go lines, breakpoints verified on them);
+the qemu gates gained TestDapProg (the frame carries synthetic.go:42
+then the test file's own line after a step) and the relay carries its
+unit suite (cat as the spawned child).
+
 ## Totals
 
 | Period | What | Days | Go lines | Go files | Sessions | Requests | Tokens in | Tokens out |
@@ -94,7 +143,10 @@ is type, constructor, methods, Builder method, decoder.
 | 09-03 … 09-08 | prog DSL, Mach-O writer, llvm-mc parity, arch exodus | 5 | 9,650 | 202 | 3 | ~90 | — | — |
 | 09-06 … 09-08 | arm64 ISA-audit closeout: 5 conflicts, SIMD copy family, MOV alias | 3 | 534 | 16 | 3 | — | — | — |
 | 09-09 | style unification: constructors, grammar structs, decoder/parser vocabulary, lint at zero | 1 | +1,639 | 200 | 1 | — | — | — |
-| **total** | | **27** | **117,029** | **1,349** | **145** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-10 | debugger: RSP client, qemu executor, session engine, line maps, assembly-debug REPL | 1 | 2,933 | 21 | 1 | — | — | — |
+| 09-10 | DAP adapter: debug/dap server, debug/load split, assembly-debug-dap, VSCode extension | 1 | 2,844 | 19 | 2 | — | — | — |
+| 09-11 | prog editor debugging: dap relay + NewImageLauncher, riscv example -debug mode, TestDapProg gate | 1 | 453 | 10 | 3 | — | — | — |
+| **total** | | **30** | **123,259** | **1,399** | **151** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

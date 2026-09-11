@@ -259,6 +259,14 @@ linters:
       # the contract must not change; the new json: snake convention is for new code.
       - linters: [tagliatelle]
         path: ^server/
+      # The DAP wire protocol is camelCase (supportsConfigurationDoneRequest,
+      # stackFrames): the editor owns the contract, the adapter speaks it
+      # as specced.
+      - linters: [tagliatelle]
+        path: ^debug/dap/
+      # The DAP e2e gate mirrors the same contract in its reply views.
+      - linters: [tagliatelle]
+        path: ^tests/dap_test\.go$
 
 # Formatters are checked by `golangci-lint run` and applied by
 # `golangci-lint fmt` (the make fmt target).

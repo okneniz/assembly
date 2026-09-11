@@ -1,0 +1,98 @@
+{
+  "name": "assembly-debug",
+  "displayName": "Assembly Debug",
+  "description": "DAP adapter of the assembly toolkit debugger: one static binary over the qemu gdbstub",
+  "version": "0.1.0",
+  "publisher": "okneniz",
+  "engines": {
+    "vscode": "^1.75.0"
+  },
+  "categories": [
+    "Debuggers"
+  ],
+  "contributes": {
+    "debuggers": [
+      {
+        "type": "assembly-debug",
+        "label": "Assembly Debug",
+        "program": "assembly-debug-dap",
+        "configurationAttributes": {
+          "launch": {
+            "required": [
+              "arch"
+            ],
+            "properties": {
+              "arch": {
+                "type": "string",
+                "enum": [
+                  "arm64",
+                  "riscv64",
+                  "loong64"
+                ],
+                "default": "arm64",
+                "description": "Architecture of the debugged program."
+              },
+              "source": {
+                "type": "string",
+                "description": "The .s source file: assembled in-process, its labels and source lines become the breakpoints and the line map."
+              },
+              "bin": {
+                "type": "string",
+                "description": "A prebuilt image to run instead of assembling a source (the assembly CLI's -o output)."
+              },
+              "sym": {
+                "type": "string",
+                "description": "Symbol sidecar of bin: the assembly CLI's -sym output (\"0xaddr name\" lines)."
+              },
+              "base": {
+                "type": "string",
+                "description": "Base load address, hex or dec (the arch default otherwise)."
+              },
+              "icount": {
+                "type": "boolean",
+                "default": false,
+                "description": "Deterministic virtual clock (-icount shift=auto)."
+              },
+              "command": {
+                "type": "string",
+                "description": "Delegate the session to a program serving DAP itself (a prog example in its -debug mode): the adapter spawns it and relays the conversation."
+              }
+            }
+          }
+        },
+        "initialConfigurations": [
+          {
+            "type": "assembly-debug",
+            "request": "launch",
+            "name": "Debug hello (arm64)"
+          }
+        ],
+        "configurationSnippets": [
+          {
+            "label": "Assembly Debug: launch source",
+            "description": "Assemble a source file in-process and debug it under qemu.",
+            "body": {
+              "type": "assembly-debug",
+              "request": "launch",
+              "name": "Debug ${1:hello}",
+              "arch": "${2|arm64,riscv64,loong64|}",
+              "source": "^\"\\${workspaceFolder}/${3:hello.s}\""
+            }
+          },
+          {
+            "label": "Assembly Debug: launch binary",
+            "description": "Debug a prebuilt image with its symbol sidecar.",
+            "body": {
+              "type": "assembly-debug",
+              "request": "launch",
+              "name": "Debug ${1:hello}",
+              "arch": "${2|arm64,riscv64,loong64|}",
+              "bin": "^\"\\${workspaceFolder}/${3:hello.elf}\"",
+              "sym": "^\"\\${workspaceFolder}/${4:hello.sym}\""
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

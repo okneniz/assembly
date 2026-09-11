@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check vet lint tests build tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data
+.PHONY: fmt fmt-check vet lint tests build cli vscode tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data
 
 # GOLANGCI_LINT_VERSION pins the project-local linter (see bin/golangci-lint).
 GOLANGCI_LINT_VERSION ?= v2.13.2
@@ -46,6 +46,29 @@ tests:
 
 build:
 	go build ./...
+
+# cli builds the current sources of every command-line utility (assembly,
+# assembly-debug, assembly-debug-dap) into ./bin — the project-local tools
+# directory (already gitignored; clean removes it together with the pinned
+# linter). CGO_ENABLED=0 keeps them static, per the zero-dependency thesis.
+cli:
+	mkdir -p bin
+	CGO_ENABLED=0 go build -o bin/ ./cmd/...
+
+# vscode installs the assembly-debug extension into ~/.vscode/extensions
+# (overwriting a previous copy): the freshly built adapter is bundled INTO
+# the extension and its absolute path is written into the manifest. A
+# dock-launched VSCode hands its children the minimal launchd PATH — neither
+# ~/go/bin nor /opt/homebrew/bin is there, so the debug type must not depend
+# on PATH at all (the qemu lookup inside the adapter carries its own
+# homebrew fallback). Restart VSCode afterwards: extensions are scanned at
+# startup.
+VSCODE_EXT_DIR ?= $(HOME)/.vscode/extensions/okneniz.assembly-debug-0.1.0
+vscode: cli
+	mkdir -p $(VSCODE_EXT_DIR)
+	cp -R vscode/assembly-debug/. $(VSCODE_EXT_DIR)/
+	cp bin/assembly-debug-dap $(VSCODE_EXT_DIR)/
+	python3 -c 'import json,os,sys; p=sys.argv[1]; m=json.load(open(p)); [d.update(program=os.path.join(os.path.dirname(p), d["program"])) for d in m["contributes"]["debuggers"]]; json.dump(m, open(p, "w"), indent=2); open(p, "a").write("\n")' $(VSCODE_EXT_DIR)/package.json
 
 # gen-sysregs regenerates arch/arm64/sysregs_generated.go from the vendored
 # ARM System Register XML and m1n1's apple_regs.json. Re-run after updating the

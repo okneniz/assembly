@@ -664,3 +664,53 @@ func TestLtorgUnsupported(t *testing.T) {
 	require.Len(t, errs, 1, "errs = %v", errs)
 	require.Contains(t, errs[0].Msg, "end of the subsection", ".ltorg - an explicit error")
 }
+
+func TestLineMap(t *testing.T) {
+	cases := []struct {
+		name string
+		src  string
+		base uint64
+		want []LineEntry
+	}{
+		{
+			"instructions in order",
+			"start:\n  pad 4\nloop:\n  pad 8\n  pad 2\n",
+			0x1000,
+			[]LineEntry{
+				NewLineEntry(0x1000, 4, 2),
+				NewLineEntry(0x1004, 8, 4),
+				NewLineEntry(0x100c, 2, 5),
+			},
+		},
+		{
+			// the walk visits sub 0, sub 1, sub 0 again - the map is
+			// sorted by the final address, not the visit order
+			"subsections sorted by address",
+			"  pad 4\n  .text 1\n  pad 2\n  .text 0\n  pad 8\n",
+			0x1000,
+			[]LineEntry{
+				NewLineEntry(0x1000, 4, 1),
+				NewLineEntry(0x1004, 8, 5),
+				NewLineEntry(0x100c, 2, 3),
+			},
+		},
+		{
+			// only instructions emit entries: directives and labels are
+			// not mapped
+			"directives and labels unmapped",
+			".balign 8\nstart:\n  pad 4\n  .zero 3\n  pad 2\n",
+			0x2000,
+			[]LineEntry{
+				NewLineEntry(0x2000, 4, 3),
+				NewLineEntry(0x2007, 2, 5), // after 3 zeros of .zero
+			},
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			res, errs := Assemble(c.src, c.base, mockBackend{})
+			require.Empty(t, errs, "errors: %v", errs)
+			require.Equal(t, c.want, res.Lines, "line map")
+		})
+	}
+}

@@ -119,6 +119,24 @@ $ objdump -d hello
 1000002e8: 0a646c72    	bic  w18, w3, w4, lsr #27
 ```
 
+### Debugger
+
+`assembly-debug` runs a program under qemu, frozen at start, and drives it with breakpoints at labels, source lines, register and memory dumps — one static binary, no gdb:
+
+```console
+$ assembly-debug -arch arm64 tests/examples/hello-asm/hello-arm-vm.s
+pc 0x40100000  hello-arm-vm.s:10  mov x0, #0x09000000
+(asmdb) b done
+breakpoint at 0x40100024
+(asmdb) c
+hello world
+(asmdb) q
+```
+
+One engine, three frontends: the REPL, the editors (VSCode and Zed, both driven by the same DAP adapter), and Go programs importing `debug/session`.
+
+The full story — the command set, complete sessions, and the editor setup — lives in [debug/README.md](debug/README.md).
+
 ## Architectures
 
 Three ISA backends, fully separated (no shared line between them):
@@ -143,6 +161,8 @@ Three ISA backends, fully separated (no shared line between them):
 - **Container parsers** — ELF and Mach-O, self-contained, no `debug/elf`/`debug/macho`
 - **Generated decode tables** — from the ARM A64 XML, Spike's `encoding.h`, loongarch-opcodes
 - **prog DSL** — Go-level machine code programming (chain methods = source lines)
+- **Debugger** — one static binary over the qemu gdbstub: RSP client, own decoders and symbols; REPL (`assembly-debug`) and a Go scripting API (`debug/session`)
+- **Editor debugging** — `assembly-debug-dap` (DAP over stdio) drives both VSCode (a declarative extension, `vscode/assembly-debug`) and Zed (a CodeLLDB name override in `.zed/`); the REPL and the Go scripting API (`debug/session`) sit on the same engine
 - **Web UI** — disassembly viewer + assembler panel
 - **assembly-diff** — objdump coverage gate
 
@@ -157,6 +177,9 @@ landed on top).
 ```bash
 # Build everything
 go build ./...
+
+# Build every CLI (assembly, assembly-debug, assembly-debug-dap) into ./bin
+make cli
 
 # Run the full test suite (requires objdump and qemu-system on PATH)
 make tests

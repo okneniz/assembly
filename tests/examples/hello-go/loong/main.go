@@ -54,16 +54,16 @@ func main() {
 		fail(errs)
 	}
 
-	code, syms, errs := bin.Assemble(base)
-	if len(errs) > 0 {
-		fail(errs)
+	res := bin.Assemble(base)
+	if len(res.Errs) > 0 {
+		fail(res.Errs)
 	}
 
-	if err := os.WriteFile(*out, code, 0o755); err != nil {
+	if err := os.WriteFile(*out, res.Code, 0o755); err != nil {
 		fail([]error{err})
 	}
 
-	fmt.Printf("wrote %s (%d bytes, entry %#x)\n", *out, len(code), syms["start"])
+	fmt.Printf("wrote %s (%d bytes, entry %#x)\n", *out, len(res.Code), res.Syms["start"])
 }
 
 func fail(errs []error) {

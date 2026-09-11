@@ -7,14 +7,18 @@
 #                     same code is in file.MachoBuilder)
 #   make run-loong  - build hello-go-loong and run it in the QEMU virt
 #                     machine (bare-metal, flash at 0x1c000000)
+#   make vm-riscv   - build hello-go-riscv and run it in the QEMU virt
+#                     machine (bare-metal, sifive_test poweroff)
 #
 # Run from this directory (or make -C tests/examples/hello-go from the
 # repository root).
 
 ASM := go run ./macos
 LOONG := go run ./loong
+RISCV := go run ./riscv
 RUNNER := cc -O2 -o runner ../hello-asm/runner.c && ./runner
 QEMU_LOONG ?= qemu-system-loongarch64
+QEMU_RISCV ?= qemu-system-riscv64
 
 all: run-macos
 
@@ -38,7 +42,15 @@ run-loong: hello-go-loong.bin
 	for i in $$(seq 1 50); do grep -q hello loong.out && break; sleep 0.2; done; \
 	kill $$QEMU 2>/dev/null; cat loong.out; rm -f loong.out
 
-clean:
-	rm -f hello-go-macos.bin hello-go-loong.bin runner loong.out
+hello-go-riscv.elf:
+	$(RISCV) -o hello-go-riscv.elf
 
-.PHONY: all run-macos run-loong clean
+# The sifive_test write powers the machine off: qemu exits by itself.
+vm-riscv: hello-go-riscv.elf
+	@echo "--- executing hello-go-riscv.elf (qemu virt, bare-metal) ---"
+	$(QEMU_RISCV) -machine virt -bios none -nographic -kernel hello-go-riscv.elf
+
+clean:
+	rm -f hello-go-macos.bin hello-go-loong.bin hello-go-riscv.elf runner loong.out
+
+.PHONY: all run-macos run-loong vm-riscv clean

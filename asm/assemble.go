@@ -13,6 +13,7 @@ package asm
 
 import (
 	"bytes"
+	"cmp"
 	"encoding/binary"
 	"errors"
 	"fmt"
@@ -54,7 +55,13 @@ func Assemble(src string, base uint64, be Syntax) (*Result, []AsmError) {
 	// literal pools: slot values go to the tails of subsections
 	a.emitPoolRecords()
 
-	res := NewResult(map[string]uint64{}, a.globals)
+	// the walk appends in source order, but subsections concatenate by
+	// number: the line map is sorted into the final address order
+	slices.SortFunc(a.lines, func(x, y LineEntry) int {
+		return cmp.Compare(x.Addr, y.Addr)
+	})
+
+	res := NewResult(map[string]uint64{}, a.globals, a.lines)
 	for i, s := range a.secs {
 		data := s.concat()
 		if len(data) == 0 && (!s.nobits || s.secSize() == 0) {
@@ -208,6 +215,7 @@ type assembler struct {
 	sets      map[string]*expr.Expr
 	globals   []string
 	errs      []AsmError
+	lines     []LineEntry // the line map (pass 2, final addresses)
 	base      uint64
 	incbins   map[string][]byte       // .incbin cache: both passes read the same bytes
 	pools     map[*subBuf][]poolEntry // literal pools of subsections (order of appearance)
@@ -627,6 +635,11 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 	if !ok {
 		return // the final layout walk could not size it (error already recorded)
 	}
+
+	// the line map: this is the only place where the final address, the
+	// reserved size, and the source position of one statement meet (the
+	// best-effort zeros below keep their entry - the map stays complete)
+	a.lines = append(a.lines, NewLineEntry(addr, size, st.pos.Line()+1))
 
 	var buf bytes.Buffer
 	res, rerr := st.instr.Resolve(newCtx(addr, resolve))

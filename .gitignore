@@ -5,6 +5,11 @@
 # project-local tools (golangci-lint via make lint/bin/golangci-lint)
 /bin/
 
+# editor debug configs (launch.json drives the assembly-debug DAP adapter
+# over the test fixtures — local convenience, not repo content)
+.vscode/
+.zed/
+
 # compiled binaries
 /assembly
 /assembly-server
