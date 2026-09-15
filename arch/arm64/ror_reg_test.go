@@ -16,6 +16,8 @@ func TestRorRegBuild(t *testing.T) {
 	}{
 		{"ror x0,x1,x2", "x0", "x1", "x2", 0x9ac22c20},
 		{"ror x3,xzr,x4", "x3", "xzr", "x4", 0x9ac42fe3},
+		{"ror w1,w2,w3", "w1", "w2", "w3", 0x1ac32c41},
+		{"ror w0,wzr,w4", "w0", "wzr", "w4", 0x1ac42fe0},
 	}
 	for _, c := range cases {
 		in, err := New().RorReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))
@@ -35,7 +37,6 @@ func TestRorRegBuild(t *testing.T) {
 		rn   string
 		rm   string
 	}{
-		{"ror w form", "w0", "w1", "w2"},
 		{"ror w,rn", "x0", "w1", "x2"},
 		{"ror w,rm", "x0", "x1", "w2"},
 	}

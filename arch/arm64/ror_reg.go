@@ -22,9 +22,11 @@ func newRorReg(b base, rd Reg, rn Reg, rm Reg) (RorReg, error) {
 		rd,
 		"RorReg",
 		"rd",
-		"only x registers (X/XZR)",
+		"register 31 reads as zr — use XZR/WZR",
 		classX,
+		classW,
 		classXZR,
+		classWZR,
 	)
 
 	if err != nil {
@@ -35,9 +37,11 @@ func newRorReg(b base, rd Reg, rn Reg, rm Reg) (RorReg, error) {
 		rn,
 		"RorReg",
 		"rn",
-		"only x registers (X/XZR)",
+		"register 31 reads as zr — use XZR/WZR",
 		classX,
+		classW,
 		classXZR,
+		classWZR,
 	)
 
 	if err != nil {
@@ -48,9 +52,22 @@ func newRorReg(b base, rd Reg, rn Reg, rm Reg) (RorReg, error) {
 		rm,
 		"RorReg",
 		"rm",
-		"only x registers (X/XZR)",
+		"register 31 reads as zr — use XZR/WZR",
 		classX,
+		classW,
 		classXZR,
+		classWZR,
+	)
+
+	if err != nil {
+		return RorReg{}, err
+	}
+
+	err = requireWidth(
+		"RorReg",
+		rd,
+		rn,
+		rm,
 	)
 
 	if err != nil {
@@ -72,7 +89,7 @@ func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
 }
 
 func (i RorReg) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, RorRegX, 0)
+	match, err := sfMatch(i.rd, RorRegX, 0x1AC02C00)
 	if err != nil {
 		return 0, fmt.Errorf("ror: %w", err)
 	}

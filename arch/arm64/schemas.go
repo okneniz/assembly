@@ -563,6 +563,11 @@ var arm64Schemas = []Schema{
 		NewField("Rn", 5, 5, "regW"),
 		NewField("Rm", 16, 5, "regW"),
 	}, NewMeta("asr", "Data processing - 2 source"), "op3", true, decodeAsrReg),
+	NewSchema(0xFFE0FC00, 0x1AC02C00, []Field{
+		NewField("Rd", 0, 5, "regW"),
+		NewField("Rn", 5, 5, "regW"),
+		NewField("Rm", 16, 5, "regW"),
+	}, NewMeta("ror", "Data processing - 2 source"), "op3", true, decodeRorReg),
 	NewSchema(0xFF800000, 0x92000000, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
