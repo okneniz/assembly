@@ -30,10 +30,9 @@ func (fakeTarget) Disasm(code []byte, addr uint64) []string {
 	return []string{fmt.Sprintf("%x: % x", addr, code)}
 }
 func (fakeTarget) Registers() []debug.Reg {
-	return []debug.Reg{
-		debug.NewReg("r0", 0, 64),
-		debug.NewReg("pc", 1, 64),
-	}
+	r0, _ := debug.NewReg("r0", 0, 64)
+	pc, _ := debug.NewReg("pc", 1, 64)
+	return []debug.Reg{r0, pc}
 }
 
 // dialogStep is one expected request with its reply (the rsp fake

@@ -64,19 +64,30 @@ func (Target) QemuArgs(imgPath string) []string {
 	}
 }
 
+// mustReg - the pre-minting helper: the names/numbers/widths are
+// constants, the constructor error is unreachable.
+func mustReg(name string, num, bits int) debug.Reg {
+	r, err := debug.NewReg(name, num, bits)
+	if err != nil {
+		panic(err) // unreachable: the inputs are constants
+	}
+
+	return r
+}
+
 // Registers is the ordered core register set: $r0-$r31, orig_a0, pc
 // (orig_a0 is part of the stub layout - it keeps the block offsets
 // aligned even though the display barely needs it).
 func (Target) Registers() []debug.Reg {
 	regs := make([]debug.Reg, 0, 34)
 	for i := range 32 {
-		regs = append(regs, debug.NewReg(fmt.Sprintf("$r%d", i), i, 64))
+		regs = append(regs, mustReg(fmt.Sprintf("$r%d", i), i, 64))
 	}
 
 	return append(
 		regs,
-		debug.NewReg("orig_a0", origA0, 64),
-		debug.NewReg("pc", pcNum, 64),
+		mustReg("orig_a0", origA0, 64),
+		mustReg("pc", pcNum, 64),
 	)
 }
 

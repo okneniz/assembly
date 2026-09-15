@@ -7,16 +7,15 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
-	"github.com/okneniz/assembly/debug"
 )
 
 func TestRegisters(t *testing.T) {
 	regs := NewTarget().Registers()
 	require.Len(t, regs, 34)
-	require.Equal(t, debug.NewReg("$r0", 0, 64), regs[0])
-	require.Equal(t, debug.NewReg("$r31", 31, 64), regs[31])
-	require.Equal(t, debug.NewReg("orig_a0", 32, 64), regs[32])
-	require.Equal(t, debug.NewReg("pc", 33, 64), regs[33])
+	require.Equal(t, mustReg("$r0", 0, 64), regs[0])
+	require.Equal(t, mustReg("$r31", 31, 64), regs[31])
+	require.Equal(t, mustReg("orig_a0", 32, 64), regs[32])
+	require.Equal(t, mustReg("pc", 33, 64), regs[33])
 }
 
 func TestNums(t *testing.T) {

@@ -14,20 +14,31 @@ const (
 	cpsrNum = 33
 )
 
+// mustReg - the pre-minting helper: the names/numbers/widths are
+// constants, the constructor error is unreachable.
+func mustReg(name string, num, bits int) debug.Reg {
+	r, err := debug.NewReg(name, num, bits)
+	if err != nil {
+		panic(err) // unreachable: the inputs are constants
+	}
+
+	return r
+}
+
 // Registers is the ordered core register set of the 'g' block prefix:
 // x0-x30, sp, pc, cpsr. The vector registers of the full block are not
 // described - the display shows the core set.
 func (Target) Registers() []debug.Reg {
 	regs := make([]debug.Reg, 0, 34)
 	for i := range 31 {
-		regs = append(regs, debug.NewReg(fmt.Sprintf("x%d", i), i, 64))
+		regs = append(regs, mustReg(fmt.Sprintf("x%d", i), i, 64))
 	}
 
 	regs = append(
 		regs,
-		debug.NewReg("sp", spNum, 64),
-		debug.NewReg("pc", pcNum, 64),
-		debug.NewReg("cpsr", cpsrNum, 32),
+		mustReg("sp", spNum, 64),
+		mustReg("pc", pcNum, 64),
+		mustReg("cpsr", cpsrNum, 32),
 	)
 
 	return regs

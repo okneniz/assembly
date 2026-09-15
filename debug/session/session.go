@@ -111,7 +111,7 @@ func (s *Session) Regs() ([]RegValue, error) {
 	out := make([]RegValue, 0, 16)
 	off := 0
 	for _, r := range s.tgt.Registers() {
-		if r.Bits > 64 {
+		if r.Width() > 8 {
 			continue // vector registers: outside the display
 		}
 
@@ -124,7 +124,7 @@ func (s *Session) Regs() ([]RegValue, error) {
 			v |= uint64(block[off+i]) << (8 * i)
 		}
 
-		out = append(out, NewRegValue(r.Name, v))
+		out = append(out, NewRegValue(r.Name(), v))
 		off += r.Width()
 	}
 

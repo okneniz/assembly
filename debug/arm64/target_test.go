@@ -4,8 +4,6 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/debug"
 )
 
 func TestRegisters(t *testing.T) {
@@ -14,11 +12,11 @@ func TestRegisters(t *testing.T) {
 
 	// the 'g' block prefix: x0-x30, sp, pc, cpsr - the numbers are the
 	// RSP register numbers, the order is the block order
-	require.Equal(t, debug.NewReg("x0", 0, 64), regs[0])
-	require.Equal(t, debug.NewReg("x30", 30, 64), regs[30])
-	require.Equal(t, debug.NewReg("sp", 31, 64), regs[31])
-	require.Equal(t, debug.NewReg("pc", 32, 64), regs[32])
-	require.Equal(t, debug.NewReg("cpsr", 33, 32), regs[33])
+	require.Equal(t, mustReg("x0", 0, 64), regs[0])
+	require.Equal(t, mustReg("x30", 30, 64), regs[30])
+	require.Equal(t, mustReg("sp", 31, 64), regs[31])
+	require.Equal(t, mustReg("pc", 32, 64), regs[32])
+	require.Equal(t, mustReg("cpsr", 33, 32), regs[33])
 }
 
 func TestNums(t *testing.T) {

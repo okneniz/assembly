@@ -59,15 +59,26 @@ func (Target) QemuArgs(imgPath string) []string {
 	}
 }
 
+// mustReg - the pre-minting helper: the names/numbers/widths are
+// constants, the constructor error is unreachable.
+func mustReg(name string, num, bits int) debug.Reg {
+	r, err := debug.NewReg(name, num, bits)
+	if err != nil {
+		panic(err) // unreachable: the inputs are constants
+	}
+
+	return r
+}
+
 // Registers is the ordered core register set: x0-x31, pc (the plain
 // stub names - the ABI aliases live in the listing, not the dump).
 func (Target) Registers() []debug.Reg {
 	regs := make([]debug.Reg, 0, 33)
 	for i := range 32 {
-		regs = append(regs, debug.NewReg(fmt.Sprintf("x%d", i), i, 64))
+		regs = append(regs, mustReg(fmt.Sprintf("x%d", i), i, 64))
 	}
 
-	return append(regs, debug.NewReg("pc", pcNum, 64))
+	return append(regs, mustReg("pc", pcNum, 64))
 }
 
 // Disasm - the listing lines of the buffer at addr through the riscv
