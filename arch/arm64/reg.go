@@ -154,6 +154,11 @@ var (
 	WSP = newReg(31, classWSP)
 )
 
+// Num — the register number (0..30; the named 31st registers are 31).
+func (r Reg) Num() uint8 {
+	return r.num
+}
+
 // Is64 — width of the class.
 func (r Reg) Is64() bool {
 	return r.class == classX || r.class == classXZR || r.class == classSP

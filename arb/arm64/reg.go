@@ -10,7 +10,6 @@ import (
 	"iter"
 	"math/rand/v2"
 	"slices"
-	"strconv"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
@@ -106,7 +105,7 @@ func regShrunk(r arm64.Reg) []arm64.Reg {
 		out = append(out, zero)
 	}
 
-	if n, ok := plainRegNum(r); ok && n > 1 {
+	if n := int(r.Num()); n > 1 && n <= 30 {
 		var half arm64.Reg
 		if r.Is64() {
 			half = xreg(n / 2)
@@ -118,19 +117,4 @@ func regShrunk(r arm64.Reg) []arm64.Reg {
 	}
 
 	return out
-}
-
-// plainRegNum — the number of a plain register (x#/w#); not for named ones.
-func plainRegNum(r arm64.Reg) (int, bool) {
-	s := r.String()
-	if len(s) < 2 || (s[0] != 'x' && s[0] != 'w') {
-		return 0, false
-	}
-
-	n, err := strconv.Atoi(s[1:])
-	if err != nil {
-		return 0, false
-	}
-
-	return n, true
 }
