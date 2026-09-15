@@ -78,13 +78,6 @@ func (p *Program) Bytes(b ...byte) *Program {
 	return p
 }
 
-// Instr - append an already computed instruction (the escape hatch when
-// no chain twin exists yet).
-func (p *Program) Instr(i arch.Instr, src string) *Program {
-	p.lines = append(p.lines, newInstrLine(i, src, p.pos()))
-	return p
-}
-
 // --- label-directed lines -------------------------------------------------------
 
 // J - unconditional jump to a label (jal zero - prints as j).
