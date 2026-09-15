@@ -14,8 +14,8 @@ func TestLslRegBuild(t *testing.T) {
 		rm   string
 		word uint32
 	}{
-		{"lsl x1,x2,x3", "x1", "x2", "x3", 0x9a032041},
-		{"lsl w1,w2,w3", "w1", "w2", "w3", 0x1a032041},
+		{"lsl x1,x2,x3", "x1", "x2", "x3", 0x9ac32041},
+		{"lsl w1,w2,w3", "w1", "w2", "w3", 0x1ac32041},
 	}
 	for _, c := range cases {
 		in, err := New().LslReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))

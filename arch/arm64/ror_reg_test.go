@@ -14,8 +14,8 @@ func TestRorRegBuild(t *testing.T) {
 		rm   string
 		word uint32
 	}{
-		{"ror x0,x1,x2", "x0", "x1", "x2", 0x9a022c20},
-		{"ror x3,xzr,x4", "x3", "xzr", "x4", 0x9a042fe3},
+		{"ror x0,x1,x2", "x0", "x1", "x2", 0x9ac22c20},
+		{"ror x3,xzr,x4", "x3", "xzr", "x4", 0x9ac42fe3},
 	}
 	for _, c := range cases {
 		in, err := New().RorReg(reg(t, c.rd), reg(t, c.rn), reg(t, c.rm))

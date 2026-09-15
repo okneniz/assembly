@@ -65,7 +65,7 @@ func newRorReg(b base, rd Reg, rn Reg, rm Reg) (RorReg, error) {
 	}, nil
 }
 
-const RorRegX uint32 = 0x9A002C00
+const RorRegX uint32 = 0x9AC02C00
 
 func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)

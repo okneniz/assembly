@@ -82,14 +82,14 @@ func newLsrReg(b base, rd Reg, rn Reg, rm Reg) (LsrReg, error) {
 	}, nil
 }
 
-const LsrRegX uint32 = 0x9A002400
+const LsrRegX uint32 = 0x9AC02400
 
 func (i LsrReg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lsr %s, %s, %s", i.rd, i.rn, i.rm)
 }
 
 func (i LsrReg) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, LsrRegX, 0x1A002400)
+	match, err := sfMatch(i.rd, LsrRegX, 0x1AC02400)
 	if err != nil {
 		return 0, fmt.Errorf("lsr: %w", err)
 	}

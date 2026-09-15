@@ -528,37 +528,37 @@ var arm64Schemas = []Schema{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "regW"),
 	}, NewMeta("cls", "Data processing - 1 source"), "op2", true, decodeCls),
-	NewSchema(0xFF20FC00, 0x9A002000, []Field{
+	NewSchema(0xFFE0FC00, 0x9AC02000, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
 		NewField("Rm", 16, 5, "regX"),
 	}, NewMeta("lsl", "Data processing - 2 source"), "op3", true, decodeLslReg),
-	NewSchema(0xFF20FC00, 0x9A002400, []Field{
+	NewSchema(0xFFE0FC00, 0x9AC02400, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
 		NewField("Rm", 16, 5, "regX"),
 	}, NewMeta("lsr", "Data processing - 2 source"), "op3", true, decodeLsrReg),
-	NewSchema(0xFF20FC00, 0x9A002800, []Field{
+	NewSchema(0xFFE0FC00, 0x9AC02800, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
 		NewField("Rm", 16, 5, "regX"),
 	}, NewMeta("asr", "Data processing - 2 source"), "op3", true, decodeAsrReg),
-	NewSchema(0xFF20FC00, 0x9A002C00, []Field{
+	NewSchema(0xFFE0FC00, 0x9AC02C00, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
 		NewField("Rm", 16, 5, "regX"),
 	}, NewMeta("ror", "Data processing - 2 source"), "op3", true, decodeRorReg),
-	NewSchema(0xFF20FC00, 0x1A002000, []Field{
+	NewSchema(0xFFE0FC00, 0x1AC02000, []Field{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "regW"),
 		NewField("Rm", 16, 5, "regW"),
 	}, NewMeta("lsl", "Data processing - 2 source"), "op3", true, decodeLslReg),
-	NewSchema(0xFF20FC00, 0x1A002400, []Field{
+	NewSchema(0xFFE0FC00, 0x1AC02400, []Field{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "regW"),
 		NewField("Rm", 16, 5, "regW"),
 	}, NewMeta("lsr", "Data processing - 2 source"), "op3", true, decodeLsrReg),
-	NewSchema(0xFF20FC00, 0x1A002800, []Field{
+	NewSchema(0xFFE0FC00, 0x1AC02800, []Field{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "regW"),
 		NewField("Rm", 16, 5, "regW"),
