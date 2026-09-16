@@ -9,6 +9,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	arch "github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/arm64/alias"
 	lpseudo "github.com/okneniz/assembly/asm/loong64/pseudo"
@@ -238,7 +239,7 @@ func TestDebugProgArm64(t *testing.T) {
 	p := aprog.New().
 		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 42) }).
 		Label("start").
-		Mov(aprog.X0, 0x41).
+		Movz(aprog.X0, 0x41, arch.Hw0).
 		WithPos(callerPos).
 		Label("loop").
 		B("loop").
@@ -315,7 +316,7 @@ func TestDebugProgRiscv(t *testing.T) {
 		Addi(rprog.A0, rprog.Zero, 0x41).
 		WithPos(callerPos).
 		Label("loop").
-		J("loop").
+		Jal(rprog.Zero, "loop").
 		Entry("start")
 
 	bin, buildErrs := p.Build()

@@ -67,7 +67,7 @@ func main() {
 		Lb(prog.A5, prog.A1, 0).
 		Sb(prog.A5, prog.A0, 0).
 		Addi(prog.A1, prog.A1, 1).
-		J("loop").
+		Jal(prog.Zero, "loop").
 		Label("done").
 		Lui(prog.A5, finisher>>12).
 		Lui(prog.A6, finishPass>>12).
@@ -76,7 +76,7 @@ func main() {
 		// the safety idle loop: reached only when the finisher write
 		// does not power the machine off.
 		Label("hang").
-		J("hang").
+		Jal(prog.Zero, "hang").
 		Label("msg").
 		Ascii(msg).
 		Label("end").

@@ -34,7 +34,7 @@ func helloRiscv() *Program {
 		Lb(A5, A1, 0).        // the string byte
 		Sb(A5, A0, 0).        // → UART
 		Addi(A1, A1, 1).
-		J("loop").
+		Jal(Zero, "loop").
 		// done: a5 = the sifive_test device; 0x5555 (FINISHER_PASS)
 		// powers the machine off.
 		Label("done").
@@ -43,7 +43,7 @@ func helloRiscv() *Program {
 		Addi(A6, A6, 0x555).
 		Sw(A6, A5, 0).
 		Label("hang").
-		J("hang").
+		Jal(Zero, "hang").
 		Label("msg").
 		Ascii("hello world\n").
 		Label("end").
@@ -76,7 +76,7 @@ func TestAssembleRiscvGolden(t *testing.T) {
 
 func TestAssembleRiscvErrors(t *testing.T) {
 	// undefined branch target
-	bin, _ := New().J("nowhere").Build()
+	bin, _ := New().Jal(Zero, "nowhere").Build()
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "nowhere")
@@ -117,12 +117,12 @@ func TestLineMap(t *testing.T) {
 }
 
 func TestTwins(t *testing.T) {
-	// jal/bnez/ecall: three fixed 4-byte lines, no compression (ecall
+	// jal/bne/ecall: three fixed 4-byte lines, no compression (ecall
 	// is the word 0x00000073)
 	bin, buildErrs := New().
 		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 1) }).
 		Jal(Ra, "f").
-		Bnez(T0, "f").
+		Bne(T0, Zero, "f").
 		Ecall().
 		Label("f").
 		Entry("f").

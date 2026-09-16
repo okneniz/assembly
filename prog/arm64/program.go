@@ -125,6 +125,25 @@ func (p *Program) Adr(rd arch.Reg, label string) *Program {
 	}, pos)
 }
 
+// Adrp - load the 4KB page address of a label into the register
+// (pc-relative; the offset is the page count between the instruction's
+// page and the target's page).
+func (p *Program) Adrp(rd arch.Reg, label string) *Program {
+	pos := p.pos()
+	return p.branchLine("adrp", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Adrp(rd, (int64(t)&^0xFFF-int64(pc)&^0xFFF)>>12)
+	}, pos)
+}
+
+// Tbz - test a bit and branch to a label when it is zero (the register
+// width is dictated by the bit number: 32..63 need an x register).
+func (p *Program) Tbz(rt arch.Reg, bit uint32, label string) *Program {
+	pos := p.pos()
+	return p.branchLine("tbz", label, func(t, pc uint64) (arch.Instr, error) {
+		return p.b.Tbz(rt, bit, int64(t)-int64(pc))
+	}, pos)
+}
+
 // --- instruction chain twins ----------------------------------------------------
 
 // Movz - movz rd, #imm[, lsl #hw*16].
@@ -151,17 +170,16 @@ func (p *Program) Movk(rd arch.Reg, imm int64, hw arch.Hw) *Program {
 	return p.instrLine("movk", i, err, pos)
 }
 
-// Mov - mov rd, #imm (the assembler's immediate form: movz; values wider
-// than 16 bits come from Movz/Movk pairs - see the syscall constants).
-func (p *Program) Mov(rd arch.Reg, imm int64) *Program {
+// Movn - movn rd, #imm[, lsl #hw*16] (movz's negative-immediate twin).
+func (p *Program) Movn(rd arch.Reg, imm int64, hw arch.Hw) *Program {
 	pos := p.pos()
 	v, err := p.b.Imm16(imm)
 	if err != nil {
-		return p.fail("mov", err)
+		return p.fail("movn", err)
 	}
 
-	i, err := p.b.Movz(rd, v, arch.Hw0)
-	return p.instrLine("mov", i, err, pos)
+	i, err := p.b.Movn(rd, v, hw)
+	return p.instrLine("movn", i, err, pos)
 }
 
 // Svc - svc #imm (the canonical Darwin trap immediate is 0x80).
@@ -173,6 +191,711 @@ func (p *Program) Svc(imm int64) *Program {
 	}
 
 	return p.instrLine("svc", p.b.Svc(v), nil, pos)
+}
+
+// --- arithmetic -----------------------------------------------------------------
+
+// Adc - adc rd, rn, rm (add with carry).
+func (p *Program) Adc(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Adc(rd, rn, rm)
+	return p.instrLine("adc", i, err, pos)
+}
+
+// AddImm - add rd, rn, #imm[, lsl #12].
+func (p *Program) AddImm(rd, rn arch.Reg, imm int64, sh arch.Sh12) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm12(imm)
+	if err != nil {
+		return p.fail("add", err)
+	}
+
+	i, err := p.b.AddImm(rd, rn, v, sh)
+	return p.instrLine("add", i, err, pos)
+}
+
+// AddShift - add rd, rn, rm[, shift #imm].
+func (p *Program) AddShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("add", err)
+	}
+
+	i, err := p.b.AddShift(rd, rn, rm, v, sh)
+	return p.instrLine("add", i, err, pos)
+}
+
+// AddExt - add rd, rn, rm[ext[#imm3]].
+func (p *Program) AddExt(rd, rn, rm arch.Reg, ext string, imm3 uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.AddExt(rd, rn, rm, ext, imm3)
+	return p.instrLine("add", i, err, pos)
+}
+
+// AddsImm - adds rd, rn, #imm[, lsl #12] (the flag-setting add).
+func (p *Program) AddsImm(rd, rn arch.Reg, imm int64, sh arch.Sh12) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm12(imm)
+	if err != nil {
+		return p.fail("adds", err)
+	}
+
+	i, err := p.b.AddsImm(rd, rn, v, sh)
+	return p.instrLine("adds", i, err, pos)
+}
+
+// AddsShift - adds rd, rn, rm[, shift #imm].
+func (p *Program) AddsShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("adds", err)
+	}
+
+	i, err := p.b.AddsShift(rd, rn, rm, v, sh)
+	return p.instrLine("adds", i, err, pos)
+}
+
+// AddsExt - adds rd, rn, rm[ext[#imm3]].
+func (p *Program) AddsExt(rd, rn, rm arch.Reg, ext string, imm3 uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.AddsExt(rd, rn, rm, ext, imm3)
+	return p.instrLine("adds", i, err, pos)
+}
+
+// SubImm - sub rd, rn, #imm[, lsl #12].
+func (p *Program) SubImm(rd, rn arch.Reg, imm int64, sh arch.Sh12) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm12(imm)
+	if err != nil {
+		return p.fail("sub", err)
+	}
+
+	i, err := p.b.SubImm(rd, rn, v, sh)
+	return p.instrLine("sub", i, err, pos)
+}
+
+// SubShift - sub rd, rn, rm[, shift #imm].
+func (p *Program) SubShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("sub", err)
+	}
+
+	i, err := p.b.SubShift(rd, rn, rm, v, sh)
+	return p.instrLine("sub", i, err, pos)
+}
+
+// SubExt - sub rd, rn, rm[ext[#imm3]].
+func (p *Program) SubExt(rd, rn, rm arch.Reg, ext string, imm3 uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SubExt(rd, rn, rm, ext, imm3)
+	return p.instrLine("sub", i, err, pos)
+}
+
+// SubsImm - subs rd, rn, #imm[, lsl #12] (the flag-setting sub).
+func (p *Program) SubsImm(rd, rn arch.Reg, imm int64, sh arch.Sh12) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm12(imm)
+	if err != nil {
+		return p.fail("subs", err)
+	}
+
+	i, err := p.b.SubsImm(rd, rn, v, sh)
+	return p.instrLine("subs", i, err, pos)
+}
+
+// SubsShift - subs rd, rn, rm[, shift #imm].
+func (p *Program) SubsShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("subs", err)
+	}
+
+	i, err := p.b.SubsShift(rd, rn, rm, v, sh)
+	return p.instrLine("subs", i, err, pos)
+}
+
+// SubsExt - subs rd, rn, rm[ext[#imm3]].
+func (p *Program) SubsExt(rd, rn, rm arch.Reg, ext string, imm3 uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SubsExt(rd, rn, rm, ext, imm3)
+	return p.instrLine("subs", i, err, pos)
+}
+
+// Madd - madd rd, rn, rm, ra (rd = ra + rn*rm).
+func (p *Program) Madd(rd, rn, rm, ra arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Madd(rd, rn, rm, ra)
+	return p.instrLine("madd", i, err, pos)
+}
+
+// Msub - msub rd, rn, rm, ra (rd = ra - rn*rm).
+func (p *Program) Msub(rd, rn, rm, ra arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Msub(rd, rn, rm, ra)
+	return p.instrLine("msub", i, err, pos)
+}
+
+// Sdiv - sdiv rd, rn, rm.
+func (p *Program) Sdiv(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Sdiv(rd, rn, rm)
+	return p.instrLine("sdiv", i, err, pos)
+}
+
+// Udiv - udiv rd, rn, rm.
+func (p *Program) Udiv(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Udiv(rd, rn, rm)
+	return p.instrLine("udiv", i, err, pos)
+}
+
+// Smulh - smulh rd, rn, rm (signed high 64 bits of the product).
+func (p *Program) Smulh(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Smulh(rd, rn, rm)
+	return p.instrLine("smulh", i, err, pos)
+}
+
+// Umulh - umulh rd, rn, rm (unsigned high 64 bits of the product).
+func (p *Program) Umulh(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Umulh(rd, rn, rm)
+	return p.instrLine("umulh", i, err, pos)
+}
+
+// --- logical / conditional ------------------------------------------------------
+
+// AndImm - and rd, rn, #imm (the bitmask immediate).
+func (p *Program) AndImm(rd, rn arch.Reg, imm uint64) *Program {
+	pos := p.pos()
+	i, err := p.b.AndImm(rd, rn, imm)
+	return p.instrLine("and", i, err, pos)
+}
+
+// AndShift - and rd, rn, rm[, shift #imm].
+func (p *Program) AndShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("and", err)
+	}
+
+	i, err := p.b.AndShift(rd, rn, rm, v, sh)
+	return p.instrLine("and", i, err, pos)
+}
+
+// AndsImm - ands rd, rn, #imm (the flag-setting and).
+func (p *Program) AndsImm(rd, rn arch.Reg, imm uint64) *Program {
+	pos := p.pos()
+	i, err := p.b.AndsImm(rd, rn, imm)
+	return p.instrLine("ands", i, err, pos)
+}
+
+// AndsShift - ands rd, rn, rm[, shift #imm].
+func (p *Program) AndsShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("ands", err)
+	}
+
+	i, err := p.b.AndsShift(rd, rn, rm, v, sh)
+	return p.instrLine("ands", i, err, pos)
+}
+
+// BicShift - bic rd, rn, rm[, shift #imm] (and-not).
+func (p *Program) BicShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("bic", err)
+	}
+
+	i, err := p.b.BicShift(rd, rn, rm, v, sh)
+	return p.instrLine("bic", i, err, pos)
+}
+
+// BicsShift - bics rd, rn, rm[, shift #imm] (the flag-setting bic).
+func (p *Program) BicsShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("bics", err)
+	}
+
+	i, err := p.b.BicsShift(rd, rn, rm, v, sh)
+	return p.instrLine("bics", i, err, pos)
+}
+
+// OrrImm - orr rd, rn, #imm (the bitmask immediate).
+func (p *Program) OrrImm(rd, rn arch.Reg, imm uint64) *Program {
+	pos := p.pos()
+	i, err := p.b.OrrImm(rd, rn, imm)
+	return p.instrLine("orr", i, err, pos)
+}
+
+// OrrShift - orr rd, rn, rm[, shift #imm].
+func (p *Program) OrrShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("orr", err)
+	}
+
+	i, err := p.b.OrrShift(rd, rn, rm, v, sh)
+	return p.instrLine("orr", i, err, pos)
+}
+
+// OrnShift - orn rd, rn, rm[, shift #imm] (or-not).
+func (p *Program) OrnShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("orn", err)
+	}
+
+	i, err := p.b.OrnShift(rd, rn, rm, v, sh)
+	return p.instrLine("orn", i, err, pos)
+}
+
+// EorImm - eor rd, rn, #imm (the bitmask immediate).
+func (p *Program) EorImm(rd, rn arch.Reg, imm uint64) *Program {
+	pos := p.pos()
+	i, err := p.b.EorImm(rd, rn, imm)
+	return p.instrLine("eor", i, err, pos)
+}
+
+// EorShift - eor rd, rn, rm[, shift #imm].
+func (p *Program) EorShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("eor", err)
+	}
+
+	i, err := p.b.EorShift(rd, rn, rm, v, sh)
+	return p.instrLine("eor", i, err, pos)
+}
+
+// EonShift - eon rd, rn, rm[, shift #imm] (eor-not).
+func (p *Program) EonShift(rd, rn, rm arch.Reg, imm int64, sh arch.Shift) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(imm)
+	if err != nil {
+		return p.fail("eon", err)
+	}
+
+	i, err := p.b.EonShift(rd, rn, rm, v, sh)
+	return p.instrLine("eon", i, err, pos)
+}
+
+// Ccmp - ccmp rn, rm, #nzcv, cond.
+func (p *Program) Ccmp(rn, rm arch.Reg, nzcv uint32, cond string) *Program {
+	pos := p.pos()
+	i, err := p.b.Ccmp(rn, rm, nzcv, cond)
+	return p.instrLine("ccmp", i, err, pos)
+}
+
+// Csel - csel rd, rn, rm, cond.
+func (p *Program) Csel(rd, rn, rm arch.Reg, cond string) *Program {
+	pos := p.pos()
+	i, err := p.b.Csel(rd, rn, rm, cond)
+	return p.instrLine("csel", i, err, pos)
+}
+
+// Csinc - csinc rd, rn, rm, cond.
+func (p *Program) Csinc(rd, rn, rm arch.Reg, cond string) *Program {
+	pos := p.pos()
+	i, err := p.b.Csinc(rd, rn, rm, cond)
+	return p.instrLine("csinc", i, err, pos)
+}
+
+// Csinv - csinv rd, rn, rm, cond.
+func (p *Program) Csinv(rd, rn, rm arch.Reg, cond string) *Program {
+	pos := p.pos()
+	i, err := p.b.Csinv(rd, rn, rm, cond)
+	return p.instrLine("csinv", i, err, pos)
+}
+
+// Csneg - csneg rd, rn, rm, cond.
+func (p *Program) Csneg(rd, rn, rm arch.Reg, cond string) *Program {
+	pos := p.pos()
+	i, err := p.b.Csneg(rd, rn, rm, cond)
+	return p.instrLine("csneg", i, err, pos)
+}
+
+// --- shifts / bitfield ----------------------------------------------------------
+
+// LslReg - lsl rd, rn, rm (the register shift form).
+func (p *Program) LslReg(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.LslReg(rd, rn, rm)
+	return p.instrLine("lsl", i, err, pos)
+}
+
+// LsrReg - lsr rd, rn, rm (the register shift form).
+func (p *Program) LsrReg(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.LsrReg(rd, rn, rm)
+	return p.instrLine("lsr", i, err, pos)
+}
+
+// AsrReg - asr rd, rn, rm (the register shift form).
+func (p *Program) AsrReg(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.AsrReg(rd, rn, rm)
+	return p.instrLine("asr", i, err, pos)
+}
+
+// RorReg - ror rd, rn, rm (the register shift form).
+func (p *Program) RorReg(rd, rn, rm arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.RorReg(rd, rn, rm)
+	return p.instrLine("ror", i, err, pos)
+}
+
+// Bfm - bfm rd, rn, #immr, #imms.
+func (p *Program) Bfm(rd, rn arch.Reg, immr, imms uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Bfm(rd, rn, immr, imms)
+	return p.instrLine("bfm", i, err, pos)
+}
+
+// Sbfm - sbfm rd, rn, #immr, #imms.
+func (p *Program) Sbfm(rd, rn arch.Reg, immr, imms uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Sbfm(rd, rn, immr, imms)
+	return p.instrLine("sbfm", i, err, pos)
+}
+
+// Ubfm - ubfm rd, rn, #immr, #imms.
+func (p *Program) Ubfm(rd, rn arch.Reg, immr, imms uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Ubfm(rd, rn, immr, imms)
+	return p.instrLine("ubfm", i, err, pos)
+}
+
+// Extr - extr rd, rn, rm, #lsb.
+func (p *Program) Extr(rd, rn, rm arch.Reg, lsb int64) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm6(lsb)
+	if err != nil {
+		return p.fail("extr", err)
+	}
+
+	i, err := p.b.Extr(rd, rn, rm, v)
+	return p.instrLine("extr", i, err, pos)
+}
+
+// Cls - cls rd, rn.
+func (p *Program) Cls(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Cls(rd, rn)
+	return p.instrLine("cls", i, err, pos)
+}
+
+// Clz - clz rd, rn.
+func (p *Program) Clz(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Clz(rd, rn)
+	return p.instrLine("clz", i, err, pos)
+}
+
+// Rbit - rbit rd, rn.
+func (p *Program) Rbit(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Rbit(rd, rn)
+	return p.instrLine("rbit", i, err, pos)
+}
+
+// Rev - rev rd, rn.
+func (p *Program) Rev(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Rev(rd, rn)
+	return p.instrLine("rev", i, err, pos)
+}
+
+// Rev16 - rev16 rd, rn.
+func (p *Program) Rev16(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Rev16(rd, rn)
+	return p.instrLine("rev16", i, err, pos)
+}
+
+// Rev32 - rev32 rd, rn.
+func (p *Program) Rev32(rd, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Rev32(rd, rn)
+	return p.instrLine("rev32", i, err, pos)
+}
+
+// --- control transfers ----------------------------------------------------------
+
+// Br - br rn (branch to register).
+func (p *Program) Br(rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Br(rn)
+	return p.instrLine("br", i, err, pos)
+}
+
+// Blr - blr rn (branch with link to register).
+func (p *Program) Blr(rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Blr(rn)
+	return p.instrLine("blr", i, err, pos)
+}
+
+// Ret - ret rn.
+func (p *Program) Ret(rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ret(rn)
+	return p.instrLine("ret", i, err, pos)
+}
+
+// --- loads ----------------------------------------------------------------------
+
+// Ldr - ldr rt, [rn, #off].
+func (p *Program) Ldr(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldr(rt, rn, arch.Off(off))
+	return p.instrLine("ldr", i, err, pos)
+}
+
+// Ldrb - ldrb rt, [rn, #off].
+func (p *Program) Ldrb(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldrb(rt, rn, arch.Off(off))
+	return p.instrLine("ldrb", i, err, pos)
+}
+
+// Ldrh - ldrh rt, [rn, #off].
+func (p *Program) Ldrh(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldrh(rt, rn, arch.Off(off))
+	return p.instrLine("ldrh", i, err, pos)
+}
+
+// Ldrsb - ldrsb rt, [rn, #off].
+func (p *Program) Ldrsb(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldrsb(rt, rn, arch.Off(off))
+	return p.instrLine("ldrsb", i, err, pos)
+}
+
+// Ldrsh - ldrsh rt, [rn, #off].
+func (p *Program) Ldrsh(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldrsh(rt, rn, arch.Off(off))
+	return p.instrLine("ldrsh", i, err, pos)
+}
+
+// Ldrsw - ldrsw rt, [rn, #off].
+func (p *Program) Ldrsw(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldrsw(rt, rn, arch.Off(off))
+	return p.instrLine("ldrsw", i, err, pos)
+}
+
+// Ldur - ldur rt, [rn, #off] (unscaled).
+func (p *Program) Ldur(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldur(rt, rn, arch.Off(off))
+	return p.instrLine("ldur", i, err, pos)
+}
+
+// Ldurb - ldurb rt, [rn, #off] (unscaled).
+func (p *Program) Ldurb(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldurb(rt, rn, arch.Off(off))
+	return p.instrLine("ldurb", i, err, pos)
+}
+
+// Ldurh - ldurh rt, [rn, #off] (unscaled).
+func (p *Program) Ldurh(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldurh(rt, rn, arch.Off(off))
+	return p.instrLine("ldurh", i, err, pos)
+}
+
+// Ldp - ldp rt, rt2, [rn, #off].
+func (p *Program) Ldp(rt, rt2, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldp(rt, rt2, rn, arch.Off(off))
+	return p.instrLine("ldp", i, err, pos)
+}
+
+// Ldpsw - ldpsw rt, rt2, [rn, #off].
+func (p *Program) Ldpsw(rt, rt2, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldpsw(rt, rt2, rn, arch.Off(off))
+	return p.instrLine("ldpsw", i, err, pos)
+}
+
+// --- stores ---------------------------------------------------------------------
+
+// Str - str rt, [rn, #off].
+func (p *Program) Str(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Str(rt, rn, arch.Off(off))
+	return p.instrLine("str", i, err, pos)
+}
+
+// Strb - strb rt, [rn, #off].
+func (p *Program) Strb(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Strb(rt, rn, arch.Off(off))
+	return p.instrLine("strb", i, err, pos)
+}
+
+// Strh - strh rt, [rn, #off].
+func (p *Program) Strh(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Strh(rt, rn, arch.Off(off))
+	return p.instrLine("strh", i, err, pos)
+}
+
+// Stur - stur rt, [rn, #off] (unscaled).
+func (p *Program) Stur(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Stur(rt, rn, arch.Off(off))
+	return p.instrLine("stur", i, err, pos)
+}
+
+// Sturb - sturb rt, [rn, #off] (unscaled).
+func (p *Program) Sturb(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Sturb(rt, rn, arch.Off(off))
+	return p.instrLine("sturb", i, err, pos)
+}
+
+// Sturh - sturh rt, [rn, #off] (unscaled).
+func (p *Program) Sturh(rt, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Sturh(rt, rn, arch.Off(off))
+	return p.instrLine("sturh", i, err, pos)
+}
+
+// Stp - stp rt, rt2, [rn, #off].
+func (p *Program) Stp(rt, rt2, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.Stp(rt, rt2, rn, arch.Off(off))
+	return p.instrLine("stp", i, err, pos)
+}
+
+// --- atomics --------------------------------------------------------------------
+
+// Ldar - ldar rt, [rn].
+func (p *Program) Ldar(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldar(rt, rn)
+	return p.instrLine("ldar", i, err, pos)
+}
+
+// Ldarb - ldarb rt, [rn].
+func (p *Program) Ldarb(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldarb(rt, rn)
+	return p.instrLine("ldarb", i, err, pos)
+}
+
+// Ldaxr - ldaxr rt, [rn].
+func (p *Program) Ldaxr(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldaxr(rt, rn)
+	return p.instrLine("ldaxr", i, err, pos)
+}
+
+// Ldaxrb - ldaxrb rt, [rn].
+func (p *Program) Ldaxrb(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ldaxrb(rt, rn)
+	return p.instrLine("ldaxrb", i, err, pos)
+}
+
+// Stlr - stlr rt, [rn].
+func (p *Program) Stlr(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Stlr(rt, rn)
+	return p.instrLine("stlr", i, err, pos)
+}
+
+// Stlrb - stlrb rt, [rn].
+func (p *Program) Stlrb(rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Stlrb(rt, rn)
+	return p.instrLine("stlrb", i, err, pos)
+}
+
+// Stlxr - stlxr rs, rt, [rn].
+func (p *Program) Stlxr(rs, rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Stlxr(rs, rt, rn)
+	return p.instrLine("stlxr", i, err, pos)
+}
+
+// Stlxrb - stlxrb rs, rt, [rn].
+func (p *Program) Stlxrb(rs, rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Stlxrb(rs, rt, rn)
+	return p.instrLine("stlxrb", i, err, pos)
+}
+
+// Stxrb - stxrb rs, rt, [rn].
+func (p *Program) Stxrb(rs, rt, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Stxrb(rs, rt, rn)
+	return p.instrLine("stxrb", i, err, pos)
+}
+
+// --- system ---------------------------------------------------------------------
+
+// Nop - nop.
+func (p *Program) Nop() *Program {
+	pos := p.pos()
+	return p.instrLine("nop", p.b.Nop(), nil, pos)
+}
+
+// Brk - brk #imm.
+func (p *Program) Brk(imm int64) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm16(imm)
+	if err != nil {
+		return p.fail("brk", err)
+	}
+
+	return p.instrLine("brk", p.b.Brk(v), nil, pos)
+}
+
+// Mrs - mrs rd, sysreg.
+func (p *Program) Mrs(rd arch.Reg, sysreg string) *Program {
+	pos := p.pos()
+	i, err := p.b.Mrs(rd, sysreg)
+	return p.instrLine("mrs", i, err, pos)
+}
+
+// Msr - msr sysreg, rt.
+func (p *Program) Msr(sysreg string, rt arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Msr(sysreg, rt)
+	return p.instrLine("msr", i, err, pos)
+}
+
+// Prfm - prfm [rn].
+func (p *Program) Prfm(rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Prfm(rn)
+	return p.instrLine("prfm", i, err, pos)
+}
+
+// Build - materialize the program; deferred construction errors are
+// returned alongside (an empty slice means the program is well-formed).
+func (p *Program) Build() (*Binary, []error) {
+	return &Binary{Entry: p.entry, lines: p.lines}, p.errs
 }
 
 // --- internals ---------------------------------------------------------------

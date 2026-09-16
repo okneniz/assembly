@@ -24,13 +24,13 @@ func helloMacOS() *Program {
 	return New().
 		WithPos(callerPos).
 		Label("start").
-		Mov(X0, fdStdout).                     // write(fd=stdout, ...)
+		Movz(X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
 		Adr(X1, "msg").                        // ... buf - the string address
-		Mov(X2, int64(len(msg))).              // ... len
+		Movz(X2, int64(len(msg)), arch.Hw0).   // ... len
 		Movz(X16, sysClassUnix>>16, arch.Hw1). // x16 = 0x2000000 | ...
 		Movk(X16, sysWrite, arch.Hw0).         // ... 0x4 = write
 		Svc(trapMach).
-		Mov(X0, 0). // exit(return code = 0)
+		Movz(X0, 0, arch.Hw0). // exit(return code = 0)
 		Movz(X16, sysClassUnix>>16, arch.Hw1).
 		Movk(X16, sysExit, arch.Hw0).
 		Svc(trapMach).
@@ -76,9 +76,9 @@ func TestAssembleLabels(t *testing.T) {
 	// backward branch loop: three instructions between the label and the b.
 	p := New().
 		Label("loop").
-		Mov(X0, 1).
-		Mov(X1, 2).
-		Mov(X2, 3).
+		Movz(X0, 1, arch.Hw0).
+		Movz(X1, 2, arch.Hw0).
+		Movz(X2, 3, arch.Hw0).
 		B("loop").
 		Entry("loop")
 
@@ -105,15 +105,15 @@ func TestAssembleErrors(t *testing.T) {
 	require.Contains(t, errs[0].Error(), "nowhere")
 
 	// undefined entry
-	entryBin, _ := New().Label("a").Mov(X0, 0).Entry("gone").Build()
+	entryBin, _ := New().Label("a").Movz(X0, 0, arch.Hw0).Entry("gone").Build()
 	entryErrs := entryBin.Assemble(0).Errs
 	require.Len(t, entryErrs, 1)
 	require.Contains(t, entryErrs[0].Error(), "gone")
 
 	// deferred immediate error surfaces at Build
-	_, buildErrs := New().Mov(X0, 1<<20).Build()
+	_, buildErrs := New().Movz(X0, 1<<20, arch.Hw0).Build()
 	require.Len(t, buildErrs, 1)
-	require.Contains(t, buildErrs[0].Error(), "mov")
+	require.Contains(t, buildErrs[0].Error(), "movz")
 }
 
 func TestLineMap(t *testing.T) {
@@ -122,8 +122,8 @@ func TestLineMap(t *testing.T) {
 	p := New().
 		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 7) }).
 		Label("start").
-		Mov(X0, 1).
-		Mov(X1, 2).
+		Movz(X0, 1, arch.Hw0).
+		Movz(X1, 2, arch.Hw0).
 		Ascii("ab").
 		Entry("start")
 
@@ -144,9 +144,9 @@ func TestWithPosSwap(t *testing.T) {
 	// file; the line is pinned loosely - it moves with edits)
 	bin, _ := New().
 		WithPos(func() prog.Pos { return prog.NewPos("macro.go", 1) }).
-		Mov(X0, 1).
+		Movz(X0, 1, arch.Hw0).
 		WithPos(callerPos).
-		Mov(X1, 2).
+		Movz(X1, 2, arch.Hw0).
 		Build()
 	res := bin.Assemble(0)
 	require.Empty(t, res.Errs)

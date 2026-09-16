@@ -146,7 +146,10 @@ unit suite (cat as the spawned child).
 | 09-10 | debugger: RSP client, qemu executor, session engine, line maps, assembly-debug REPL | 1 | 2,933 | 21 | 1 | — | — | — |
 | 09-10 | DAP adapter: debug/dap server, debug/load split, assembly-debug-dap, VSCode extension | 1 | 2,844 | 19 | 2 | — | — | — |
 | 09-11 | prog editor debugging: dap relay + NewImageLauncher, riscv example -debug mode, TestDapProg gate | 1 | 453 | 10 | 3 | — | — | — |
-| **total** | | **30** | **123,259** | **1,399** | **151** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-15 … 09-16 | prog/arm64 Builder parity: 88 chain twins, Mov pseudo deleted (the no-alias rule), reflect parity guard | 1 | +1,164 | 7 | 1 | — | — | — |
+| 09-16 | prog no-alias cleanup: riscv J/Bnez pseudos deleted (Bne twin added), chain-method guards for riscv+loong64 | 1 | +107 | 6 | — | — | — | — |
+| 09-16 | prog/riscv Builder parity: 98 chain twins (arith/logic/shifts/loads/stores/AMO/CSR/FP), two-way reflect guard | 1 | +1,286 | 4 | — | — | — | — |
+| **total** | | **31** | **125,816** | **1,416** | **152** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

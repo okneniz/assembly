@@ -43,13 +43,13 @@ func main() {
 	// *prog.Program.
 	p := prog.New().
 		Label("start").
-		Mov(prog.X0, fdStdout).                     // write(fd=stdout, ...)
+		Movz(prog.X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
 		Adr(prog.X1, "msg").                        // ... buf = the string
-		Mov(prog.X2, int64(len(msg))).              // ... len
+		Movz(prog.X2, int64(len(msg)), arch.Hw0).   // ... len
 		Movz(prog.X16, sysClassUnix>>16, arch.Hw1). // x16 = sysClassUnix | ...
 		Movk(prog.X16, sysWrite, arch.Hw0).         // ... sysWrite
 		Svc(trapMach).
-		Mov(prog.X0, 0). // exit(return code = 0)
+		Movz(prog.X0, 0, arch.Hw0). // exit(return code = 0)
 		Movz(prog.X16, sysClassUnix>>16, arch.Hw1).
 		Movk(prog.X16, sysExit, arch.Hw0).
 		Svc(trapMach).

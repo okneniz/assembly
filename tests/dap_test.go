@@ -12,6 +12,7 @@ import (
 
 	"github.com/stretchr/testify/require"
 
+	arch "github.com/okneniz/assembly/arch/arm64"
 	darm64 "github.com/okneniz/assembly/debug/arm64"
 	"github.com/okneniz/assembly/debug/dap"
 	"github.com/okneniz/assembly/debug/session"
@@ -306,7 +307,7 @@ func TestDapProg(t *testing.T) {
 	p := aprog.New().
 		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 42) }).
 		Label("start").
-		Mov(aprog.X0, 0x41).
+		Movz(aprog.X0, 0x41, arch.Hw0).
 		WithPos(callerPos).
 		Label("loop").
 		B("loop").

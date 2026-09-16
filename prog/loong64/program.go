@@ -195,6 +195,12 @@ func (p *Program) AddiW(rd, rj arch.Reg, imm int64) *Program {
 	return p.instrLine("addi.w", p.b.AddiW(rd, rj, v), nil, pos)
 }
 
+// Build - materialize the program; deferred construction errors are
+// returned alongside.
+func (p *Program) Build() (*Binary, []error) {
+	return &Binary{Entry: p.entry, lines: p.lines}, p.errs
+}
+
 // --- internals ---------------------------------------------------------------
 
 func (p *Program) instrLine(src string, i arch.Instr, _ error, pos prog.Pos) *Program {

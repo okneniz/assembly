@@ -15,12 +15,6 @@ type Binary struct {
 	lines []line
 }
 
-// Build - materialize the program; deferred construction errors are
-// returned alongside (an empty slice means the program is well-formed).
-func (p *Program) Build() (*Binary, []error) {
-	return &Binary{Entry: p.entry, lines: p.lines}, p.errs
-}
-
 // Assemble - encode the program at base: labels become absolute
 // addresses, label-directed lines receive their targets. Returns the
 // result: the code, the symbol table, the line map, and the assembly
