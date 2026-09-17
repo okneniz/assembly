@@ -9,6 +9,8 @@
 package arm64
 
 import (
+	"encoding/binary"
+	"errors"
 	"fmt"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
@@ -19,11 +21,12 @@ import (
 // label-directed branches, labels, data). Chain methods append one line
 // each and return the program; nothing is encoded until Assemble.
 type Program struct {
-	lines []line
-	entry string
-	errs  []error
-	pos   func() prog.Pos
-	b     arch.Builder
+	lines  []line
+	entry  string
+	errs   []error
+	pos    func() prog.Pos
+	b      arch.Builder
+	stream int // the emitting stream: 0 text (default), 1 data
 }
 
 // New - an empty program.
@@ -51,9 +54,9 @@ func (p *Program) WithPos(pos func() prog.Pos) *Program {
 	return p
 }
 
-// Label - define a label at the current position.
+// Label - define a label at the current position of the current stream.
 func (p *Program) Label(name string) *Program {
-	p.lines = append(p.lines, newLabelLine(name, p.pos()))
+	p.lines = append(p.lines, newLabelLine(name, p.stream, p.pos()))
 	return p
 }
 
@@ -63,15 +66,82 @@ func (p *Program) Entry(name string) *Program {
 	return p
 }
 
-// Ascii - string data appended verbatim (no terminating zero).
-func (p *Program) Ascii(s string) *Program {
-	p.lines = append(p.lines, newDataLine([]byte(s), ".ascii", p.pos()))
+// Text - emit into the text stream: the instructions and any read-only
+// data placed before the first Data() call live here.
+func (p *Program) Text() *Program {
+	p.stream = 0
 	return p
 }
 
-// Bytes - raw data bytes.
+// Data - emit into the data stream: the writable statics of the program.
+// The stream split only takes effect in AssembleLayout (the flat
+// Assemble rejects a program that has one).
+func (p *Program) Data() *Program {
+	p.stream = 1
+	return p
+}
+
+// Ascii - string data appended verbatim (no terminating zero), into the
+// current stream.
+func (p *Program) Ascii(s string) *Program {
+	p.lines = append(p.lines, newDataLine([]byte(s), ".ascii", p.stream, p.pos()))
+	return p
+}
+
+// Bytes - raw data bytes, into the current stream.
 func (p *Program) Bytes(b ...byte) *Program {
-	p.lines = append(p.lines, newDataLine(b, ".byte", p.pos()))
+	p.lines = append(p.lines, newDataLine(b, ".byte", p.stream, p.pos()))
+	return p
+}
+
+// Half - 16-bit little-endian values, into the current stream.
+func (p *Program) Half(vs ...uint16) *Program {
+	b := make([]byte, 2*len(vs))
+	for i, v := range vs {
+		binary.LittleEndian.PutUint16(b[2*i:], v)
+	}
+
+	p.lines = append(p.lines, newDataLine(b, ".half", p.stream, p.pos()))
+	return p
+}
+
+// Word - 32-bit little-endian values, into the current stream.
+func (p *Program) Word(vs ...uint32) *Program {
+	b := make([]byte, 4*len(vs))
+	for i, v := range vs {
+		binary.LittleEndian.PutUint32(b[4*i:], v)
+	}
+
+	p.lines = append(p.lines, newDataLine(b, ".word", p.stream, p.pos()))
+	return p
+}
+
+// Quad - 64-bit little-endian values, into the current stream.
+func (p *Program) Quad(vs ...uint64) *Program {
+	b := make([]byte, 8*len(vs))
+	for i, v := range vs {
+		binary.LittleEndian.PutUint64(b[8*i:], v)
+	}
+
+	p.lines = append(p.lines, newDataLine(b, ".quad", p.stream, p.pos()))
+	return p
+}
+
+// Bss - a zero-fill reserve of the data stream: memory the kernel zeroes,
+// no file bytes. Labels after it resolve past the reserved range.
+func (p *Program) Bss(reserve int) *Program {
+	pos := p.pos()
+	if p.stream != 1 {
+		return p.fail(".bss", errors.New(
+			"a bss reserve belongs to the data stream",
+		))
+	}
+
+	if reserve <= 0 {
+		return p.fail(".bss", fmt.Errorf("reserve %d is not positive", reserve))
+	}
+
+	p.lines = append(p.lines, newBssLine(reserve, pos))
 	return p
 }
 
@@ -133,6 +203,38 @@ func (p *Program) Adrp(rd arch.Reg, label string) *Program {
 	return p.branchLine("adrp", label, func(t, pc uint64) (arch.Instr, error) {
 		return p.b.Adrp(rd, (int64(t)&^0xFFF-int64(pc)&^0xFFF)>>12)
 	}, pos)
+}
+
+// La - load the address of a label into the register: the adrp+add pair
+// (a fixed 8 bytes; the page split is computed against the pair's own
+// address, the low 12 bits come from the target - the arm64 twin of the
+// riscv/loong64 La).
+func (p *Program) La(rd arch.Reg, label string) *Program {
+	pos := p.pos()
+	p.lines = append(p.lines, newLaLine(label, func(t, pc uint64) ([]arch.Instr, error) {
+		return laPair(p.b, rd, int64(t), int64(pc))
+	}, pos))
+	return p
+}
+
+// laPair - adrp rd, page; add rd, rd, :lo12:target.
+func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]arch.Instr, error) {
+	adrp, err := b.Adrp(rd, (target&^0xFFF-pc&^0xFFF)>>12)
+	if err != nil {
+		return nil, err
+	}
+
+	lo, err := b.Imm12(target & 0xFFF)
+	if err != nil {
+		return nil, err
+	}
+
+	add, err := b.AddImm(rd, rd, lo, arch.NoSh12)
+	if err != nil {
+		return nil, err
+	}
+
+	return []arch.Instr{adrp, add}, nil
 }
 
 // Tbz - test a bit and branch to a label when it is zero (the register
@@ -905,6 +1007,10 @@ func (p *Program) instrLine(src string, i arch.Instr, err error, pos prog.Pos) *
 		return p.fail(src, err)
 	}
 
+	if p.stream != 0 {
+		return p.fail(src, errors.New("an instruction in the data stream"))
+	}
+
 	p.lines = append(p.lines, newInstrLine(i, src, pos))
 	return p
 }
@@ -914,6 +1020,10 @@ func (p *Program) branchLine(
 	ctor func(target, pc uint64) (arch.Instr, error),
 	pos prog.Pos,
 ) *Program {
+	if p.stream != 0 {
+		return p.fail(src, errors.New("an instruction in the data stream"))
+	}
+
 	p.lines = append(p.lines, newBranchLine(src, label, ctor, pos))
 	return p
 }

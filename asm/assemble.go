@@ -29,6 +29,33 @@ import (
 // Returns the result and all accumulated errors (assembly continues past
 // line errors - best-effort, like objdump).
 func Assemble(src string, base uint64, be Syntax) (*Result, []AsmError) {
+	return assembleWith(src, base, be, nil)
+}
+
+// Layout is the injected section placement: given the section specs in
+// declaration order (full memory sizes, literal pools included), it
+// returns one base address per section. The file-format policies live
+// above this package - this core knows no formats; sections sit
+// consecutively from base when no layout is given (Assemble).
+type Layout func([]SectionSpec) ([]uint64, error)
+
+// AssembleLayout assembles the source with the section placement injected:
+// every label, pool slot, and instruction resolves against the policy's
+// addresses, so symbolic references across sections (adrp to a data
+// static over the page gap, say) encode correctly without the source
+// knowing the layout.
+func AssembleLayout(src string, be Syntax, layout Layout) (*Result, []AsmError) {
+	return assembleWith(src, 0, be, layout)
+}
+
+// assembleWith is the one assembler entry: base and an optional layout
+// policy (a nil layout places the sections consecutively from base).
+func assembleWith(
+	src string,
+	base uint64,
+	be Syntax,
+	layout Layout,
+) (*Result, []AsmError) {
 	a := newAssembler(
 		be,
 		map[string]labelRef{},
@@ -36,6 +63,7 @@ func Assemble(src string, base uint64, be Syntax) (*Result, []AsmError) {
 		map[string][]numLabelDef{},
 		base,
 	)
+	a.place = layout
 	a.switchSection(".text", 0)
 	stmts := parseSource([]rune(src), be)
 
@@ -220,6 +248,7 @@ type assembler struct {
 	incbins   map[string][]byte       // .incbin cache: both passes read the same bytes
 	pools     map[*subBuf][]poolEntry // literal pools of subsections (order of appearance)
 	poolAddr  map[string]uint64       // slot addresses (after finalizeLayout)
+	place     Layout                  // the injected section placement (nil: consecutive)
 
 	// relaxation state (walkLayout): the symbol table frozen from the
 	// previous layout iteration (nil during the first, placeholder walk)
@@ -334,35 +363,73 @@ func (a *assembler) walk(stmts []statement, pass2 bool) {
 // of each section get base offsets in ascending number order (GAS
 // concatenation: all subsections of a section are concatenated by number,
 // the write order within a subsection is preserved), the sections get
-// consecutive addresses from base without gaps. The walk is then repeated
-// with these addresses frozen (see walkLayout); when the sizes stabilize,
-// pass 2 encodes at exactly these FINAL addresses, and the encode length
-// check is the guard that the reservation matches.
+// consecutive addresses from base without gaps - or one base address each
+// from the injected layout policy, whose answers the literal-pool slots
+// and every pass-2 address then follow. The walk is then repeated with
+// these addresses frozen (see walkLayout); when the sizes stabilize, pass
+// 2 encodes at exactly these FINAL addresses, and the encode length check
+// is the guard that the reservation matches.
 func (a *assembler) finalizeLayout() {
-	a.secAddr = make([]uint64, len(a.secs))
+	totals := make([]int, len(a.secs))
+	secAddr := make([]uint64, len(a.secs))
 	next := a.base
 	for i, s := range a.secs {
-		a.secAddr[i] = next
+		secAddr[i] = next
 		base := 0
 		for _, sub := range s.sortedSubs() {
 			sub.base = base
 			base += sub.size
+			base += a.poolSlots(sub)
+		}
 
-			// the subsection pool is its tail (GAS: a separate pool per
-			// subsection); the slot addresses are for the pass 2 resolver
+		totals[i] = base
+		next = secAddr[i] + uint64(base)
+	}
+	if a.place != nil {
+		specs := make([]SectionSpec, len(a.secs))
+		for i := range a.secs {
+			specs[i] = NewSectionSpec(a.secs[i].name, totals[i], a.secs[i].nobits)
+		}
+
+		addrs, err := a.place(specs)
+		switch {
+		case err != nil:
+			a.errs = append(a.errs, NewAsmError(0, 0, err.Error()))
+		case len(addrs) != len(a.secs):
+			a.errs = append(a.errs, NewAsmError(0, 0,
+				"the layout policy answered for the wrong section count"))
+		default:
+			copy(secAddr, addrs)
+		}
+	}
+
+	// the pool slots ride the section tails; their addresses follow the
+	// final section addresses
+	for i := range a.secs {
+		base := 0
+		for _, sub := range a.secs[i].sortedSubs() {
+			base += sub.size
 			off := base
 			for _, e := range a.pools[sub] {
-				a.poolAddr[e.name] = a.secAddr[i] + uint64(off)
+				a.poolAddr[e.name] = secAddr[i] + uint64(off)
 				off += e.slot
 			}
 
 			base = off
 		}
-
-		if i+1 < len(a.secs) {
-			next += uint64(base)
-		}
 	}
+
+	a.secAddr = secAddr
+}
+
+// poolSlots - the literal-pool bytes appended to the subsection tail.
+func (a *assembler) poolSlots(sub *subBuf) int {
+	n := 0
+	for _, e := range a.pools[sub] {
+		n += e.slot
+	}
+
+	return n
 }
 
 // maxLayoutIterations bounds the layout relaxation: consecutive walks must
@@ -668,9 +735,17 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 // subsections, the pass 1 addresses may differ from the final ones (see
 // finalizeLayout) - the divergence is caught by the encoding length check.
 func (a *assembler) pass1Addr() uint64 {
-	addr := a.base
-	for i := range a.curIdx {
-		addr += uint64(a.secs[i].secSize())
+	// with an injected layout the section addresses come from the last
+	// finalizeLayout (they carry the policy's gaps); without one the
+	// sections sit consecutively from base
+	addr := uint64(0)
+	if a.place != nil && a.secAddr != nil {
+		addr = a.secAddr[a.curIdx]
+	} else {
+		addr = a.base
+		for i := range a.curIdx {
+			addr += uint64(a.secs[i].secSize())
+		}
 	}
 
 	for _, sub := range a.cur().sortedSubs() {

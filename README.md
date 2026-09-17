@@ -157,7 +157,8 @@ Three ISA backends, fully separated (no shared line between them):
 - **Disassembler** — ARM64, RISC-V (RV64GC + RVC), LoongArch; diffed against llvm-objdump on real binaries
 - **Assembler** — GNU-as compatible syntax; assembles back into the same bytes
 - **llvm-mc byte parity** — all five hello examples (arm64 macOS/Linux/VM, RISC-V, LoongArch) assemble into exactly the bytes llvm-mc chooses; gated in docker (`make tests`)
-- **Executable writer** — minimal ELF64 (Linux, qemu) and Mach-O (arm64 macOS, ad-hoc signed)
+- **Executable writer** — ELF64 (Linux, qemu) and Mach-O (arm64 macOS, ad-hoc signed)
+- **Universal Mach-O writer** — arbitrary sections and symbols, bss, generated linkedit tables; the assembler layers resolve labels against the writer's own placement
 - **Container parsers** — ELF and Mach-O, self-contained, no `debug/elf`/`debug/macho`
 - **Generated decode tables** — from the ARM A64 XML, Spike's `encoding.h`, loongarch-opcodes
 - **prog DSL** — Go-level machine code programming (chain methods = source lines)

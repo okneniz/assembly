@@ -149,7 +149,8 @@ unit suite (cat as the spawned child).
 | 09-15 … 09-16 | prog/arm64 Builder parity: 88 chain twins, Mov pseudo deleted (the no-alias rule), reflect parity guard | 1 | +1,164 | 7 | 1 | — | — | — |
 | 09-16 | prog no-alias cleanup: riscv J/Bnez pseudos deleted (Bne twin added), chain-method guards for riscv+loong64 | 1 | +107 | 6 | — | — | — | — |
 | 09-16 | prog/riscv Builder parity: 98 chain twins (arith/logic/shifts/loads/stores/AMO/CSR/FP), two-way reflect guard | 1 | +1,286 | 4 | — | — | — | — |
-| **total** | | **31** | **125,816** | **1,416** | **152** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-17 | universal Mach-O writer: arbitrary sections/symbols/bss with generated linkedit (byte-identical legacy), placement policies for prog and asm, streams+La in the DSL, symbolic adrp page fix | 1 | +2,856 | 25 | 1 | — | — | — |
+| **total** | | **32** | **128,672** | **1,429** | **153** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

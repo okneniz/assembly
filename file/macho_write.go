@@ -1,19 +1,24 @@
 package file
 
 // The Mach-O writer: a minimal arm64 MH_EXECUTE that macOS runs natively -
-// the Darwin counterpart of WriteELF. Beyond the segments (PAGEZERO, __TEXT
-// with one __text section, __LINKEDIT) the image carries the full set of
-// load commands ld emits: strict validation in AMFI/codesign (enforced for
-// arm64 main executables since macOS 13) rejects anything leaner - every
-// command of the reference set is mandatory, down to an empty chained-fixups
-// header and a one-function FUNCTION_STARTS table.
+// the Darwin counterpart of WriteELF. The universal entry is NewMachOImage
+// (arbitrary sections, symbols, a symbol entry point); WriteMachO is its
+// legacy text-only face, kept byte-identical by the golden test. Beyond
+// the segments (PAGEZERO, __TEXT with its sections, __DATA and custom
+// rw- segments when present, __LINKEDIT with generated tables) the image
+// carries the full set of load commands ld emits: strict validation in
+// AMFI/codesign (enforced for arm64 main executables since macOS 13)
+// rejects anything leaner - every command of the reference set is
+// mandatory, down to an empty chained-fixups header and a one-function
+// FUNCTION_STARTS table.
 //
 // The same validation requires an ad-hoc code signature embedded in the
 // file (LC_CODE_SIGNATURE + a CodeDirectory over the 4K pages of everything
 // before it), so the writer signs the image itself - the byte-identical
 // scheme codesign -s - produces (CD v0x20400, flags adhoc|linker-signed,
-// SHA-256). __TEXT is padded to whole 16K kernel pages: every mapped page
-// must be fully file-backed, or the kernel kills the process at exec.
+// SHA-256). Every mapped page is fully file-backed, or the kernel kills
+// the process at exec: segments are padded to whole 16K pages, and a NOBITS
+// reserve only ever trails file-backed data.
 
 import (
 	"crypto/sha256"
@@ -61,62 +66,16 @@ const (
 // base; pc-relative code runs at any base.
 const MachoTextBase = machoVMAddr
 
-// MachoCodeOff - the file offset the code starts at: right after the header
-// and the fixed command set (the commands themselves are size-constant, so
-// the offset never moves). Assemble position-independent code or account
-// for it in absolute operands.
+// MachoCodeOff - the file offset the code starts at in a WriteMachO image:
+// right after the header and the fixed command set (the commands of the
+// legacy shape are size-constant, so the offset never moves). Images with
+// data sections have more commands and a different offset - their geometry
+// lives inside MachOImage, and label references resolve through the
+// exported placement policies, never through this constant.
 const MachoCodeOff = 696
 
-// The __LINKEDIT tables: 176 constant bytes in the layout
-//
-//	chained fixups [0:56)   an empty header (no rebase/bind targets)
-//	exports trie   [56:104) __mh_execute_header and main
-//	function strts [104:112) the single entry function (the entry point)
-//	symbol table   [112:144) the same two symbols as nlist_64
-//	strings        [144:176)
-//
-// The template is extracted verbatim from a minimal ld-produced executable
-// (clang -c + ld -e _main, macOS 15) with the entry-dependent spots left as
-// the ULEB/value of the reference entry (696 = MachoCodeOff, so a program
-// entering at its first byte needs no patching at all); WriteMachO rewrites
-// those spots for other entry offsets. Reproducing the trie/nlist bytes by
-// hand is not worth it: the encoding is validated byte-for-byte by AMFI.
-const (
-	machoLinkeditSize  = 176
-	machoTrieEntryAt   = 71  // 2-byte ULEB inside the trie
-	machoFstartEntryAt = 104 // 2-byte ULEB of FUNCTION_STARTS
-	machoSymtabEntryAt = 136 // u64 nlist value of main
-	machoSymtabMHAt    = 120 // u64 nlist value of __mh_execute_header
-)
-
-var machoLinkedit = [machoLinkeditSize]byte{
-	0x00, 0x00, 0x00, 0x00, 0x20, 0x00, 0x00, 0x00,
-	0x30, 0x00, 0x00, 0x00, 0x30, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x00, 0x01, 0x5f, 0x00, 0x12, 0x00, 0x00, 0x00,
-	0x00, 0x02, 0x00, 0x00, 0x00, 0x03, 0x00, 0xb8,
-	0x05, 0x00, 0x00, 0x02, 0x5f, 0x6d, 0x68, 0x5f,
-	0x65, 0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x5f,
-	0x68, 0x65, 0x61, 0x64, 0x65, 0x72, 0x00, 0x09,
-	0x6d, 0x61, 0x69, 0x6e, 0x00, 0x0d, 0x00, 0x00,
-	0xb8, 0x05, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
-	0x02, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x10, 0x00,
-	0x00, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-	0x16, 0x00, 0x00, 0x00, 0x0f, 0x01, 0x00, 0x00,
-	0xb8, 0x02, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00,
-	0x20, 0x00, 0x5f, 0x5f, 0x6d, 0x68, 0x5f, 0x65,
-	0x78, 0x65, 0x63, 0x75, 0x74, 0x65, 0x5f, 0x68,
-	0x65, 0x61, 0x64, 0x65, 0x72, 0x00, 0x5f, 0x6d,
-	0x61, 0x69, 0x6e, 0x00, 0x00, 0x00, 0x00, 0x00,
-}
-
 // WriteMachO wraps an arm64 machine code blob into a MH_EXECUTE that macOS
-// (Apple Silicon and Intel Macs running arm64 binaries via Rosetta aside -
-// arm64 hosts) executes as-is: no linker, no codesign step. text is the raw
+// (arm64 hosts) executes as-is: no linker, no codesign step. text is the raw
 // program (the concatenation the assembler produces), entry the offset of
 // the first instruction inside text (0 for a program entering at its start).
 // The program sees argc/argv/envp in the C main registers but must not
@@ -134,253 +93,203 @@ func WriteMachO(text []byte, entry uint64) ([]byte, error) {
 		)
 	}
 
-	// The template holds the reference entry 696 as a 2-byte ULEB; a longer
-	// encoding would shift the trie (a patched value must stay < 8192).
-	entryAbs := uint64(MachoCodeOff) + entry
-	if entryAbs >= 8192 {
-		return nil, fmt.Errorf(
-			"macho: entry offset %#x does not fit the linkedit template",
-			entryAbs,
-		)
+	img, err := NewMachOImage(
+		[]MachOSection{{Segment: "__TEXT", Name: "__text", Data: text, Align: 4}},
+		[]MachOSym{{Name: "_main", Section: "__text", Off: entry, Global: true}},
+		"_main",
+	)
+	if err != nil {
+		return nil, err
 	}
 
-	// __TEXT: header + commands + code, padded to whole 16K pages.
-	textSize := MachoCodeOff + len(text)
-	if textSize%machoKPage == 0 {
-		textSize /= machoKPage
-	} else {
-		textSize = (textSize/machoKPage + 1) * machoKPage
-	}
+	return img.Bytes(), nil
+}
 
-	leOff := textSize
-	sigOff := leOff + machoLinkeditSize
-	sigLen := 12 + 8 + 88 + 9 + 32*((sigOff+machoHashPage-1)/machoHashPage)
-	leSize := machoLinkeditSize + sigLen
-
-	out := make([]byte, sigOff+sigLen)
-	le := binary.LittleEndian
+// emitMachO - the byte emitter: header, load commands, section data, the
+// linkedit tables, the signature. Everything is validated and placed, so
+// the emitter only serializes.
+func emitMachO(m *MachOImage) []byte {
+	p := &m.place
+	le := &m.le
+	out := make([]byte, le.sigOff+le.sigLen)
+	b := binary.LittleEndian
 
 	// mach_header_64.
-	le.PutUint32(out[0:], machoMagic64)
-	le.PutUint32(out[4:], machoCPUArm64)
-	le.PutUint32(out[8:], 0) // cpusubtype ARM64_ALL
-	le.PutUint32(out[12:], machoExecute)
-	le.PutUint32(out[16:], 16) // ncmds
-	le.PutUint32(out[20:], 664)
-	le.PutUint32(out[24:], machoFlags)
-	le.PutUint32(out[28:], 0)
+	b.PutUint32(out[0:], machoMagic64)
+	b.PutUint32(out[4:], machoCPUArm64)
+	b.PutUint32(out[8:], 0) // cpusubtype ARM64_ALL
+	b.PutUint32(out[12:], machoExecute)
+	b.PutUint32(out[16:], p.ncmds)
+	b.PutUint32(out[20:], p.cmdSize)
+	b.PutUint32(out[24:], machoFlags)
+	b.PutUint32(out[28:], 0)
 
 	pos := 32
 
 	// LC_SEGMENT_64 __PAGEZERO: the guard trap range at zero.
-	le.PutUint32(out[pos:], machoSegment64)
-	le.PutUint32(out[pos+4:], 72)
+	b.PutUint32(out[pos:], machoSegment64)
+	b.PutUint32(out[pos+4:], 72)
 	copy(out[pos+8:], "__PAGEZERO\x00\x00\x00\x00\x00\x00")
-	le.PutUint64(out[pos+32:], 0x100000000) // vmsize: the lower 4GB
+	b.PutUint64(out[pos+32:], 0x100000000) // vmsize: the lower 4GB
 	pos += 72
 
-	// LC_SEGMENT_64 __TEXT: the whole first pages, one __text section.
-	le.PutUint32(out[pos:], machoSegment64)
-	le.PutUint32(out[pos+4:], 152)
-	copy(out[pos+8:], "__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
-	le.PutUint64(out[pos+24:], machoVMAddr)
-	le.PutUint64(out[pos+32:], uint64(textSize))
-	le.PutUint64(out[pos+40:], 0)                // fileoff: the image from 0
-	le.PutUint64(out[pos+48:], uint64(textSize)) // filesize: every page file-backed
-	le.PutUint32(out[pos+56:], 7)                // maxprot rwx
-	le.PutUint32(out[pos+60:], 5)                // initprot r-x
-	le.PutUint32(out[pos+64:], 1)                // nsects
-	sec := out[pos+72:]
-	copy(sec, "__text\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
-	copy(sec[16:], "__TEXT\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00")
-	le.PutUint64(sec[32:], machoVMAddr+MachoCodeOff) // addr
-	le.PutUint64(sec[40:], uint64(len(text)))        // size
-	le.PutUint32(sec[48:], MachoCodeOff)             // offset
-	le.PutUint32(sec[52:], 2)                        // align: 2^2
-	le.PutUint32(sec[64:], 0x80000400)               // PURE_INSTRUCTIONS | SOME_INSTRUCTIONS
-	pos += 152
+	// LC_SEGMENT_64 per placement (__TEXT first, then the rw- ones), each
+	// with its sections.
+	for si := range p.segs {
+		seg := &p.segs[si]
 
-	// LC_SEGMENT_64 __LINKEDIT: the tables + the signature.
-	le.PutUint32(out[pos:], machoSegment64)
-	le.PutUint32(out[pos+4:], 72)
+		b.PutUint32(out[pos:], machoSegment64)
+		b.PutUint32(out[pos+4:], uint32(72+80*len(seg.sects)))
+		copy(out[pos+8:], seg.name) // the 16-byte name field is zero-padded
+		b.PutUint64(out[pos+24:], seg.vmaddr)
+		b.PutUint64(out[pos+32:], seg.vmsize)
+		b.PutUint64(out[pos+40:], seg.fileoff)
+		b.PutUint64(out[pos+48:], seg.filesize)
+		b.PutUint32(out[pos+56:], seg.maxprot)
+		b.PutUint32(out[pos+60:], seg.initprot)
+		b.PutUint32(out[pos+64:], uint32(len(seg.sects)))
+
+		sec := out[pos+72:]
+		for _, sp := range seg.sects {
+			s := &m.sections[sp.idx]
+
+			copy(sec, s.Name)
+			copy(sec[16:], seg.name)
+			b.PutUint64(sec[32:], sp.addr)
+			b.PutUint64(sec[40:], sp.size)
+			b.PutUint32(sec[48:], sp.offset)
+			b.PutUint32(sec[52:], sp.align)
+			b.PutUint32(sec[64:], machoSectFlags(seg.name, &sp))
+			sec = sec[80:]
+		}
+
+		pos += 72 + 80*len(seg.sects)
+	}
+
+	// LC_SEGMENT_64 __LINKEDIT: the tables + the signature. Its vmaddr is
+	// the memory continuation (a pure-bss segment before it has file
+	// bytes but still owns pages), its file offset the file continuation.
+	b.PutUint32(out[pos:], machoSegment64)
+	b.PutUint32(out[pos+4:], 72)
 	copy(out[pos+8:], "__LINKEDIT\x00\x00\x00\x00\x00\x00")
-	le.PutUint64(out[pos+24:], machoVMAddr+uint64(textSize))
-	le.PutUint64(out[pos+32:], uint64((leSize+machoKPage-1)&^(machoKPage-1)))
-	le.PutUint64(out[pos+40:], uint64(leOff))
-	le.PutUint64(out[pos+48:], uint64(leSize))
-	le.PutUint32(out[pos+56:], 1)
-	le.PutUint32(out[pos+60:], 1)
+	b.PutUint64(out[pos+24:], machoVMAddr+p.vmTotal)
+	b.PutUint64(out[pos+32:], roundMachoKPage(le.leSize))
+	b.PutUint64(out[pos+40:], le.leOff)
+	b.PutUint64(out[pos+48:], le.leSize)
+	b.PutUint32(out[pos+56:], 1)
+	b.PutUint32(out[pos+60:], 1)
 	pos += 72
 
-	lc16 := func(cmd uint32, a, b uint32) {
-		le.PutUint32(out[pos:], cmd)
-		le.PutUint32(out[pos+4:], 16)
-		le.PutUint32(out[pos+8:], a)
-		le.PutUint32(out[pos+12:], b)
+	// the fixed command set, in the reference file's order
+	lc16 := func(cmd uint32, a, b2 uint32) {
+		b.PutUint32(out[pos:], cmd)
+		b.PutUint32(out[pos+4:], 16)
+		b.PutUint32(out[pos+8:], a)
+		b.PutUint32(out[pos+12:], b2)
 		pos += 16
 	}
 
-	lc16(machoChainedFix, uint32(leOff), 56)     // empty fixups header
-	lc16(machoExportsTrie, uint32(leOff)+56, 48) // __mh_execute_header, main
+	trieLen := le.fstartAt - le.trieAt
+	fstartLen := le.symAt - le.fstartAt
 
-	// LC_SYMTAB: two symbols (the linkedit order is fixups, trie, fstarts,
-	// symtab, strings; the commands follow the reference file's order).
-	le.PutUint32(out[pos:], machoSymtab)
-	le.PutUint32(out[pos+4:], 24)
-	le.PutUint32(out[pos+8:], uint32(leOff)+112)  // symoff
-	le.PutUint32(out[pos+12:], 2)                 // nsyms
-	le.PutUint32(out[pos+16:], uint32(leOff)+144) // stroff
-	le.PutUint32(out[pos+20:], 32)                // strsize
+	lc16(machoChainedFix, uint32(le.leOff), 56)                  // empty fixups header
+	lc16(machoExportsTrie, uint32(le.leOff)+le.trieAt, trieLen)  // __mh_execute_header + globals
+
+	// LC_SYMTAB: __mh_execute_header plus the input symbols.
+	b.PutUint32(out[pos:], machoSymtab)
+	b.PutUint32(out[pos+4:], 24)
+	b.PutUint32(out[pos+8:], uint32(le.leOff)+le.symAt)
+	b.PutUint32(out[pos+12:], le.nsyms)
+	b.PutUint32(out[pos+16:], uint32(le.leOff)+le.strAt)
+	b.PutUint32(out[pos+20:], le.strSize)
 	pos += 24
 
 	// LC_DYLD_INFO_ONLY: every offset zero - nothing to rebase or bind.
-	le.PutUint32(out[pos:], machoDyldInfoOnly)
-	le.PutUint32(out[pos+4:], 80)
+	b.PutUint32(out[pos:], machoDyldInfoOnly)
+	b.PutUint32(out[pos+4:], 80)
 	pos += 80
 
 	// LC_LOAD_DYLINKER: macOS has no static executables; dyld calls the
 	// LC_MAIN entry. The binary loads libSystem (below) but never calls
 	// into it - the program talks to the kernel directly.
-	le.PutUint32(out[pos:], machoDylinker)
-	le.PutUint32(out[pos+4:], 32)
-	le.PutUint32(out[pos+8:], 12)
+	b.PutUint32(out[pos:], machoDylinker)
+	b.PutUint32(out[pos+4:], 32)
+	b.PutUint32(out[pos+8:], 12)
 	copy(out[pos+12:], "/usr/lib/dyld\x00")
 	pos += 32
 
-	// LC_UUID: derived from the code - stable for the same program.
-	le.PutUint32(out[pos:], machoUUID)
-	le.PutUint32(out[pos+4:], 24)
-	id := sha256.Sum256(text)
-	copy(out[pos+8:], id[:16])
+	// LC_UUID: derived from the section data - stable for the same program.
+	b.PutUint32(out[pos:], machoUUID)
+	b.PutUint32(out[pos+4:], 24)
+	id := sha256.New()
+	for i := range m.sections {
+		id.Write(m.sections[i].Data)
+	}
+	copy(out[pos+8:], id.Sum(nil)[:16])
 	pos += 24
 
 	// LC_BUILD_VERSION: platform macos, the reference minos, ld as the tool.
-	le.PutUint32(out[pos:], machoBuildVersion)
-	le.PutUint32(out[pos+4:], 32)
-	le.PutUint32(out[pos+8:], 1) // PLATFORM_MACOS
-	le.PutUint32(out[pos+12:], machoMinOS)
-	le.PutUint32(out[pos+16:], 0) // sdk: n/a
-	le.PutUint32(out[pos+20:], 1) // ntools
-	le.PutUint32(out[pos+24:], machoLdTool)
-	le.PutUint32(out[pos+28:], machoLdVersion)
+	b.PutUint32(out[pos:], machoBuildVersion)
+	b.PutUint32(out[pos+4:], 32)
+	b.PutUint32(out[pos+8:], 1) // PLATFORM_MACOS
+	b.PutUint32(out[pos+12:], machoMinOS)
+	b.PutUint32(out[pos+16:], 0) // sdk: n/a
+	b.PutUint32(out[pos+20:], 1) // ntools
+	b.PutUint32(out[pos+24:], machoLdTool)
+	b.PutUint32(out[pos+28:], machoLdVersion)
 	pos += 32
 
 	// LC_SOURCE_VERSION: none.
-	le.PutUint32(out[pos:], machoSourceVer)
-	le.PutUint32(out[pos+4:], 16)
+	b.PutUint32(out[pos:], machoSourceVer)
+	b.PutUint32(out[pos+4:], 16)
 	pos += 16
 
 	// LC_MAIN: dyld calls vmaddr+entryoff with main-style arguments.
-	le.PutUint32(out[pos:], machoMain)
-	le.PutUint32(out[pos+4:], 24)
-	le.PutUint64(out[pos+8:], entryAbs)
-	le.PutUint64(out[pos+16:], 0) // stacksize: the default
+	b.PutUint32(out[pos:], machoMain)
+	b.PutUint32(out[pos+4:], 24)
+	b.PutUint64(out[pos+8:], m.entryOff)
+	b.PutUint64(out[pos+16:], 0) // stacksize: the default
 	pos += 24
 
 	// LC_LOAD_DYLIB: strict validation requires at least one; the reference
 	// version constants are carried over verbatim.
-	le.PutUint32(out[pos:], machoLoadDylib)
-	le.PutUint32(out[pos+4:], 56)
-	le.PutUint32(out[pos+8:], 24)          // name offset
-	le.PutUint32(out[pos+12:], 2)          // timestamp
-	le.PutUint32(out[pos+16:], 0x05470000) // current_version
-	le.PutUint32(out[pos+20:], 0x00010000) // compatibility_version
+	b.PutUint32(out[pos:], machoLoadDylib)
+	b.PutUint32(out[pos+4:], 56)
+	b.PutUint32(out[pos+8:], 24)          // name offset
+	b.PutUint32(out[pos+12:], 2)          // timestamp
+	b.PutUint32(out[pos+16:], 0x05470000) // current_version
+	b.PutUint32(out[pos+20:], 0x00010000) // compatibility_version
 	copy(out[pos+24:], "/usr/lib/libSystem.B.dylib\x00")
 	pos += 56
 
-	lc16(machoFuncStarts, uint32(leOff)+104, 8) // the entry function
-	lc16(machoDataInCode, uint32(leOff)+112, 0) // empty
+	lc16(machoFuncStarts, uint32(le.leOff)+le.fstartAt, fstartLen) // the __TEXT symbols
+	lc16(machoDataInCode, uint32(le.leOff)+le.symAt, 0)            // empty
+	lc16(machoCodeSig, uint32(le.sigOff), uint32(le.sigLen))       // the signature closing the file
 
-	// LC_CODE_SIGNATURE: the ad-hoc signature closing the file.
-	lc16(machoCodeSig, uint32(sigOff), uint32(sigLen))
-
-	copy(out[MachoCodeOff:], text)
-
-	// The linkedit tables with the entry point patched in.
-	copy(out[leOff:], machoLinkedit[:])
-	uleb2 := func(v uint64) (byte, byte) {
-		return byte(v) | 0x80, byte(v >> 7)
+	// the section data at the placed offsets
+	for i := range m.sections {
+		if sp := &p.sect[i]; !sp.nobits {
+			copy(out[sp.offset:], m.sections[i].Data)
+		}
 	}
 
-	b0, b1 := uleb2(entryAbs)
-	out[leOff+machoTrieEntryAt] = b0
-	out[leOff+machoTrieEntryAt+1] = b1
-	out[leOff+machoFstartEntryAt] = b0
-	out[leOff+machoFstartEntryAt+1] = b1
-	le.PutUint64(out[leOff+machoSymtabEntryAt:], machoVMAddr+entryAbs)
+	// the linkedit tables, then the signature over everything before it
+	copy(out[le.leOff:], le.data)
+	copy(out[le.sigOff:], machoSignature(out[:le.sigOff], uint32(le.sigOff), le.execSeg))
 
-	copy(out[sigOff:], machoSignature(out[:sigOff], uint32(sigOff), uint32(textSize)))
-
-	return out, nil
+	return out
 }
 
-// machoSignature - the ad-hoc CodeDirectory superblob over the 4K pages of
-// everything before it (big-endian fields, the cs_blobs.h layout):
-// CD v0x20400, flags adhoc|linker-signed, SHA-256, page size 2^12,
-// execSeg covering __TEXT - the exact scheme of codesign -s - and of the
-// Go linker, which is what lets the unsigned-toolchain image run.
-func machoSignature(image []byte, codeLimit, execSegLimit uint32) []byte {
-	const (
-		magicSuper = 0xfade0cc0
-		magicCD    = 0xfade0c02
-		ident      = "assembly\x00"
-		cdHdrLen   = 88 // magic+len+version..execSegFlags
-	)
-
-	n := (codeLimit + machoHashPage - 1) / machoHashPage
-	cdLen := cdHdrLen + len(ident) + 32*int(n)
-
-	sig := make([]byte, 0, 12+8+cdLen)
-	put32 := func(v uint32) {
-		sig = append(sig, byte(v>>24), byte(v>>16), byte(v>>8), byte(v))
+// machoSectFlags - section attribute flags: executable for __TEXT data
+// sections, S_ZEROFILL for the nobits reserves.
+func machoSectFlags(seg string, sp *machoSectPlace) uint32 {
+	if sp.nobits {
+		return 1 // S_ZEROFILL
 	}
 
-	put32(magicSuper)
-	put32(uint32(12 + 8 + cdLen))
-	put32(1)  // one blob
-	put32(0)  // slot 0 type: CodeDirectory
-	put32(20) // slot 0 offset
-	put32(magicCD)
-	put32(uint32(cdLen))
-
-	head := make([]byte, 0, 72)
-	hput32 := func(v uint32) {
-		head = append(head, byte(v>>24), byte(v>>16), byte(v>>8), byte(v))
+	if seg == "__TEXT" {
+		return 0x80000400 // PURE_INSTRUCTIONS | SOME_INSTRUCTIONS
 	}
 
-	hput32(0x20400) // version
-	hput32(
-		0x20002,
-	) // flags: CS_ADHOC | CS_LINKER_SIGNED
-	hput32(uint32(cdHdrLen + len(ident))) // hashOffset
-	hput32(cdHdrLen)                      // identOffset
-	hput32(0)                             // nSpecialSlots
-	hput32(n)                             // nCodeSlots
-	hput32(codeLimit)                     // codeLimit
-	head = append(
-		head,
-		32,
-		2,
-		0,
-		12,
-	) // hashSize, hashType SHA-256, platform, pageSize 2^12
-	hput32(0)                                                   // spare2
-	hput32(0)                                                   // scatterOffset
-	hput32(0)                                                   // teamOffset
-	hput32(0)                                                   // spare3
-	for _, v := range []uint64{0, 0, uint64(execSegLimit), 1} { // codeLimit64, execSegBase, execSegLimit, MAIN_BINARY
-		head = append(head, byte(v>>56), byte(v>>48), byte(v>>40), byte(v>>32),
-			byte(v>>24), byte(v>>16), byte(v>>8), byte(v))
-	}
-
-	sig = append(sig, head...)
-	sig = append(sig, ident...)
-
-	for off := uint32(0); off < codeLimit; off += machoHashPage {
-		end := min(off+machoHashPage, codeLimit)
-		h := sha256.Sum256(image[off:end])
-		sig = append(sig, h[:]...)
-	}
-
-	return sig
+	return 0
 }

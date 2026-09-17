@@ -99,13 +99,26 @@ func main() {
 
 	arch := strings.ToLower(*archFlag)
 
+	if *formatFlag == "macho" && arch != "arm64" && arch != "aarch64" {
+		fmt.Fprintln(os.Stderr, "macho: arm64 only (the other targets use -format elf)")
+		os.Exit(2)
+	}
+
 	if *disasmFlag {
 		// our own container formats: the code sits at a fixed file offset
 		switch {
 		case len(src) > 4 && src[0] == 0x7f && string(src[1:4]) == "ELF":
 			src = src[0x1000:]
 		case len(src) > 4 && binary.LittleEndian.Uint32(src) == 0xfeedfacf:
-			// our Mach-O: arm64, the code right after the load commands
+			// our Mach-O: the __text section knows its bytes and address
+			// (works for any image shape); without a file to parse, the
+			// legacy fixed-offset slice
+			if code, cerr := machoCode(flag.Arg(0)); cerr == nil {
+				src = code.Data
+				base = code.Addr
+				break
+			}
+
 			src = src[file.MachoCodeOff:]
 			base = file.MachoTextBase
 		}
@@ -118,7 +131,17 @@ func main() {
 		return
 	}
 
-	res, errs := assemble(string(src), base)
+	// the macho format assembles against the writer's own placement (the
+	// label addresses are the ones the image uses); every other format
+	// stays with the plain base
+	var res *asm.Result
+	var errs []asm.AsmError
+	if *formatFlag == "macho" {
+		res, errs = alias.AssembleLayout(string(src), alias.MachoLayout)
+	} else {
+		res, errs = assemble(string(src), base)
+	}
+
 	if len(errs) > 0 {
 		exit := 0
 		for _, e := range errs {
@@ -157,31 +180,13 @@ func main() {
 
 			blob = elfBlob
 		case "macho":
-			if arch != "arm64" && arch != "aarch64" {
-				fmt.Fprintln(os.Stderr, "macho: arm64 only (the other targets use -format elf)")
-				os.Exit(2)
-			}
-
-			var raw []byte
-			for _, sec := range res.Sections {
-				raw = append(raw, sec.Data...)
-			}
-
-			entry := uint64(0) // the offset of the entry inside the code
-			for _, name := range []string{"start", "_start"} {
-				if a, ok := res.Symbols[name]; ok {
-					entry = a - base
-					break
-				}
-			}
-
-			machoBlob, werr := file.WriteMachO(raw, entry)
-			if werr != nil {
-				fmt.Fprintln(os.Stderr, "macho:", werr)
+			machoBlob, merr := alias.MachOFromResult(res, "")
+			if merr != nil {
+				fmt.Fprintln(os.Stderr, "macho:", merr)
 				os.Exit(1)
 			}
 
-			blob = machoBlob
+			blob = machoBlob.Bytes()
 		default:
 			for _, sec := range res.Sections {
 				blob = append(blob, sec.Data...)
@@ -363,4 +368,20 @@ func hexLine(b []byte) string {
 	}
 
 	return sb.String()
+}
+
+// machoCode — the __text section of a Mach-O file on disk (the disasm
+// source); an empty path (stdin) or an unparseable file is an error the
+// caller falls back from.
+func machoCode(path string) (*file.Section, error) {
+	if path == "" || path == "-" {
+		return nil, fmt.Errorf("no file to parse")
+	}
+
+	f, err := file.Detect(path)
+	if err != nil {
+		return nil, err
+	}
+
+	return f.CodeSection()
 }

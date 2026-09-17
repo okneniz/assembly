@@ -32,6 +32,12 @@ func Assemble(src string, base uint64) (*asm.Result, []asm.AsmError) {
 	return asm.Assemble(src, base, NewASMBackend())
 }
 
+// AssembleLayout is the full ARM64 assembly with an injected section
+// placement (see asm.AssembleLayout; MachoLayout is the Mach-O policy).
+func AssembleLayout(src string, layout asm.Layout) (*asm.Result, []asm.AsmError) {
+	return asm.AssembleLayout(src, NewASMBackend(), layout)
+}
+
 // aliasCtors maps mnemonics to alias constructors.
 var aliasCtors = map[string]arch.ArmCtor{
 	// add/sub family: cmp/cmn (Rd = zr), neg/negs (Rn = zr)

@@ -92,6 +92,26 @@ func NewNobitsSection(name string, addr uint64, reserve int) Section {
 	}
 }
 
+// SectionSpec is one section of a layout query (AssembleLayout): its
+// name, its full memory size (data and literal pools included), and
+// whether it is a NOBITS reserve. The file-format policies live above
+// this package and answer with one base address per spec.
+type SectionSpec struct {
+	Name   string
+	Size   int
+	Nobits bool
+}
+
+// NewSectionSpec is the spec of a section of size (or reserve) under a
+// name.
+func NewSectionSpec(name string, size int, nobits bool) SectionSpec {
+	return SectionSpec{
+		Name:   name,
+		Size:   size,
+		Nobits: nobits,
+	}
+}
+
 // LineEntry is one emitting statement at its final address: its bytes
 // start at Addr and occupy Size of them, emitted from the 1-based source
 // Line. The file is a property of the whole result (one source per

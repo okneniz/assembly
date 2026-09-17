@@ -60,6 +60,13 @@ func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {
 		"Entry":   true,
 		"Ascii":   true,
 		"Bytes":   true,
+		"Text":    true,
+		"Data":    true,
+		"Half":    true,
+		"Word":    true,
+		"Quad":    true,
+		"Bss":     true,
+		"La":      true, // the adrp+add pair, the riscv/loong64 twin
 	}
 
 	instrs := builderInstrs()

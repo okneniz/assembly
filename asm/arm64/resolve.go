@@ -3,10 +3,11 @@ package arm64
 // Evaluation of an unevaluated instruction: expression slots -> numbers
 // (arch.VOp). Keywords (conditions, sysreg, prfm hints) become names
 // (arch.IsKeywordSym); labels/.set become values via the core resolver;
-// adr/adrp: a symbolic target in position 1 is an absolute -> offset
-// (as the formatter prints); the ldr=literal is the pool slot address
-// (the core resolver returns it under the reserved name PoolSelf). The
-// core's placeholder pass yields rel=0.
+// adr/adrp: a symbolic target in position 1 is an absolute address,
+// converted to the byte offset (adr) or the page count (adrp) of the
+// arch canon; the ldr=literal is the pool slot address (the core
+// resolver returns it under the reserved name PoolSelf). The core's
+// placeholder pass yields rel=0.
 
 import (
 	"errors"
@@ -58,13 +59,21 @@ func resolveOps(mnem string, ops []armOp, ctx ctx) ([]arch.VOp, error) {
 
 			out = append(out, arch.VOpReg(op.reg, op.arr, lane, idx))
 		case armOpImm:
-			// adr/adrp: a symbolic target in position 1 is an absolute ->
-			// offset; a numeric one is already an offset
+			// adr/adrp: a symbolic target in position 1 is an absolute
+			// address; a numeric one is already an offset. adr takes the
+			// byte offset, adrp the page count between the instruction's
+			// page and the target's page (the arch canon).
 			if i == 1 && (mnem == "adr" || mnem == "adrp") &&
 				op.expr != nil && op.expr.Kind == expr.ExprSym {
 				abs, err := op.expr.Eval(ctx.Resolve)
 				if err != nil {
 					return nil, err
+				}
+
+				if mnem == "adrp" {
+					off := (abs&^0xFFF - int64(ctx.Addr)&^0xFFF) >> 12
+					out = append(out, arch.VOpImm(off, ""))
+					continue
 				}
 
 				out = append(out, arch.VOpImm(abs-int64(ctx.Addr), ""))
