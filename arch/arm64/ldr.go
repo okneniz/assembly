@@ -128,3 +128,38 @@ func LdrPoolWrapOf(rt string, lit int64, enc uint32) Instr {
 func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
 	return newLdr(base{}, rt, rn, off)
 }
+
+// The FP unsigned-offset encodings: the access size is set by the rt
+// kind, the offset scale = log2 of the size.
+const (
+	ldrFDEnc uint32 = 0xFD400000 // ldr dt, [xn, #imm12<<3]
+	ldrFSEnc uint32 = 0xBD400000 // ldr st, [xn, #imm12<<2]
+)
+
+// LdrF — ldr st|dt, [xn, #off] (the FP/SIMD register form).
+func (Builder) LdrF(rt FReg, rn Reg, off Off) (Instr, error) {
+	err := requireClass(
+		rn,
+		"LdrF",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX, classSP,
+	)
+	if err != nil {
+		return Ldr{}, err
+	}
+
+	enc, scale := ldrFDEnc, uint32(3)
+	if !rt.Is64() {
+		enc, scale = ldrFSEnc, 2
+	}
+
+	if err := requireOff("LdrF", off, scale); err != nil {
+		return Ldr{}, err
+	}
+
+	return newLdrBase(
+		base{},
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
+	), nil
+}

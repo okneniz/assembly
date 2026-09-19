@@ -150,7 +150,8 @@ unit suite (cat as the spawned child).
 | 09-16 | prog no-alias cleanup: riscv J/Bnez pseudos deleted (Bne twin added), chain-method guards for riscv+loong64 | 1 | +107 | 6 | — | — | — | — |
 | 09-16 | prog/riscv Builder parity: 98 chain twins (arith/logic/shifts/loads/stores/AMO/CSR/FP), two-way reflect guard | 1 | +1,286 | 4 | — | — | — | — |
 | 09-17 | universal Mach-O writer: arbitrary sections/symbols/bss with generated linkedit (byte-identical legacy), placement policies for prog and asm, streams+La in the DSL, symbolic adrp page fix | 1 | +2,856 | 25 | 1 | — | — | — |
-| **total** | | **32** | **128,672** | **1,429** | **153** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-18 | arm64 scalar FP: per-op instruction types on the Builder (the one construction API — the asm FP ctors and FP ldr/str route through it), FReg operands, 22 prog twins + D0-D7/S0-S7, llvm-pinned encodings | 1 | +1,853 | 36 | 1 | — | — | — |
+| **total** | | **33** | **130,525** | **1,443** | **154** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

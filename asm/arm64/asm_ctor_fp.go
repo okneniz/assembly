@@ -1,8 +1,10 @@
 package arm64
 
 // Scalar FP assembler constructors: fadd/fsub/fmul/fdiv/fmax/fmin
-// (s/d by register type), fneg/fcvt/fcvtzs/scvtf/ucvtf, fmov (registers,
-// imm8), fcmp (registers/#0.0), fmadd/fnmsub.
+// (s/d by register type), fneg/fcvt, the int↔FP conversions scvtf/
+// ucvtf/fcvtzs/fcvtzu, fmov (registers, imm8, GPR moves), fcmp
+// (registers/#0.0), fmadd/fnmsub. Every entry builds through the arch
+// Builder — the one construction API of the package.
 
 import (
 	"errors"
@@ -11,159 +13,205 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
-// newFp3Arm — fop fd, fn, fm: the (d, s) enc pair by the first register's type.
-func newFp3Arm(op string, encD, encS uint32) func([]vOp) (Instr, error) {
+// fpReg — one FP register operand (s/d by the spelling).
+func fpReg(op vOp, name string) (arch.FReg, error) {
+	r, err := arch.FRegOf(op.Reg())
+	if err != nil {
+		return arch.FReg{}, fmt.Errorf("%s: %w", name, err)
+	}
+
+	return r, nil
+}
+
+// gpr — one integer register operand (w/x, zr allowed).
+func gpr(op vOp, name string) (arch.Reg, error) {
+	if op.Reg() == "" {
+		return arch.Reg{}, fmt.Errorf("%s: register operand expected", name)
+	}
+
+	r, err := arch.RegOf(op.Reg())
+	if err != nil {
+		return arch.Reg{}, fmt.Errorf("%s: %w", name, err)
+	}
+
+	return r, nil
+}
+
+// newFp3Arm — an FP three-register instruction (fd, fn, fm): the
+// Builder method comes in as a method expression.
+func newFp3Arm(
+	name string,
+	method func(arch.Builder, arch.FReg, arch.FReg, arch.FReg) (arch.Instr, error),
+) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
 		if len(ops) != 3 {
-			return nil, fmt.Errorf("%s: want fd, fn, fm", op)
+			return nil, fmt.Errorf("%s: want fd, fn, fm", name)
 		}
 
-		regs, err := armReg3Strings(ops, op)
+		rd, err := fpReg(ops[0], name)
 		if err != nil {
 			return nil, err
 		}
 
-		fd, fn, fm := regs[0], regs[1], regs[2]
-		enc := encS
-		if fd[0] == 'd' {
-			enc = encD
+		rn, err := fpReg(ops[1], name)
+		if err != nil {
+			return nil, err
 		}
 
-		return arch.NewFp3(op, fd, fn, fm, enc), nil
+		rm, err := fpReg(ops[2], name)
+		if err != nil {
+			return nil, err
+		}
+
+		return method(arch.Builder{}, rd, rn, rm)
 	}
 }
 
-// armReg3Strings — three FP/integer registers (no strict kind check).
-func armReg3Strings(ops []vOp, name string) ([3]string, error) {
-	var out [3]string
-	if len(ops) != 3 {
-		return out, fmt.Errorf("%s: want 3 registers", name)
-	}
-
-	for i := range 3 {
-		if ops[i].Reg() == "" {
-			return out, fmt.Errorf("%s: register operand %d", name, i+1)
-		}
-
-		if _, err := armRegNum(ops[i].Reg()); err != nil {
-			return out, fmt.Errorf("%s: %w", name, err)
-		}
-
-		out[i] = ops[i].Reg()
-	}
-
-	return out, nil
-}
-
-// newFp2Arm — fop fd, fn (enc by kinds; the rdK/rnK kinds are derived from
-// the operands, not from the word).
-func newFp2Arm(op string, enc uint32) func([]vOp) (Instr, error) {
+// newFp2Arm — an FP two-register instruction (fd, fn).
+func newFp2Arm(
+	name string,
+	method func(arch.Builder, arch.FReg, arch.FReg) (arch.Instr, error),
+) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
 		if len(ops) != 2 {
-			return nil, fmt.Errorf("%s: want fd, fn", op)
+			return nil, fmt.Errorf("%s: want fd, fn", name)
 		}
 
-		if ops[0].Reg() == "" || ops[1].Reg() == "" {
-			return nil, fmt.Errorf("%s: register operands", op)
+		rd, err := fpReg(ops[0], name)
+		if err != nil {
+			return nil, err
 		}
 
-		rd, rn := ops[0].Reg(), ops[1].Reg()
-		if _, err := armRegNum(rd); err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
+		rn, err := fpReg(ops[1], name)
+		if err != nil {
+			return nil, err
 		}
 
-		if _, err := armRegNum(rn); err != nil {
-			return nil, fmt.Errorf("%s: %w", op, err)
-		}
-
-		rdK, rnK := regKindOf(rd), regKindOf(rn)
-		return arch.NewFp2(op, rd, rn, enc, rdK, rnK), nil
+		return method(arch.Builder{}, rd, rn)
 	}
 }
 
-// regKindOf — fpKind by the name prefix.
-func regKindOf(name string) fpKind {
-	switch name[0] {
-	case 's':
-		return kS
-	case 'd':
-		return kD
-	case 'w':
-		return kW
-	default:
-		return kX
+// newFpConvArm — an int→FP conversion (fd, wn|xn).
+func newFpConvArm(
+	name string,
+	method func(arch.Builder, arch.FReg, arch.Reg) (arch.Instr, error),
+) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 2 {
+			return nil, fmt.Errorf("%s: want fd, wn|xn", name)
+		}
+
+		rd, err := fpReg(ops[0], name)
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := gpr(ops[1], name)
+		if err != nil {
+			return nil, err
+		}
+
+		return method(arch.Builder{}, rd, rn)
 	}
 }
 
-// newFmov — fmov fd, fn (registers) | fmov fd, #imm (imm8 via the
-// vfpExpandImm table; text #%.8f).
+// newConvFpArm — an FP→int conversion (wd|xd, fn).
+func newConvFpArm(
+	name string,
+	method func(arch.Builder, arch.Reg, arch.FReg) (arch.Instr, error),
+) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 2 {
+			return nil, fmt.Errorf("%s: want wd|xd, fn", name)
+		}
+
+		rd, err := gpr(ops[0], name)
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := fpReg(ops[1], name)
+		if err != nil {
+			return nil, err
+		}
+
+		return method(arch.Builder{}, rd, rn)
+	}
+}
+
+// newFp4Arm — an FP four-register instruction (fd, fn, fm, fa).
+func newFp4Arm(
+	name string,
+	method func(arch.Builder, arch.FReg, arch.FReg, arch.FReg, arch.FReg) (arch.Instr, error),
+) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 4 {
+			return nil, fmt.Errorf("%s: want fd, fn, fm, fa", name)
+		}
+
+		rd, err := fpReg(ops[0], name)
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := fpReg(ops[1], name)
+		if err != nil {
+			return nil, err
+		}
+
+		rm, err := fpReg(ops[2], name)
+		if err != nil {
+			return nil, err
+		}
+
+		ra, err := fpReg(ops[3], name)
+		if err != nil {
+			return nil, err
+		}
+
+		return method(arch.Builder{}, rd, rn, rm, ra)
+	}
+}
+
+// newFmov — fmov by the operand spellings: fd, fn (two FP registers),
+// fd, xn | sn, wn (from a GPR), xn, fd | wn, sn (to a GPR), fd, #imm
+// (the imm8 form).
 func newFmov(ops []vOp) (Instr, error) {
 	if len(ops) != 2 {
 		return nil, errors.New("fmov: want fd, op")
 	}
 
-	if ops[0].Reg() == "" {
-		return nil, errors.New("fmov: register expected")
-	}
+	rd, rdIsFp := arch.FRegOf(ops[0].Reg())
 
-	rd := ops[0].Reg()
-	if _, err := armRegNum(rd); err != nil {
-		return nil, fmt.Errorf("fmov: %w", err)
-	}
-
-	isS := rd[0] == 's'
 	if ops[1].Kind() == arch.ArmOpFloat || ops[1].Kind() == arch.ArmOpImm {
-		text := fmt.Sprintf("%.8f", ops[1].Float())
-		enc := uint32(0x1E601000)
-		rdK := kD
-		if isS {
-			rdK = kS
+		if ops[0].Reg() == "" || rdIsFp != nil {
+			return nil, errors.New("fmov: FP register expected")
 		}
 
-		for imm8 := range uint32(256) {
-			if isS {
-				if fmt.Sprintf("%.8f", vfpExpandImm32(imm8)) == text {
-					return arch.NewFmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
-				}
-			} else if fmt.Sprintf("%.8f", vfpExpandImm64(imm8)) == text {
-				return arch.NewFmovImm(rd, ops[1].Float(), text, isS, enc, rdK), nil
-			}
-		}
-
-		return nil, errors.New("fmov: imm not encodable")
+		return (arch.Builder{}).FmovImm(rd, ops[1].Float())
 	}
 
-	if ops[1].Reg() == "" {
-		return nil, errors.New("fmov: register or immediate expected")
-	}
-
-	rn := ops[1].Reg()
-	if _, err := armRegNum(rn); err != nil {
-		return nil, fmt.Errorf("fmov: %w", err)
-	}
-
-	// register-move forms: kinds set the encoding (like the decode table)
-	rdK, rnK := regKindOf(rd), regKindOf(rn)
-	var enc uint32
+	rn, rnIsFp := arch.FRegOf(ops[1].Reg())
 	switch {
-	case rdK == kD && rnK == kD, rdK == kS && rnK == kS:
-		enc = 0x1E604000 // fmov d,d / s,s (one base; kinds in the registers)
-		if rdK == kS {
-			enc = 0x1E204000
+	case rdIsFp == nil && rnIsFp == nil:
+		return (arch.Builder{}).Fmov(rd, rn)
+	case rdIsFp == nil:
+		src, err := gpr(ops[1], "fmov")
+		if err != nil {
+			return nil, err
 		}
-	case rdK == kD && rnK == kX:
-		enc = 0x9E670000
-	case rdK == kX && rnK == kD:
-		enc = 0x9E660000
-	case rdK == kS && rnK == kW:
-		enc = 0x1E270000
-	case rdK == kW && rnK == kS:
-		enc = 0x1E260000
-	default:
-		return nil, errors.New("fmov: bad register kinds")
+
+		return (arch.Builder{}).FmovFromGpr(rd, src)
+	case rnIsFp == nil:
+		dst, err := gpr(ops[0], "fmov")
+		if err != nil {
+			return nil, err
+		}
+
+		return (arch.Builder{}).FmovToGpr(dst, rn)
 	}
 
-	return arch.NewFp2("fmov", rd, rn, enc, rdK, rnK), nil
+	return nil, errors.New("fmov: register or immediate expected")
 }
 
 // newFcmpArm — fcmp fn, fm | fcmp fn, #0.0.
@@ -172,48 +220,19 @@ func newFcmpArm(ops []vOp) (Instr, error) {
 		return nil, errors.New("fcmp: want fn, fm|#0.0")
 	}
 
-	if ops[0].Reg() == "" {
-		return nil, errors.New("fcmp: register expected")
-	}
-
-	rn := ops[0].Reg()
-	k := regKindOf(rn)
-	enc := uint32(0x1E602000)
-	if k == kS {
-		enc = 0x1E202000
+	rn, err := fpReg(ops[0], "fcmp")
+	if err != nil {
+		return nil, err
 	}
 
 	if ops[1].Kind() == arch.ArmOpFloat || ops[1].Kind() == arch.ArmOpImm {
-		return arch.NewFcmp(rn, "", false, enc, enc, k), nil
+		return (arch.Builder{}).FcmpZero(rn)
 	}
 
-	if ops[1].Reg() == "" {
-		return nil, errors.New("fcmp: register or #0.0")
+	rm, err := fpReg(ops[1], "fcmp")
+	if err != nil {
+		return nil, errors.New("fcmp: FP register or #0.0")
 	}
 
-	return arch.NewFcmp(rn, ops[1].Reg(), true, enc, enc, k), nil
-}
-
-// newFmadd — fmadd fd, fn, fm, fa (d form).
-func newFmadd(op string, enc uint32) func([]vOp) (Instr, error) {
-	return func(ops []vOp) (Instr, error) {
-		if len(ops) != 4 {
-			return nil, fmt.Errorf("%s: want fd, fn, fm, fa", op)
-		}
-
-		regs := make([]string, 4)
-		for i := range 4 {
-			if ops[i].Reg() == "" {
-				return nil, fmt.Errorf("%s: register operand %d", op, i+1)
-			}
-
-			if _, err := armRegNum(ops[i].Reg()); err != nil {
-				return nil, fmt.Errorf("%s: %w", op, err)
-			}
-
-			regs[i] = ops[i].Reg()
-		}
-
-		return arch.NewFp4(op, regs[0], regs[1], regs[2], regs[3], enc), nil
-	}
+	return (arch.Builder{}).Fcmp(rn, rm)
 }

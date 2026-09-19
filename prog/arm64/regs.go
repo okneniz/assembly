@@ -36,3 +36,46 @@ var (
 	XZR = arch.XZR
 	SP  = arch.SP
 )
+
+// dreg/sreg - the FP pre-minting helpers: the number is a constant
+// 0..7 (the AAPCS64 argument registers), the constructor error is
+// unreachable.
+func dreg(n int) arch.FReg {
+	r, err := arch.D(n)
+	if err != nil {
+		panic(err) // unreachable: 0..7 is a valid register number
+	}
+
+	return r
+}
+
+func sreg(n int) arch.FReg {
+	r, err := arch.S(n)
+	if err != nil {
+		panic(err) // unreachable: 0..7 is a valid register number
+	}
+
+	return r
+}
+
+// D0-D7/S0-S7 - the FP argument registers (v0-v7), the AAPCS64
+// counterparts of X0-X7.
+var (
+	D0 = dreg(0)
+	D1 = dreg(1)
+	D2 = dreg(2)
+	D3 = dreg(3)
+	D4 = dreg(4)
+	D5 = dreg(5)
+	D6 = dreg(6)
+	D7 = dreg(7)
+
+	S0 = sreg(0)
+	S1 = sreg(1)
+	S2 = sreg(2)
+	S3 = sreg(3)
+	S4 = sreg(4)
+	S5 = sreg(5)
+	S6 = sreg(6)
+	S7 = sreg(7)
+)

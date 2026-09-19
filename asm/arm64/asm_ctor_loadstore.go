@@ -59,6 +59,11 @@ func newLdrArm(ops []vOp) (Instr, error) {
 		return newLdrLiteral(ops)
 	}
 
+	// the FP/SIMD register form goes through the Builder's LdrF
+	if in, ok, err := newLsFpArm(ops, "ldr", arch.Builder.LdrF); ok || err != nil {
+		return in, err
+	}
+
 	return makeLSCtorTyped(ops, "ldr", 0xF9400000)
 }
 func newLdrbArm(ops []vOp) (Instr, error) {
@@ -68,7 +73,44 @@ func newLdrhArm(ops []vOp) (Instr, error) {
 	return makeLSCtorTyped(ops, "ldrh", 0x79400000)
 }
 func newStrArm(ops []vOp) (Instr, error) {
+	// the FP/SIMD register form goes through the Builder's StrF
+	if in, ok, err := newLsFpArm(ops, "str", arch.Builder.StrF); ok || err != nil {
+		return in, err
+	}
+
 	return makeLSCtorTyped(ops, "str", 0xF9000000)
+}
+
+// newLsFpArm — the FP/SIMD load/store by an FP rt: only the plain
+// immediate form belongs to the Builder; the other addressing kinds
+// (unscaled, register offset, pre/post-index) stay on the legacy path.
+// ok=false: not this shape, the caller continues.
+func newLsFpArm(
+	ops []vOp,
+	name string,
+	method func(arch.Builder, arch.FReg, arch.Reg, arch.Off) (arch.Instr, error),
+) (Instr, bool, error) {
+	if len(ops) != 2 || !ops[1].IsMem() {
+		return nil, false, nil
+	}
+
+	rt, err := arch.FRegOf(ops[0].Reg())
+	if err != nil {
+		return nil, false, nil // an integer rt: not this shape
+	}
+
+	m := ops[1].Mem()
+	if m.Post() != 0 || m.Pre() || m.OffReg() != "" {
+		return nil, false, nil
+	}
+
+	rn, rerr := arch.RegOf(m.Base())
+	if rerr != nil {
+		return nil, true, fmt.Errorf("%s: %w", name, rerr)
+	}
+
+	in, ierr := method(arch.Builder{}, rt, rn, arch.Off(m.Off()))
+	return in, true, ierr
 }
 func newStrbArm(ops []vOp) (Instr, error) {
 	return makeLSCtorTyped(ops, "strb", 0x39000000)

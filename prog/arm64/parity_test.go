@@ -47,7 +47,7 @@ func TestBuilderParity(t *testing.T) {
 
 	// a new Builder instruction method without a twin fails the loop
 	// above; a removed one fails this pin
-	require.Equal(t, 97, twins)
+	require.Equal(t, 119, twins)
 }
 
 func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {

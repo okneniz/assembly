@@ -15,7 +15,6 @@ type (
 	vMem   = arch.VMem
 	Schema = arch.Schema
 	Field  = arch.Field
-	fpKind = arch.FpKind
 	Csel   = arch.Csel
 )
 
@@ -24,13 +23,6 @@ func decodeArrangement(q, size uint32) string       { return arch.DecodeArrangem
 func getSchemas() []Schema                          { return arch.Schemas() }
 func shiftAmt(op vOp) int64                         { return arch.ShiftAmt(op) }
 func wantTarget(op vOp, name string) (int64, error) { return arch.WantTarget(op, name) }
-
-const (
-	kS = arch.FS
-	kD = arch.FD
-	kW = arch.FW
-	kX = arch.FX
-)
 
 // Instr — the arch instruction interface.
 type Instr = arch.Instr
@@ -166,17 +158,22 @@ func buildArmCtors() map[string]func(ops []vOp) (Instr, error) {
 		"hvc":        newHvc,
 		"mrs":        newMrsArm,
 		"msr":        newMsrArm,
-		"fadd":       newFp3Arm("fadd", 0x1E602800, 0x1E202800),
-		"fsub":       newFp3Arm("fsub", 0x1E603800, 0x1E203800),
-		"fmul":       newFp3Arm("fmul", 0x1E600800, 0x1E200800),
-		"fdiv":       newFp3Arm("fdiv", 0x1E601800, 0x1E201800),
-		"fmax":       newFp3Arm("fmax", 0x1E604800, 0x1E204800),
-		"fmin":       newFp3Arm("fmin", 0x1E605800, 0x1E205800),
-		"fneg":       newFp2Arm("fneg", 0x1E614000),
+		"fadd":       newFp3Arm("fadd", arch.Builder.Fadd),
+		"fsub":       newFp3Arm("fsub", arch.Builder.Fsub),
+		"fmul":       newFp3Arm("fmul", arch.Builder.Fmul),
+		"fdiv":       newFp3Arm("fdiv", arch.Builder.Fdiv),
+		"fmax":       newFp3Arm("fmax", arch.Builder.Fmax),
+		"fmin":       newFp3Arm("fmin", arch.Builder.Fmin),
+		"fneg":       newFp2Arm("fneg", arch.Builder.Fneg),
+		"fcvt":       newFp2Arm("fcvt", arch.Builder.Fcvt),
+		"scvtf":      newFpConvArm("scvtf", arch.Builder.Scvtf),
+		"ucvtf":      newFpConvArm("ucvtf", arch.Builder.Ucvtf),
+		"fcvtzs":     newConvFpArm("fcvtzs", arch.Builder.Fcvtzs),
+		"fcvtzu":     newConvFpArm("fcvtzu", arch.Builder.Fcvtzu),
 		"fmov":       newFmov,
 		"fcmp":       newFcmpArm,
-		"fmadd":      newFmadd("fmadd", 0x1F000000),
-		"fnmsub":     newFmadd("fnmsub", 0x1F200000),
+		"fmadd":      newFp4Arm("fmadd", arch.Builder.Fmadd),
+		"fnmsub":     newFp4Arm("fnmsub", arch.Builder.Fnmsub),
 		"and.16b":    newSimd3("and", 0x0E201C00),
 		"and.8b":     newSimd3("and", 0x0E201C00),
 		"bic.16b":    newSimd3("bic", 0x0E601C00),

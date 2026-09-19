@@ -113,3 +113,38 @@ func decodeStrOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error
 func (Builder) Str(rt, rn Reg, off Off) (Instr, error) {
 	return newStr(base{}, rt, rn, off)
 }
+
+// The FP unsigned-offset encodings: the access size is set by the rt
+// kind, the offset scale = log2 of the size.
+const (
+	strFDEnc uint32 = 0xFD000000 // str dt, [xn, #imm12<<3]
+	strFSEnc uint32 = 0xBD000000 // str st, [xn, #imm12<<2]
+)
+
+// StrF — str st|dt, [xn, #off] (the FP/SIMD register form).
+func (Builder) StrF(rt FReg, rn Reg, off Off) (Instr, error) {
+	err := requireClass(
+		rn,
+		"StrF",
+		"rn",
+		"x register or SP (register 31 in the base reads as sp)",
+		classX, classSP,
+	)
+	if err != nil {
+		return Str{}, err
+	}
+
+	enc, scale := strFDEnc, uint32(3)
+	if !rt.Is64() {
+		enc, scale = strFSEnc, 2
+	}
+
+	if err := requireOff("StrF", off, scale); err != nil {
+		return Str{}, err
+	}
+
+	return newStrBase(
+		base{},
+		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
+	), nil
+}

@@ -11,45 +11,27 @@ import (
 	"math"
 )
 
+// vfpExpandImm64 — the FP immediate expansion (ARM ARM VFPExpandImm):
+// imm8 = a:u2u1u0:v3v2v1v0 — a sign, a 3-bit exponent field u, a
+// 4-bit mantissa v. The exponent picks the power (u<4 → 2^(u+1),
+// u≥4 → 2^(u-7)), the value = that power × (1 + v/16). Every expanded
+// value is exact in float32 and float64; pinned against llvm-objdump
+// on all 256 encodings.
 func vfpExpandImm64(imm8 uint32) float64 {
-	// Hardcoded lookup for known values in hello-world (fast path).
-	switch imm8 {
-	case 0x70:
-		return 1.0
-	case 0x50:
-		return 0.25
-	case 0x10:
-		return 4.0
-	case 0x68:
-		return 0.75
-	case 0x3a:
-		return 26.0
-	case 0x24:
-		return 10.0
-	case 0x14:
-		return 5.0
-	case 0x60:
-		return 0.5
-	case 0x90:
-		return 10.0
-	case 0x38:
-		return -1.0
-	case 0x18:
-		return -4.0
+	sign := uint64(imm8>>7&1) << 63
+	u := uint64(imm8>>4) & 7
+	v := uint64(imm8 & 0xF)
+
+	exp := 1024 + u // u<4: 2^(u+1)
+	if imm8>>4&7 >= 4 {
+		exp = 1016 + u // u≥4: 2^(u-7)
 	}
 
-	// General formula: construct IEEE 754 double bits.
-	sign := uint64((imm8 >> 7) & 1)
-	exp := uint64((imm8 >> 2) & 0x1f)
-	mant := uint64(imm8 & 0x3)
-	e4n := uint64(1) - (exp >> 4) // NOT(exp<4>)
-	// 11-bit IEEE exponent.
-	ieeeExp := (e4n << 10) | (exp << 5) | (e4n << 4) | (e4n << 3) | (e4n << 2) | (e4n << 1) | e4n
-	raw := (sign << 63) | (ieeeExp << 52) | (mant << 50)
-	return math.Float64frombits(raw)
+	return math.Float64frombits(sign | exp<<52 | v<<48)
 }
 
-// vfpExpandImm32 — for single.
+// vfpExpandImm32 — the single-precision view (the mantissa and every
+// power fit float32 exactly).
 func vfpExpandImm32(imm8 uint32) float32 {
 	return float32(vfpExpandImm64(imm8))
 }

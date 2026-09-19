@@ -1,34 +1,10 @@
 package arm64
 
-// The SIMD/FP part of the Builder vocabulary (scalar families are next
-// to their structs; this completes the programmatic construction
+// The SIMD part of the Builder vocabulary (the scalar FP families are
+// per-instruction types with their own Builder methods — fadd.go,
+// fmadd.go, ...; this file completes the programmatic construction
 // surface so the assembler constructors (asm/arm64 after the
 // arch-exodus) build through exported API only).
-
-// Fp3 — an FP three-register operation (fadd/fsub/fmul/fdiv/fmax/fmin
-// ...): the mnemonic, three FP registers and the family encoding base
-// (the s/d variant chosen by the caller).
-func NewFp3(op string, fd, fn, fm string, enc uint32) Instr {
-	return Fp3{
-		op:  op,
-		rd:  fd,
-		rn:  fn,
-		rm:  fm,
-		enc: enc,
-	}
-}
-
-// Fp4 — an FP four-register operation (fmadd/fmsub/...).
-func NewFp4(op string, fd, fn, fm, fa string, enc uint32) Instr {
-	return Fp4{
-		op:  op,
-		rd:  fd,
-		rn:  fn,
-		rm:  fm,
-		ra:  fa,
-		enc: enc,
-	}
-}
 
 // Simd2 — a two-register SIMD operation (cnt/abs/not/...): q/size carry
 // the arrangement.

@@ -31,6 +31,43 @@ func requireWidth(instr string, regs ...Reg) error {
 	return nil
 }
 
+// requireFpKind - equal kind (s/d) of all FP registers of an instruction.
+func requireFpKind(instr string, regs ...FReg) error {
+	for _, r := range regs[1:] {
+		if r.Is64() != regs[0].Is64() {
+			return fmt.Errorf("arm64.New%s: register kinds must match: %s vs %s",
+				instr, regs[0].name(), r.name())
+		}
+	}
+
+	return nil
+}
+
+// requireGprClass - an integer register operand of an FP instruction:
+// w/x (register 31 reads as zr; sp belongs to no FP form).
+func requireGprClass(r Reg, instr, op string) error {
+	return requireClass(
+		r,
+		instr,
+		op,
+		"w/x register (register 31 in an FP form reads as zr)",
+		classX, classW, classXZR, classWZR,
+	)
+}
+
+// requireFpGprWidth - the integer side of an FP↔GPR move must match
+// the FP width (d↔x, s↔w).
+func requireFpGprWidth(instr string, fp FReg, gpr Reg) error {
+	if fp.Is64() != gpr.Is64() {
+		return fmt.Errorf(
+			"arm64.New%s: register widths must match: %s vs %s",
+			instr, fp.name(), gpr.name(),
+		)
+	}
+
+	return nil
+}
+
 // requireHwW - the 32-bit form of movz/movk never has shift #32/#48.
 func requireHwW(rd Reg, instr string, hw Hw) error {
 	if !rd.Is64() && hw > Hw1 {

@@ -1311,51 +1311,55 @@ var arm64Schemas = []Schema{
 	NewSchema(0xFFE01C00, 0x1E601000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("imm8", 13, 8),
-	}, NewMeta("fmov", "Float"), "fmovImmD", true, decodeFmovImmOf(false, 0x1E601000, kD)),
-	NewSchema(0xFFE01C00, 0x1E601000, []Field{
+	}, NewMeta("fmov", "Float"), "fmovImmD", true, decodeFmovImmOf(false)),
+	NewSchema(0xFFE01C00, 0x1E201000, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("imm8", 13, 8),
-	}, NewMeta("fmov", "Float"), "fmovImmS", true, decodeFmovImmOf(true, 0x1E601000, kS)),
+	}, NewMeta("fmov", "Float"), "fmovImmS", true, decodeFmovImmOf(true)),
 	NewSchema(0xFFFFFC00, 0x1E270000, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "regW"),
-	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFp2Of("fmov", 0x1E270000, kS, kW)),
+	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFmovFromGpr),
 	NewSchema(0xFFFFFC00, 0x1E260000, []Field{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "fpRegS"),
-	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFp2Of("fmov", 0x1E260000, kW, kS)),
+	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFmovToGpr),
 	NewSchema(0xFFFFFC00, 0x1E614000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fneg", "Float"), "op2", true, decodeFp2Of("fneg", 0x1E614000, kD, kD)),
+	}, NewMeta("fneg", "Float"), "op2", true, decodeFneg),
+	NewSchema(0xFFFFFC00, 0x1E214000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fneg", "Float"), "op2", true, decodeFneg),
 	NewSchema(0xFFFFFC00, 0x1E624000, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcvt", "Float"), "op2", true, decodeFp2Of("fcvt", 0x1E624000, kS, kD)),
+	}, NewMeta("fcvt", "Float"), "op2", true, decodeFcvt),
 	NewSchema(0xFFFFFC00, 0x1E780000, []Field{
 		NewField("Rd", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFp2Of("fcvtzs", 0x1E780000, kW, kD)),
-	NewSchema(0xFFE0FC00, 0x1E600000, []Field{
+	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFcvtzs),
+	NewSchema(0xFFFFFC00, 0x1E620000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "regW"),
-	}, NewMeta("scvtf", "Float"), "op2", true, decodeFp2Of("scvtf", 0x1E600000, kD, kW)),
+	}, NewMeta("scvtf", "Float"), "op2", true, decodeScvtf),
 	NewSchema(0xFFFFFC00, 0x9E790000, []Field{
 		NewField("Rd", 0, 5, "intX"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFp2Of("fcvtzu", 0x9E790000, kX, kD)),
+	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
 	NewSchema(0xFF200000, 0x1F000000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Ra", 10, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmadd", "Float"), "op4", true, decodeFp4Of("fmadd", 0x1F000000)),
-	NewSchema(0xFF200000, 0x1F200000, []Field{
+	}, NewMeta("fmadd", "Float"), "op4", true, decodeFmadd),
+	NewSchema(0xFF208000, 0x1F208000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Ra", 10, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fnmsub", "Float"), "op4", true, decodeFp4Of("fnmsub", 0x1F200000)),
+	}, NewMeta("fnmsub", "Float"), "op4", true, decodeFnmsub),
 	NewSchema(
 		0xFFFFFFFF,
 		0xD5033EBF,
@@ -1471,118 +1475,156 @@ var arm64Schemas = []Schema{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fadd", "Float"), "op3", true, decodeFp3Of("fadd", kD)),
+	}, NewMeta("fadd", "Float"), "op3", true, decodeFadd),
 	NewSchema(0xFFE0FC00, 0x1E202800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fadd", "Float"), "op3", true, decodeFp3Of("fadd", kS)),
+	}, NewMeta("fadd", "Float"), "op3", true, decodeFadd),
 	NewSchema(0xFFE0FC00, 0x1E603800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fsub", "Float"), "op3", true, decodeFp3Of("fsub", kD)),
+	}, NewMeta("fsub", "Float"), "op3", true, decodeFsub),
 	NewSchema(0xFFE0FC00, 0x1E203800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fsub", "Float"), "op3", true, decodeFp3Of("fsub", kS)),
+	}, NewMeta("fsub", "Float"), "op3", true, decodeFsub),
 	NewSchema(0xFFE0FC00, 0x1E600800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmul", "Float"), "op3", true, decodeFp3Of("fmul", kD)),
+	}, NewMeta("fmul", "Float"), "op3", true, decodeFmul),
 	NewSchema(0xFFE0FC00, 0x1E200800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fmul", "Float"), "op3", true, decodeFp3Of("fmul", kS)),
+	}, NewMeta("fmul", "Float"), "op3", true, decodeFmul),
 	NewSchema(0xFFE0FC00, 0x1E601800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fdiv", "Float"), "op3", true, decodeFp3Of("fdiv", kD)),
+	}, NewMeta("fdiv", "Float"), "op3", true, decodeFdiv),
 	NewSchema(0xFFE0FC00, 0x1E201800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fdiv", "Float"), "op3", true, decodeFp3Of("fdiv", kS)),
+	}, NewMeta("fdiv", "Float"), "op3", true, decodeFdiv),
 	NewSchema(0xFFE0FC00, 0x1E604800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmax", "Float"), "op3", true, decodeFp3Of("fmax", kD)),
+	}, NewMeta("fmax", "Float"), "op3", true, decodeFmax),
 	NewSchema(0xFFE0FC00, 0x1E204800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fmax", "Float"), "op3", true, decodeFp3Of("fmax", kS)),
+	}, NewMeta("fmax", "Float"), "op3", true, decodeFmax),
 	NewSchema(0xFFE0FC00, 0x1E605800, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmin", "Float"), "op3", true, decodeFp3Of("fmin", kD)),
+	}, NewMeta("fmin", "Float"), "op3", true, decodeFmin),
 	NewSchema(0xFFE0FC00, 0x1E205800, []Field{
 		NewField("Rd", 0, 5, "fpRegS"),
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fmin", "Float"), "op3", true, decodeFp3Of("fmin", kS)),
+	}, NewMeta("fmin", "Float"), "op3", true, decodeFmin),
 	NewSchema(0xFFFFFC00, 0x9E660000, []Field{
 		NewField("Rd", 0, 5, "intX"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFp2Of("fmov", 0x9E660000, kX, kD)),
+	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFmovToGpr),
 	NewSchema(0xFFFFFC00, 0x9E670000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "intX"),
-	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFp2Of("fmov", 0x9E670000, kD, kX)),
+	}, NewMeta("fmov", "Float"), "fmovGen", true, decodeFmovFromGpr),
 	NewSchema(0xFFFFFC00, 0x1E22C000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegS"),
-	}, NewMeta("fcvt", "Float"), "op2", true, decodeFp2Of("fcvt", 0x1E22C000, kD, kS)),
+	}, NewMeta("fcvt", "Float"), "op2", true, decodeFcvt),
 	NewSchema(0xFFFFFC00, 0x9E620000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "intX"),
-	}, NewMeta("scvtf", "Float"), "op2", true, decodeFp2Of("scvtf", 0x9E620000, kD, kX)),
+	}, NewMeta("scvtf", "Float"), "op2", true, decodeScvtf),
 	NewSchema(0xFFFFFC00, 0x1E780000, []Field{
 		NewField("Rd", 0, 5, "intW"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFp2Of("fcvtzs", 0x1E780000, kW, kD)),
+	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFcvtzs),
 	NewSchema(0xFFFFFC00, 0x9E780000, []Field{
 		NewField("Rd", 0, 5, "intX"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFp2Of("fcvtzs", 0x9E780000, kX, kD)),
-	NewSchema(0xFFFFFC00, 0x9E620000, []Field{
+	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFcvtzs),
+	NewSchema(0xFFFFFC00, 0x1E220000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("scvtf", "Float"), "op2", true, decodeScvtf),
+	NewSchema(0xFFFFFC00, 0x9E220000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("scvtf", "Float"), "op2", true, decodeScvtf),
+	NewSchema(0xFFFFFC00, 0x1E630000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
-		NewField("Rn", 5, 5, "intX"),
-	}, NewMeta("scvtf", "Float"), "op2", true, decodeFp2Of("scvtf", 0x9E620000, kD, kX)),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("ucvtf", "Float"), "op2", true, decodeUcvtf),
 	NewSchema(0xFFFFFC00, 0x9E630000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
-		NewField("Rn", 5, 5, "intX"),
-	}, NewMeta("ucvtf", "Float"), "op2", true, decodeFp2Of("ucvtf", 0x9E630000, kD, kX)),
-	NewSchema(0xFF200000, 0x1F400000, []Field{
-		NewField("Rd", 0, 5, "fpRegD"),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("ucvtf", "Float"), "op2", true, decodeUcvtf),
+	NewSchema(0xFFFFFC00, 0x1E230000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("ucvtf", "Float"), "op2", true, decodeUcvtf),
+	NewSchema(0xFFFFFC00, 0x9E230000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "regW"),
+	}, NewMeta("ucvtf", "Float"), "op2", true, decodeUcvtf),
+	NewSchema(0xFFFFFC00, 0x1E380000, []Field{
+		NewField("Rd", 0, 5, "intW"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFcvtzs),
+	NewSchema(0xFFFFFC00, 0x9E380000, []Field{
+		NewField("Rd", 0, 5, "intX"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fcvtzs", "Float"), "op2", true, decodeFcvtzs),
+	NewSchema(0xFFFFFC00, 0x1E790000, []Field{
+		NewField("Rd", 0, 5, "intW"),
 		NewField("Rn", 5, 5, "fpRegD"),
-		NewField("Ra", 10, 5, "fpRegD"),
-		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fmadd", "Float"), "op4", true, decodeFp4Of("fmadd", 0x1F400000)),
+	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
+	NewSchema(0xFFFFFC00, 0x9E790000, []Field{
+		NewField("Rd", 0, 5, "intX"),
+		NewField("Rn", 5, 5, "fpRegD"),
+	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
+	NewSchema(0xFFFFFC00, 0x1E390000, []Field{
+		NewField("Rd", 0, 5, "intW"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
+	NewSchema(0xFFFFFC00, 0x9E390000, []Field{
+		NewField("Rd", 0, 5, "intX"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
 	NewSchema(0xFFFFFE0F, 0x1E202008, []Field{
 		NewField("Rn", 5, 5, "fpRegS"),
-	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpOf(false, 0x1E202008, kS)),
+	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpZero),
 	NewSchema(0xFFFFFE0F, 0x1E602008, []Field{
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpOf(false, 0x1E602008, kD)),
+	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpZero),
 	NewSchema(0xFFE0FC1F, 0x1E202000, []Field{
 		NewField("Rn", 5, 5, "fpRegS"),
 		NewField("Rm", 16, 5, "fpRegS"),
-	}, NewMeta("fcmp", "Float"), "fcmp2", true, decodeFcmpOf(true, 0x1E202000, kS)),
+	}, NewMeta("fcmp", "Float"), "fcmp2", true, decodeFcmpReg),
 	NewSchema(0xFFE0FC1F, 0x1E602000, []Field{
 		NewField("Rn", 5, 5, "fpRegD"),
 		NewField("Rm", 16, 5, "fpRegD"),
-	}, NewMeta("fcmp", "Float"), "fcmp2", true, decodeFcmpOf(true, 0x1E602000, kD)),
+	}, NewMeta("fcmp", "Float"), "fcmp2", true, decodeFcmpReg),
 	NewSchema(0xFFFFFC00, 0x1E604000, []Field{
 		NewField("Rd", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "fpRegD"),
-	}, NewMeta("fmov", "Float"), "op2", true, decodeFp2Of("fmov", 0x1E604000, kD, kD)),
+	}, NewMeta("fmov", "Float"), "op2", true, decodeFmov),
+	NewSchema(0xFFFFFC00, 0x1E204000, []Field{
+		NewField("Rd", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "fpRegS"),
+	}, NewMeta("fmov", "Float"), "op2", true, decodeFmov),
 	NewSchema(0xFFFFFC00, 0x4E284800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),

@@ -954,6 +954,163 @@ func (p *Program) Stxrb(rs, rt, rn arch.Reg) *Program {
 	return p.instrLine("stxrb", i, err, pos)
 }
 
+// --- floating point ------------------------------------------------------------
+
+// Fadd - fadd fd, fn, fm (double/single by the operand kind).
+func (p *Program) Fadd(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fadd(rd, rn, rm)
+	return p.instrLine("fadd", i, err, pos)
+}
+
+// Fsub - fsub fd, fn, fm.
+func (p *Program) Fsub(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fsub(rd, rn, rm)
+	return p.instrLine("fsub", i, err, pos)
+}
+
+// Fmul - fmul fd, fn, fm.
+func (p *Program) Fmul(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fmul(rd, rn, rm)
+	return p.instrLine("fmul", i, err, pos)
+}
+
+// Fdiv - fdiv fd, fn, fm.
+func (p *Program) Fdiv(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fdiv(rd, rn, rm)
+	return p.instrLine("fdiv", i, err, pos)
+}
+
+// Fmax - fmax fd, fn, fm.
+func (p *Program) Fmax(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fmax(rd, rn, rm)
+	return p.instrLine("fmax", i, err, pos)
+}
+
+// Fmin - fmin fd, fn, fm.
+func (p *Program) Fmin(rd, rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fmin(rd, rn, rm)
+	return p.instrLine("fmin", i, err, pos)
+}
+
+// Fneg - fneg fd, fn.
+func (p *Program) Fneg(rd, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fneg(rd, rn)
+	return p.instrLine("fneg", i, err, pos)
+}
+
+// Fmov - fmov fd, fn (the register form between two FP registers).
+func (p *Program) Fmov(rd, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fmov(rd, rn)
+	return p.instrLine("fmov", i, err, pos)
+}
+
+// FmovFromGpr - fmov fd, xn | fmov sn, wn (bits from the integer file;
+// fmov d0, xzr is the FP zero).
+func (p *Program) FmovFromGpr(rd arch.FReg, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.FmovFromGpr(rd, rn)
+	return p.instrLine("fmov", i, err, pos)
+}
+
+// FmovToGpr - fmov xn, fd | fmov wn, sn (bits to the integer file).
+func (p *Program) FmovToGpr(rd arch.Reg, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.FmovToGpr(rd, rn)
+	return p.instrLine("fmov", i, err, pos)
+}
+
+// FmovImm - fmov fd, #imm (the VFP imm8 form).
+func (p *Program) FmovImm(rd arch.FReg, imm float64) *Program {
+	pos := p.pos()
+	i, err := p.b.FmovImm(rd, imm)
+	return p.instrLine("fmov", i, err, pos)
+}
+
+// Fcvt - fcvt fd, fn (the s<->d width conversion).
+func (p *Program) Fcvt(rd, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fcvt(rd, rn)
+	return p.instrLine("fcvt", i, err, pos)
+}
+
+// Scvtf - scvtf fd, wn|xn (signed integer to FP).
+func (p *Program) Scvtf(rd arch.FReg, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Scvtf(rd, rn)
+	return p.instrLine("scvtf", i, err, pos)
+}
+
+// Ucvtf - ucvtf fd, wn|xn (unsigned integer to FP).
+func (p *Program) Ucvtf(rd arch.FReg, rn arch.Reg) *Program {
+	pos := p.pos()
+	i, err := p.b.Ucvtf(rd, rn)
+	return p.instrLine("ucvtf", i, err, pos)
+}
+
+// Fcvtzs - fcvtzs wd|xd, fn (FP to signed integer).
+func (p *Program) Fcvtzs(rd arch.Reg, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fcvtzs(rd, rn)
+	return p.instrLine("fcvtzs", i, err, pos)
+}
+
+// Fcvtzu - fcvtzu wd|xd, fn (FP to unsigned integer).
+func (p *Program) Fcvtzu(rd arch.Reg, rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fcvtzu(rd, rn)
+	return p.instrLine("fcvtzu", i, err, pos)
+}
+
+// Fmadd - fmadd fd, fn, fm, fa (fd = fa + fn*fm).
+func (p *Program) Fmadd(rd, rn, rm, ra arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fmadd(rd, rn, rm, ra)
+	return p.instrLine("fmadd", i, err, pos)
+}
+
+// Fnmsub - fnmsub fd, fn, fm, fa (fd = -(fn*fm - fa)).
+func (p *Program) Fnmsub(rd, rn, rm, ra arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fnmsub(rd, rn, rm, ra)
+	return p.instrLine("fnmsub", i, err, pos)
+}
+
+// Fcmp - fcmp fn, fm (sets the FP flags).
+func (p *Program) Fcmp(rn, rm arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Fcmp(rn, rm)
+	return p.instrLine("fcmp", i, err, pos)
+}
+
+// FcmpZero - fcmp fn, #0.0.
+func (p *Program) FcmpZero(rn arch.FReg) *Program {
+	pos := p.pos()
+	i, err := p.b.FcmpZero(rn)
+	return p.instrLine("fcmp", i, err, pos)
+}
+
+// LdrF - ldr st|dt, [rn, #off] (the FP/SIMD register form).
+func (p *Program) LdrF(rt arch.FReg, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.LdrF(rt, rn, arch.Off(off))
+	return p.instrLine("ldr", i, err, pos)
+}
+
+// StrF - str st|dt, [rn, #off] (the FP/SIMD register form).
+func (p *Program) StrF(rt arch.FReg, rn arch.Reg, off int64) *Program {
+	pos := p.pos()
+	i, err := p.b.StrF(rt, rn, arch.Off(off))
+	return p.instrLine("str", i, err, pos)
+}
+
 // --- system ---------------------------------------------------------------------
 
 // Nop - nop.

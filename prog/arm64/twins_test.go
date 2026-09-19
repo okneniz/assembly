@@ -367,3 +367,232 @@ func TestTwinsErrors(t *testing.T) {
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "nowhere")
 }
+
+func TestTwinsFP(t *testing.T) {
+	w0 := wreg(t, 0)
+	w1 := wreg(t, 1)
+
+	res := assemble(t, New().
+		Fadd(D0, D1, D2).
+		Fadd(S0, S1, S2).
+		Fsub(D3, D4, D5).
+		Fmul(S3, S4, S5).
+		Fdiv(D6, D7, D0).
+		Fmax(S6, S7, S0).
+		Fmin(D1, D2, D3).
+		Fneg(D4, D5).
+		Fneg(S4, S5).
+		Fmov(D6, D7).
+		Fmov(S6, S7).
+		FmovFromGpr(D0, X0).
+		FmovFromGpr(S1, w1).
+		FmovFromGpr(D2, XZR). // the FP zero idiom
+		FmovToGpr(X3, D5).
+		FmovToGpr(w0, S7).
+		FmovImm(D0, 0.5).
+		FmovImm(S0, 1.5).
+		Fcvt(S0, D0).
+		Fcvt(D1, S1).
+		Scvtf(D2, w1).
+		Scvtf(D3, X2).
+		Scvtf(S2, w1).
+		Scvtf(S3, X3).
+		Ucvtf(D4, X4).
+		Ucvtf(S4, w0).
+		Fcvtzs(X5, D5).
+		Fcvtzs(w1, D6).
+		Fcvtzs(X6, S5).
+		Fcvtzs(w0, S6).
+		Fcvtzu(X7, D7).
+		Fcvtzu(w1, S7).
+		Fmadd(D0, D1, D2, D3).
+		Fmadd(S0, S1, S2, S3).
+		Fnmsub(D4, D5, D6, D7).
+		Fnmsub(S4, S5, S6, S7).
+		Fcmp(D0, D1).
+		Fcmp(S0, S1).
+		FcmpZero(D2).
+		FcmpZero(S2).
+		LdrF(D3, X29, 16).
+		LdrF(S3, X29, 8).
+		StrF(D4, SP, 16).
+		StrF(S4, SP, 8))
+
+	b := arch.New()
+	require.Equal(t, []uint32{
+		enc(b.Fadd(D0, D1, D2)),
+		enc(b.Fadd(S0, S1, S2)),
+		enc(b.Fsub(D3, D4, D5)),
+		enc(b.Fmul(S3, S4, S5)),
+		enc(b.Fdiv(D6, D7, D0)),
+		enc(b.Fmax(S6, S7, S0)),
+		enc(b.Fmin(D1, D2, D3)),
+		enc(b.Fneg(D4, D5)),
+		enc(b.Fneg(S4, S5)),
+		enc(b.Fmov(D6, D7)),
+		enc(b.Fmov(S6, S7)),
+		enc(b.FmovFromGpr(D0, X0)),
+		enc(b.FmovFromGpr(S1, w1)),
+		enc(b.FmovFromGpr(D2, XZR)),
+		enc(b.FmovToGpr(X3, D5)),
+		enc(b.FmovToGpr(w0, S7)),
+		enc(b.FmovImm(D0, 0.5)),
+		enc(b.FmovImm(S0, 1.5)),
+		enc(b.Fcvt(S0, D0)),
+		enc(b.Fcvt(D1, S1)),
+		enc(b.Scvtf(D2, w1)),
+		enc(b.Scvtf(D3, X2)),
+		enc(b.Scvtf(S2, w1)),
+		enc(b.Scvtf(S3, X3)),
+		enc(b.Ucvtf(D4, X4)),
+		enc(b.Ucvtf(S4, w0)),
+		enc(b.Fcvtzs(X5, D5)),
+		enc(b.Fcvtzs(w1, D6)),
+		enc(b.Fcvtzs(X6, S5)),
+		enc(b.Fcvtzs(w0, S6)),
+		enc(b.Fcvtzu(X7, D7)),
+		enc(b.Fcvtzu(w1, S7)),
+		enc(b.Fmadd(D0, D1, D2, D3)),
+		enc(b.Fmadd(S0, S1, S2, S3)),
+		enc(b.Fnmsub(D4, D5, D6, D7)),
+		enc(b.Fnmsub(S4, S5, S6, S7)),
+		enc(b.Fcmp(D0, D1)),
+		enc(b.Fcmp(S0, S1)),
+		enc(b.FcmpZero(D2)),
+		enc(b.FcmpZero(S2)),
+		enc(b.LdrF(D3, X29, 16)),
+		enc(b.LdrF(S3, X29, 8)),
+		enc(b.StrF(D4, SP, 16)),
+		enc(b.StrF(S4, SP, 8)),
+	}, words(res.Code))
+}
+
+// TestTwinsFPClangPinned — the chain's FP words byte-compared with the
+// constants the Apple clang (LLVM 17) oracle emits for the same source
+// lines (the byte-parity pin of the whole FP surface).
+func TestTwinsFPClangPinned(t *testing.T) {
+	w2, w21, w23, w25 := wreg(t, 2), wreg(t, 21), wreg(t, 23), wreg(t, 25)
+	x21, x23, x25 := reg(21), reg(23), reg(25)
+	d8, d11 := dreg(8), dreg(11)
+	d13 := dreg(13)
+	d15, d16, d17 := dreg(15), dreg(16), dreg(17)
+	d18, d19, d20 := dreg(18), dreg(19), dreg(20)
+	d22, d24, d26 := dreg(22), dreg(24), dreg(26)
+	s9, s12, s14 := sreg(9), sreg(12), sreg(14)
+	s15, s16, s17 := sreg(15), sreg(16), sreg(17)
+	s18, s19, s20 := sreg(18), sreg(19), sreg(20)
+	s22, s24, s26 := sreg(22), sreg(24), sreg(26)
+	d27, d28, d29, d30 := dreg(27), dreg(28), dreg(29), dreg(30)
+	s27, s28, s29, s30 := sreg(27), sreg(28), sreg(29), sreg(30)
+
+	res := assemble(t, New().
+		Fadd(D0, D1, D2).
+		Fadd(S0, S1, S2).
+		Fsub(D0, D1, D2).
+		Fsub(S0, S1, S2).
+		Fmul(D0, D1, D2).
+		Fmul(S0, S1, S2).
+		Fdiv(D0, D1, D2).
+		Fdiv(S0, S1, S2).
+		Fmax(D0, D1, D2).
+		Fmax(S0, S1, S2).
+		Fmin(D0, D1, D2).
+		Fmin(S0, S1, S2).
+		Fneg(D3, D4).
+		Fneg(S3, S4).
+		Fmov(D5, D6).
+		Fmov(S5, S6).
+		FmovFromGpr(D7, X0).
+		FmovToGpr(X1, d8).
+		FmovFromGpr(s9, w2).
+		FmovImm(d11, 0.5).
+		FmovImm(s12, 0.5).
+		FmovImm(d13, 1.5).
+		FmovImm(s14, 1.5).
+		Fcmp(d15, d16).
+		Fcmp(s15, s16).
+		FcmpZero(d17).
+		FcmpZero(s17).
+		Fcvt(s18, d19).
+		Fcvt(d18, s19).
+		Scvtf(d20, w21).
+		Scvtf(d20, x21).
+		Scvtf(s20, w21).
+		Scvtf(s20, x21).
+		Ucvtf(d22, w21).
+		Ucvtf(d22, x21).
+		Ucvtf(s22, w21).
+		Ucvtf(s22, x21).
+		Fcvtzs(w23, d24).
+		Fcvtzs(x23, d24).
+		Fcvtzs(w23, s24).
+		Fcvtzs(x23, s24).
+		Fcvtzu(w25, d26).
+		Fcvtzu(x25, d26).
+		Fcvtzu(w25, s26).
+		Fcvtzu(x25, s26).
+		Fmadd(d27, d28, d29, d30).
+		Fmadd(s27, s28, s29, s30).
+		Fnmsub(d27, d28, d29, d30).
+		Fnmsub(s27, s28, s29, s30).
+		LdrF(D0, X1, 8).
+		LdrF(S0, X1, 4).
+		StrF(D2, X1, 16).
+		StrF(S2, X1, 8))
+
+	require.Equal(t, []uint32{
+		0x1e622820, 0x1e222820, // fadd d/s
+		0x1e623820, 0x1e223820, // fsub d/s
+		0x1e620820, 0x1e220820, // fmul d/s
+		0x1e621820, 0x1e221820, // fdiv d/s
+		0x1e624820, 0x1e224820, // fmax d/s
+		0x1e625820, 0x1e225820, // fmin d/s
+		0x1e614083, 0x1e214083, // fneg d/s
+		0x1e6040c5, 0x1e2040c5, // fmov d/d, s/s
+		0x9e670007, 0x9e660101, // fmov d<-x, x<-d
+		0x1e270049,             // fmov s<-w
+		0x1e6c100b, 0x1e2c100c, // fmov imm 0.5 d/s
+		0x1e6f100d, 0x1e2f100e, // fmov imm 1.5 d/s
+		0x1e7021e0, 0x1e3021e0, // fcmp d/d, s/s
+		0x1e602228, 0x1e202228, // fcmp #0.0 d/s
+		0x1e624272, 0x1e22c272, // fcvt s<-d, d<-s
+		0x1e6202b4, 0x9e6202b4, 0x1e2202b4, 0x9e2202b4, // scvtf
+		0x1e6302b6, 0x9e6302b6, 0x1e2302b6, 0x9e2302b6, // ucvtf
+		0x1e780317, 0x9e780317, 0x1e380317, 0x9e380317, // fcvtzs
+		0x1e790359, 0x9e790359, 0x1e390359, 0x9e390359, // fcvtzu
+		0x1f5d7b9b, 0x1f1d7b9b, // fmadd d/s
+		0x1f7dfb9b, 0x1f3dfb9b, // fnmsub d/s
+		0xfd400420, 0xbd400420, // ldr d/s
+		0xfd000822, 0xbd000822, // str d/s
+	}, words(res.Code))
+}
+
+func TestTwinsFPErrors(t *testing.T) {
+	// mixed kinds: the ctor error surfaces at Build
+	_, buildErrs := New().Fadd(D0, S1, D2).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "fadd")
+
+	// width-mismatched GPR move
+	_, buildErrs = New().FmovFromGpr(D0, wreg(t, 0)).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "fmov")
+
+	// fcvt needs differing kinds
+	_, buildErrs = New().Fcvt(D0, D1).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "fcvt")
+
+	// misaligned FP load offset
+	_, buildErrs = New().LdrF(D0, X1, 3).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "ldr")
+
+	// a non-encodable immediate builds fine and fails at Encode:
+	// 0.1 is not one of the 256 VFP values
+	bin, buildErrs := New().FmovImm(D0, 0.1).Build()
+	require.Empty(t, buildErrs)
+	errs := bin.Assemble(0).Errs
+	require.Len(t, errs, 1)
+	require.Contains(t, errs[0].Error(), "fmov")
+}
