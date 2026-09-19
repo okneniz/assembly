@@ -67,6 +67,7 @@ func TestArm64VsLlvmMc(t *testing.T) {
 		{"hello-linux", "tests/examples/hello-asm/hello-linux.s", "aarch64-linux-gnu"},
 		{"hello-arm-vm", "tests/examples/hello-asm/hello-arm-vm.s", "aarch64"},
 		{"fp", "tests/examples/fp/fp-arm64.s", "aarch64-linux-gnu"},
+		{"simd", "tests/examples/simd/simd-arm64.s", "aarch64-linux-gnu"},
 	} {
 		t.Run(tc.name, func(t *testing.T) {
 			src, err := os.ReadFile(tc.path)

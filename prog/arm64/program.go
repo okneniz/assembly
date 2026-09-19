@@ -954,6 +954,427 @@ func (p *Program) Stxrb(rs, rt, rn arch.Reg) *Program {
 	return p.instrLine("stxrb", i, err, pos)
 }
 
+// --- SIMD ------------------------------------------------------------------------
+// Cnt - cnt.Arr vd, vn.
+func (p *Program) Cnt(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Cnt(rd, rn, arr)
+	return p.instrLine("cnt", i, err, pos)
+}
+
+// Rev32V - rev32.Arr vd, vn.
+func (p *Program) Rev32V(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Rev32V(rd, rn, arr)
+	return p.instrLine("rev32", i, err, pos)
+}
+
+// Not - not.Arr vd, vn.
+func (p *Program) Not(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Not(rd, rn, arr)
+	return p.instrLine("not", i, err, pos)
+}
+
+// Abs - abs.Arr vd, vn.
+func (p *Program) Abs(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Abs(rd, rn, arr)
+	return p.instrLine("abs", i, err, pos)
+}
+
+// RbitV - rbit.Arr vd, vn.
+func (p *Program) RbitV(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.RbitV(rd, rn, arr)
+	return p.instrLine("rbit", i, err, pos)
+}
+
+// And - and.Arr vd, vn, vm.
+func (p *Program) And(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.And(rd, rn, rm, arr)
+	return p.instrLine("and", i, err, pos)
+}
+
+// Bic - bic.Arr vd, vn, vm.
+func (p *Program) Bic(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Bic(rd, rn, rm, arr)
+	return p.instrLine("bic", i, err, pos)
+}
+
+// Orr - orr.Arr vd, vn, vm.
+func (p *Program) Orr(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Orr(rd, rn, rm, arr)
+	return p.instrLine("orr", i, err, pos)
+}
+
+// Orn - orn.Arr vd, vn, vm.
+func (p *Program) Orn(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Orn(rd, rn, rm, arr)
+	return p.instrLine("orn", i, err, pos)
+}
+
+// Eor - eor.Arr vd, vn, vm.
+func (p *Program) Eor(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Eor(rd, rn, rm, arr)
+	return p.instrLine("eor", i, err, pos)
+}
+
+// Bsl - bsl.Arr vd, vn, vm.
+func (p *Program) Bsl(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Bsl(rd, rn, rm, arr)
+	return p.instrLine("bsl", i, err, pos)
+}
+
+// Bit - bit.Arr vd, vn, vm.
+func (p *Program) Bit(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Bit(rd, rn, rm, arr)
+	return p.instrLine("bit", i, err, pos)
+}
+
+// Bif - bif.Arr vd, vn, vm.
+func (p *Program) Bif(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Bif(rd, rn, rm, arr)
+	return p.instrLine("bif", i, err, pos)
+}
+
+// Add - add.Arr vd, vn, vm.
+func (p *Program) Add(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Add(rd, rn, rm, arr)
+	return p.instrLine("add", i, err, pos)
+}
+
+// Cmeq - cmeq.Arr vd, vn, vm.
+func (p *Program) Cmeq(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Cmeq(rd, rn, rm, arr)
+	return p.instrLine("cmeq", i, err, pos)
+}
+
+// Addp - addp.Arr vd, vn, vm.
+func (p *Program) Addp(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Addp(rd, rn, rm, arr)
+	return p.instrLine("addp", i, err, pos)
+}
+
+// Sqrshl - sqrshl.Arr vd, vn, vm.
+func (p *Program) Sqrshl(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Sqrshl(rd, rn, rm, arr)
+	return p.instrLine("sqrshl", i, err, pos)
+}
+
+// Cmtst - cmtst.Arr vd, vn, vm.
+func (p *Program) Cmtst(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Cmtst(rd, rn, rm, arr)
+	return p.instrLine("cmtst", i, err, pos)
+}
+
+// Cmge - cmge.Arr vd, vn, vm.
+func (p *Program) Cmge(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Cmge(rd, rn, rm, arr)
+	return p.instrLine("cmge", i, err, pos)
+}
+
+// Shl - shl.Arr vd, vn, #shift.
+func (p *Program) Shl(rd, rn arch.VReg, arr string, shift uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Shl(rd, rn, arr, shift)
+	return p.instrLine("shl", i, err, pos)
+}
+
+// Sri - sri.Arr vd, vn, #shift.
+func (p *Program) Sri(rd, rn arch.VReg, arr string, shift uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Sri(rd, rn, arr, shift)
+	return p.instrLine("sri", i, err, pos)
+}
+
+// Ushr - ushr.Arr vd, vn, #shift.
+func (p *Program) Ushr(rd, rn arch.VReg, arr string, shift uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Ushr(rd, rn, arr, shift)
+	return p.instrLine("ushr", i, err, pos)
+}
+
+// Sshr - sshr.Arr vd, vn, #shift.
+func (p *Program) Sshr(rd, rn arch.VReg, arr string, shift uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Sshr(rd, rn, arr, shift)
+	return p.instrLine("sshr", i, err, pos)
+}
+
+// Saddw - saddw.Arr vd, vn, vm.
+func (p *Program) Saddw(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Saddw(rd, rn, rm, arr)
+	return p.instrLine("saddw", i, err, pos)
+}
+
+// Ssubw - ssubw.Arr vd, vn, vm.
+func (p *Program) Ssubw(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Ssubw(rd, rn, rm, arr)
+	return p.instrLine("ssubw", i, err, pos)
+}
+
+// Uaddw - uaddw.Arr vd, vn, vm.
+func (p *Program) Uaddw(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Uaddw(rd, rn, rm, arr)
+	return p.instrLine("uaddw", i, err, pos)
+}
+
+// Usubw - usubw.Arr vd, vn, vm.
+func (p *Program) Usubw(rd, rn, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Usubw(rd, rn, rm, arr)
+	return p.instrLine("usubw", i, err, pos)
+}
+
+// Aese - aese.16b vd, vn.
+func (p *Program) Aese(rd, rn arch.VReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Aese(rd, rn)
+	return p.instrLine("aese", i, err, pos)
+}
+
+// Aesmc - aesmc.16b vd, vn.
+func (p *Program) Aesmc(rd, rn arch.VReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Aesmc(rd, rn)
+	return p.instrLine("aesmc", i, err, pos)
+}
+
+// Dup - dup.Arr vd, wn (DUP general).
+func (p *Program) Dup(vd arch.VReg, wn arch.Reg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Dup(vd, wn, arr)
+	return p.instrLine("dup", i, err, pos)
+}
+
+// Ins - mov.sz vd[idx], wn (INS general, the mov spelling).
+func (p *Program) Ins(vd arch.VReg, idx uint32, wn arch.Reg, elem string) *Program {
+	pos := p.pos()
+	i, err := p.b.Ins(vd, idx, wn, elem)
+	return p.instrLine("mov", i, err, pos)
+}
+
+// Smov - smov wd, vn.sz[idx].
+func (p *Program) Smov(wd arch.Reg, vn arch.VReg, elem string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Smov(wd, vn, elem, idx)
+	return p.instrLine("smov", i, err, pos)
+}
+
+// Umov - umov wd, vn.sz[idx].
+func (p *Program) Umov(wd arch.Reg, vn arch.VReg, elem string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.Umov(wd, vn, elem, idx)
+	return p.instrLine("umov", i, err, pos)
+}
+
+// DupElem - dup.Arr vd, vn[idx] (DUP element).
+func (p *Program) DupElem(rd, rn arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.DupElem(rd, rn, arr, idx)
+	return p.instrLine("dup", i, err, pos)
+}
+
+// InsElem - ins.sz vd[idx], vn[idx] (INS element).
+func (p *Program) InsElem(rd, rn arch.VReg, elem string, idx, srcIdx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.InsElem(rd, rn, elem, idx, srcIdx)
+	return p.instrLine("ins", i, err, pos)
+}
+
+// DupScalar - mov.s|d vd, vn (the scalar DUP alias).
+func (p *Program) DupScalar(rd, rn arch.VReg, elem string) *Program {
+	pos := p.pos()
+	i, err := p.b.DupScalar(rd, rn, elem)
+	return p.instrLine("mov", i, err, pos)
+}
+
+// MovSimd - mov.8b|16b vd, vm (the ORR-vector mov alias).
+func (p *Program) MovSimd(rd, rm arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.MovSimd(rd, rm, arr)
+	return p.instrLine("mov", i, err, pos)
+}
+
+// Tbl - tbl.16b vd, { vn }, vm.
+func (p *Program) Tbl(rd, rn, rm arch.VReg) *Program {
+	pos := p.pos()
+	i, err := p.b.Tbl(rd, rn, rm)
+	return p.instrLine("tbl", i, err, pos)
+}
+
+// Uaddlv - uaddlv.Arr hN|sN|dN, vn.
+func (p *Program) Uaddlv(rd, rn arch.VReg, arr string) *Program {
+	pos := p.pos()
+	i, err := p.b.Uaddlv(rd, rn, arr)
+	return p.instrLine("uaddlv", i, err, pos)
+}
+
+// MlaElem - mla.Arr vd, vn, vm[idx] (by element).
+func (p *Program) MlaElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.MlaElem(rd, rn, rm, arr, idx)
+	return p.instrLine("mla", i, err, pos)
+}
+
+// MlsElem - mls.Arr vd, vn, vm[idx] (by element).
+func (p *Program) MlsElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.MlsElem(rd, rn, rm, arr, idx)
+	return p.instrLine("mls", i, err, pos)
+}
+
+// MulElem - mul.Arr vd, vn, vm[idx] (by element).
+func (p *Program) MulElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.MulElem(rd, rn, rm, arr, idx)
+	return p.instrLine("mul", i, err, pos)
+}
+
+// SqdmulhElem - sqdmulh.Arr vd, vn, vm[idx] (by element).
+func (p *Program) SqdmulhElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqdmulhElem(rd, rn, rm, arr, idx)
+	return p.instrLine("sqdmulh", i, err, pos)
+}
+
+// SqrdmulhElem - sqrdmulh.Arr vd, vn, vm[idx] (by element).
+func (p *Program) SqrdmulhElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqrdmulhElem(rd, rn, rm, arr, idx)
+	return p.instrLine("sqrdmulh", i, err, pos)
+}
+
+// SqrdmlahElem - sqrdmlah.Arr vd, vn, vm[idx] (by element).
+func (p *Program) SqrdmlahElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqrdmlahElem(rd, rn, rm, arr, idx)
+	return p.instrLine("sqrdmlah", i, err, pos)
+}
+
+// SqrdmlshElem - sqrdmlsh.Arr vd, vn, vm[idx] (by element).
+func (p *Program) SqrdmlshElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqrdmlshElem(rd, rn, rm, arr, idx)
+	return p.instrLine("sqrdmlsh", i, err, pos)
+}
+
+// FmlaElem - fmla.Arr vd, vn, vm[idx] (by element).
+func (p *Program) FmlaElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.FmlaElem(rd, rn, rm, arr, idx)
+	return p.instrLine("fmla", i, err, pos)
+}
+
+// FmlsElem - fmls.Arr vd, vn, vm[idx] (by element).
+func (p *Program) FmlsElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.FmlsElem(rd, rn, rm, arr, idx)
+	return p.instrLine("fmls", i, err, pos)
+}
+
+// FmulElem - fmul.Arr vd, vn, vm[idx] (by element).
+func (p *Program) FmulElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.FmulElem(rd, rn, rm, arr, idx)
+	return p.instrLine("fmul", i, err, pos)
+}
+
+// FmulxElem - fmulx.Arr vd, vn, vm[idx] (by element).
+func (p *Program) FmulxElem(rd, rn, rm arch.VReg, arr string, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.FmulxElem(rd, rn, rm, arr, idx)
+	return p.instrLine("fmulx", i, err, pos)
+}
+
+// SmlalElem - smlal{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SmlalElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SmlalElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("smlal", i, err, pos)
+}
+
+// SqdmlalElem - sqdmlal{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SqdmlalElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqdmlalElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("sqdmlal", i, err, pos)
+}
+
+// SmlslElem - smlsl{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SmlslElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SmlslElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("smlsl", i, err, pos)
+}
+
+// SqdmlslElem - sqdmlsl{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SqdmlslElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqdmlslElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("sqdmlsl", i, err, pos)
+}
+
+// SmullElem - smull{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SmullElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SmullElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("smull", i, err, pos)
+}
+
+// SqdmullElem - sqdmull{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) SqdmullElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.SqdmullElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("sqdmull", i, err, pos)
+}
+
+// UmlalElem - umlal{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) UmlalElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.UmlalElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("umlal", i, err, pos)
+}
+
+// UmlslElem - umlsl{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) UmlslElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.UmlslElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("umlsl", i, err, pos)
+}
+
+// UmullElem - umull{,2}.Arr vd, vn, vm[idx] (by element, widening).
+func (p *Program) UmullElem(rd, rn, rm arch.VReg, arr string, two bool, idx uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.UmullElem(rd, rn, rm, arr, two, idx)
+	return p.instrLine("umull", i, err, pos)
+}
+
+// FcmlaElem - fcmla.Arr vd, vn, vm[idx], #rot.
+func (p *Program) FcmlaElem(rd, rn, rm arch.VReg, arr string, idx, rot uint32) *Program {
+	pos := p.pos()
+	i, err := p.b.FcmlaElem(rd, rn, rm, arr, idx, rot)
+	return p.instrLine("fcmla", i, err, pos)
+}
+
 // --- floating point ------------------------------------------------------------
 
 // Fadd - fadd fd, fn, fm (double/single by the operand kind).

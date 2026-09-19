@@ -15,23 +15,21 @@ type Tbl struct {
 }
 
 // newTbl - the Tbl constructor: the struct is assembled only
-// here (NewTbl and the decoder call it).
-func newTbl(b base, rd, rn, rm string) (Tbl, error) {
+// here (the Builder method and the decoder call it).
+func newTbl(b base, rd, rn, rm VReg) (Tbl, error) {
 	return Tbl{
 		base: b,
-		rd:   rd,
-		rn:   rn,
-		rm:   rm,
+		rd:   rd.name(),
+		rn:   rn.name(),
+		rm:   rm.name(),
 	}, nil
 }
 
-// NewTbl - tbl.16b vd, { vn }, vm (the assembler ctor form; the word
-// base is filled at decode time).
-func NewTbl(rd, rn, rm string) (Tbl, error) {
+func (Builder) Tbl(rd, rn, rm VReg) (Instr, error) {
 	return newTbl(base{}, rd, rn, rm)
 }
 
-const tblEnc uint32 = 0x0E000000
+const tblEnc uint32 = 0x4E000000
 
 func (i Tbl) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("tbl.16b %s, { %s }, %s", i.rd, i.rn, i.rm)
@@ -47,7 +45,7 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 }
 
 func decodeTbl(w uint32) (Instr, error) {
-	in, err := newTbl(newBase(w), vReg(w&0x1f), vReg(w>>5&0x1f), vReg(w>>16&0x1f))
+	in, err := newTbl(newBase(w), newVReg(uint8(w&0x1f)), newVReg(uint8(w>>5&0x1f)), newVReg(uint8(w>>16&0x1f)))
 	if err != nil {
 		return nil, err
 	}

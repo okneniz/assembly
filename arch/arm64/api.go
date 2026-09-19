@@ -333,7 +333,6 @@ func RegListStr(rt0 uint32, count int) string { return regListStr(rt0, count) }
 
 // IsSimd3Logical — whether the three-same mnemonic uses the logical
 // arrangement convention (only Q selects).
-func IsSimd3Logical(name string) bool { return isSimd3Logical(name) }
 
 // InvSysReg — a system register name → 15-bit key.
 func InvSysReg(v any) (uint32, error) { return invSysReg(v) }

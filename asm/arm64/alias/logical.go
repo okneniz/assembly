@@ -121,30 +121,32 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 			return nil, errors.New("mov: vector register expected")
 		}
 
-		vdN, err := arch.ArmRegNum(vd)
-		if err != nil {
-			return nil, fmt.Errorf("mov: %w", err)
-		}
-
-		rdN, err := arch.ArmRegNum(rd)
-		if err != nil {
-			return nil, fmt.Errorf("mov: %w", err)
-		}
-
-		size := uint32(2)
-		q := uint32(0)
+		elem := "s"
 		if rd[0] == 'x' {
-			size, q = 3, 1
+			elem = "d"
 		}
 
 		idx := ops[1].Num()
-		if idx < 0 || idx >= 16>>size {
-			return nil, fmt.Errorf("mov: lane index out of range (0..%d)",
-				(16>>size)-1)
+		if idx < 0 {
+			return nil, errors.New("mov: bad lane index")
 		}
 
-		return arch.NewSimdCopyGPR("umov", vd, rd, size,
-			uint32(idx), q, vdN, rdN, true), nil
+		gpr, err := arch.RegOf(rd)
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		vreg, err := arch.VRegOf(vd)
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		in, ierr := (arch.Builder{}).Umov(gpr, vreg, elem, uint32(idx))
+		if ierr != nil {
+			return nil, fmt.Errorf("mov: %w", ierr)
+		}
+
+		return in, nil
 	}
 
 	if ops[1].IsReg() && arm64.IsGPR(ops[1].Reg()) {

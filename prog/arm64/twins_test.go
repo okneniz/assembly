@@ -596,3 +596,159 @@ func TestTwinsFPErrors(t *testing.T) {
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "fmov")
 }
+
+// TestTwinsSimdClangPinned - the chain's SIMD words byte-compared with
+// the constants the Apple clang (LLVM 17) oracle emits for the same
+// source lines (the byte-parity pin of the decomposed SIMD families;
+// the Builder is pinned transitively - every twin delegates to it).
+func TestTwinsSimdClangPinned(t *testing.T) {
+	w0 := wreg(t, 0)
+	w1 := wreg(t, 1)
+
+	res := assemble(t, New().
+		And(V0, V1, V2, "16b").
+		And(V3, V4, V5, "8b").
+		Bic(V0, V1, V2, "16b").
+		Orr(V0, V1, V2, "16b").
+		Orr(V3, V4, V5, "8b").
+		Orn(V0, V1, V2, "16b").
+		Eor(V0, V1, V2, "16b").
+		Bsl(V0, V1, V2, "16b").
+		Bit(V0, V1, V2, "16b").
+		Bif(V0, V1, V2, "16b").
+		Add(V0, V1, V2, "16b").
+		Add(V3, V4, V5, "8b").
+		Cmeq(V0, V1, V2, "16b").
+		Addp(V0, V1, V2, "16b").
+		Sqrshl(V0, V1, V2, "16b").
+		Cnt(V0, V1, "8b").
+		Cnt(V0, V1, "16b").
+		Rev32V(V0, V1, "8b").
+		Not(V0, V1, "16b").
+		Abs(V0, V1, "8b").
+		RbitV(V0, V1, "16b").
+		Shl(V0, V1, "16b", 3).
+		Shl(V3, V4, "8b", 5).
+		Sri(V0, V1, "16b", 4).
+		Ushr(V0, V1, "16b", 5).
+		Sshr(V0, V1, "16b", 5).
+		Aese(V0, V1).
+		Aesmc(V0, V1).
+		Dup(V0, w0, "16b").
+		DupElem(V0, V1, "4s", 2).
+		Ins(V0, 1, w1, "s").
+		Smov(X0, V0, "s", 1).
+		Umov(w0, V0, "s", 1).
+		InsElem(V0, V1, "d", 0, 0).
+		InsElem(V2, V3, "s", 0, 0).
+		MovSimd(V0, V1, "16b").
+		MovSimd(V2, V3, "8b").
+		Tbl(V0, V1, V2).
+		Saddw(V0, V1, V2, "8h").
+		Uaddw(V0, V1, V2, "4s").
+		Usubw(V0, V1, V2, "8h").
+		MlaElem(V0, V1, V2, "4s", 1).
+		MlsElem(V0, V1, V2, "4s", 1).
+		MulElem(V0, V1, V2, "4s", 1).
+		SqdmulhElem(V0, V1, V2, "8h", 3).
+		SqrdmulhElem(V0, V1, V2, "4s", 0).
+		SqrdmlahElem(V0, V1, V2, "4s", 0).
+		SqrdmlshElem(V0, V1, V2, "4s", 0).
+		SmlalElem(V0, V1, V2, "4s", true, 1).
+		FmlaElem(V0, V1, V2, "4s", 1).
+		FmlsElem(V0, V1, V2, "2s", 0).
+		FmulElem(V0, V1, V2, "2d", 0).
+		FmulxElem(V0, V1, V2, "4s", 2).
+		FcmlaElem(V0, V1, V2, "4s", 0, 90).
+		InsElem(V0, V1, "s", 1, 2))
+
+	require.Equal(t, []uint32{
+		0x4e221c20,
+		0x0e251c83,
+		0x4e621c20,
+		0x4ea21c20,
+		0x0ea51c83,
+		0x4ee21c20,
+		0x6e221c20,
+		0x6e621c20,
+		0x6ea21c20,
+		0x6ee21c20,
+		0x4e228420,
+		0x0e258483,
+		0x6e228c20,
+		0x4e22bc20,
+		0x4e225c20,
+		0x0e205820,
+		0x4e205820,
+		0x2e200820,
+		0x6e205820,
+		0x0e20b820,
+		0x6e605820,
+		0x4f0b5420,
+		0x0f0d5483,
+		0x6f0c4420,
+		0x6f0b0420,
+		0x4f0b0420,
+		0x4e284820,
+		0x4e286820,
+		0x4e010c00,
+		0x4e140420,
+		0x4e0c1c20,
+		0x4e0c2c00,
+		0x0e0c3c00,
+		0x6e080420,
+		0x6e040462,
+		0x4ea11c20,
+		0x0ea31c62,
+		0x4e020020,
+		0x4e221020,
+		0x6e621020,
+		0x6e223020,
+		0x6fa20020,
+		0x6fa24020,
+		0x4fa28020,
+		0x4f72c020,
+		0x4f82d020,
+		0x6f82d020,
+		0x6f82f020,
+		0x4f522020,
+		0x4fa21020,
+		0x0f825020,
+		0x4fc29020,
+		0x6f829820,
+		0x6f823020,
+		0x6e0c4420,
+	}, words(res.Code))
+}
+
+func TestTwinsSimdErrors(t *testing.T) {
+	// the logical group takes only .8b/.16b (bits 23:22 are its opcode)
+	_, buildErrs := New().And(V0, V1, V2, "4h").Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "and")
+
+	// a lane index beyond the lane count
+	_, buildErrs = New().DupElem(V0, V1, "4s", 4).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "dup")
+
+	// umov: the element must fill the destination register
+	_, buildErrs = New().Umov(X0, V0, "s", 1).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "umov")
+
+	// a shift out of the lane width's range
+	_, buildErrs = New().Shl(V0, V1, "16b", 16).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "shl")
+
+	// an fp arrangement on an integer by-element form
+	_, buildErrs = New().MlaElem(V0, V1, V2, "2d", 1).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "mla")
+
+	// fcmla rotation is one of #0/#90/#180/#270
+	_, buildErrs = New().FcmlaElem(V0, V1, V2, "4s", 0, 45).Build()
+	require.Len(t, buildErrs, 1)
+	require.Contains(t, buildErrs[0].Error(), "fcmla")
+}

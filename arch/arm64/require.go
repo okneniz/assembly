@@ -163,3 +163,29 @@ func requireUnscaledOff(instr string, off Off) error {
 
 	return nil
 }
+
+// requireArr - the arrangement must be one of the listed forms.
+func requireArr(instr, arr string, ok ...string) error {
+	for _, a := range ok {
+		if arr == a {
+			return nil
+		}
+	}
+
+	return fmt.Errorf("arm64.New%s: arrangement %q is not one of %v",
+		instr, arr, ok,
+	)
+}
+
+// requireVRegNum - a vector register constructor check is unreachable
+// through this helper: kept for symmetry with the FP/int sides.
+func requireLaneIdx(instr string, size, idx uint32) error {
+	if idx >= 16>>size {
+		return fmt.Errorf(
+			"arm64.New%s: lane index %d out of range (0..%d)",
+			instr, idx, 16>>size-1,
+		)
+	}
+
+	return nil
+}

@@ -58,6 +58,30 @@ func sreg(n int) arch.FReg {
 	return r
 }
 
+// vreg - the vector pre-minting helper: the number is a constant
+// 0..7, the constructor error is unreachable.
+func vreg(n int) arch.VReg {
+	r, err := arch.V(n)
+	if err != nil {
+		panic(err) // unreachable: 0..7 is a valid register number
+	}
+
+	return r
+}
+
+// V0-V7 - the vector argument registers (the SIMD halves of the
+// AAPCS64 argument file), the counterparts of X0-X7/D0-D7.
+var (
+	V0 = vreg(0)
+	V1 = vreg(1)
+	V2 = vreg(2)
+	V3 = vreg(3)
+	V4 = vreg(4)
+	V5 = vreg(5)
+	V6 = vreg(6)
+	V7 = vreg(7)
+)
+
 // D0-D7/S0-S7 - the FP argument registers (v0-v7), the AAPCS64
 // counterparts of X0-X7.
 var (
