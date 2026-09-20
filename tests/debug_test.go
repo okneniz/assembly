@@ -21,17 +21,17 @@ import (
 	driscv "github.com/okneniz/assembly/debug/riscv"
 	"github.com/okneniz/assembly/debug/session"
 	"github.com/okneniz/assembly/file"
-	"github.com/okneniz/assembly/prog"
 	aprog "github.com/okneniz/assembly/prog/arm64"
 	rprog "github.com/okneniz/assembly/prog/riscv"
+	"github.com/okneniz/assembly/unit"
 )
 
 // callerPos - a caller-based position resolver for the prog chains:
 // invoked inside a chain method, two frames up is the calling code
 // (this file).
-func callerPos() prog.Pos {
+func callerPos() unit.Pos {
 	_, file, line, _ := runtime.Caller(2)
-	return prog.NewPos(file, line)
+	return unit.NewPos(file, line)
 }
 
 // asmDebugLines converts the asm line map into the session's normalized
@@ -236,8 +236,8 @@ func TestDebugSource(t *testing.T) {
 // resolver for the first line, an injected caller resolver for the
 // rest), the register state after a step matching the mov operand.
 func TestDebugProgArm64(t *testing.T) {
-	p := aprog.New().
-		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 42) }).
+	p := aprog.New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("synthetic.go", 42) }).
 		Label("start").
 		Movz(aprog.X0, 0x41, arch.Hw0).
 		WithPos(callerPos).
@@ -310,8 +310,8 @@ func TestDebugProgArm64(t *testing.T) {
 // stop is a breakpoint at the entry. The register state after a step
 // matches the addi operand.
 func TestDebugProgRiscv(t *testing.T) {
-	p := rprog.New().
-		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 42) }).
+	p := rprog.New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("synthetic.go", 42) }).
 		Label("start").
 		Addi(rprog.A0, rprog.Zero, 0x41).
 		WithPos(callerPos).

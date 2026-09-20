@@ -11,8 +11,8 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
-	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
 
 // exprNumeric reports that the expression contains no symbols
@@ -58,7 +58,7 @@ func (r resolved) Encode(w io.Writer) (int64, error) {
 
 // resolve evaluates the expression slots via ctx and builds the
 // evaluated instruction.
-func (in instr) resolve(ctx asm.Ctx) (asm.Resolved, error) {
+func (in instr) resolve(ctx unit.Ctx) (unit.Resolved, error) {
 	ops := make([]arch.Op, 0, len(in.ops))
 	for idx, o := range in.ops {
 		switch {

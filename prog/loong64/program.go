@@ -5,13 +5,17 @@
 // each line (the debugger's address ↔ source map) comes from the
 // position resolver injected with WithPos - there is no built-in caller
 // detection.
+// The chain is a producer over the unit output: every method deposits
+// its record there (instructions as ready records, label-directed macros
+// as deferred ones), and Assemble is the unit's resolve phase adapted to
+// the chain's result shape.
 package loong64
 
 import (
 	"fmt"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
-	"github.com/okneniz/assembly/prog"
+	"github.com/okneniz/assembly/unit"
 )
 
 // Program - a program being built: a sequence of lines (instructions,
@@ -19,22 +23,23 @@ import (
 // one line each and return the program; nothing is encoded until
 // Assemble.
 type Program struct {
-	lines []line
-	entry string
-	errs  []error
-	pos   func() prog.Pos
-	b     arch.Builder
+	u    *unit.Unit
+	errs []error
+	pos  func() unit.Pos
+	b    arch.Builder
 }
 
-// New - an empty program.
-func New() *Program {
-	return &Program{pos: nopos}
+// New - a chain over the given output: the caller owns it (a compiler
+// creates one output and passes it to every producer it composes - the
+// chain does not know who else deposits there).
+func New(u *unit.Unit) *Program {
+	return &Program{u: u, pos: nopos}
 }
 
 // nopos - the default resolver: no position (a line reports one only
 // after a resolver is injected with WithPos).
-func nopos() prog.Pos {
-	return prog.Pos{}
+func nopos() unit.Pos {
+	return unit.Pos{}
 }
 
 // WithPos - the position resolver for all lines appended after this
@@ -43,7 +48,7 @@ func nopos() prog.Pos {
 // one runs inside the chain method, where frame 0 is the resolver
 // itself and frame 2 the code calling the chain (runtime.Caller(2)).
 // A nil resolver is ignored.
-func (p *Program) WithPos(pos func() prog.Pos) *Program {
+func (p *Program) WithPos(pos func() unit.Pos) *Program {
 	if pos != nil {
 		p.pos = pos
 	}
@@ -53,25 +58,25 @@ func (p *Program) WithPos(pos func() prog.Pos) *Program {
 
 // Label - define a label at the current position.
 func (p *Program) Label(name string) *Program {
-	p.lines = append(p.lines, newLabelLine(name, p.pos()))
+	p.u.Label(name)
 	return p
 }
 
 // Entry - the label the program starts at.
 func (p *Program) Entry(name string) *Program {
-	p.entry = name
+	p.u.Entry(name)
 	return p
 }
 
 // Ascii - string data appended verbatim (no terminating zero).
 func (p *Program) Ascii(s string) *Program {
-	p.lines = append(p.lines, newDataLine([]byte(s), ".ascii", p.pos()))
+	p.u.Ascii(p.pos(), s)
 	return p
 }
 
 // Bytes - raw data bytes.
 func (p *Program) Bytes(b ...byte) *Program {
-	p.lines = append(p.lines, newDataLine(b, ".byte", p.pos()))
+	p.u.Bytes(p.pos(), b...)
 	return p
 }
 
@@ -105,15 +110,14 @@ func (p *Program) Bnez(rj arch.Reg, label string) *Program {
 // pcalau12i+addi.d pair (a fixed 8 bytes; the split is computed against
 // the page-aligned pc, exactly as the text-path pseudo).
 func (p *Program) La(rd arch.Reg, label string) *Program {
-	pos := p.pos()
-	p.lines = append(p.lines, newLaLine(label, func(t, pc uint64) ([]arch.Instr, error) {
+	p.u.Sym(p.pos(), unit.NewPair("la", label, 8, func(t, pc uint64) ([]unit.Resolved, error) {
 		return laPair(p.b, rd, int64(t), int64(pc))
-	}, pos))
+	}))
 	return p
 }
 
 // laPair - the evaluated la encoding: pcalau12i (hi) + addi.d (lo).
-func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]arch.Instr, error) {
+func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]unit.Resolved, error) {
 	page := pc &^ 0xfff
 	d := target - page
 	lo := d & 0xfff
@@ -132,7 +136,7 @@ func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]arch.Instr, error)
 		return nil, fmt.Errorf("la: %w", err)
 	}
 
-	return []arch.Instr{
+	return []unit.Resolved{
 		b.Pcalau12i(rd, hi20),
 		b.AddiD(rd, rd, lo12),
 	}, nil
@@ -198,22 +202,24 @@ func (p *Program) AddiW(rd, rj arch.Reg, imm int64) *Program {
 // Build - materialize the program; deferred construction errors are
 // returned alongside.
 func (p *Program) Build() (*Binary, []error) {
-	return &Binary{Entry: p.entry, lines: p.lines}, p.errs
+	return &Binary{u: p.u}, p.errs
 }
 
 // --- internals ---------------------------------------------------------------
 
-func (p *Program) instrLine(src string, i arch.Instr, _ error, pos prog.Pos) *Program {
-	p.lines = append(p.lines, newInstrLine(i, src, pos))
+func (p *Program) instrLine(src string, i arch.Instr, _ error, pos unit.Pos) *Program {
+	p.u.Instr(pos, i, nil)
 	return p
 }
 
 func (p *Program) branchLine(
 	src, label string,
 	ctor func(target, pc uint64) (arch.Instr, error),
-	pos prog.Pos,
+	pos unit.Pos,
 ) *Program {
-	p.lines = append(p.lines, newBranchLine(src, label, ctor, pos))
+	p.u.Sym(pos, unit.NewBranch(src, label, 4, func(t, pc uint64) (unit.Resolved, error) {
+		return ctor(t, pc)
+	}))
 	return p
 }
 

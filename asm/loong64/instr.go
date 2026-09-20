@@ -5,7 +5,7 @@ package loong64
 // the evaluated form (expr -> numbers -> arch.BuildInstr).
 
 import (
-	asm "github.com/okneniz/assembly/asm"
+	"github.com/okneniz/assembly/unit"
 )
 
 // instr is an unevaluated instruction (mnemonic + operand slots); it
@@ -26,13 +26,13 @@ func newInstr(mnem string, ops []Op) instr {
 
 // Resolve evaluates the expressions and builds the evaluated
 // instruction.
-func (in instr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
+func (in instr) Resolve(ctx unit.Ctx) (unit.Resolved, error) {
 	return in.resolve(ctx)
 }
 
 // ResolveForm evaluates the "mnemonic + operands" form in the ctx
 // environment (pseudo expansion: each form starts from its own address,
 // pass a derived ctx).
-func (b *Backend) ResolveForm(mnem string, ops []Op, ctx asm.Ctx) (asm.Resolved, error) {
+func (b *Backend) ResolveForm(mnem string, ops []Op, ctx unit.Ctx) (unit.Resolved, error) {
 	return newInstr(mnem, ops).resolve(ctx)
 }

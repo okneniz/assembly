@@ -12,8 +12,8 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
 
 // roundingModes maps FP rounding mode names (an optional operand:
@@ -87,7 +87,7 @@ func (r resolved) Encode(w io.Writer) (int64, error) {
 // evaluated instruction; optNoRVC is the .option mode at the
 // instruction's moment (compression itself is value-driven - see the
 // package comment).
-func (in instr) resolve(ctx asm.Ctx, optNoRVC bool) (asm.Resolved, error) {
+func (in instr) resolve(ctx unit.Ctx, optNoRVC bool) (unit.Resolved, error) {
 	ops := make([]arch.Op, 0, len(in.ops))
 
 	for idx, o := range in.ops {
@@ -133,7 +133,7 @@ func (in instr) resolve(ctx asm.Ctx, optNoRVC bool) (asm.Resolved, error) {
 
 // evalExpr evaluates an expression slot (nil means bare memory
 // "(rs1)": zero).
-func evalExpr(e *expr.Expr, ctx asm.Ctx) (int64, error) {
+func evalExpr(e *expr.Expr, ctx unit.Ctx) (int64, error) {
 	if e == nil {
 		return 0, nil
 	}

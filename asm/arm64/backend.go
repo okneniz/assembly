@@ -20,6 +20,7 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
 
 // New returns an ARM64 Syntax for asm.Assemble (real instructions).
@@ -68,7 +69,7 @@ type armAsmInstr struct {
 }
 
 // Resolve evaluates the expressions and encodes with self-verify.
-func (in armAsmInstr) Resolve(c asm.Ctx) (asm.Resolved, error) {
+func (in armAsmInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
 	word, err := encodeARM(in, newCtx(c.Addr(), c.Resolve, in.ctors))
 	if err != nil {
 		return nil, err

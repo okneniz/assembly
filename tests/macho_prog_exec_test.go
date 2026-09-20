@@ -18,6 +18,7 @@ import (
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 	prog "github.com/okneniz/assembly/prog/arm64"
+	"github.com/okneniz/assembly/unit"
 )
 
 func TestMachOProgramExec(t *testing.T) {
@@ -25,7 +26,7 @@ func TestMachOProgramExec(t *testing.T) {
 		t.Skip("native arm64 macOS only")
 	}
 
-	p := prog.New().Entry("start")
+	p := prog.New(unit.New()).Entry("start")
 
 	// counter (data, 7) incremented in place and re-read; scratch (bss)
 	// must read zero, accept a write, and read it back; exit(9)

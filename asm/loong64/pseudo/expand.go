@@ -3,9 +3,9 @@ package pseudo
 import (
 	"fmt"
 
-	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 	loong64 "github.com/okneniz/assembly/asm/loong64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // form is one base instruction of an expansion: a mnemonic + operands.
@@ -40,7 +40,7 @@ func zero() loong64.Op {
 // forms. The li ladders evaluate their operand via ctx: a symbolic
 // operand takes the worst-case chain LENGTH (the content is whatever
 // the current pass sees), so the assembler's two passes converge.
-func expandPseudo(mnem string, ops []loong64.Op, ctx asm.Ctx) ([]form, error) {
+func expandPseudo(mnem string, ops []loong64.Op, ctx unit.Ctx) ([]form, error) {
 	switch mnem {
 	case "nop":
 		return []form{newForm("andi", []loong64.Op{zero(), zero(), loong64.OpNum(0)})}, nil
@@ -119,7 +119,7 @@ func expandPseudo(mnem string, ops []loong64.Op, ctx asm.Ctx) ([]form, error) {
 // the shortest exact chain (the llvm ladder); a symbolic one (an
 // address, in practice) is forced to the full 64-bit chain - as GAS,
 // li.w/li.d of a symbol load the whole address.
-func expandLi(ops []loong64.Op, is64 bool, ctx asm.Ctx) ([]form, error) {
+func expandLi(ops []loong64.Op, is64 bool, ctx unit.Ctx) ([]form, error) {
 	what := "li.w"
 	if is64 {
 		what = "li.d"

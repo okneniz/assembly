@@ -7,18 +7,18 @@ package arm64
 
 import (
 	"encoding/binary"
+	"github.com/okneniz/assembly/unit"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
-	"github.com/okneniz/assembly/prog"
 )
 
 // streamsProg - a program reading and writing a data static and a bss
 // one through an La pair, exiting with the data value it re-read.
 func streamsProg() *Program {
-	p := New().Entry("start")
+	p := New(unit.New()).Entry("start")
 
 	p.Label("start")
 	p.La(X0, "counter")
@@ -86,23 +86,23 @@ func TestStreamsFlatRejected(t *testing.T) {
 
 func TestStreamsDirectivesGuard(t *testing.T) {
 	// an instruction in the data stream
-	_, errs := New().Data().Nop().Build()
+	_, errs := New(unit.New()).Data().Nop().Build()
 	require.Len(t, errs, 1)
 	require.ErrorContains(t, errs[0], "instruction in the data stream")
 
 	// a bss reserve outside the data stream
-	_, errs = New().Bss(8).Build()
+	_, errs = New(unit.New()).Bss(8).Build()
 	require.Len(t, errs, 1)
 	require.ErrorContains(t, errs[0], "belongs to the data stream")
 
 	// a non-positive reserve
-	_, errs = New().Data().Bss(0).Build()
+	_, errs = New(unit.New()).Data().Bss(0).Build()
 	require.Len(t, errs, 1)
 	require.ErrorContains(t, errs[0], "not positive")
 }
 
 func TestStreamsIntegerEmitters(t *testing.T) {
-	bin, errs := New().
+	bin, errs := New(unit.New()).
 		Data().
 		Half(0x0102).
 		Word(0x03040506).
@@ -122,7 +122,7 @@ func TestStreamsIntegerEmitters(t *testing.T) {
 
 func TestStreamsLaFlat(t *testing.T) {
 	// the La pair also assembles flat, against the flat base
-	bin, errs := New().
+	bin, errs := New(unit.New()).
 		Label("start").
 		La(X0, "msg").
 		Label("msg").
@@ -145,4 +145,4 @@ func nopPlace(text, data, dataMem int) (uint64, uint64) {
 }
 
 // compile-time: the policy type is the plain function the layers share.
-var _ prog.Place = nopPlace
+var _ unit.Place = nopPlace

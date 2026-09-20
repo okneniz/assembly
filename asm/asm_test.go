@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"errors"
+	"github.com/okneniz/assembly/unit"
 	"io"
 	"os"
 	"path/filepath"
@@ -28,7 +29,7 @@ func newMockInstr(n int) mockInstr {
 	return mockInstr{n: n}
 }
 
-func (m mockInstr) Resolve(Ctx) (Resolved, error) {
+func (m mockInstr) Resolve(unit.Ctx) (unit.Resolved, error) {
 	return mockResolved{b: bytes.Repeat([]byte{0xAB}, m.n)}, nil
 }
 
@@ -43,7 +44,7 @@ func (m mockResolved) Encode(w io.Writer) (int64, error) {
 
 type failInstr struct{}
 
-func (failInstr) Resolve(Ctx) (Resolved, error) {
+func (failInstr) Resolve(unit.Ctx) (unit.Resolved, error) {
 	return nil, errMock
 }
 
@@ -113,7 +114,7 @@ type mockPoolInstr struct {
 	v *expr.Expr
 }
 
-func (m mockPoolInstr) Resolve(c Ctx) (Resolved, error) {
+func (m mockPoolInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
 	addr, ok := c.Resolve(PoolSelf)
 	if !ok {
 		return nil, errors.New("pool slot not resolved")

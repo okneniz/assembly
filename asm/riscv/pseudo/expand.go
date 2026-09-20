@@ -15,9 +15,9 @@ import (
 	"fmt"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 	riscv "github.com/okneniz/assembly/asm/riscv"
+	"github.com/okneniz/assembly/unit"
 )
 
 // expandable is the dictionary of single-word pseudo-instructions
@@ -285,7 +285,7 @@ func expandLi(p pInstr) ([]form, error) {
 // preferAddFormMv prefers the add form (c.mv) for mv rd, rs when
 // possible, as GNU as does; otherwise the addi form (as the decoder
 // prints). The decision is deterministic in both passes.
-func (p pInstr) preferAddFormMv(forms []form, ctx asm.Ctx) []form {
+func (p pInstr) preferAddFormMv(forms []form, ctx unit.Ctx) []form {
 	if p.mnem != "mv" || len(p.ops) != 2 || !p.ops[0].IsReg() || !p.ops[1].IsReg() ||
 		p.ops[0].Reg() == "zero" || p.ops[1].Reg() == "zero" {
 		return forms

@@ -7,9 +7,9 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/asm"
 	riscv "github.com/okneniz/assembly/asm/riscv"
 	"github.com/okneniz/assembly/disasm"
+	"github.com/okneniz/assembly/unit"
 )
 
 // Call is call sym: auipc ra, hi + jalr ra, lo(ra) (a fixed 8 bytes).
@@ -59,7 +59,7 @@ func (i Call) Encode(w io.Writer) (int64, error) {
 }
 
 // resolveCall is the evaluator wired to parsing: call sym.
-func resolveCall(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
+func resolveCall(ops []riscv.Op, ctx unit.Ctx) (unit.Resolved, error) {
 	if len(ops) != 1 {
 		return nil, errors.New("call: want sym")
 	}

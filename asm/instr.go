@@ -6,25 +6,12 @@ package asm
 // instructions purely - the exact inverse of decode, without a resolver.
 
 import (
-	"io"
-
 	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
-
-// Ctx is the evaluation environment of an unresolved instruction: the
-// address of the instruction itself (PC-relative encodings, '.') and the
-// symbol resolver. Built by the core; it carries no arch-specific modes -
-// those live in Resolved.
-type Ctx interface {
-	// Addr is the absolute address of the instruction itself.
-	Addr() uint64
-
-	// Resolve is the value of a symbol by name; ok=false for unknown ones.
-	Resolve(name string) (uint64, bool)
-}
 
 // Syntax is the per-arch syntax layer (asm/<arch>): the grammar of
 // unresolved instructions and .option modes. Created per assembly; the core
@@ -58,38 +45,10 @@ type Syntax interface {
 type Unresolved interface {
 	// Resolve evaluates the expressions via ctx and builds the resolved
 	// instruction.
-	Resolve(ctx Ctx) (Resolved, error)
+	Resolve(ctx unit.Ctx) (unit.Resolved, error)
 }
 
-// Resolved is a resolved instruction: all operands are numbers. Encoding is
-// pure, no environment needed (arch modes are values closed over by the
-// implementation, see the riscv EncOpts approach).
-type Resolved interface {
-	// Encode writes the encoding bytes.
-	Encode(w io.Writer) (int64, error)
-}
-
-// addrCtx is the core's concrete Ctx.
-type addrCtx struct {
-	addr    uint64
-	resolve func(string) (uint64, bool)
-}
-
-func newCtx(addr uint64, resolve func(string) (uint64, bool)) Ctx {
-	return addrCtx{addr: addr, resolve: resolve}
-}
-
-func (c addrCtx) Addr() uint64 {
-	return c.addr
-}
-
-func (c addrCtx) Resolve(name string) (uint64, bool) {
-	if c.resolve == nil {
-		return 0, false
-	}
-
-	return c.resolve(name)
-}
+// addrCtx - see unit.NewCtx (the concrete Ctx of the resolve walks).
 
 // PoolUser is an optional capability of an unresolved instruction: it needs
 // a slot in the literal pool of its subsection (GAS: ldr xN, =literal).
@@ -117,7 +76,7 @@ func (c *countingWriter) Write(p []byte) (int, error) {
 // chain afterwards) and a count of the written bytes. The sizes of the
 // FINAL layout walk are what pass 2 encodes against (see Unresolved on the
 // relaxation).
-func sizeOf(in Unresolved, ctx Ctx) (int, error) {
+func sizeOf(in Unresolved, ctx unit.Ctx) (int, error) {
 	res, err := in.Resolve(ctx)
 	if err != nil {
 		return 0, err

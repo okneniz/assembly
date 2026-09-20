@@ -14,6 +14,7 @@ import (
 	"os"
 
 	prog "github.com/okneniz/assembly/prog/loong64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // The machine dictionary: the UART data register of the virt machine
@@ -31,7 +32,7 @@ func main() {
 
 	// $t0 = the UART data register; $t1 = the message cursor; the loop
 	// stores every byte until the terminating zero.
-	p := prog.New().
+	p := prog.New(unit.New()).
 		Label("start").
 		Lu12iW(prog.T0, uartData>>12).
 		Ori(prog.T0, prog.T0, uartData&0xfff).

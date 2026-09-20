@@ -24,6 +24,7 @@ import (
 	"github.com/okneniz/assembly/file"
 	core "github.com/okneniz/assembly/prog"
 	prog "github.com/okneniz/assembly/prog/riscv"
+	"github.com/okneniz/assembly/unit"
 )
 
 // The machine dictionary: the ns16550 UART data register of the virt
@@ -39,9 +40,9 @@ const msg = "hello world\n"
 
 // callerPos - the position resolver of the chain: invoked inside a
 // chain method, two frames up is the calling code (this file).
-func callerPos() core.Pos {
+func callerPos() unit.Pos {
 	_, file, line, _ := runtime.Caller(2)
-	return core.NewPos(file, line)
+	return unit.NewPos(file, line)
 }
 
 func main() {
@@ -56,7 +57,7 @@ func main() {
 	// a0 = the UART data register; a1 = the message cursor; a2 = the
 	// end; the loop stores every byte, then the finisher write powers
 	// the machine off.
-	p := prog.New().
+	p := prog.New(unit.New()).
 		WithPos(callerPos).
 		Label("start").
 		Lui(prog.A0, uartData>>12).

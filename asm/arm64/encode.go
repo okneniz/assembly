@@ -18,7 +18,7 @@ import (
 )
 
 // ctx is the internal orchestration context of encodeARM: the
-// evaluation environment (address + resolver, like the core's asm.Ctx)
+// evaluation environment (address + resolver, like the core's unit.Ctx)
 // plus the injected alias constructors (extra; nil for the pure
 // backend).
 type ctx struct {

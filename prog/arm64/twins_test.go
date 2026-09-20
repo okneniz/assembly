@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/assembly/prog"
 )
 
@@ -62,7 +63,7 @@ func wreg(t *testing.T, n int) arch.Reg {
 }
 
 func TestTwinsArithmetic(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Adc(X0, X1, X2).
 		AddImm(X3, X4, 0x123, arch.NoSh12).
 		AddShift(X5, X6, X7, 5, arch.LSL).
@@ -117,7 +118,7 @@ func TestTwinsArithmetic(t *testing.T) {
 }
 
 func TestTwinsLogical(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		AndImm(X0, X1, 0xff).
 		AndShift(X2, X3, X4, 3, arch.LSL).
 		AndsImm(X5, X6, 0x7f).
@@ -168,7 +169,7 @@ func TestTwinsLogical(t *testing.T) {
 }
 
 func TestTwinsBitfield(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		LslReg(X0, X1, X2).
 		LsrReg(X3, X4, X5).
 		AsrReg(X6, X7, X16).
@@ -207,7 +208,7 @@ func TestTwinsBitfield(t *testing.T) {
 }
 
 func TestTwinsControl(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Movn(X0, 1, arch.Hw0).
 		Br(X16).
 		Blr(X30).
@@ -244,7 +245,7 @@ func TestTwinsMemory(t *testing.T) {
 	w1 := wreg(t, 1)
 	w6 := wreg(t, 6)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Ldr(X0, X1, 8).
 		Ldrb(w2, X3, 5).
 		Ldrh(w4, X5, 6).
@@ -309,7 +310,7 @@ func TestTwinsLabelDirected(t *testing.T) {
 	// base 0xff0: the adrp sits in page 0, the page label at +0x2c
 	// lands in page 1; tbz covers a forward and a backward target
 	w1 := wreg(t, 1)
-	p := New().
+	p := New(unit.New()).
 		Adrp(X0, "page").        // @0x00: page delta +1
 		Label("top").            // @0x04
 		Tbz(w1, 3, "fwd").       // @0x04 → fwd @0x28: +36
@@ -343,25 +344,25 @@ func TestTwinsLabelDirected(t *testing.T) {
 
 func TestTwinsErrors(t *testing.T) {
 	// imm out of range: the deferred error surfaces at Build
-	_, buildErrs := New().AddImm(X0, X1, 0x1000, arch.NoSh12).Build()
+	_, buildErrs := New(unit.New()).AddImm(X0, X1, 0x1000, arch.NoSh12).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "add")
 
 	// misaligned load offset: the ctor error surfaces at Build
-	_, buildErrs = New().Ldr(X0, X1, 5).Build()
+	_, buildErrs = New(unit.New()).Ldr(X0, X1, 5).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "ldr")
 
 	// label-directed lines build fine and surface their errors at
 	// Assemble: the tbz width rule (bit 40 needs an x register)
-	bin, buildErrs := New().Tbz(wreg(t, 1), 40, "l").Label("l").Build()
+	bin, buildErrs := New(unit.New()).Tbz(wreg(t, 1), 40, "l").Label("l").Build()
 	require.Empty(t, buildErrs)
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "tbz")
 
 	// ...and the undefined target
-	bin, buildErrs = New().Tbz(X2, 5, "nowhere").Build()
+	bin, buildErrs = New(unit.New()).Tbz(X2, 5, "nowhere").Build()
 	require.Empty(t, buildErrs)
 	errs = bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
@@ -372,7 +373,7 @@ func TestTwinsFP(t *testing.T) {
 	w0 := wreg(t, 0)
 	w1 := wreg(t, 1)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Fadd(D0, D1, D2).
 		Fadd(S0, S1, S2).
 		Fsub(D3, D4, D5).
@@ -485,7 +486,7 @@ func TestTwinsFPClangPinned(t *testing.T) {
 	d27, d28, d29, d30 := dreg(27), dreg(28), dreg(29), dreg(30)
 	s27, s28, s29, s30 := sreg(27), sreg(28), sreg(29), sreg(30)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Fadd(D0, D1, D2).
 		Fadd(S0, S1, S2).
 		Fsub(D0, D1, D2).
@@ -569,28 +570,28 @@ func TestTwinsFPClangPinned(t *testing.T) {
 
 func TestTwinsFPErrors(t *testing.T) {
 	// mixed kinds: the ctor error surfaces at Build
-	_, buildErrs := New().Fadd(D0, S1, D2).Build()
+	_, buildErrs := New(unit.New()).Fadd(D0, S1, D2).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "fadd")
 
 	// width-mismatched GPR move
-	_, buildErrs = New().FmovFromGpr(D0, wreg(t, 0)).Build()
+	_, buildErrs = New(unit.New()).FmovFromGpr(D0, wreg(t, 0)).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "fmov")
 
 	// fcvt needs differing kinds
-	_, buildErrs = New().Fcvt(D0, D1).Build()
+	_, buildErrs = New(unit.New()).Fcvt(D0, D1).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "fcvt")
 
 	// misaligned FP load offset
-	_, buildErrs = New().LdrF(D0, X1, 3).Build()
+	_, buildErrs = New(unit.New()).LdrF(D0, X1, 3).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "ldr")
 
 	// a non-encodable immediate builds fine and fails at Encode:
 	// 0.1 is not one of the 256 VFP values
-	bin, buildErrs := New().FmovImm(D0, 0.1).Build()
+	bin, buildErrs := New(unit.New()).FmovImm(D0, 0.1).Build()
 	require.Empty(t, buildErrs)
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
@@ -605,7 +606,7 @@ func TestTwinsSimdClangPinned(t *testing.T) {
 	w0 := wreg(t, 0)
 	w1 := wreg(t, 1)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		And(V0, V1, V2, "16b").
 		And(V3, V4, V5, "8b").
 		Bic(V0, V1, V2, "16b").
@@ -723,32 +724,32 @@ func TestTwinsSimdClangPinned(t *testing.T) {
 
 func TestTwinsSimdErrors(t *testing.T) {
 	// the logical group takes only .8b/.16b (bits 23:22 are its opcode)
-	_, buildErrs := New().And(V0, V1, V2, "4h").Build()
+	_, buildErrs := New(unit.New()).And(V0, V1, V2, "4h").Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "and")
 
 	// a lane index beyond the lane count
-	_, buildErrs = New().DupElem(V0, V1, "4s", 4).Build()
+	_, buildErrs = New(unit.New()).DupElem(V0, V1, "4s", 4).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "dup")
 
 	// umov: the element must fill the destination register
-	_, buildErrs = New().Umov(X0, V0, "s", 1).Build()
+	_, buildErrs = New(unit.New()).Umov(X0, V0, "s", 1).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "umov")
 
 	// a shift out of the lane width's range
-	_, buildErrs = New().Shl(V0, V1, "16b", 16).Build()
+	_, buildErrs = New(unit.New()).Shl(V0, V1, "16b", 16).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "shl")
 
 	// an fp arrangement on an integer by-element form
-	_, buildErrs = New().MlaElem(V0, V1, V2, "2d", 1).Build()
+	_, buildErrs = New(unit.New()).MlaElem(V0, V1, V2, "2d", 1).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "mla")
 
 	// fcmla rotation is one of #0/#90/#180/#270
-	_, buildErrs = New().FcmlaElem(V0, V1, V2, "4s", 0, 45).Build()
+	_, buildErrs = New(unit.New()).FcmlaElem(V0, V1, V2, "4s", 0, 45).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "fcmla")
 }

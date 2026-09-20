@@ -7,8 +7,8 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
-	"github.com/okneniz/assembly/asm"
 	loong64 "github.com/okneniz/assembly/asm/loong64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // La is la rd, sym: a pcalau12i+addi.d pair (a fixed 8 bytes) - the
@@ -67,7 +67,7 @@ func (i La) Encode(w io.Writer) (int64, error) {
 }
 
 // resolveLa is the evaluator wired to parsing: la/la.pcrel rd, sym.
-func resolveLa(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error) {
+func resolveLa(ops []loong64.Op, ctx unit.Ctx) (unit.Resolved, error) {
 	if len(ops) != 2 {
 		return nil, errors.New("la: want rd, sym")
 	}
@@ -139,7 +139,7 @@ func (i LaAbs) Encode(w io.Writer) (int64, error) {
 }
 
 // resolveLaAbs is the evaluator wired to parsing: la.abs rd, sym.
-func resolveLaAbs(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error) {
+func resolveLaAbs(ops []loong64.Op, ctx unit.Ctx) (unit.Resolved, error) {
 	if len(ops) != 2 {
 		return nil, errors.New("la.abs: want rd, sym")
 	}
@@ -165,7 +165,7 @@ func resolveLaAbs(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error) {
 // resolveLaGot rejects la.got explicitly: the GOT-indirect form
 // (pcalau12i+ld.d through a linker-created GOT slot) cannot resolve in
 // this standalone assembler (no relocations, everything absolute).
-func resolveLaGot(_ []loong64.Op, _ asm.Ctx) (asm.Resolved, error) {
+func resolveLaGot(_ []loong64.Op, _ unit.Ctx) (unit.Resolved, error) {
 	return nil, errors.New("la.got: the GOT form needs a linker-built GOT slot" +
 		" (this assembler resolves absolutely; use la/la.pcrel or la.abs)")
 }

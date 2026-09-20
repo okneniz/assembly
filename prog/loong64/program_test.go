@@ -1,26 +1,25 @@
 package loong64
 
 import (
+	"github.com/okneniz/assembly/unit"
 	"os"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
-
-	"github.com/okneniz/assembly/prog"
 )
 
 // callerPos - a caller-based resolver for the tests: invoked inside a
 // chain method, two frames up is the code calling the chain (this file).
-func callerPos() prog.Pos {
+func callerPos() unit.Pos {
 	_, file, line, _ := runtime.Caller(2)
-	return prog.NewPos(file, line)
+	return unit.NewPos(file, line)
 }
 
 // The Go counterpart of tests/examples/hello-asm/hello-loongarch.s: one
 // string through the 16550A UART, then an idle loop.
 func helloLoong() *Program {
-	return New().
+	return New(unit.New()).
 		WithPos(callerPos).
 		Label("start").
 		// $t0 = the UART data register (16550A, byte-wide at 0x1fe001e0).
@@ -69,19 +68,19 @@ func TestAssembleLoongGolden(t *testing.T) {
 
 func TestAssembleLoongErrors(t *testing.T) {
 	// undefined branch target
-	bin, _ := New().B("nowhere").Build()
+	bin, _ := New(unit.New()).B("nowhere").Build()
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "nowhere")
 
 	// undefined la target
-	laBin, _ := New().La(T0, "gone").Build()
+	laBin, _ := New(unit.New()).La(T0, "gone").Build()
 	laErrs := laBin.Assemble(0).Errs
 	require.Len(t, laErrs, 1)
 	require.Contains(t, laErrs[0].Error(), "gone")
 
 	// deferred immediate error surfaces at Build
-	_, buildErrs := New().Lu12iW(T0, 1<<20).Build()
+	_, buildErrs := New(unit.New()).Lu12iW(T0, 1<<20).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "lu12i.w")
 }
@@ -89,8 +88,8 @@ func TestAssembleLoongErrors(t *testing.T) {
 func TestLineMap(t *testing.T) {
 	// the injected resolver: the la pair is ONE entry of 8 bytes (one
 	// chain call), data lines carry their byte size
-	p := New().
-		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 3) }).
+	p := New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("synthetic.go", 3) }).
 		Label("start").
 		Lu12iW(T0, 0x1fe00).
 		La(T1, "msg").
@@ -102,9 +101,9 @@ func TestLineMap(t *testing.T) {
 	require.Empty(t, buildErrs)
 	res := bin.Assemble(0)
 	require.Empty(t, res.Errs)
-	require.Equal(t, []prog.LineEntry{
-		prog.NewLineEntry(0, 4, prog.NewPos("synthetic.go", 3)),
-		prog.NewLineEntry(4, 8, prog.NewPos("synthetic.go", 3)),
-		prog.NewLineEntry(12, 2, prog.NewPos("synthetic.go", 3)),
+	require.Equal(t, []unit.LineEntry{
+		unit.NewLineEntry(0, 4, unit.NewPos("synthetic.go", 3)),
+		unit.NewLineEntry(4, 8, unit.NewPos("synthetic.go", 3)),
+		unit.NewLineEntry(12, 2, unit.NewPos("synthetic.go", 3)),
 	}, res.Lines)
 }

@@ -7,9 +7,9 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/asm"
 	riscv "github.com/okneniz/assembly/asm/riscv"
 	"github.com/okneniz/assembly/disasm"
+	"github.com/okneniz/assembly/unit"
 )
 
 // La is la rd, sym: an auipc+addi pair via pcrel (a fixed 8 bytes).
@@ -64,7 +64,7 @@ func (i La) Encode(w io.Writer) (int64, error) {
 }
 
 // resolveLa is the evaluator wired to parsing: la rd, sym.
-func resolveLa(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
+func resolveLa(ops []riscv.Op, ctx unit.Ctx) (unit.Resolved, error) {
 	if len(ops) != 2 {
 		return nil, errors.New("la: want rd, sym")
 	}

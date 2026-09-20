@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"github.com/okneniz/assembly/unit"
 	"os"
 	"runtime"
 	"testing"
@@ -8,20 +9,19 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
-	"github.com/okneniz/assembly/prog"
 )
 
 // callerPos - a caller-based resolver for the tests: invoked inside a
 // chain method, two frames up is the code calling the chain (this file).
-func callerPos() prog.Pos {
+func callerPos() unit.Pos {
 	_, file, line, _ := runtime.Caller(2)
-	return prog.NewPos(file, line)
+	return unit.NewPos(file, line)
 }
 
 // hello-macos written on the chain: the Go counterpart of
 // tests/examples/hello-asm/hello-macos.s, byte-identical when assembled.
 func helloMacOS() *Program {
-	return New().
+	return New(unit.New()).
 		WithPos(callerPos).
 		Label("start").
 		Movz(X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
@@ -74,7 +74,7 @@ func TestAssembleHelloGolden(t *testing.T) {
 
 func TestAssembleLabels(t *testing.T) {
 	// backward branch loop: three instructions between the label and the b.
-	p := New().
+	p := New(unit.New()).
 		Label("loop").
 		Movz(X0, 1, arch.Hw0).
 		Movz(X1, 2, arch.Hw0).
@@ -99,19 +99,19 @@ func TestAssembleLabels(t *testing.T) {
 
 func TestAssembleErrors(t *testing.T) {
 	// undefined branch target
-	bin, _ := New().B("nowhere").Build()
+	bin, _ := New(unit.New()).B("nowhere").Build()
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "nowhere")
 
 	// undefined entry
-	entryBin, _ := New().Label("a").Movz(X0, 0, arch.Hw0).Entry("gone").Build()
+	entryBin, _ := New(unit.New()).Label("a").Movz(X0, 0, arch.Hw0).Entry("gone").Build()
 	entryErrs := entryBin.Assemble(0).Errs
 	require.Len(t, entryErrs, 1)
 	require.Contains(t, entryErrs[0].Error(), "gone")
 
 	// deferred immediate error surfaces at Build
-	_, buildErrs := New().Movz(X0, 1<<20, arch.Hw0).Build()
+	_, buildErrs := New(unit.New()).Movz(X0, 1<<20, arch.Hw0).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "movz")
 }
@@ -119,8 +119,8 @@ func TestAssembleErrors(t *testing.T) {
 func TestLineMap(t *testing.T) {
 	// the injected resolver: every line reports the synthetic position
 	// (what a macro pointing at its own call site would do)
-	p := New().
-		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 7) }).
+	p := New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("synthetic.go", 7) }).
 		Label("start").
 		Movz(X0, 1, arch.Hw0).
 		Movz(X1, 2, arch.Hw0).
@@ -131,10 +131,10 @@ func TestLineMap(t *testing.T) {
 	require.Empty(t, buildErrs)
 	res := bin.Assemble(0x100)
 	require.Empty(t, res.Errs)
-	require.Equal(t, []prog.LineEntry{
-		prog.NewLineEntry(0x100, 4, prog.NewPos("synthetic.go", 7)),
-		prog.NewLineEntry(0x104, 4, prog.NewPos("synthetic.go", 7)),
-		prog.NewLineEntry(0x108, 2, prog.NewPos("synthetic.go", 7)),
+	require.Equal(t, []unit.LineEntry{
+		unit.NewLineEntry(0x100, 4, unit.NewPos("synthetic.go", 7)),
+		unit.NewLineEntry(0x104, 4, unit.NewPos("synthetic.go", 7)),
+		unit.NewLineEntry(0x108, 2, unit.NewPos("synthetic.go", 7)),
 	}, res.Lines)
 }
 
@@ -142,8 +142,8 @@ func TestWithPosSwap(t *testing.T) {
 	// WithPos applies from its call on: a later call swaps the resolver
 	// for the lines after it (the caller-based one reports this test
 	// file; the line is pinned loosely - it moves with edits)
-	bin, _ := New().
-		WithPos(func() prog.Pos { return prog.NewPos("macro.go", 1) }).
+	bin, _ := New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("macro.go", 1) }).
 		Movz(X0, 1, arch.Hw0).
 		WithPos(callerPos).
 		Movz(X1, 2, arch.Hw0).
@@ -151,7 +151,7 @@ func TestWithPosSwap(t *testing.T) {
 	res := bin.Assemble(0)
 	require.Empty(t, res.Errs)
 	require.Len(t, res.Lines, 2)
-	require.Equal(t, prog.NewPos("macro.go", 1), res.Lines[0].Pos)
+	require.Equal(t, unit.NewPos("macro.go", 1), res.Lines[0].Pos)
 	require.Contains(t, res.Lines[1].Pos.File, "prog/arm64/program_test.go")
 	require.Positive(t, res.Lines[1].Pos.Line)
 }

@@ -20,6 +20,7 @@ import (
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 	prog "github.com/okneniz/assembly/prog/arm64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // The program dictionary: syscall numbers, trap immediates, fds - the
@@ -41,7 +42,7 @@ func main() {
 	// The program: every chain method is a source line, labels resolve
 	// at assembly time, macros would be ordinary Go functions returning
 	// *prog.Program.
-	p := prog.New().
+	p := prog.New(unit.New()).
 		Label("start").
 		Movz(prog.X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
 		Adr(prog.X1, "msg").                        // ... buf = the string

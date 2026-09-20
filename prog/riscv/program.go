@@ -8,13 +8,18 @@
 // source position of each line (the debugger's address ↔ source map)
 // comes from the position resolver injected with WithPos - there is no
 // built-in caller detection.
+// The chain is a producer over the unit output: every method deposits
+// its record there (instructions as ready records, label-directed macros
+// as deferred ones), and Assemble is the unit's resolve phase adapted to
+// the chain's result shape.
 package riscv
 
 import (
 	"fmt"
+	"io"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/prog"
+	"github.com/okneniz/assembly/unit"
 )
 
 // Program - a program being built: a sequence of lines (instructions,
@@ -22,22 +27,23 @@ import (
 // one line each and return the program; nothing is encoded until
 // Assemble.
 type Program struct {
-	lines []line
-	entry string
-	errs  []error
-	pos   func() prog.Pos
-	b     arch.Builder
+	u    *unit.Unit
+	errs []error
+	pos  func() unit.Pos
+	b    arch.Builder
 }
 
-// New - an empty program.
-func New() *Program {
-	return &Program{pos: nopos}
+// New - a chain over the given output: the caller owns it (a compiler
+// creates one output and passes it to every producer it composes - the
+// chain does not know who else deposits there).
+func New(u *unit.Unit) *Program {
+	return &Program{u: u, pos: nopos}
 }
 
 // nopos - the default resolver: no position (a line reports one only
 // after a resolver is injected with WithPos).
-func nopos() prog.Pos {
-	return prog.Pos{}
+func nopos() unit.Pos {
+	return unit.Pos{}
 }
 
 // WithPos - the position resolver for all lines appended after this
@@ -46,7 +52,7 @@ func nopos() prog.Pos {
 // one runs inside the chain method, where frame 0 is the resolver
 // itself and frame 2 the code calling the chain (runtime.Caller(2)).
 // A nil resolver is ignored.
-func (p *Program) WithPos(pos func() prog.Pos) *Program {
+func (p *Program) WithPos(pos func() unit.Pos) *Program {
 	if pos != nil {
 		p.pos = pos
 	}
@@ -56,25 +62,25 @@ func (p *Program) WithPos(pos func() prog.Pos) *Program {
 
 // Label - define a label at the current position.
 func (p *Program) Label(name string) *Program {
-	p.lines = append(p.lines, newLabelLine(name, p.pos()))
+	p.u.Label(name)
 	return p
 }
 
 // Entry - the label the program starts at.
 func (p *Program) Entry(name string) *Program {
-	p.entry = name
+	p.u.Entry(name)
 	return p
 }
 
 // Ascii - string data appended verbatim (no terminating zero).
 func (p *Program) Ascii(s string) *Program {
-	p.lines = append(p.lines, newDataLine([]byte(s), ".ascii", p.pos()))
+	p.u.Ascii(p.pos(), s)
 	return p
 }
 
 // Bytes - raw data bytes.
 func (p *Program) Bytes(b ...byte) *Program {
-	p.lines = append(p.lines, newDataLine(b, ".byte", p.pos()))
+	p.u.Bytes(p.pos(), b...)
 	return p
 }
 
@@ -141,15 +147,29 @@ func (p *Program) Bltu(rs1, rs2 arch.Reg, label string) *Program {
 // pair (a fixed 8 bytes; the split is computed against the pair's own
 // address, exactly as the text-path pseudo).
 func (p *Program) La(rd arch.Reg, label string) *Program {
-	pos := p.pos()
-	p.lines = append(p.lines, newLaLine(label, func(t, pc uint64) ([]arch.Instr, error) {
+	p.u.Sym(p.pos(), unit.NewPair("la", label, 8, func(t, pc uint64) ([]unit.Resolved, error) {
 		return laPair(p.b, rd, int64(t), int64(pc))
-	}, pos))
+	}))
 	return p
 }
 
+// noRvc wraps a chain instruction as a resolved record with the NoRVC
+// mode closed over: chain programs are uncompressed by design (line
+// sizes are fixed at layout, see the package comment).
+type noRvc struct {
+	i arch.Instr
+}
+
+func newNoRvc(i arch.Instr) noRvc {
+	return noRvc{i: i}
+}
+
+func (w noRvc) Encode(out io.Writer) (int64, error) {
+	return w.i.Encode(out, arch.EncOpts{NoRVC: true})
+}
+
 // laPair - the evaluated la encoding: auipc (hi) + addi (lo).
-func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]arch.Instr, error) {
+func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]unit.Resolved, error) {
 	hi, lo := arch.PcrelHiLo(target - pc)
 	hi20, err := b.Imm20(hi & 0xfffff)
 	if err != nil {
@@ -161,9 +181,9 @@ func laPair(b arch.Builder, rd arch.Reg, target, pc int64) ([]arch.Instr, error)
 		return nil, fmt.Errorf("la: %w", err)
 	}
 
-	return []arch.Instr{
-		b.Auipc(rd, hi20),
-		b.Addi(rd, rd, lo12),
+	return []unit.Resolved{
+		newNoRvc(b.Auipc(rd, hi20)),
+		newNoRvc(b.Addi(rd, rd, lo12)),
 	}, nil
 }
 
@@ -959,26 +979,29 @@ func (p *Program) Fence(fm uint8) *Program {
 // Build - materialize the program; deferred construction errors are
 // returned alongside.
 func (p *Program) Build() (*Binary, []error) {
-	return &Binary{Entry: p.entry, lines: p.lines}, p.errs
+	return &Binary{u: p.u}, p.errs
 }
 
 // --- internals ---------------------------------------------------------------
 
-func (p *Program) instrLine(src string, i arch.Instr, err error, pos prog.Pos) *Program {
+func (p *Program) instrLine(src string, i arch.Instr, err error, pos unit.Pos) *Program {
 	if err != nil {
 		return p.fail(src, err)
 	}
 
-	p.lines = append(p.lines, newInstrLine(i, src, pos))
+	p.u.Instr(pos, newNoRvc(i), nil)
 	return p
 }
 
 func (p *Program) branchLine(
 	src, label string,
 	ctor func(target, pc uint64) (arch.Instr, error),
-	pos prog.Pos,
+	pos unit.Pos,
 ) *Program {
-	p.lines = append(p.lines, newBranchLine(src, label, ctor, pos))
+	p.u.Sym(pos, unit.NewBranch(src, label, 4, func(t, pc uint64) (unit.Resolved, error) {
+		i, err := ctor(t, pc)
+		return newNoRvc(i), err
+	}))
 	return p
 }
 

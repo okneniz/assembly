@@ -24,6 +24,7 @@ import (
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 	loong64 "github.com/okneniz/assembly/asm/loong64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // NewASMBackend returns a LoongArch Syntax with pseudo-instructions: a
@@ -69,7 +70,7 @@ func newPInstr(mnem string, ops []loong64.Op, be *loong64.Backend) pInstr {
 // ctors are the evaluators of the multi-word pseudo-instructions
 // (their own fixed-length forms). la = la.pcrel (llvm-mc's plain la is
 // the GOT form, which needs a linker); la.got is rejected explicitly.
-var ctors = map[string]func(ops []loong64.Op, ctx asm.Ctx) (asm.Resolved, error){
+var ctors = map[string]func(ops []loong64.Op, ctx unit.Ctx) (unit.Resolved, error){
 	"la":       resolveLa,
 	"la.pcrel": resolveLa,
 	"la.abs":   resolveLaAbs,
@@ -139,7 +140,7 @@ func (s source) ResetOptions() {
 // a placeholder environment and code generation) - the decisions (the
 // li ladder) do not depend on symbol values (a symbolic li takes the
 // fixed worst-case chain), so the passes converge.
-func (p pInstr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
+func (p pInstr) Resolve(ctx unit.Ctx) (unit.Resolved, error) {
 	if ctor, ok := ctors[p.mnem]; ok {
 		return ctor(p.ops, ctx)
 	}
@@ -169,12 +170,12 @@ func (p pInstr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
 // shared resolver (pseudo expansion: each form is encoded from its
 // own address).
 type formCtx struct {
-	base asm.Ctx
+	base unit.Ctx
 	addr uint64
 }
 
 // newFormCtx - a derived environment for a form encoded at addr.
-func newFormCtx(base asm.Ctx, addr uint64) formCtx {
+func newFormCtx(base unit.Ctx, addr uint64) formCtx {
 	return formCtx{
 		base: base,
 		addr: addr,

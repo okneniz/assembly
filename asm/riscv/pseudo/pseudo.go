@@ -25,6 +25,7 @@ import (
 	"github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/asm/expr"
 	riscv "github.com/okneniz/assembly/asm/riscv"
+	"github.com/okneniz/assembly/unit"
 )
 
 // NewASMBackend returns a RISC-V Syntax with pseudo-instructions: a
@@ -68,7 +69,7 @@ func newPInstr(mnem string, ops []riscv.Op, be *riscv.Backend) pInstr {
 
 // ctors are the evaluators of the multi-word pseudo-instructions
 // (their own fixed-length forms, without RVC).
-var ctors = map[string]func(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error){
+var ctors = map[string]func(ops []riscv.Op, ctx unit.Ctx) (unit.Resolved, error){
 	"la": resolveLa, "call": resolveCall, "tail": resolveTail,
 }
 
@@ -135,11 +136,11 @@ func (s source) ResetOptions() {
 // a placeholder environment and code generation) - the decisions (li
 // expansion, the c.mv form, fixed lengths) do not depend on symbol
 // values, so the passes converge.
-func (p pInstr) Resolve(ctx asm.Ctx) (asm.Resolved, error) {
+func (p pInstr) Resolve(ctx unit.Ctx) (unit.Resolved, error) {
 	return p.resolve(ctx)
 }
 
-func (p pInstr) resolve(ctx asm.Ctx) (asm.Resolved, error) {
+func (p pInstr) resolve(ctx unit.Ctx) (unit.Resolved, error) {
 	// multi-word pseudo-instructions get their own evaluated
 	// fixed-length forms
 	if ctor, ok := ctors[p.mnem]; ok {
@@ -173,12 +174,12 @@ func (p pInstr) resolve(ctx asm.Ctx) (asm.Resolved, error) {
 // shared resolver (pseudo expansion: each form is encoded from its
 // own address).
 type formCtx struct {
-	base asm.Ctx
+	base unit.Ctx
 	addr uint64
 }
 
 // newFormCtx - a derived environment for a form encoded at addr.
-func newFormCtx(base asm.Ctx, addr uint64) formCtx {
+func newFormCtx(base unit.Ctx, addr uint64) formCtx {
 	return formCtx{
 		base: base,
 		addr: addr,

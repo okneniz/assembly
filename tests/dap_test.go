@@ -17,8 +17,8 @@ import (
 	"github.com/okneniz/assembly/debug/dap"
 	"github.com/okneniz/assembly/debug/session"
 	"github.com/okneniz/assembly/file"
-	"github.com/okneniz/assembly/prog"
 	aprog "github.com/okneniz/assembly/prog/arm64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // dapMsg is the editor-side view of one DAP message of the e2e gate.
@@ -304,8 +304,8 @@ func TestDapProg(t *testing.T) {
 		t.Skipf("%s not on PATH (brew install qemu)", tgt.QemuBinary())
 	}
 
-	p := aprog.New().
-		WithPos(func() prog.Pos { return prog.NewPos("synthetic.go", 42) }).
+	p := aprog.New(unit.New()).
+		WithPos(func() unit.Pos { return unit.NewPos("synthetic.go", 42) }).
 		Label("start").
 		Movz(aprog.X0, 0x41, arch.Hw0).
 		WithPos(callerPos).

@@ -23,6 +23,7 @@ import (
 	parsecstrings "github.com/okneniz/parsec/strings"
 
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
 
 // Assemble assembles the source into sections with base address base.
@@ -687,7 +688,7 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 	// reserved by the final layout walk, so the encode length check below
 	// is exactly "the encoding matches the reservation".
 	if !pass2 {
-		size, err := sizeOf(st.instr, newCtx(addr, a.sizingResolve(idx, addr)))
+		size, err := sizeOf(st.instr, unit.NewCtx(addr, a.sizingResolve(idx, addr)))
 		if err != nil {
 			a.errf(st.pos, "size: %v", err)
 			return
@@ -709,7 +710,7 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 	a.lines = append(a.lines, NewLineEntry(addr, size, st.pos.Line()+1))
 
 	var buf bytes.Buffer
-	res, rerr := st.instr.Resolve(newCtx(addr, resolve))
+	res, rerr := st.instr.Resolve(unit.NewCtx(addr, resolve))
 	if rerr == nil {
 		_, rerr = res.Encode(&buf)
 	}

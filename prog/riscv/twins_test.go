@@ -8,6 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
+	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/assembly/prog"
 )
 
@@ -59,7 +60,7 @@ func offv(v int64) arch.Off {
 }
 
 func TestTwinsArithmetic(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Add(T0, T1, T2).
 		Addw(A0, A1, A2).
 		Addi(T0, T1, -5).
@@ -122,7 +123,7 @@ func TestTwinsArithmetic(t *testing.T) {
 }
 
 func TestTwinsLogicalShifts(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		And(T0, T1, T2).
 		Andi(A0, A1, -2).
 		Or(T1, T2, A0).
@@ -185,7 +186,7 @@ func TestTwinsLogicalShifts(t *testing.T) {
 }
 
 func TestTwinsUpperJumps(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Lui(T0, 0x12345).
 		Auipc(A0, 0x54321>>12&0xfffff).
 		Jalr(Ra, T0, 0).
@@ -212,7 +213,7 @@ func TestTwinsLoadsStores(t *testing.T) {
 	fa1 := reg(11)
 	fa2 := reg(12)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		Lb(T0, A0, 8).
 		Lbu(T1, A0, 9).
 		Lh(T2, A0, 10).
@@ -250,7 +251,7 @@ func TestTwinsLoadsStores(t *testing.T) {
 }
 
 func TestTwinsAmoCsr(t *testing.T) {
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		AmoswapW(T0, A0, T1).
 		AmoswapD(T1, A0, T2).
 		AmoaddW(T2, A0, T0).
@@ -311,7 +312,7 @@ func TestTwinsFP(t *testing.T) {
 	fa2 := reg(12)
 	fa3 := reg(13)
 
-	res := assemble(t, New().
+	res := assemble(t, New(unit.New()).
 		FaddS(fa0, fa1, fa2, 0).
 		FaddD(fa0, fa1, fa2, 0).
 		FsubS(fa1, fa2, fa3, 1).
@@ -352,7 +353,7 @@ func TestTwinsFP(t *testing.T) {
 
 func TestTwinsBranches(t *testing.T) {
 	// forward and backward targets through the label machinery
-	p := New().
+	p := New(unit.New()).
 		Label("top").        // @0x00
 		Bge(T0, T1, "fwd").  // @0x00 → fwd @0x14: +20
 		Bltu(T1, T2, "top"). // @0x04 → top @0x00: -4
@@ -378,17 +379,17 @@ func TestTwinsBranches(t *testing.T) {
 
 func TestTwinsErrors(t *testing.T) {
 	// imm out of range: the deferred error surfaces at Build
-	_, buildErrs := New().Addi(T0, T1, 4096).Build()
+	_, buildErrs := New(unit.New()).Addi(T0, T1, 4096).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "addi")
 
 	// off out of range: the deferred error surfaces at Build
-	_, buildErrs = New().Ld(T0, A0, 4096).Build()
+	_, buildErrs = New(unit.New()).Ld(T0, A0, 4096).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "ld")
 
 	// undefined branch target surfaces at Assemble
-	bin, buildErrs := New().Bge(T0, T1, "nowhere").Build()
+	bin, buildErrs := New(unit.New()).Bge(T0, T1, "nowhere").Build()
 	require.Empty(t, buildErrs)
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)

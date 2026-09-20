@@ -10,9 +10,9 @@ import (
 	"io"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/asm"
 	riscv "github.com/okneniz/assembly/asm/riscv"
 	"github.com/okneniz/assembly/disasm"
+	"github.com/okneniz/assembly/unit"
 )
 
 type Tail struct {
@@ -41,7 +41,7 @@ func (i Tail) Encode(w io.Writer) (int64, error) {
 }
 
 // resolveTail is the evaluator wired to parsing: tail sym.
-func resolveTail(ops []riscv.Op, ctx asm.Ctx) (asm.Resolved, error) {
+func resolveTail(ops []riscv.Op, ctx unit.Ctx) (unit.Resolved, error) {
 	if len(ops) != 1 {
 		return nil, errors.New("tail: want sym")
 	}

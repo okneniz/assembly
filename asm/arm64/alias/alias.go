@@ -38,6 +38,14 @@ func AssembleLayout(src string, layout asm.Layout) (*asm.Result, []asm.AsmError)
 	return asm.AssembleLayout(src, NewASMBackend(), layout)
 }
 
+// Fragment parses an inline-asm template body (aliases included, as
+// everywhere in the text layer): instructions and numeric local labels,
+// resolved by the host program against its own layout (see
+// asm.ParseFragment).
+func Fragment(src string) (*asm.Fragment, []asm.AsmError) {
+	return asm.ParseFragment(src, NewASMBackend())
+}
+
 // aliasCtors maps mnemonics to alias constructors.
 var aliasCtors = map[string]arch.ArmCtor{
 	// add/sub family: cmp/cmn (Rd = zr), neg/negs (Rn = zr)
