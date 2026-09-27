@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -150,7 +151,7 @@ func TestArmRoundTripExample(t *testing.T) {
 		t.Skipf("example not available: %v", err)
 	}
 
-	insts, err := arch.MakeDecoder()(bytes.Buffer(ts.Data))
+	insts, err := arch.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	matched, failed, notAssembled, dontCare, equiv := 0, 0, 0, 0, 0
 	sample := 0

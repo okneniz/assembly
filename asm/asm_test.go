@@ -51,10 +51,10 @@ func (failInstr) Resolve(unit.Ctx) (unit.Resolved, error) {
 // mockBackend - a minimal Syntax for core tests.
 type mockBackend struct{}
 
-func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position, Unresolved] {
+func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless] {
 	pad := parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.String("pad", "pad"),
+			parsecstrings.String[parsec.Stateless]("pad", "pad"),
 			parsecstrings.SkipMany(expr.MakeSpaceParser(),
 				parsecstrings.Cast(
 					parsecstrings.Some(4, "operand", expr.MakeDigitParser()),
@@ -73,14 +73,14 @@ func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position,
 		},
 	)
 	fail := parsecstrings.Cast(
-		parsecstrings.String("fail", "fail"),
+		parsecstrings.String[parsec.Stateless]("fail", "fail"),
 		func(string) (Unresolved, error) {
 			return failInstr{}, nil
 		},
 	)
 	pool := parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.String("pool", "pool"),
+			parsecstrings.String[parsec.Stateless]("pool", "pool"),
 			parsecstrings.SkipMany(expr.MakeSpaceParser(),
 				parsecstrings.Cast(
 					parsecstrings.Some(4, "operand", expr.MakeDigitParser()),
@@ -129,10 +129,10 @@ func (m mockPoolInstr) PoolReq() (*expr.Expr, int, bool) {
 	return m.v, 8, true
 }
 
-func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
+func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	hash := parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.Try(parsecstrings.Eq("comment", '#')),
+			parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')),
 			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
 		),
 		func(rs []rune) (string, error) {
@@ -141,7 +141,7 @@ func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, str
 	)
 	slash := parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.Try(parsecstrings.String("comment", "//")),
+			parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")),
 			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
 		),
 		func(rs []rune) (string, error) {

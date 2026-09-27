@@ -21,13 +21,13 @@ func isLatin(r rune) bool {
 // newMnemonicC - skip all non-letters, then read the first alphabetic
 // run; if there are no letters at all - an empty string. A constructor:
 // the combinators are values built once per call.
-func makeMnemonicParser() parsec.Combinator[rune, parsecstrings.Position, string] {
-	notAlpha := parsecstrings.Try(parsecstrings.Satisfy("non-letter", true, func(r rune) bool {
+func makeMnemonicParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
+	notAlpha := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("non-letter", true, func(r rune) bool {
 		return !isLatin(r)
 	}))
 	alphaRun := parsecstrings.Cast(
 		parsecstrings.Some(8, "mnemonic letters",
-			parsecstrings.Try(parsecstrings.Satisfy("letter", true, isLatin))),
+			parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, isLatin))),
 		func(rs []rune) (string, error) {
 			return strings.ToLower(string(rs)), nil
 		},
@@ -49,7 +49,7 @@ func firstAlphaRun(pieces []string) (string, error) {
 		buf = append(buf, ' ')
 	}
 
-	m, err := parsecstrings.Parse(buf, makeMnemonicParser())
+	m, err := parsecstrings.Parse(parsec.Stateless{}, buf, makeMnemonicParser())
 	if err != nil {
 		// the mnemonic is Optional with a default "", so an error can only
 		// come from the buffer; the generator's caller sees it upstream

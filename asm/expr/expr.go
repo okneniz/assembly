@@ -153,13 +153,13 @@ func (e *Expr) Eval(resolve func(string) (uint64, bool)) (int64, error) {
 // Special case "/": a single slash is division, but "//" starts a comment
 // (arm/riscv Comment), such an operator does not match (Try restores the
 // position).
-func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]] {
-	str := parsecstrings.String("operator "+sym, sym)
+func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless] {
+	str := parsecstrings.String[parsec.Stateless]("operator "+sym, sym)
 	isDiv := sym == "/"
 
-	scan := func(buf parsec.Buffer[rune, parsecstrings.Position]) (string, parsec.Error[parsecstrings.Position]) {
+	scan := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (string, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
-		got, err := str(buf)
+		got, err := str(state, buf)
 		if err != nil {
 			return "", err
 		}
@@ -185,7 +185,7 @@ func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.Bina
 
 // binLevel is a precedence level: strictChainl1(term, op1 | op2).
 func binLevel(term Combinator,
-	ops ...parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
+	ops ...parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless],
 ) Combinator {
 	return strictChainl1(term, parsecstrings.Choice("operator", ops...))
 }
@@ -195,10 +195,10 @@ func binLevel(term Combinator,
 // "1").
 func strictChainl1(
 	term Combinator,
-	op parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr]],
+	op parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless],
 ) Combinator {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
-		x, err := term(buf)
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+		x, err := term(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -207,7 +207,7 @@ func strictChainl1(
 		for !buf.IsEOF() {
 			save := buf.Position()
 			skipWS(buf)
-			f, oerr := op(buf)
+			f, oerr := op(state, buf)
 			if oerr != nil {
 				if rerr := Rewind(buf, save); rerr != nil {
 					return nil, rerr
@@ -216,7 +216,7 @@ func strictChainl1(
 				break
 			}
 
-			y, yerr := term(buf)
+			y, yerr := term(state, buf)
 			if yerr != nil {
 				return nil, parsec.NewParseError(save, "operator without right operand", yerr)
 			}
@@ -253,13 +253,13 @@ type grammar struct {
 func makeGrammar() *grammar {
 	g := &grammar{}
 
-	lparen := parsecstrings.Try(parsecstrings.Eq("'('", '('))
-	rparen := parsecstrings.Try(parsecstrings.Eq("')'", ')'))
+	lparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'('", '('))
+	rparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("')'", ')'))
 
 	// the parenthesized body refers to the top level lazily (through the
 	// field): the ladder above it is assigned below
-	parenBody := func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
-		return g.expr(buf)
+	parenBody := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+		return g.expr(state, buf)
 	}
 
 	g.primary = parsecstrings.Choice(
@@ -277,25 +277,25 @@ func makeGrammar() *grammar {
 		parsecstrings.Try(makeSymbolParser()), // identifier; "." and ".+8" give Sym(".")/binary
 	)
 
-	minus := parsecstrings.Try(parsecstrings.Eq("'-'", '-'))
-	tilde := parsecstrings.Try(parsecstrings.Eq("'~'", '~'))
-	plus := parsecstrings.Try(parsecstrings.Eq("'+'", '+'))
+	minus := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'-'", '-'))
+	tilde := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'~'", '~'))
+	plus := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'+'", '+'))
 
-	g.unary = func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+	g.unary = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		skipWS(buf)
 		for _, u := range []struct {
 			op string
-			c  parsec.Combinator[rune, parsecstrings.Position, rune]
+			c  parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 		}{
 			{op: "-", c: minus},
 			{op: "~", c: tilde},
 			{op: "+", c: plus},
 		} {
-			if _, err := u.c(buf); err != nil {
+			if _, err := u.c(state, buf); err != nil {
 				continue
 			}
 
-			x, xerr := g.unary(buf)
+			x, xerr := g.unary(state, buf)
 			if xerr != nil {
 				return nil, xerr
 			}
@@ -303,7 +303,7 @@ func makeGrammar() *grammar {
 			return NewExpr(ExprUnary, 0, "", u.op, x, nil), nil
 		}
 
-		return g.primary(buf)
+		return g.primary(state, buf)
 	}
 
 	g.mul = binLevel(g.unary, op2("*"), op2("/"), op2("%"))
@@ -329,8 +329,8 @@ func MakeExprParser() Combinator {
 func ParseExpr(s string) (*Expr, error) {
 	cExpr := MakeExprParser()
 
-	body := func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
-		e, err := cExpr(buf)
+	body := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+		e, err := cExpr(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -341,7 +341,7 @@ func ParseExpr(s string) (*Expr, error) {
 
 		return e, nil
 	}
-	e, perr := parsecstrings.ParseString(s, body)
+	e, perr := parsecstrings.ParseString(parsec.Stateless{}, s, body)
 	if perr != nil {
 		return nil, fmt.Errorf("%w (at %s)", perr, perr.Position())
 	}

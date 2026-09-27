@@ -5,6 +5,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arb"
@@ -42,7 +43,7 @@ func TestInstrLenMatchesDecoder(t *testing.T) {
 	compressed := 0
 	for _, c := range cases {
 		ohsnap.Check(t, 12000, c.gen, func(b []byte) bool {
-			instrs, err := decode(parsecbytes.Buffer(b))
+			instrs, err := decode(parsec.Stateless{}, parsecbytes.Buffer(b))
 			if err != nil || len(instrs) != 1 {
 				return false
 			}

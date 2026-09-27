@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -93,7 +94,7 @@ func rvBytesRoundTrip(t *testing.T, in riscv.Instr) bool {
 			return rvBytesOf(t, x)
 		},
 		func(ctx rvEnc, b []byte) (riscv.Instr, bool) {
-			back, err := riscv.MakeDecoder()(parsecbytes.Buffer(b))
+			back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -123,7 +124,7 @@ func rvTextRoundTrip(t *testing.T, in riscv.Instr) bool {
 		return false
 	}
 
-	d1, err := riscv.MakeDecoder()(parsecbytes.Buffer(b))
+	d1, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
 	if err != nil {
 		t.Logf("decode: %v", err)
 		return false
@@ -145,7 +146,7 @@ func rvTextRoundTrip(t *testing.T, in riscv.Instr) bool {
 				return nil, false
 			}
 
-			d2, err := riscv.MakeDecoder()(parsecbytes.Buffer(data))
+			d2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -325,7 +326,7 @@ func TestPropertyRiscvBytesRoundTripList(t *testing.T) {
 
 		buf := *bytes.NewBuffer(raw)
 
-		back, err := riscv.MakeDecoder()(parsecbytes.Buffer(buf.Bytes()))
+		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -366,7 +367,7 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 
 		buf := *bytes.NewBuffer(raw)
 
-		back, err := riscv.MakeDecoder()(parsecbytes.Buffer(buf.Bytes()))
+		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -387,7 +388,7 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 			return false
 		}
 
-		back2, err := riscv.MakeDecoder()(parsecbytes.Buffer(data))
+		back2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -422,7 +423,7 @@ func TestPropertyRiscvDecodeRobustness(t *testing.T) {
 				}
 			}()
 			data := binary.LittleEndian.AppendUint32(nil, w)
-			ins, err := riscv.MakeDecoder()(parsecbytes.Buffer(data))
+			ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 			if err != nil {
 				t.Errorf("parse %#08x: %v", w, err)
 				ok = false
@@ -485,7 +486,7 @@ func TestPropertyRiscvVsObjdump(t *testing.T) {
 			continue
 		}
 
-		ins, err := riscv.MakeDecoder()(parsecbytes.Buffer(code[off:]))
+		ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(code[off:]))
 		if err != nil {
 			notInOurs++
 			continue

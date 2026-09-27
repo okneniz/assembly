@@ -34,7 +34,7 @@ func NewASMBackend() asm.Syntax {
 
 	return source{
 		be:                  be,
-		parsePseudoMnemonic: parsecstrings.MapStrings("mnemonic", buildPseudoMnemonics()),
+		parsePseudoMnemonic: parsecstrings.MapStrings[string, parsec.Stateless]("mnemonic", buildPseudoMnemonics()),
 	}
 }
 
@@ -49,7 +49,7 @@ func Assemble(src string, base uint64) (*asm.Result, []asm.AsmError) {
 // The pseudo-mnemonic trie is built once (NewASMBackend).
 type source struct {
 	be                  *loong64.Backend
-	parsePseudoMnemonic parsec.Combinator[rune, parsecstrings.Position, string]
+	parsePseudoMnemonic parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 }
 
 // pInstr is an unevaluated pseudo-instruction (mnemonic + operands).
@@ -93,11 +93,11 @@ func buildPseudoMnemonics() map[string]string {
 // Instruction is the grammar "mnemonic operands": a pseudo-mnemonic
 // from its own trie (with the same boundary check), otherwise the
 // syntax layer's inner grammar.
-func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
+func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		expr.SkipSpaces(buf)
-		if name, err := s.parsePseudoMnemonic(buf); err == nil {
+		if name, err := s.parsePseudoMnemonic(state, buf); err == nil {
 			// mnemonic boundary: followed by a space/comma/end of
 			// line; otherwise - rewind to the inner grammar
 			if r, ok := expr.PeekRune(buf); !ok || r == ' ' || r == '\t' || r == ',' || r == '\n' {
@@ -114,13 +114,13 @@ func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, as
 			return nil, rerr
 		}
 
-		return s.be.Instruction()(buf)
+		return s.be.Instruction()(parsec.Stateless{}, buf)
 	}
 }
 
 // Comment parses a comment ('#' and '//' to the end of the line), as
 // in the syntax layer.
-func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
+func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return s.be.Comment()
 }
 

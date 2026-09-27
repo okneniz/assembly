@@ -105,14 +105,14 @@ var directives = map[string]dirArgsKind{
 // (expr.CExpr is a fresh ladder per call - capturing it once is the
 // point). A struct: everything below captures its fields.
 type lineGrammar struct {
-	parseInstruction parsec.Combinator[rune, parsecstrings.Position, Unresolved]
-	parseComment     parsec.Combinator[rune, parsecstrings.Position, string]
-	parseLabel       parsec.Combinator[rune, parsecstrings.Position, string]
-	parseDirective   parsec.Combinator[rune, parsecstrings.Position, *directive]
-	parseIdent       parsec.Combinator[rune, parsecstrings.Position, string]
-	parseStringLit   parsec.Combinator[rune, parsecstrings.Position, string]
-	parseComma       parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseExpr        parsec.Combinator[rune, parsecstrings.Position, *expr.Expr]
+	parseInstruction parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless]
+	parseComment     parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
+	parseLabel       parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
+	parseDirective   parsec.Combinator[rune, parsecstrings.Position, *directive, parsec.Stateless]
+	parseIdent       parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
+	parseStringLit   parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
+	parseComma       parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseExpr        parsec.Combinator[rune, parsecstrings.Position, *expr.Expr, parsec.Stateless]
 }
 
 // makeLineGrammar builds the whole line grammar once; be is the syntax
@@ -127,19 +127,19 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 		parseExpr:        expr.MakeExprParser(),
 	}
 
-	identColon := func() parsec.Combinator[rune, parsecstrings.Position, string] {
-		colon := parsecstrings.Try(parsecstrings.Eq("':'", ':'))
+	identColon := func() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
+		colon := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':'))
 		return parsecstrings.Cast(
 			parsecstrings.Concat(8,
 				parsecstrings.Some(
 					4,
 					"label name",
 					parsecstrings.Try(
-						parsecstrings.Satisfy("label start", true, expr.IsIdentStart),
+						parsecstrings.Satisfy[parsec.Stateless]("label start", true, expr.IsIdentStart),
 					),
 				),
 				parsecstrings.Many(8,
-					parsecstrings.Try(parsecstrings.Satisfy("label char", true, expr.IsIdentCont))),
+					parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("label char", true, expr.IsIdentCont))),
 				parsecstrings.Count(1, "':'", colon),
 			),
 			func(rs []rune) (string, error) {
@@ -153,7 +153,7 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 	numColon := parsecstrings.Cast(
 		parsecstrings.Concat(8,
 			parsecstrings.Some(4, "numeric label digits", expr.MakeDigitParser()),
-			parsecstrings.Count(1, "':'", parsecstrings.Try(parsecstrings.Eq("':'", ':'))),
+			parsecstrings.Count(1, "':'", parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':'))),
 		),
 		func(rs []rune) (string, error) {
 			return string(rs[:len(rs)-1]), nil
@@ -173,16 +173,16 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 }
 
 // newDirective is '.' + a known directive + arguments per specification.
-func (g *lineGrammar) makeDirectiveParser() parsec.Combinator[rune, parsecstrings.Position, *directive] {
-	dot := parsecstrings.Try(parsecstrings.Eq("'.'", '.'))
+func (g *lineGrammar) makeDirectiveParser() parsec.Combinator[rune, parsecstrings.Position, *directive, parsec.Stateless] {
+	dot := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'.'", '.'))
 
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*directive, parsec.Error[parsecstrings.Position]) {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*directive, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
-		if _, err := dot(buf); err != nil {
+		if _, err := dot(state, buf); err != nil {
 			return nil, err
 		}
 
-		name, err := g.parseIdent(buf)
+		name, err := g.parseIdent(state, buf)
 		if err != nil {
 			return nil, parsec.NewParseError(pos, "directive name expected")
 		}
@@ -223,18 +223,18 @@ func (g *lineGrammar) parseArgs(
 		return g.strList(buf)
 	case argsSymExpr:
 		expr.SkipSpaces(buf)
-		sym, err := g.parseIdent(buf)
+		sym, err := g.parseIdent(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
 
 		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(buf); err != nil {
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
 			return nil, err
 		}
 
 		expr.SkipSpaces(buf)
-		e, err := g.parseExpr(buf)
+		e, err := g.parseExpr(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -242,7 +242,7 @@ func (g *lineGrammar) parseArgs(
 		return []dirArg{newDirArg(nil, sym, false), newDirArg(e, "", false)}, nil
 	case argsSymRest, argsSecName:
 		expr.SkipSpaces(buf)
-		sym, err := g.parseIdent(buf)
+		sym, err := g.parseIdent(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -255,7 +255,7 @@ func (g *lineGrammar) parseArgs(
 	case argsIncbin:
 		// path string + optional skip, count (expressions)
 		expr.SkipSpaces(buf)
-		path, err := g.parseStringLit(buf)
+		path, err := g.parseStringLit(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -264,7 +264,7 @@ func (g *lineGrammar) parseArgs(
 		for range 2 {
 			save := buf.Position()
 			expr.SkipSpaces(buf)
-			if _, cerr := g.parseComma(buf); cerr != nil {
+			if _, cerr := g.parseComma(parsec.Stateless{}, buf); cerr != nil {
 				if rerr := expr.Rewind(buf, save); rerr != nil {
 					return nil, rerr
 				}
@@ -273,7 +273,7 @@ func (g *lineGrammar) parseArgs(
 			}
 
 			expr.SkipSpaces(buf)
-			e, eerr := g.parseExpr(buf)
+			e, eerr := g.parseExpr(parsec.Stateless{}, buf)
 			if eerr != nil {
 				return nil, eerr
 			}
@@ -286,7 +286,7 @@ func (g *lineGrammar) parseArgs(
 		// optional subsection number (0..8192, as in GAS)
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		e, err := g.parseExpr(buf)
+		e, err := g.parseExpr(parsec.Stateless{}, buf)
 		if err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return nil, rerr
@@ -309,7 +309,7 @@ func (g *lineGrammar) exprList(
 ) ([]dirArg, parsec.Error[parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
 	expr.SkipHash(buf)
-	first, err := g.parseExpr(buf)
+	first, err := g.parseExpr(parsec.Stateless{}, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -322,7 +322,7 @@ func (g *lineGrammar) exprList(
 	for {
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(buf); err != nil {
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return nil, rerr
 			}
@@ -332,7 +332,7 @@ func (g *lineGrammar) exprList(
 
 		expr.SkipSpaces(buf)
 		expr.SkipHash(buf)
-		e, err := g.parseExpr(buf)
+		e, err := g.parseExpr(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -346,7 +346,7 @@ func (g *lineGrammar) strList(
 	buf parsec.Buffer[rune, parsecstrings.Position],
 ) ([]dirArg, parsec.Error[parsecstrings.Position]) {
 	expr.SkipSpaces(buf)
-	first, err := g.parseStringLit(buf)
+	first, err := g.parseStringLit(parsec.Stateless{}, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +355,7 @@ func (g *lineGrammar) strList(
 	for {
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(buf); err != nil {
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return nil, rerr
 			}
@@ -364,7 +364,7 @@ func (g *lineGrammar) strList(
 		}
 
 		expr.SkipSpaces(buf)
-		s, err := g.parseStringLit(buf)
+		s, err := g.parseStringLit(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -425,7 +425,7 @@ func parseLine(
 	expr.SkipSpaces(buf)
 
 	// a full comment or an empty line
-	if _, err := g.parseComment(buf); err == nil {
+	if _, err := g.parseComment(parsec.Stateless{}, buf); err == nil {
 		consumeEOL(buf)
 		return st, nil
 	}
@@ -439,7 +439,7 @@ func parseLine(
 	for {
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		lbl, err := g.parseLabel(buf)
+		lbl, err := g.parseLabel(parsec.Stateless{}, buf)
 		if err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return statement{}, rerr
@@ -458,14 +458,14 @@ func parseLine(
 	}
 
 	if r, ok := expr.PeekRune(buf); ok && r == '.' {
-		d, err := g.parseDirective(buf)
+		d, err := g.parseDirective(parsec.Stateless{}, buf)
 		if err != nil {
 			return statement{}, err
 		}
 
 		st.directive = d
 	} else {
-		payload, err := g.parseInstruction(buf)
+		payload, err := g.parseInstruction(parsec.Stateless{}, buf)
 		if err != nil {
 			return statement{}, err
 		}

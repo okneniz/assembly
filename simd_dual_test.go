@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"testing"
 
@@ -38,7 +39,14 @@ func TestSimdDualCheck(t *testing.T) {
 	}
 
 	dir := t.TempDir()
-	cc := exec.Command(clang, "-arch", "arm64", "-c", "-x", "assembler", "-o", filepath.Join(dir, "o.o"), "-")
+	// the corpus carries aes/rdm/fcmla rows: Apple clang enables them for
+	// its arm64 targets, plain llvm needs the march spellt out (fcmla is
+	// an armv8.3-a feature, rdm comes with it, aes with +crypto).
+	march := []string{"-arch", "arm64"}
+	if runtime.GOOS != "darwin" {
+		march = []string{"--target=aarch64-linux-gnu", "-march=armv8.3-a+crypto"}
+	}
+	cc := exec.Command(clang, append(march, "-c", "-x", "assembler", "-o", filepath.Join(dir, "o.o"), "-")...)
 	cc.Stdin = strings.NewReader(string(src))
 	if out, err := cc.CombinedOutput(); err != nil {
 		t.Fatalf("clang: %v: %s", err, out)

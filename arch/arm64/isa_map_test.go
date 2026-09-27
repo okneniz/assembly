@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -182,7 +183,7 @@ func TestISATailCoverage(t *testing.T) {
 	}
 
 	var unknown, generic int
-	insts, err := MakeDecoder()(bytes.Buffer(ts.Data))
+	insts, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	for _, in := range insts {
 		switch in.(type) {

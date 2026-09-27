@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -53,7 +54,7 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 	switch ff.ArchKind() {
 	case file.ArchARM64:
 		archName = arm64.Name
-		insts, err := arm64.MakeDecoder()(bytes.Buffer(sec.Data))
+		insts, err := arm64.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(sec.Data))
 		require.NoError(t, err)
 		off := uint64(0)
 		for _, inst := range insts {
@@ -63,7 +64,7 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 		}
 	case file.ArchRISCV64:
 		archName = riscv.Name
-		insts, err := riscv.MakeDecoder()(bytes.Buffer(sec.Data))
+		insts, err := riscv.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(sec.Data))
 		require.NoError(t, err)
 		off := uint64(0)
 		for _, inst := range insts {

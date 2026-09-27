@@ -19,12 +19,12 @@ import (
 type Syntax interface {
 	// Instruction is the full parsec grammar of an instruction (mnemonic
 	// and operands); the result is an unresolved instruction.
-	Instruction() (comb parsec.Combinator[rune, parsecstrings.Position, Unresolved])
+	Instruction() (comb parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless])
 
 	// Comment is the parsec grammar of a comment up to end of line (the
 	// characters are arch-dependent: '#' - RISC-V, ';' - ARM, '//' - both).
 	// The newline is not consumed.
-	Comment() parsec.Combinator[rune, parsecstrings.Position, string]
+	Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 
 	// ApplyOption applies a .option value (each arch interprets its own).
 	ApplyOption(name string) error

@@ -84,8 +84,8 @@ func decodeOne(word uint32) (Instr, error) {
 // .word instruction so the total line count matches objdump. The
 // instructions are position-independent: addresses live in the view
 // context (disasm), not in the structures.
-func MakeDecoder() parsec.Combinator[byte, int, []Instr] {
-	instr := func(buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
+func MakeDecoder() parsec.Combinator[byte, int, []Instr, parsec.Stateless] {
+	instr := func(state parsec.Stateless, buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
 		w, err := decodeWordLE(buf)
 		if err != nil {
 			return nil, err

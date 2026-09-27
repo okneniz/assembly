@@ -39,7 +39,7 @@ func hexVal(r rune) uint64 {
 	}
 }
 
-type runeC = parsec.Combinator[rune, parsecstrings.Position, rune]
+type runeC = parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 
 // lineGrammar is the objdump output line grammar: the shared atoms and
 // the code-column alternatives.
@@ -47,19 +47,19 @@ type lineGrammar struct {
 	parseHex       runeC
 	parseSpace     runeC
 	parseColon     runeC
-	parseCodeField parsec.Combinator[rune, parsecstrings.Position, []string]
-	parseAddr      parsec.Combinator[rune, parsecstrings.Position, uint64]
+	parseCodeField parsec.Combinator[rune, parsecstrings.Position, []string, parsec.Stateless]
+	parseAddr      parsec.Combinator[rune, parsecstrings.Position, uint64, parsec.Stateless]
 }
 
 // makeLineGrammar builds the whole grammar once.
 func makeLineGrammar() *lineGrammar {
 	g := &lineGrammar{
-		parseHex: parsecstrings.Try(parsecstrings.OneOf("hex digit",
+		parseHex: parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("hex digit",
 			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 			'a', 'b', 'c', 'd', 'e', 'f',
 			'A', 'B', 'C', 'D', 'E', 'F')),
-		parseSpace: parsecstrings.Try(parsecstrings.Space("space")),
-		parseColon: parsecstrings.Try(parsecstrings.Eq("':'", ':')),
+		parseSpace: parsecstrings.Try(parsecstrings.Space[parsec.Stateless]("space")),
+		parseColon: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':')),
 	}
 
 	// a hex address up to ':' (>=1 digit) → uint64
@@ -97,7 +97,7 @@ func (g *lineGrammar) noByteAfter(
 ) parsec.Error[parsecstrings.Position] {
 	start := buf.Position()
 	for {
-		if _, err := g.parseSpace(buf); err != nil {
+		if _, err := g.parseSpace(parsec.Stateless{}, buf); err != nil {
 			break
 		}
 	}
@@ -136,18 +136,18 @@ func (g *lineGrammar) noByteAfter(
 // as a byte).
 func (g *lineGrammar) makeBytesFieldParser(
 	n int,
-	codeByte parsec.Combinator[rune, parsecstrings.Position, []rune],
-) parsec.Combinator[rune, parsecstrings.Position, []string] {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
+	codeByte parsec.Combinator[rune, parsecstrings.Position, []rune, parsec.Stateless],
+) parsec.Combinator[rune, parsecstrings.Position, []string, parsec.Stateless] {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
 		toks := make([]string, 0, n)
 		for i := range n {
 			if i > 0 {
-				if _, err := g.parseSpace(buf); err != nil {
+				if _, err := g.parseSpace(state, buf); err != nil {
 					return nil, err
 				}
 			}
 
-			t, err := codeByte(buf)
+			t, err := codeByte(state, buf)
 			if err != nil {
 				return nil, err
 			}
@@ -175,11 +175,11 @@ func (g *lineGrammar) makeBytesFieldParser(
 // wordField - exactly n hex digits as a single word (4 or 8).
 func (g *lineGrammar) makeWordFieldParser(
 	n int,
-) parsec.Combinator[rune, parsecstrings.Position, []string] {
+) parsec.Combinator[rune, parsecstrings.Position, []string, parsec.Stateless] {
 	digits := parsecstrings.Count(n, "code word", g.parseHex)
 
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
-		rs, err := digits(buf)
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]string, parsec.Error[parsecstrings.Position]) {
+		rs, err := digits(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -200,18 +200,19 @@ func (g *lineGrammar) makeWordFieldParser(
 // parseInstrLine - the address, ':' and the code column; the tail (mnemonic and
 // operands) is not consumed by the grammar. Returns addr.
 func (g *lineGrammar) parseInstrLine(
+	state parsec.Stateless,
 	buf parsec.Buffer[rune, parsecstrings.Position],
 ) (uint64, parsec.Error[parsecstrings.Position]) {
-	addr, err := g.parseAddr(buf)
+	addr, err := g.parseAddr(state, buf)
 	if err != nil {
 		return 0, err
 	}
 
-	if _, err := g.parseColon(buf); err != nil {
+	if _, err := g.parseColon(state, buf); err != nil {
 		return 0, err
 	}
 
-	if _, err := parsecstrings.SkipMany(g.parseSpace, g.parseCodeField)(buf); err != nil {
+	if _, err := parsecstrings.SkipMany(g.parseSpace, g.parseCodeField)(parsec.Stateless{}, buf); err != nil {
 		return 0, err
 	}
 
@@ -221,7 +222,7 @@ func (g *lineGrammar) parseInstrLine(
 // parseLine recognizes a normalized line as an objdump instruction line and
 // returns its address.
 func (g *lineGrammar) parseLine(s string) (uint64, bool) {
-	addr, err := parsecstrings.ParseString(s, g.parseInstrLine)
+	addr, err := parsecstrings.ParseString(parsec.Stateless{}, s, g.parseInstrLine)
 	if err != nil {
 		return 0, false
 	}

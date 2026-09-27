@@ -21,7 +21,7 @@ import (
 	"github.com/okneniz/assembly/asm/expr"
 )
 
-type operand = parsec.Combinator[rune, parsecstrings.Position, Op]
+type operand = parsec.Combinator[rune, parsecstrings.Position, Op, parsec.Stateless]
 
 // asmReg is a register from the source: an ABI name or xN/fN.
 type asmReg struct {
@@ -78,66 +78,66 @@ func regName(r asmReg) string {
 // trie (longest-match), the register operand, the full operand
 // alternative, the shared expression ladder and the comma atom.
 type grammar struct {
-	parseMnemonic   parsec.Combinator[rune, parsecstrings.Position, string]
+	parseMnemonic   parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 	parseRegOperand operand
 	parseOperand    operand
-	parseComma      parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseExpr       parsec.Combinator[rune, parsecstrings.Position, *expr.Expr]
+	parseComma      parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseExpr       parsec.Combinator[rune, parsecstrings.Position, *expr.Expr, parsec.Stateless]
 }
 
 // newGrammar builds the whole grammar once; the ready combinators are
 // captured by the backend and reused for every line.
 func makeGrammar() *grammar {
 	g := &grammar{
-		parseMnemonic: parsecstrings.MapStrings("mnemonic", buildAsmMnemonics()),
+		parseMnemonic: parsecstrings.MapStrings[string, parsec.Stateless]("mnemonic", buildAsmMnemonics()),
 		parseComma:    expr.MakeCommaParser(),
 		parseExpr:     expr.MakeExprParser(),
 	}
 
 	g.parseRegOperand = parsecstrings.Cast(
-		parsecstrings.MapStrings("register", buildAsmRegNum()),
+		parsecstrings.MapStrings[asmReg, parsec.Stateless]("register", buildAsmRegNum()),
 		func(r asmReg) (Op, error) {
 			return OpReg(regName(r)), nil
 		},
 	)
 
-	lparen := parsecstrings.Try(parsecstrings.Eq("'('", '('))
-	rparen := parsecstrings.Try(parsecstrings.Eq("')'", ')'))
+	lparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'('", '('))
+	rparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("')'", ')'))
 
 	// memory parseOperand: [expr] '(' reg ')' - "0x8(sp)", "(a0)"
-	memOperand := func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
+	memOperand := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
 		var off *expr.Expr
 		if r, ok := expr.PeekRune(buf); ok && r == '(' {
-			if _, err := lparen(buf); err != nil {
+			if _, err := lparen(state, buf); err != nil {
 				return Op{}, err
 			}
 		} else {
-			e, err := g.parseExpr(buf)
+			e, err := g.parseExpr(state, buf)
 			if err != nil {
 				return Op{}, err
 			}
 
 			off = e
 			expr.SkipSpaces(buf)
-			if _, err := lparen(buf); err != nil {
+			if _, err := lparen(state, buf); err != nil {
 				return Op{}, err
 			}
 		}
 
-		r, err := g.parseRegOperand(buf)
+		r, err := g.parseRegOperand(state, buf)
 		if err != nil {
 			return Op{}, err
 		}
 
-		if _, err := rparen(buf); err != nil {
+		if _, err := rparen(state, buf); err != nil {
 			return Op{}, err
 		}
 
 		return OpMemExpr(r.Reg(), off), nil
 	}
 
-	exprOperand := func(buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
-		e, err := g.parseExpr(buf)
+	exprOperand := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (Op, parsec.Error[parsecstrings.Position]) {
+		e, err := g.parseExpr(state, buf)
 		if err != nil {
 			return Op{}, err
 		}
@@ -178,7 +178,7 @@ func (b *Backend) ParseOps(
 		return ops, nil
 	}
 
-	op, err := g.parseOperand(buf)
+	op, err := g.parseOperand(parsec.Stateless{}, buf)
 	if err != nil {
 		return nil, err
 	}
@@ -187,7 +187,7 @@ func (b *Backend) ParseOps(
 	for {
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(buf); err != nil {
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
 			if rerr := expr.Rewind(buf, save); rerr != nil {
 				return nil, rerr
 			}
@@ -196,7 +196,7 @@ func (b *Backend) ParseOps(
 		}
 
 		expr.SkipSpaces(buf)
-		op, err := g.parseOperand(buf)
+		op, err := g.parseOperand(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -209,17 +209,17 @@ func (b *Backend) ParseOps(
 
 // Instruction is the grammar "mnemonic operands" (comma-separated
 // operands); built once in New (b.newInstruction).
-func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
 	return b.parseInstruction
 }
 
 // newInstruction builds the instruction combinator: mnemonic
 // (longest-match + boundary check) and the operand list.
-func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
+func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		skipSpaces(buf)
-		name, err := b.g.parseMnemonic(buf)
+		name, err := b.g.parseMnemonic(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -239,22 +239,22 @@ func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.
 }
 
 // Comment parses '#' and '//' to the end of the line; built once in New.
-func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
+func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return b.parseComment
 }
 
 // newComment builds the comment combinator ('#' and '//' to the end of
 // the line).
-func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
 	hash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", '#')), body),
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')), body),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
 	)
 	slash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String("comment", "//")), body),
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")), body),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},

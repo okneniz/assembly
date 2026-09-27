@@ -7,6 +7,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/disasm"
@@ -173,7 +174,7 @@ func BenchmarkParse(b *testing.B) {
 
 	start := time.Now()
 	for range b.N {
-		if _, err := MakeDecoder()(bytes.Buffer(data)); err != nil {
+		if _, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data)); err != nil {
 			b.Fatal(err)
 		}
 	}

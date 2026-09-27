@@ -74,33 +74,33 @@ type tableGrammar struct {
 	// separators and trailing runs must never cross a line boundary
 	// (strings.Space matches '\n', which would silently swallow the
 	// following blank lines into the previous entry).
-	parseHSpace    parsec.Combinator[rune, strings.Position, rune]
-	parseNewline   parsec.Combinator[rune, strings.Position, rune]
-	parseSpaces1   parsec.Combinator[rune, strings.Position, []rune]
-	parseHexWord   parsec.Combinator[rune, strings.Position, uint32]
-	parseName      parsec.Combinator[rune, strings.Position, string]
-	parseFormat    parsec.Combinator[rune, strings.Position, string]
-	parseAnnoField parsec.Combinator[rune, strings.Position, string]
-	parseLine      parsec.Combinator[rune, strings.Position, Entry]
+	parseHSpace    parsec.Combinator[rune, strings.Position, rune, parsec.Stateless]
+	parseNewline   parsec.Combinator[rune, strings.Position, rune, parsec.Stateless]
+	parseSpaces1   parsec.Combinator[rune, strings.Position, []rune, parsec.Stateless]
+	parseHexWord   parsec.Combinator[rune, strings.Position, uint32, parsec.Stateless]
+	parseName      parsec.Combinator[rune, strings.Position, string, parsec.Stateless]
+	parseFormat    parsec.Combinator[rune, strings.Position, string, parsec.Stateless]
+	parseAnnoField parsec.Combinator[rune, strings.Position, string, parsec.Stateless]
+	parseLine      parsec.Combinator[rune, strings.Position, Entry, parsec.Stateless]
 }
 
 func makeTableGrammar() *tableGrammar {
 	g := &tableGrammar{
-		parseHSpace:  strings.Try(strings.Satisfy("horizontal space", true, isHSpaceRune)),
-		parseNewline: strings.Try(strings.Eq("newline", '\n')),
+		parseHSpace:  strings.Try(strings.Satisfy[parsec.Stateless]("horizontal space", true, isHSpaceRune)),
+		parseNewline: strings.Try(strings.Eq[parsec.Stateless]("newline", '\n')),
 	}
 
 	g.parseSpaces1 = strings.Some(4, "expected whitespace", g.parseHSpace)
 
-	at := strings.Try(strings.Eq("'@'", '@'))
-	hexDigit := strings.Try(strings.OneOf("hex digit",
+	at := strings.Try(strings.Eq[parsec.Stateless]("'@'", '@'))
+	hexDigit := strings.Try(strings.OneOf[parsec.Stateless]("hex digit",
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
 		'A', 'B', 'C', 'D', 'E', 'F',
 	))
-	nameRune := strings.Try(strings.Satisfy("mnemonic character", true, isNameRune))
-	fmtRune := strings.Try(strings.Satisfy("format character", true, isFormatRune))
-	annoRune := strings.Try(strings.Satisfy("annotation character", true, isAnnoRune))
+	nameRune := strings.Try(strings.Satisfy[parsec.Stateless]("mnemonic character", true, isNameRune))
+	fmtRune := strings.Try(strings.Satisfy[parsec.Stateless]("format character", true, isFormatRune))
+	annoRune := strings.Try(strings.Satisfy[parsec.Stateless]("annotation character", true, isAnnoRune))
 
 	g.parseHexWord = strings.Cast(strings.Some(8, "expected hex word", hexDigit), castWord)
 	g.parseName = strings.Cast(strings.Some(24, "expected mnemonic", nameRune), castRunes)
@@ -192,7 +192,7 @@ func cutPrefix(s, prefix string) (string, bool) {
 // skipSpaces - consume the run of horizontal spaces.
 func (g *tableGrammar) skipSpaces(buf parsec.Buffer[rune, strings.Position]) {
 	for {
-		if _, err := g.parseHSpace(buf); err != nil {
+		if _, err := g.parseHSpace(parsec.Stateless{}, buf); err != nil {
 			return
 		}
 	}
@@ -200,7 +200,7 @@ func (g *tableGrammar) skipSpaces(buf parsec.Buffer[rune, strings.Position]) {
 
 // consumeNewline - the parseLine's parseNewline, if present.
 func (g *tableGrammar) consumeNewline(buf parsec.Buffer[rune, strings.Position]) {
-	if _, err := g.parseNewline(buf); err != nil {
+	if _, err := g.parseNewline(parsec.Stateless{}, buf); err != nil {
 		return
 	}
 }
@@ -208,11 +208,11 @@ func (g *tableGrammar) consumeNewline(buf parsec.Buffer[rune, strings.Position])
 // makeLineParser - one table line: word, mnemonic, format, annotations,
 // EOL - or a blank line (whitespace only, the zero Entry which Parse
 // drops).
-func (g *tableGrammar) makeLineParser() parsec.Combinator[rune, strings.Position, Entry] {
+func (g *tableGrammar) makeLineParser() parsec.Combinator[rune, strings.Position, Entry, parsec.Stateless] {
 	blankLine := strings.Try(
-		func(buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
-			if _, err := g.parseHSpace(buf); err != nil {
-				if _, err := g.parseNewline(buf); err != nil {
+		func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
+			if _, err := g.parseHSpace(state, buf); err != nil {
+				if _, err := g.parseNewline(state, buf); err != nil {
 					return Entry{}, parsec.NewParseError(
 						buf.Position(),
 						"expected a blank line",
@@ -229,26 +229,26 @@ func (g *tableGrammar) makeLineParser() parsec.Combinator[rune, strings.Position
 		},
 	)
 
-	tableLine := func(buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
-		word, err := g.parseHexWord(buf)
+	tableLine := func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (Entry, parsec.Error[strings.Position]) {
+		word, err := g.parseHexWord(state, buf)
 		if err != nil {
 			return Entry{}, err
 		}
 
-		if _, err := g.parseSpaces1(buf); err != nil {
+		if _, err := g.parseSpaces1(state, buf); err != nil {
 			return Entry{}, err
 		}
 
-		name, err := g.parseName(buf)
+		name, err := g.parseName(state, buf)
 		if err != nil {
 			return Entry{}, err
 		}
 
-		if _, err := g.parseSpaces1(buf); err != nil {
+		if _, err := g.parseSpaces1(state, buf); err != nil {
 			return Entry{}, err
 		}
 
-		format, err := g.parseFormat(buf)
+		format, err := g.parseFormat(state, buf)
 		if err != nil {
 			return Entry{}, err
 		}
@@ -257,7 +257,7 @@ func (g *tableGrammar) makeLineParser() parsec.Combinator[rune, strings.Position
 		// annoField is a Try - when no '@' follows the spaces it fails
 		// with the position rolled back, and the loop simply ends.
 		annos := []string{}
-		for a, aerr := g.parseAnnoField(buf); aerr == nil; a, aerr = g.parseAnnoField(buf) {
+		for a, aerr := g.parseAnnoField(state, buf); aerr == nil; a, aerr = g.parseAnnoField(state, buf) {
 			annos = append(annos, a)
 		}
 
@@ -282,7 +282,7 @@ func Parse(data []rune) ([]Entry, parsec.Error[strings.Position]) {
 
 	out := make([]Entry, 0, 64)
 	for !buf.IsEOF() {
-		e, err := g.parseLine(buf)
+		e, err := g.parseLine(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, parsec.NewParseError(buf.Position(), "corrupt line", err)
 		}

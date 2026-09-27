@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 )
@@ -12,7 +13,7 @@ func TestParseInstrs(t *testing.T) {
 	data := binary.LittleEndian.AppendUint32(nil, 0x001039ac) // add.w $t0, $t1, $t2
 	data = binary.LittleEndian.AppendUint32(data, 0xffffffff) // no encoding
 
-	instrs, err := MakeDecoder()(parsecbytes.Buffer(data))
+	instrs, err := MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 	require.NoError(t, err)
 	require.Len(t, instrs, 2)
 
@@ -26,17 +27,17 @@ func TestParseTruncatedTail(t *testing.T) {
 	data := binary.LittleEndian.AppendUint32(nil, 0x1c000000)
 	data = append(data, 0x11, 0x22, 0x33)
 
-	instrs, err := MakeDecoder()(parsecbytes.Buffer(data))
+	instrs, err := MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 	require.NoError(t, err)
 	require.Len(t, instrs, 1)
 
 	// Only the tail.
-	instrs, err = MakeDecoder()(parsecbytes.Buffer([]byte{1, 2, 3}))
+	instrs, err = MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer([]byte{1, 2, 3}))
 	require.NoError(t, err)
 	require.Empty(t, instrs)
 
 	// Nothing at all.
-	instrs, err = MakeDecoder()(parsecbytes.Buffer(nil))
+	instrs, err = MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(nil))
 	require.NoError(t, err)
 	require.Empty(t, instrs)
 }

@@ -55,7 +55,7 @@ func isRegisterName(s string) bool {
 	return true
 }
 
-type armOperand = parsec.Combinator[rune, parsecstrings.Position, armOp]
+type armOperand = parsec.Combinator[rune, parsecstrings.Position, armOp, parsec.Stateless]
 
 // armGrammar is the whole operand grammar plus the shared atoms (the
 // expression ladder, the decimal digit, the punctuation) captured once.
@@ -69,16 +69,16 @@ type armGrammar struct {
 	parseList     armOperand
 	parseLitPool  armOperand
 	parseOperand  armOperand
-	parseMnemonic parsec.Combinator[rune, parsecstrings.Position, string]
+	parseMnemonic parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 
-	parseExpr   parsec.Combinator[rune, parsecstrings.Position, *expr.Expr]
-	parseDigit  parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseComma  parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseHash   parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseLBrack parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseRBrack parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseLBrace parsec.Combinator[rune, parsecstrings.Position, rune]
-	parseRBrace parsec.Combinator[rune, parsecstrings.Position, rune]
+	parseExpr   parsec.Combinator[rune, parsecstrings.Position, *expr.Expr, parsec.Stateless]
+	parseDigit  parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseComma  parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseHash   parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseLBrack parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseRBrack parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseLBrace parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
+	parseRBrace parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 }
 
 // makeGrammar builds the whole grammar once; the ready combinators
@@ -88,30 +88,30 @@ func makeGrammar() *armGrammar {
 		parseExpr:   expr.MakeExprParser(),
 		parseDigit:  expr.MakeDigitParser(),
 		parseComma:  expr.MakeCommaParser(),
-		parseHash:   parsecstrings.Try(parsecstrings.Eq("'#'", '#')),
-		parseLBrack: parsecstrings.Try(parsecstrings.Eq("'['", '[')),
-		parseRBrack: parsecstrings.Try(parsecstrings.Eq("']'", ']')),
-		parseLBrace: parsecstrings.Try(parsecstrings.Eq("'{'", '{')),
-		parseRBrace: parsecstrings.Try(parsecstrings.Eq("'}'", '}')),
+		parseHash:   parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'#'", '#')),
+		parseLBrack: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'['", '[')),
+		parseRBrack: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("']'", ']')),
+		parseLBrace: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'{'", '{')),
+		parseRBrace: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'}'", '}')),
 	}
 
-	letter := parsecstrings.Try(parsecstrings.Satisfy("letter", true, func(r rune) bool {
+	letter := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
 		return r >= 'a' && r <= 'z'
 	}))
-	dot := parsecstrings.Try(parsecstrings.Eq("dot", '.'))
+	dot := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("dot", '.'))
 
 	// a register (letter prefix + digits + an optional .arr), or a named
 	// one (sp/xzr/wzr/wsp/lr/fp)
-	g.parseReg = func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+	g.parseReg = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		var rs []rune
-		first, err := letter(buf)
+		first, err := letter(state, buf)
 		if err != nil {
 			return armOp{}, err
 		}
 
 		rs = append(rs, first)
 		for {
-			l, lerr := letter(buf)
+			l, lerr := letter(state, buf)
 			if lerr != nil {
 				break
 			}
@@ -120,7 +120,7 @@ func makeGrammar() *armGrammar {
 		}
 
 		for {
-			d, derr := g.parseDigit(buf)
+			d, derr := g.parseDigit(state, buf)
 			if derr != nil {
 				break
 			}
@@ -129,12 +129,12 @@ func makeGrammar() *armGrammar {
 		}
 
 		save := buf.Position()
-		if _, derr := dot(buf); derr == nil {
+		if _, derr := dot(state, buf); derr == nil {
 			var arr []rune
 			for {
-				a, aerr := letter(buf)
+				a, aerr := letter(state, buf)
 				if aerr != nil {
-					ad, aderr := g.parseDigit(buf)
+					ad, aderr := g.parseDigit(state, buf)
 					if aderr != nil {
 						break
 					}
@@ -179,10 +179,10 @@ func makeGrammar() *armGrammar {
 		parsecstrings.SkipMany(
 			expr.MakeSpaceParser(),
 			parsecstrings.Try(
-				func(buf parsec.Buffer[rune, parsecstrings.Position]) (*expr.Expr, parsec.Error[parsecstrings.Position]) {
+				func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*expr.Expr, parsec.Error[parsecstrings.Position]) {
 					// an optional '#' before the immediate (objdump style)
 					expr.SkipHash(buf)
-					return g.parseExpr(buf)
+					return g.parseExpr(state, buf)
 				},
 			),
 		),
@@ -205,11 +205,11 @@ func makeGrammar() *armGrammar {
 	)
 
 	// lsl/lsr/asr/ror #imm (a modifier operand)
-	shiftKw := parsecstrings.Try(parsecstrings.MapStrings("shift", map[string]string{
+	shiftKw := parsecstrings.Try(parsecstrings.MapStrings[string, parsec.Stateless]("shift", map[string]string{
 		"lsl": "lsl", "lsr": "lsr", "asr": "asr", "ror": "ror",
 	}))
-	g.parseShift = func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
-		name, err := shiftKw(buf)
+	g.parseShift = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+		name, err := shiftKw(state, buf)
 		if err != nil {
 			return armOp{}, err
 		}
@@ -218,7 +218,7 @@ func makeGrammar() *armGrammar {
 		expr.SkipHash(buf)
 		var digits []rune
 		for {
-			d, derr := g.parseDigit(buf)
+			d, derr := g.parseDigit(state, buf)
 			if derr != nil {
 				break
 			}
@@ -239,13 +239,13 @@ func makeGrammar() *armGrammar {
 	}
 
 	// an extension (uxtw/sxtw/...) with an optional #imm
-	extendKw := parsecstrings.Try(parsecstrings.MapStrings("extend", map[string]string{
+	extendKw := parsecstrings.Try(parsecstrings.MapStrings[string, parsec.Stateless]("extend", map[string]string{
 		"uxtb": "uxtb", "uxth": "uxth", "uxtw": "uxtw", "uxtx": "uxtx",
 		"sxtb": "sxtb", "sxth": "sxth", "sxtw": "sxtw", "sxtx": "sxtx",
 		"lsl": "lsl",
 	}))
-	g.parseExtend = func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
-		name, err := extendKw(buf)
+	g.parseExtend = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+		name, err := extendKw(state, buf)
 		if err != nil {
 			return armOp{}, err
 		}
@@ -253,10 +253,10 @@ func makeGrammar() *armGrammar {
 		op := newExtendOp(name)
 		save := buf.Position()
 		expr.SkipSpaces(buf)
-		if _, herr := g.parseHash(buf); herr == nil {
+		if _, herr := g.parseHash(state, buf); herr == nil {
 			var digits []rune
 			for {
-				d, derr := g.parseDigit(buf)
+				d, derr := g.parseDigit(state, buf)
 				if derr != nil {
 					break
 				}
@@ -284,44 +284,44 @@ func makeGrammar() *armGrammar {
 		return op, nil
 	}
 
-	bang := parsecstrings.Try(parsecstrings.Eq("'!'", '!'))
+	bang := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'!'", '!'))
 	memOption := parsecstrings.Choice(
 		"option",
 		parsecstrings.Try(
-			func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
-				return g.parseExtend(buf)
+			func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+				return g.parseExtend(state, buf)
 			},
 		),
 		parsecstrings.Try(
-			func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
-				return g.parseShift(buf)
+			func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+				return g.parseShift(state, buf)
 			},
 		),
 	)
 
 	// the addressing forms: [x0] / [x0, #imm] / [x0, #imm]! / [x0], #imm
 	// / [x0, x1] / [x0, x1, lsl #3] / [x0, x1, uxtw]
-	g.parseMem = func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+	g.parseMem = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		m := &armMem{}
-		if _, err := g.parseLBrack(buf); err != nil {
+		if _, err := g.parseLBrack(state, buf); err != nil {
 			return armOp{}, err
 		}
 
 		expr.SkipSpaces(buf)
-		base, err := g.parseReg(buf)
+		base, err := g.parseReg(state, buf)
 		if err != nil {
 			return armOp{}, err
 		}
 
 		m.base = base.reg
 		expr.SkipSpaces(buf)
-		if _, err := g.parseRBrack(buf); err == nil {
+		if _, err := g.parseRBrack(state, buf); err == nil {
 			// post-index: [x0], #imm
 			expr.SkipSpaces(buf)
-			if _, cerr := g.parseComma(buf); cerr == nil {
+			if _, cerr := g.parseComma(state, buf); cerr == nil {
 				expr.SkipSpaces(buf)
 				expr.SkipHash(buf)
-				off, perr := g.parseExpr(buf)
+				off, perr := g.parseExpr(state, buf)
 				if perr != nil {
 					return armOp{}, perr
 				}
@@ -332,7 +332,7 @@ func makeGrammar() *armGrammar {
 			return newMemOp(m), nil
 		}
 
-		if _, err := g.parseComma(buf); err != nil {
+		if _, err := g.parseComma(state, buf); err != nil {
 			return armOp{}, parsec.NewParseError(buf.Position(), "expected ']' or ','")
 		}
 
@@ -341,7 +341,7 @@ func makeGrammar() *armGrammar {
 		if r, ok := expr.PeekRune(buf); !ok || r == '#' || r == '-' ||
 			(r >= '0' && r <= '9') || r == '(' || r == '.' || r == '\'' {
 			expr.SkipHash(buf)
-			off, perr := g.parseExpr(buf)
+			off, perr := g.parseExpr(state, buf)
 			if perr != nil {
 				return armOp{}, perr
 			}
@@ -349,16 +349,16 @@ func makeGrammar() *armGrammar {
 			m.offExpr = off
 		} else {
 			// [x0, x1(, opt #imm)]
-			reg2, rerr := g.parseReg(buf)
+			reg2, rerr := g.parseReg(state, buf)
 			if rerr != nil {
 				return armOp{}, rerr
 			}
 
 			m.offReg = reg2.reg
 			expr.SkipSpaces(buf)
-			if _, oerr := g.parseComma(buf); oerr == nil {
+			if _, oerr := g.parseComma(state, buf); oerr == nil {
 				expr.SkipSpaces(buf)
-				ext, eerr := memOption(buf)
+				ext, eerr := memOption(state, buf)
 				if eerr != nil {
 					return armOp{}, eerr
 				}
@@ -369,11 +369,11 @@ func makeGrammar() *armGrammar {
 		}
 
 		expr.SkipSpaces(buf)
-		if _, err := g.parseRBrack(buf); err != nil {
+		if _, err := g.parseRBrack(state, buf); err != nil {
 			return armOp{}, err
 		}
 
-		if _, err := bang(buf); err == nil {
+		if _, err := bang(state, buf); err == nil {
 			m.pre = true
 		}
 
@@ -381,28 +381,28 @@ func makeGrammar() *armGrammar {
 	}
 
 	// { v0.16b, v1.16b } / { x0, x1 }
-	g.parseList = func(buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
-		if _, err := g.parseLBrace(buf); err != nil {
+	g.parseList = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
+		if _, err := g.parseLBrace(state, buf); err != nil {
 			return armOp{}, err
 		}
 
 		op := newListOp()
 		for {
 			expr.SkipSpaces(buf)
-			r, err := g.parseReg(buf)
+			r, err := g.parseReg(state, buf)
 			if err != nil {
 				return armOp{}, err
 			}
 
 			op.list = append(op.list, newArmListReg(r.reg, r.arr))
 			expr.SkipSpaces(buf)
-			if _, cerr := g.parseComma(buf); cerr != nil {
+			if _, cerr := g.parseComma(state, buf); cerr != nil {
 				break
 			}
 		}
 
 		expr.SkipSpaces(buf)
-		if _, err := g.parseRBrace(buf); err != nil {
+		if _, err := g.parseRBrace(state, buf); err != nil {
 			return armOp{}, err
 		}
 
@@ -413,7 +413,7 @@ func makeGrammar() *armGrammar {
 	// pool, the instruction refers to the slot (see asm.PoolUser)
 	g.parseLitPool = parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.Try(parsecstrings.Eq("'='", '=')),
+			parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'='", '=')),
 			g.parseExpr,
 		),
 		func(e *expr.Expr) (armOp, error) {
@@ -436,11 +436,11 @@ func makeGrammar() *armGrammar {
 	g.parseMnemonic = parsecstrings.Cast(
 		parsecstrings.Concat(8,
 			parsecstrings.Count(1, "mnemonic",
-				parsecstrings.Try(parsecstrings.Satisfy("letter", true, func(r rune) bool {
+				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
 					return r >= 'a' && r <= 'z'
 				}))),
 			parsecstrings.Many(6,
-				parsecstrings.Try(parsecstrings.Satisfy("mnemonic char", true, func(r rune) bool {
+				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("mnemonic char", true, func(r rune) bool {
 					return r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '.'
 				}))),
 		),
@@ -453,8 +453,8 @@ func makeGrammar() *armGrammar {
 }
 
 // floatRun parses a decimal parseFloat: digits [. digits] ([eE]...).
-func makeFloatRun() parsec.Combinator[rune, parsecstrings.Position, []rune] {
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
+func makeFloatRun() parsec.Combinator[rune, parsecstrings.Position, []rune, parsec.Stateless] {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
 		digits := func() bool {
 			n := 0

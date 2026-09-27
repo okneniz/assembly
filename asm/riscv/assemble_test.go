@@ -4,6 +4,7 @@ import (
 	"encoding/binary"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -148,7 +149,7 @@ func TestAssembleWords(t *testing.T) {
 	}
 	for _, c := range texts {
 		got := assembleOne(t, c.src, 0)
-		insts, err := arch.MakeDecoder()(bytes.Buffer(got))
+		insts, err := arch.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(got))
 		require.NoError(t, err)
 		require.NotEmpty(t, insts, "case %q: nothing decoded from % x", c.src, got)
 		for _, in := range insts {

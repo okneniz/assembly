@@ -6,6 +6,7 @@ package loong64
 import (
 	"fmt"
 
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 
 	arch "github.com/okneniz/assembly/arch/loong64"
@@ -94,7 +95,7 @@ func (Target) Registers() []debug.Reg {
 // Disasm - the listing lines of the buffer at addr through the loong64
 // decoder (the decode tail falls back to .word lines on its own).
 func (Target) Disasm(code []byte, addr uint64) []string {
-	instrs, err := arch.MakeDecoder()(parsecbytes.Buffer(code))
+	instrs, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(code))
 	if err != nil {
 		return nil
 	}

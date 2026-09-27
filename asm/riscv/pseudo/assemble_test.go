@@ -7,6 +7,7 @@ import (
 	"math/rand"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -108,7 +109,7 @@ func TestAssemblePseudo(t *testing.T) {
 	}
 	for _, c := range structural {
 		got := assembleOne(t, c.src, 0)
-		insts, err := arch.MakeDecoder()(parsecbytes.Buffer(got))
+		insts, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(got))
 		require.NoError(t, err)
 		require.NotEmpty(t, insts, "case %q: nothing decoded", c.src)
 		back := objdump.Normalize(instrTextSource(insts[0], 0))
@@ -319,7 +320,7 @@ target:
 		// distance 4+4096 > 2046: the optimistic seed compresses (offset
 		// 0), the relaxed layout widens back to jal
 		require.Len(t, d, 4+4096+2, "total")
-		insts, err := arch.MakeDecoder()(parsecbytes.Buffer(d))
+		insts, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(d))
 		require.NoError(t, err)
 		require.Equal(
 			t,
@@ -361,7 +362,7 @@ back:
 		require.Empty(t, errs, "errors: %v", errs)
 		d := res.Sections[0].Data
 		require.Len(t, d, 4096+4, "total")
-		insts, err := arch.MakeDecoder()(parsecbytes.Buffer(d))
+		insts, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(d))
 		require.NoError(t, err)
 		last := insts[len(insts)-1] // the .space bytes decode as junk before it
 		require.Equal(t, "j 0x1000", last.ObjDump(disasm.ViewCtxAt(0x2000)), "jal -4096")
@@ -421,7 +422,7 @@ func TestRoundTripExample(t *testing.T) {
 		t.Skipf("example not available: %v", err)
 	}
 
-	insts, err := arch.MakeDecoder()(parsecbytes.Buffer(ts.Data))
+	insts, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(ts.Data))
 	require.NoError(t, err)
 	matched, rmLossy, mismatched := 0, 0, 0
 	var failures []string
@@ -616,7 +617,7 @@ func TestRoundTripSynthetic(t *testing.T) {
 		}
 
 		want := res.Sections[0].Data
-		insts, err := arch.MakeDecoder()(parsecbytes.Buffer(want))
+		insts, err := arch.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(want))
 		require.NoError(t, err)
 		off := uint64(0)
 		for _, in := range insts {

@@ -31,8 +31,11 @@ func a64McText(t *testing.T, triple, src string) []byte {
 	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
 	defer cancel()
 
+	// the corpus carries aes/rdm/fcmla rows: llvm (19+) gates them behind
+	// explicit feature flags, any llvm accepts the extra -mattr.
 	cmd := exec.CommandContext(ctx, llvmMcPath(),
-		"-assemble", "-triple="+triple, "-filetype=obj", "-o", path)
+		"-assemble", "-triple="+triple, "-mattr=+aes,+rdm,+complxnum",
+		"-filetype=obj", "-o", path)
 	cmd.Stdin = strings.NewReader(src)
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Fatalf("llvm-mc %q (%s): %v: %s", src, triple, err, out)

@@ -62,13 +62,13 @@ func newSlice(hi uint, lo uint) slice {
 
 // newEncValueC — the full value of the v attribute (one of the three
 // formats above).
-func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
-	colon := strings.Try(strings.Eq("':'", ':'))
-	n := strings.Try(strings.Eq("'n'", 'n'))
+func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue, parsec.Stateless] {
+	colon := strings.Try(strings.Eq[parsec.Stateless]("':'", ':'))
+	n := strings.Try(strings.Eq[parsec.Stateless]("'n'", 'n'))
 
 	// decUint — a decimal number (bit index) → uint.
-	decUint := func(what string) parsec.Combinator[rune, strings.Position, uint] {
-		digit := strings.Try(strings.Digit("decimal digit"))
+	decUint := func(what string) parsec.Combinator[rune, strings.Position, uint, parsec.Stateless] {
+		digit := strings.Try(strings.Digit[parsec.Stateless]("decimal digit"))
 		return strings.Cast(
 			strings.Some(2, what, digit),
 			func(rs []rune) (uint, error) {
@@ -84,19 +84,19 @@ func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
 
 	// cSlice — the contents of square brackets: "3" (hi==lo) or "3:0".
 	sliceC := strings.Squares(strings.Choice("expected bit index or range",
-		strings.Try(func() parsec.Combinator[rune, strings.Position, slice] {
+		strings.Try(func() parsec.Combinator[rune, strings.Position, slice, parsec.Stateless] {
 			hi := decUint("high bit index")
-			return func(buf parsec.Buffer[rune, strings.Position]) (slice, parsec.Error[strings.Position]) {
-				h, err := hi(buf)
+			return func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (slice, parsec.Error[strings.Position]) {
+				h, err := hi(state, buf)
 				if err != nil {
 					return slice{}, err
 				}
 
-				if _, err := colon(buf); err != nil {
+				if _, err := colon(state, buf); err != nil {
 					return slice{}, err
 				}
 
-				l, err := decUint("low bit index")(buf)
+				l, err := decUint("low bit index")(state, buf)
 				if err != nil {
 					return slice{}, err
 				}
@@ -110,9 +110,9 @@ func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
 	))
 
 	// binLit — "0b" and a non-empty sequence of binary digits → uint64.
-	binDigit := strings.Try(strings.OneOf("binary digit", '0', '1'))
+	binDigit := strings.Try(strings.OneOf[parsec.Stateless]("binary digit", '0', '1'))
 	binLit := strings.Cast(
-		strings.Skip(strings.Try(strings.String("expected 0b", "0b")),
+		strings.Skip(strings.Try(strings.String[parsec.Stateless]("expected 0b", "0b")),
 			strings.Some(8, "binary number", binDigit)),
 		func(rs []rune) (uint64, error) {
 			v, err := strconv.ParseUint(string(rs), 2, 64)
@@ -127,22 +127,22 @@ func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
 	return strings.Choice(
 		"malformed enc value",
 		strings.Try(
-			func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
+			func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 				// "0b010:n[3]" / "0b1:n[1:0]"
-				p, err := binLit(buf)
+				p, err := binLit(state, buf)
 				if err != nil {
 					return encValue{}, err
 				}
 
-				if _, err := colon(buf); err != nil {
+				if _, err := colon(state, buf); err != nil {
 					return encValue{}, err
 				}
 
-				if _, err := n(buf); err != nil {
+				if _, err := n(state, buf); err != nil {
 					return encValue{}, err
 				}
 
-				sl, err := sliceC(buf)
+				sl, err := sliceC(state, buf)
 				if err != nil {
 					return encValue{}, err
 				}
@@ -156,13 +156,13 @@ func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
 			},
 		),
 		strings.Try(
-			func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
+			func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 				// "n[3:0]" / "n[2]"
-				if _, err := n(buf); err != nil {
+				if _, err := n(state, buf); err != nil {
 					return encValue{}, err
 				}
 
-				sl, err := sliceC(buf)
+				sl, err := sliceC(state, buf)
 				if err != nil {
 					return encValue{}, err
 				}
@@ -176,9 +176,9 @@ func makeEncValueParser() parsec.Combinator[rune, strings.Position, encValue] {
 			},
 		),
 		strings.Try(
-			func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
+			func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
 				// "0b110"
-				p, err := binLit(buf)
+				p, err := binLit(state, buf)
 				if err != nil {
 					return encValue{}, err
 				}
@@ -203,17 +203,17 @@ func toEncValue(prefix uint64, sl slice) (encValue, error) {
 // previous strconv approach).
 func parseEncValue(v string) (encValue, error) {
 	cEncValue := makeEncValueParser()
-	space := strings.Try(strings.Space("whitespace"))
-	eof := strings.EOF()
+	space := strings.Try(strings.Space[parsec.Stateless]("whitespace"))
+	eof := strings.EOF[parsec.Stateless]()
 
-	body := func(buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
-		e, err := cEncValue(buf)
+	body := func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (encValue, parsec.Error[strings.Position]) {
+		e, err := cEncValue(state, buf)
 		if err != nil {
 			return encValue{}, err
 		}
 
 		// eof fails exactly when the buffer is not at the end
-		if _, eofErr := eof(buf); eofErr != nil {
+		if _, eofErr := eof(state, buf); eofErr != nil {
 			return encValue{}, parsec.NewParseError(
 				buf.Position(),
 				"unexpected trailing characters",
@@ -222,7 +222,7 @@ func parseEncValue(v string) (encValue, error) {
 
 		return e, nil
 	}
-	val, perr := strings.ParseString(v, strings.Padded(space, body))
+	val, perr := strings.ParseString(parsec.Stateless{}, v, strings.Padded(space, body))
 	if perr != nil {
 		return encValue{}, fmt.Errorf("enc value %q: %w (at %s)", v, perr, perr.Position())
 	}

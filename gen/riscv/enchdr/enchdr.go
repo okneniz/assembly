@@ -88,30 +88,30 @@ func newParsedLine(kind lineKind, macro Macro, decl InsnDecl) parsedLine {
 // combinators are values captured by the closures (Try wrappers are
 // mandatory: a failed greedy atom leaves the position advanced;
 // backtracking is the caller's responsibility).
-func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine] {
-	space := strings.Try(strings.Space("whitespace"))
-	newline := strings.Try(strings.Eq("newline", '\n'))
-	notNewl := strings.Try(strings.NotEq("not a newline", '\n'))
-	comma := strings.Try(strings.Eq("comma", ','))
-	lparen := strings.Try(strings.Eq("'('", '('))
-	rparen := strings.Try(strings.Eq("')'", ')'))
-	undersc := strings.Try(strings.Eq("'_'", '_'))
-	define := strings.Try(strings.String("expected #define", "#define"))
-	declare := strings.Try(strings.String("expected DECLARE_INSN", "DECLARE_INSN"))
+func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine, parsec.Stateless] {
+	space := strings.Try(strings.Space[parsec.Stateless]("whitespace"))
+	newline := strings.Try(strings.Eq[parsec.Stateless]("newline", '\n'))
+	notNewl := strings.Try(strings.NotEq[parsec.Stateless]("not a newline", '\n'))
+	comma := strings.Try(strings.Eq[parsec.Stateless]("comma", ','))
+	lparen := strings.Try(strings.Eq[parsec.Stateless]("'('", '('))
+	rparen := strings.Try(strings.Eq[parsec.Stateless]("')'", ')'))
+	undersc := strings.Try(strings.Eq[parsec.Stateless]("'_'", '_'))
+	define := strings.Try(strings.String[parsec.Stateless]("expected #define", "#define"))
+	declare := strings.Try(strings.String[parsec.Stateless]("expected DECLARE_INSN", "DECLARE_INSN"))
 	spaces1 := strings.Some(4, "expected whitespace", space)
-	hexDigit := strings.Try(strings.OneOf("hex digit",
+	hexDigit := strings.Try(strings.OneOf[parsec.Stateless]("hex digit",
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
 		'A', 'B', 'C', 'D', 'E', 'F',
 	))
-	kind := strings.MapStrings("expected MATCH, MASK or CSR", map[string]lineKind{
+	kind := strings.MapStrings[lineKind, parsec.Stateless]("expected MATCH, MASK or CSR", map[string]lineKind{
 		"MATCH": kindMatch,
 		"MASK":  kindMask,
 		"CSR":   kindCSR,
 	})
 	hexValue := strings.Cast(
 		strings.Skip(
-			strings.String("expected 0x prefix", "0x"),
+			strings.String[parsec.Stateless]("expected 0x prefix", "0x"),
 			strings.Some(8, "expected hex number", hexDigit),
 		),
 		castUInt32,
@@ -130,39 +130,39 @@ func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine] {
 	lowerIdent := ident("expected instruction name", isLowerIdent)
 
 	// defineLine is "#define" (MATCH|MASK|CSR)_NAME 0xVALUE [rest of line].
-	defineLine := func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
-		if _, err := define(buf); err != nil {
+	defineLine := func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
+		if _, err := define(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := spaces1(buf); err != nil {
+		if _, err := spaces1(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		k, err := kind(buf)
+		k, err := kind(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := undersc(buf); err != nil {
+		if _, err := undersc(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		name, err := upperIdent(buf)
+		name, err := upperIdent(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := spaces1(buf); err != nil {
+		if _, err := spaces1(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		value, err := hexValue(buf)
+		value, err := hexValue(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := toEOL(buf); err != nil {
+		if _, err := toEOL(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
@@ -170,44 +170,44 @@ func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine] {
 	}
 
 	// declLine is DECLARE_INSN(name, MATCH_X, MASK_X) [rest of line].
-	declLine := func(buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
-		if _, err := declare(buf); err != nil {
+	declLine := func(state parsec.Stateless, buf parsec.Buffer[rune, strings.Position]) (parsedLine, parsec.Error[strings.Position]) {
+		if _, err := declare(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
 		open := strings.SkipMany(space, lparen)
-		if _, err := open(buf); err != nil {
+		if _, err := open(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		insnName, err := strings.SkipMany(space, lowerIdent)(buf)
+		insnName, err := strings.SkipMany(space, lowerIdent)(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := strings.SkipMany(space, comma)(buf); err != nil {
+		if _, err := strings.SkipMany(space, comma)(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		matchName, err := strings.SkipMany(space, upperIdent)(buf)
+		matchName, err := strings.SkipMany(space, upperIdent)(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := strings.SkipMany(space, comma)(buf); err != nil {
+		if _, err := strings.SkipMany(space, comma)(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		maskName, err := strings.SkipMany(space, upperIdent)(buf)
+		maskName, err := strings.SkipMany(space, upperIdent)(state, buf)
 		if err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := strings.SkipMany(space, rparen)(buf); err != nil {
+		if _, err := strings.SkipMany(space, rparen)(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
-		if _, err := toEOL(buf); err != nil {
+		if _, err := toEOL(state, buf); err != nil {
 			return parsedLine{}, err
 		}
 
@@ -244,9 +244,9 @@ func isLowerIdent(r rune) bool {
 }
 
 // ident is a non-empty sequence of runes satisfying ok.
-func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Position, string] {
+func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Position, string, parsec.Stateless] {
 	return strings.Cast(
-		strings.Some(16, what, strings.Try(strings.Satisfy(what, true, ok))),
+		strings.Some(16, what, strings.Try(strings.Satisfy[parsec.Stateless](what, true, ok))),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
@@ -256,7 +256,7 @@ func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Posi
 // Parse parses encoding.h text. Unrecognized lines are ignored; the result
 // preserves appearance order for consumers' first-wins policies.
 func Parse(data []rune) (Header, parsec.Error[strings.Position]) {
-	lines, err := strings.Parse(data, makeLinesParser())
+	lines, err := strings.Parse(parsec.Stateless{}, data, makeLinesParser())
 	if err != nil {
 		return Header{}, err
 	}

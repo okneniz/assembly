@@ -30,8 +30,8 @@ func New() *Backend {
 // the stored values.
 type Backend struct {
 	g                *grammar
-	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved]
-	parseComment     parsec.Combinator[rune, parsecstrings.Position, string]
+	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless]
+	parseComment     parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 }
 
 // ApplyOption accepts and ignores .option values (outside the model:

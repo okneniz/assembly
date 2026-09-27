@@ -21,20 +21,20 @@ import (
 // newIdent is an identifier/directive or label name:
 // [._$a-zA-Z][._$a-zA-Z0-9]* - the continuation may contain digits
 // ("p2align", "foo2").
-func makeIdentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+func makeIdentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return parsecstrings.Cast(
 		parsecstrings.Concat(8,
 			parsecstrings.Some(
 				4,
 				"identifier start",
 				parsecstrings.Try(
-					parsecstrings.Satisfy("identifier start", true, expr.IsIdentStart),
+					parsecstrings.Satisfy[parsec.Stateless]("identifier start", true, expr.IsIdentStart),
 				),
 			),
 			parsecstrings.Many(
 				8,
 				parsecstrings.Try(
-					parsecstrings.Satisfy("identifier char", true, expr.IsIdentCont),
+					parsecstrings.Satisfy[parsec.Stateless]("identifier char", true, expr.IsIdentCont),
 				),
 			),
 		),
@@ -45,8 +45,8 @@ func makeIdentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
 }
 
 // newStringLit is a "..." string literal with escape sequences.
-func makeStringLitParser() parsec.Combinator[rune, parsecstrings.Position, string] {
-	dquote := parsecstrings.Try(parsecstrings.Eq("double quote", '"'))
+func makeStringLitParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
+	dquote := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("double quote", '"'))
 
 	return parsecstrings.Cast(
 		parsecstrings.Between(dquote, makeStringBody(), dquote),
@@ -58,14 +58,14 @@ func makeStringLitParser() parsec.Combinator[rune, parsecstrings.Position, strin
 
 // stringBody is any characters except '"' and '\n'; escape sequences are
 // expanded.
-func makeStringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
-	anyRune := parsecstrings.Any()
+func makeStringBody() parsec.Combinator[rune, parsecstrings.Position, []rune, parsec.Stateless] {
+	anyRune := parsecstrings.Any[parsec.Stateless]()
 
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
 		for {
 			pos := buf.Position()
-			r, err := anyRune(buf)
+			r, err := anyRune(state, buf)
 			if err != nil {
 				return nil, parsec.NewParseError(pos, "unterminated string")
 			}
@@ -83,7 +83,7 @@ func makeStringBody() parsec.Combinator[rune, parsecstrings.Position, []rune] {
 			}
 
 			if r == '\\' {
-				e, err := anyRune(buf)
+				e, err := anyRune(state, buf)
 				if err != nil {
 					return nil, parsec.NewParseError(pos, "unterminated escape")
 				}
@@ -125,9 +125,9 @@ func consumeEOL(buf parsec.Buffer[rune, parsecstrings.Position]) {
 // passed by the backend); the absence of a comment is not an error.
 func consumeComment(
 	buf parsec.Buffer[rune, parsecstrings.Position],
-	c parsec.Combinator[rune, parsecstrings.Position, string],
+	c parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless],
 ) {
-	if _, err := c(buf); err != nil {
+	if _, err := c(parsec.Stateless{}, buf); err != nil {
 		return // no comment - nothing to consume
 	}
 }

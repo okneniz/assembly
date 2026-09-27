@@ -36,8 +36,8 @@ func New() *Backend {
 type Backend struct {
 	extraCtors       map[string]arch.ArmCtor
 	g                *armGrammar
-	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved]
-	parseComment     parsec.Combinator[rune, parsecstrings.Position, string]
+	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless]
+	parseComment     parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 }
 
 // NewWithCtors returns an asm.Syntax with extra constructors (aliases,
@@ -116,28 +116,28 @@ func (in armAsmInstr) PoolReq() (*expr.Expr, int, bool) {
 
 // Instruction is the grammar "mnemonic comma-separated operands"; built
 // once in NewWithCtors (makeInstructionParser).
-func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
 	return b.parseInstruction
 }
 
 // Comment parses ';' and '//' to the end of the line ('#' is NOT a
 // comment - it is the imm prefix!); built once in NewWithCtors.
-func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string] {
+func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return b.parseComment
 }
 
 // newComment builds the comment combinator (';' and '//' to the end of
 // the line).
-func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string] {
+func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
 	semi := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq("comment", ';')), body),
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", ';')), body),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
 	)
 	slash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String("comment", "//")), body),
+		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")), body),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
@@ -147,13 +147,13 @@ func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string]
 
 // makeInstructionParser builds the instruction combinator: the mnemonic
 // (longest-match + boundary check) and the operand list.
-func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved] {
+func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
 	g := b.g
 
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (asm.Unresolved, parsec.Error[parsecstrings.Position]) {
 		pos := buf.Position()
 		expr.SkipSpaces(buf)
-		mnem, err := g.parseMnemonic(buf)
+		mnem, err := g.parseMnemonic(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -169,7 +169,7 @@ func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.
 			return in, nil
 		}
 
-		op, err := g.parseOperand(buf)
+		op, err := g.parseOperand(state, buf)
 		if err != nil {
 			return nil, err
 		}
@@ -182,7 +182,7 @@ func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.
 		for {
 			save := buf.Position()
 			expr.SkipSpaces(buf)
-			if _, err := g.parseComma(buf); err != nil {
+			if _, err := g.parseComma(state, buf); err != nil {
 				if rerr := expr.Rewind(buf, save); rerr != nil {
 					return nil, rerr
 				}
@@ -191,7 +191,7 @@ func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.
 			}
 
 			expr.SkipSpaces(buf)
-			op, err := g.parseOperand(buf)
+			op, err := g.parseOperand(state, buf)
 			if err != nil {
 				return nil, err
 			}
@@ -219,13 +219,13 @@ func (g *armGrammar) parseRegIndex(
 	}
 
 	save := buf.Position()
-	if _, err := g.parseLBrack(buf); err != nil {
+	if _, err := g.parseLBrack(parsec.Stateless{}, buf); err != nil {
 		return expr.Rewind(buf, save)
 	}
 
 	var digits []rune
 	for {
-		d, derr := g.parseDigit(buf)
+		d, derr := g.parseDigit(parsec.Stateless{}, buf)
 		if derr != nil {
 			break
 		}
@@ -237,7 +237,7 @@ func (g *armGrammar) parseRegIndex(
 		return expr.Rewind(buf, save)
 	}
 
-	if _, err := g.parseRBrack(buf); err != nil {
+	if _, err := g.parseRBrack(parsec.Stateless{}, buf); err != nil {
 		return expr.Rewind(buf, save)
 	}
 

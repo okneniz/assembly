@@ -34,8 +34,8 @@ type Backend struct {
 	noRVC            bool
 	optStack         []bool
 	g                *grammar
-	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved]
-	parseComment     parsec.Combinator[rune, parsecstrings.Position, string]
+	parseInstruction parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless]
+	parseComment     parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 }
 
 // ApplyOption handles .option values: norvc/rvc toggle auto-compression,

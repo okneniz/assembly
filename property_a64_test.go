@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 	"github.com/stretchr/testify/require"
 
@@ -97,7 +98,7 @@ func propBytesRoundTrip(t *testing.T, in arm64.Instr) bool {
 			return bytesOf(t, x)
 		},
 		func(ctx a64Enc, b []byte) (arm64.Instr, bool) {
-			back, err := arm64.MakeDecoder()(parsecbytes.Buffer(b))
+			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -130,7 +131,7 @@ func propTextRoundTrip(t *testing.T, in arm64.Instr) bool {
 				return nil, false
 			}
 
-			back, err := arm64.MakeDecoder()(parsecbytes.Buffer(data))
+			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 			if err != nil {
 				t.Logf("decode: %v", err)
 				return nil, false
@@ -323,7 +324,7 @@ func TestPropertyBytesRoundTripList(t *testing.T) {
 
 		buf := *bytes.NewBuffer(raw)
 
-		back, err := arm64.MakeDecoder()(parsecbytes.Buffer(buf.Bytes()))
+		back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -368,7 +369,7 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 			return false
 		}
 
-		back, err := arm64.MakeDecoder()(parsecbytes.Buffer(data))
+		back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 		if err != nil {
 			t.Logf("decode: %v", err)
 			return false
@@ -406,7 +407,7 @@ func TestPropertyDecodeRobustness(t *testing.T) {
 				}
 			}()
 			data := binary.LittleEndian.AppendUint32(nil, w)
-			ins, err := arm64.MakeDecoder()(parsecbytes.Buffer(data))
+			ins, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
 			if err != nil {
 				t.Errorf("parse %#08x: %v", w, err)
 				ok = false
@@ -467,7 +468,7 @@ func TestPropertyArm64VsObjdump(t *testing.T) {
 			continue
 		}
 
-		ours, err := arm64.MakeDecoder()(parsecbytes.Buffer(code[off : off+4]))
+		ours, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(code[off:off+4]))
 		if err != nil {
 			notInOurs++
 			continue

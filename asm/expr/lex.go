@@ -25,38 +25,38 @@ import (
 )
 
 // Combinator is an expression combinator: a rune parser producing *Expr.
-type Combinator = parsec.Combinator[rune, parsecstrings.Position, *Expr]
+type Combinator = parsec.Combinator[rune, parsecstrings.Position, *Expr, parsec.Stateless]
 
 // RuneCombinator is a rune-level combinator (a single-character atom).
-type RuneCombinator = parsec.Combinator[rune, parsecstrings.Position, rune]
+type RuneCombinator = parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 
 // CNL is the newline (line-based grammar).
 func MakeNewlineParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Eq("newline", '\n'))
+	return parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("newline", '\n'))
 }
 
 // CNotNL is any character except newline.
 func MakeNotNewlineParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.NotEq("not a newline", '\n'))
+	return parsecstrings.Try(parsecstrings.NotEq[parsec.Stateless]("not a newline", '\n'))
 }
 
 // CComma is the comma (operand separator).
 func MakeCommaParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Eq("comma", ','))
+	return parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comma", ','))
 }
 
 // CSpace is a space, except newline: the assembler grammar is line-based,
 // '\n' terminates a statement (unicode.IsSpace('\n') == true, hence the
 // explicit exclusion).
 func MakeSpaceParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Satisfy("whitespace", true, func(r rune) bool {
+	return parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("whitespace", true, func(r rune) bool {
 		return r != '\n' && unicode.IsSpace(r)
 	}))
 }
 
 // CDecDigit is a decimal digit (backend numeric literals).
 func MakeDigitParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Digit("decimal digit"))
+	return parsecstrings.Try(parsecstrings.Digit[parsec.Stateless]("decimal digit"))
 }
 
 // IsIdentStart is the first rune of a symbol name: [._$a-zA-Z].
@@ -77,9 +77,9 @@ func makeSymbolParser() Combinator {
 	return parsecstrings.Cast(
 		parsecstrings.Concat(8,
 			parsecstrings.Some(4, "symbol name",
-				parsecstrings.Try(parsecstrings.Satisfy("symbol start", true, IsIdentStart))),
+				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("symbol start", true, IsIdentStart))),
 			parsecstrings.Many(8,
-				parsecstrings.Try(parsecstrings.Satisfy("symbol char", true, IsIdentCont))),
+				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("symbol char", true, IsIdentCont))),
 		),
 		func(rs []rune) (*Expr, error) {
 			return Sym(string(rs)), nil
@@ -91,15 +91,15 @@ func makeSymbolParser() Combinator {
 // octal, "0" is zero, decimal without a leading zero. All alternatives are
 // Try-wrapped: a failed branch must restore the position.
 func makeNumberParser() Combinator {
-	hexDigit := parsecstrings.Try(parsecstrings.OneOf("hex digit",
+	hexDigit := parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("hex digit",
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
 		'A', 'B', 'C', 'D', 'E', 'F'))
-	binDigit := parsecstrings.Try(parsecstrings.OneOf("binary digit", '0', '1'))
+	binDigit := parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("binary digit", '0', '1'))
 	octDigit := parsecstrings.Try(
-		parsecstrings.OneOf("octal digit", '0', '1', '2', '3', '4', '5', '6', '7'),
+		parsecstrings.OneOf[parsec.Stateless]("octal digit", '0', '1', '2', '3', '4', '5', '6', '7'),
 	)
-	zero := parsecstrings.Try(parsecstrings.Eq("zero", '0'))
+	zero := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("zero", '0'))
 
 	leadingZero := parsecstrings.Count(1, "leading zero", zero)
 	octalDigits := parsecstrings.Some(4, "octal digits", octDigit)
@@ -122,7 +122,7 @@ func makeNumberParser() Combinator {
 		},
 	)
 
-	nonZero := parsecstrings.Try(parsecstrings.Satisfy("digit 1-9", true, func(r rune) bool {
+	nonZero := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("digit 1-9", true, func(r rune) bool {
 		return r >= '1' && r <= '9'
 	}))
 	decimal := parsecstrings.Cast(
@@ -155,12 +155,12 @@ func makeNumberParser() Combinator {
 // corresponding base → int64.
 func numPrefixed(
 	prefix string,
-	digits parsec.Combinator[rune, parsecstrings.Position, rune],
+	digits parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless],
 	base int,
 ) Combinator {
 	return parsecstrings.Cast(
 		parsecstrings.Skip(
-			parsecstrings.String("prefix", prefix),
+			parsecstrings.String[parsec.Stateless]("prefix", prefix),
 			parsecstrings.Some(8, "number digits", digits),
 		),
 		func(rs []rune) (*Expr, error) {
@@ -181,14 +181,14 @@ func numPrefixed(
 // resolver distinguishes such names by the suffix.
 func makeLocalRefParser() Combinator {
 	digit := MakeDigitParser()
-	bOrF := parsecstrings.Try(parsecstrings.OneOf("'b' or 'f'", 'b', 'f'))
+	bOrF := parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("'b' or 'f'", 'b', 'f'))
 
-	return func(buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
 		save := buf.Position()
 
 		var digits []rune
 		for {
-			r, err := digit(buf)
+			r, err := digit(state, buf)
 			if err != nil {
 				break
 			}
@@ -196,7 +196,7 @@ func makeLocalRefParser() Combinator {
 			digits = append(digits, r)
 		}
 
-		d, derr := bOrF(buf)
+		d, derr := bOrF(state, buf)
 		if derr != nil || len(digits) == 0 {
 			return nil, rewindOrError(buf, save)
 		}
@@ -242,22 +242,22 @@ func makeCharLitParser() Combinator {
 
 // cQuote is the quote of a character literal.
 func makeQuoteParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Eq("quote", '\''))
+	return parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("quote", '\''))
 }
 
 // escapeOrAny is one character: either an escape sequence (returns the
 // character itself) or an arbitrary one.
-func escapeOrAny() parsec.Combinator[rune, parsecstrings.Position, []rune] {
-	esc := parsecstrings.Try(parsecstrings.Eq("escape", '\\'))
-	anyRune := parsecstrings.Any()
+func escapeOrAny() parsec.Combinator[rune, parsecstrings.Position, []rune, parsec.Stateless] {
+	esc := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("escape", '\\'))
+	anyRune := parsecstrings.Any[parsec.Stateless]()
 
-	escaped := func(buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
-		if _, err := esc(buf); err != nil {
+	escaped := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
+		if _, err := esc(state, buf); err != nil {
 			return nil, err
 		}
 
 		pos := buf.Position()
-		r, err := anyRune(buf)
+		r, err := anyRune(state, buf)
 		if err != nil {
 			return nil, err
 		}

@@ -5,6 +5,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/file"
@@ -54,7 +55,7 @@ func TestISADirectMatch(t *testing.T) {
 		name        string
 		mask, value uint32
 	}
-	cur, err := MakeDecoder()(bytes.Buffer(ts.Data))
+	cur, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(ts.Data))
 	if err != nil {
 		t.Fatalf("parse: %v", err)
 	}

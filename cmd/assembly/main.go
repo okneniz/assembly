@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/okneniz/parsec"
 	"github.com/okneniz/parsec/bytes"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -227,7 +228,7 @@ func main() {
 func runDisasm(data []byte, arch string, base uint64) error {
 	switch arch {
 	case "arm64", "aarch64":
-		instrs, err := arm64.MakeDecoder()(bytes.Buffer(data))
+		instrs, err := arm64.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data))
 		if err != nil {
 			return err
 		}
@@ -240,7 +241,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			disasm.NewOptions(text.CodeBytes),
 		)
 	case "riscv64", "riscv":
-		instrs, err := riscv.MakeDecoder()(bytes.Buffer(data))
+		instrs, err := riscv.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data))
 		if err != nil {
 			return err
 		}
@@ -253,7 +254,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			disasm.NewOptions(text.CodeWord),
 		)
 	case "loong64", "loongarch64":
-		instrs, err := loong64.MakeDecoder()(bytes.Buffer(data))
+		instrs, err := loong64.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data))
 		if err != nil {
 			return err
 		}
