@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
-	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/assembly/prog"
+	"github.com/okneniz/assembly/unit"
 )
 
 // assemble - Build+Assemble with the checks every twin test needs.
@@ -217,7 +217,10 @@ func TestTwinsControl(t *testing.T) {
 		Brk(0x10).
 		Mrs(X0, "CNTFRQ_EL0").
 		Msr("TPIDR_EL0", X0).
-		Prfm(X1))
+		Prfm(X1).
+		Dmb(arch.Sy).
+		Dsb(arch.Ish).
+		Isb())
 
 	b := arch.New()
 	v16, err := b.Imm16(1)
@@ -235,6 +238,9 @@ func TestTwinsControl(t *testing.T) {
 		enc(b.Mrs(X0, "CNTFRQ_EL0")),
 		enc(b.Msr("TPIDR_EL0", X0)),
 		enc(b.Prfm(X1)),
+		enc(b.Dmb(arch.Sy)),
+		enc(b.Dsb(arch.Ish)),
+		enc(b.Isb()),
 	}, words(res.Code))
 }
 

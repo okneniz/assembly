@@ -62,6 +62,34 @@ func TestArmAssembleWords(t *testing.T) {
 			"brk #0x1",
 			0xd4200020,
 		},
+		{
+			"dmb sy",
+			0xd5033fbf,
+		},
+		{
+			"dsb sy",
+			0xd5033f9f,
+		},
+		{
+			"isb",
+			0xd5033fdf,
+		},
+		{
+			"isb sy",
+			0xd5033fdf,
+		},
+		{
+			"dsb ishst",
+			0xd5033a9f,
+		},
+		{
+			"dmb ish",
+			0xd5033bbf,
+		},
+		{
+			"mrs x0, CNTVCT_EL0",
+			0xd53be040,
+		},
 	}
 	for _, c := range cases {
 		if c.src == "add x0, x1, #0x42" {
@@ -71,6 +99,14 @@ func TestArmAssembleWords(t *testing.T) {
 		got := armAssembleOne(t, c.src, 0)
 		require.Equal(t, c.word, got, "case %q", c.src)
 	}
+
+	// the sysreg lookup is case-insensitive: the lower-case kernel
+	// spelling encodes (and prints) like the canonical one
+	require.Equal(
+		t,
+		armAssembleOne(t, "mrs x0, CNTVCT_EL0", 0),
+		armAssembleOne(t, "mrs x0, cntvct_el0", 0),
+	)
 
 	// add x0, x1, #0x42: imm12=0x42<<10 | Rn=1<<5 | Rd=0 | 0x91000000
 	got := armAssembleOne(t, "add x0, x1, #0x42", 0)

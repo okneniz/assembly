@@ -6,16 +6,44 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
-// Assembler constructors for hints and system hints: dmb st, yield,
-// dc zva, prfm pldl1keep (fixed forms, like the decode table).
+// Assembler constructors for hints and system hints: the barrier
+// family, yield, dc zva, prfm pldl1keep.
 
-// newDmb — dmb st (fixed form, like the decode table).
-func newDmb(ops []vOp) (Instr, error) {
-	if len(ops) != 1 {
-		return nil, errors.New("dmb: want option")
+// newBarrierArm — dmb/dsb option, isb [sy]: the text spelling becomes
+// the typed domain (dmb/dsb choose one, isb has none to choose).
+func newBarrierArm(name string) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		var b arch.Builder
+		switch len(ops) {
+		case 0:
+			if name != "isb" {
+				return nil, errors.New(name + ": want option")
+			}
+
+			return b.Isb()
+		case 1:
+			domain, ok := arch.DomainOf(ops[0].Sym())
+			if !ok {
+				return nil, errors.New(name + ": unknown option " + ops[0].Sym())
+			}
+
+			if name == "isb" {
+				if domain != arch.Sy {
+					return nil, errors.New(name + ": takes sy only")
+				}
+
+				return b.Isb()
+			}
+
+			if name == "dmb" {
+				return b.Dmb(domain)
+			}
+
+			return b.Dsb(domain)
+		default:
+			return nil, errors.New(name + ": want option")
+		}
 	}
-
-	return arch.SysFixedOf("dmb", "st", "System", 0xD5033EBF), nil
 }
 
 // newYield — yield (no operands).

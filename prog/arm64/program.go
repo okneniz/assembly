@@ -1547,6 +1547,28 @@ func (p *Program) Brk(imm int64) *Program {
 	return p.instrLine(pos, "brk", p.b.Brk(v), nil)
 }
 
+// Dmb - dmb domain (the memory barrier of the domain).
+func (p *Program) Dmb(domain arch.BarrierDomain) *Program {
+	pos := p.pos()
+	i, err := p.b.Dmb(domain)
+	return p.instrLine(pos, "dmb", i, err)
+}
+
+// Dsb - dsb domain (the barrier completes before anything continues).
+func (p *Program) Dsb(domain arch.BarrierDomain) *Program {
+	pos := p.pos()
+	i, err := p.b.Dsb(domain)
+	return p.instrLine(pos, "dsb", i, err)
+}
+
+// Isb - isb (the instruction barrier; the full-system domain is its
+// only form).
+func (p *Program) Isb() *Program {
+	pos := p.pos()
+	i, err := p.b.Isb()
+	return p.instrLine(pos, "isb", i, err)
+}
+
 // Mrs - mrs rd, sysreg.
 func (p *Program) Mrs(rd arch.Reg, sysreg string) *Program {
 	pos := p.pos()

@@ -78,6 +78,12 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		}
 	}
 
+	// LLVM print canon: the bare "isb" is the print form of isb sy (the
+	// self-verify compares the input render against the decoded text).
+	if res.mnem == "isb" && len(res.ops) == 1 && res.ops[0].Sym() == "sy" {
+		loose = looseNormalize("isb")
+	}
+
 	// objdump style: an arrangement suffix on the mnemonic (orr.16b
 	// v6, v3, v4). SIMD ctors expect it on the first operand - move it
 	// onto A COPY of ops (the backing array is shared between the

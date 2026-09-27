@@ -334,6 +334,9 @@ func RegListStr(rt0 uint32, count int) string { return regListStr(rt0, count) }
 // IsSimd3Logical — whether the three-same mnemonic uses the logical
 // arrangement convention (only Q selects).
 
+// DomainOf — the barrier shareability domain of a text spelling.
+func DomainOf(option string) (BarrierDomain, bool) { return domainOf(option) }
+
 // InvSysReg — a system register name → 15-bit key.
 func InvSysReg(v any) (uint32, error) { return invSysReg(v) }
 

@@ -31,14 +31,15 @@ func newMrs(b base, rd Reg, sysreg string) (Mrs, error) {
 		return Mrs{}, err
 	}
 
-	if _, err := invSysReg(sysreg); err != nil {
+	key, err := invSysReg(sysreg)
+	if err != nil {
 		return Mrs{}, fmt.Errorf("arm64.NewMrs: operand sysreg: %w", err)
 	}
 
 	return Mrs{
 		base:   b,
 		rd:     rd.name(),
-		sysreg: sysreg,
+		sysreg: sysRegName(key),
 	}, nil
 }
 

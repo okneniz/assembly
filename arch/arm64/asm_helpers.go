@@ -108,14 +108,16 @@ func shiftAmt(op vOp) int64 { return op.num }
 
 // invSysReg: system register name → 15-bit key (inverse of sysregNames;
 // the objdump form S<op0>_<op1>_C<n>_C<m>_<op2> is also accepted).
-// A derived data table, built once.
+// The lookup is case-insensitive (the canonical names are upper case;
+// kernel headers spell them lower). A derived data table, built once.
 var invSysRegNames = buildInvSysRegNames()
 
 func buildInvSysRegNames() map[string]uint32 {
 	m := map[string]uint32{}
 	for k, name := range sysregNames {
-		if _, exists := m[name]; !exists {
-			m[name] = k
+		lower := strings.ToLower(name)
+		if _, exists := m[lower]; !exists {
+			m[lower] = k
 		}
 	}
 
@@ -128,7 +130,7 @@ func invSysReg(v any) (uint32, error) {
 		return 0, errors.New("sysreg expected")
 	}
 
-	if k, ok := invSysRegNames[s]; ok {
+	if k, ok := invSysRegNames[strings.ToLower(s)]; ok {
 		return k, nil
 	}
 

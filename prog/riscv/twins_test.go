@@ -8,8 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/riscv"
-	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/assembly/prog"
+	"github.com/okneniz/assembly/unit"
 )
 
 // assemble - Build+Assemble with the checks every twin test needs.
