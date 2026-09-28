@@ -106,21 +106,21 @@ func TestMachOImageRoundTrip(t *testing.T) {
 	big := machoTestText(16376) // 8 + 16376 == 16384: file span exactly one page
 
 	sections := []MachOSection{
-		{Segment: "__TEXT", Name: "__text", Data: code, Align: 4},
-		{Segment: "__DATA", Name: "__data", Data: data, Align: 8},
-		{Segment: "__DATA", Name: "__bss", Nobits: 16, Align: 8},
-		{Segment: "__CUSTOM", Name: "__mine", Data: []byte{9, 9}, Align: 2},
-		{Segment: "__DATA", Name: "__big", Data: big, Align: 8},
-		{Segment: "__DATA", Name: "__bigbss", Nobits: 32, Align: 8},
+		NewMachOSection("__TEXT", "__text", code, 0, 4),
+		NewMachOSection("__DATA", "__data", data, 0, 8),
+		NewMachOSection("__DATA", "__bss", nil, 16, 8),
+		NewMachOSection("__CUSTOM", "__mine", []byte{9, 9}, 0, 2),
+		NewMachOSection("__DATA", "__big", big, 0, 8),
+		NewMachOSection("__DATA", "__bigbss", nil, 32, 8),
 	}
 
 	syms := []MachOSym{
-		{Name: "_start", Section: "__text", Global: true},
-		{Name: "_fn2", Section: "__text", Off: 8, Global: true},
-		{Name: "_localfn", Section: "__text", Off: 12},
-		{Name: "_counter", Section: "__data", Off: 4, Global: true},
-		{Name: "_arr", Section: "__bss", Global: true},
-		{Name: "_mine", Section: "__mine", Global: true},
+		NewMachOSym("_start", "__text", 0, true),
+		NewMachOSym("_fn2", "__text", 8, true),
+		NewMachOSym("_localfn", "__text", 12, false),
+		NewMachOSym("_counter", "__data", 4, true),
+		NewMachOSym("_arr", "__bss", 0, true),
+		NewMachOSym("_mine", "__mine", 0, true),
 	}
 
 	img, err := NewMachOImage(sections, syms, "_start")
@@ -269,97 +269,97 @@ func TestMachOImageErrors(t *testing.T) {
 		},
 		{
 			name:     "no text segment",
-			sections: []MachOSection{{Segment: "__DATA", Name: "__data", Data: text}},
+			sections: []MachOSection{NewMachOSection("__DATA", "__data", text, 0, 0)},
 			entry:    "_start",
 			want:     "no __TEXT",
 		},
 		{
 			name:     "empty segment",
-			sections: []MachOSection{{Segment: "", Name: "__text", Data: text}},
+			sections: []MachOSection{NewMachOSection("", "__text", text, 0, 0)},
 			want:     "empty segment",
 		},
 		{
 			name:     "empty section name",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "", Data: text}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "", text, 0, 0)},
 			want:     "empty name",
 		},
 		{
 			name:     "reserved segment",
-			sections: []MachOSection{{Segment: "__LINKEDIT", Name: "__x", Data: text}},
+			sections: []MachOSection{NewMachOSection("__LINKEDIT", "__x", text, 0, 0)},
 			want:     "synthesized by the writer",
 		},
 		{
 			name:     "data and nobits",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text, Nobits: 4}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 4, 0)},
 			want:     "both data and a nobits",
 		},
 		{
 			name:     "alignment not a power of two",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text, Align: 3}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 3)},
 			want:     "not a power of two",
 		},
 		{
 			name: "duplicate section",
 			sections: []MachOSection{
-				{Segment: "__TEXT", Name: "__text", Data: text},
-				{Segment: "__DATA", Name: "__text", Data: text},
+				NewMachOSection("__TEXT", "__text", text, 0, 0),
+				NewMachOSection("__DATA", "__text", text, 0, 0),
 			},
 			want: "duplicate section",
 		},
 		{
 			name: "text after another segment",
 			sections: []MachOSection{
-				{Segment: "__DATA", Name: "__d", Data: text},
-				{Segment: "__TEXT", Name: "__text", Data: text},
+				NewMachOSection("__DATA", "__d", text, 0, 0),
+				NewMachOSection("__TEXT", "__text", text, 0, 0),
 			},
 			want: "before the other segments",
 		},
 		{
 			name:     "no entry name",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
 			want:     "no entry symbol",
 		},
 		{
 			name:     "entry not defined",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
 			entry:    "_start",
 			want:     "not defined",
 		},
 		{
 			name:     "empty symbol name",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
-			syms:     []MachOSym{{Name: "", Section: "__text"}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
+			syms:     []MachOSym{NewMachOSym("", "__text", 0, false)},
 			entry:    "_start",
 			want:     "empty name",
 		},
 		{
 			name:     "reserved symbol",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
-			syms:     []MachOSym{{Name: "__mh_execute_header", Section: "__text"}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
+			syms:     []MachOSym{NewMachOSym("__mh_execute_header", "__text", 0, false)},
 			entry:    "_start",
 			want:     "synthesized by the writer",
 		},
 		{
 			name:     "symbol section missing",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
-			syms:     []MachOSym{{Name: "_start", Section: "__nope"}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
+			syms:     []MachOSym{NewMachOSym("_start", "__nope", 0, false)},
 			entry:    "_start",
 			want:     "no section",
 		},
 		{
 			name:     "symbol offset outside",
-			sections: []MachOSection{{Segment: "__TEXT", Name: "__text", Data: text}},
-			syms:     []MachOSym{{Name: "_start", Section: "__text", Off: 17}},
+			sections: []MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 0)},
+			syms:     []MachOSym{NewMachOSym("_start", "__text", 17, false)},
 			entry:    "_start",
 			want:     "outside section",
 		},
 		{
 			name: "entry outside text",
 			sections: []MachOSection{
-				{Segment: "__TEXT", Name: "__text", Data: text},
-				{Segment: "__DATA", Name: "__data", Data: text},
+				NewMachOSection("__TEXT", "__text", text, 0, 0),
+				NewMachOSection("__DATA", "__data", text, 0, 0),
 			},
-			syms:  []MachOSym{{Name: "_start", Section: "__data"}},
+			syms:  []MachOSym{NewMachOSym("_start", "__data", 0, false)},
 			entry: "_start",
 			want:  "must sit in a __TEXT",
 		},
@@ -392,9 +392,9 @@ func TestMachOImageExec(t *testing.T) {
 	// is mapped, addressable via adrp+add, writable, and re-readable.
 	rmw := func(t *testing.T, sect MachOSection, inc uint32, want int) []byte {
 		code := machoWords([]uint32{
-			0, // adrp x0, <sect>     - patched
-			0, // add x0, x0, #lo12   - patched
-			0xB9400001,          // ldr w1, [x0]
+			0,                               // adrp x0, <sect>     - patched
+			0,                               // add x0, x0, #lo12   - patched
+			0xB9400001,                      // ldr w1, [x0]
 			0x11000000 | inc<<10 | 1<<5 | 1, // add w1, w1, #inc
 			0xB9000001,                      // str w1, [x0]
 			0xB9400002,                      // ldr w2, [x0]
@@ -406,10 +406,10 @@ func TestMachOImageExec(t *testing.T) {
 		})...)
 
 		sections := []MachOSection{
-			{Segment: "__TEXT", Name: "__text", Data: code, Align: 4},
+			NewMachOSection("__TEXT", "__text", code, 0, 4),
 			sect,
 		}
-		syms := []MachOSym{{Name: "_start", Section: "__text", Global: true}}
+		syms := []MachOSym{NewMachOSym("_start", "__text", 0, true)}
 
 		img, err := NewMachOImage(sections, syms, "_start")
 		require.NoError(t, err)
@@ -431,12 +431,10 @@ func TestMachOImageExec(t *testing.T) {
 		build    func(t *testing.T) []byte
 	}{
 		{"data read-modify-write", 8, func(t *testing.T) []byte {
-			return rmw(t, MachOSection{Segment: "__DATA", Name: "__data",
-				Data: []byte{7, 0, 0, 0}, Align: 8}, 1, 8)
+			return rmw(t, NewMachOSection("__DATA", "__data", []byte{7, 0, 0, 0}, 0, 8), 1, 8)
 		}},
 		{"bss zero on first touch", 5, func(t *testing.T) []byte {
-			return rmw(t, MachOSection{Segment: "__DATA", Name: "__bss",
-				Nobits: 16, Align: 8}, 5, 5)
+			return rmw(t, NewMachOSection("__DATA", "__bss", nil, 16, 8), 5, 5)
 		}},
 		{"entry past the template limit", 42, func(t *testing.T) []byte {
 			code := make([]uint32, 2100) // 8400 bytes of nop
@@ -448,14 +446,12 @@ func TestMachOImageExec(t *testing.T) {
 			code = append(code, 0xD2800540, 0xD4001001) // mov x0, #42; svc
 
 			sections := []MachOSection{
-				{Segment: "__TEXT", Name: "__text", Data: machoWords(code), Align: 4},
+				NewMachOSection("__TEXT", "__text", machoWords(code), 0, 4),
 			}
-			syms := []MachOSym{{
-				Name:    "_start",
-				Section: "__text",
-				Off:     4 * 2100, // 8400 > 8192: the old writer refused
-				Global:  true,
-			}}
+			syms := []MachOSym{
+				// 4*2100 = 8400 > 8192: the old writer refused
+				NewMachOSym("_start", "__text", 4*2100, true),
+			}
 
 			img, err := NewMachOImage(sections, syms, "_start")
 			require.NoError(t, err)

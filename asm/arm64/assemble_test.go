@@ -64,6 +64,22 @@ func TestArmAssembleWords(t *testing.T) {
 			0xd4200020,
 		},
 		{
+			"hlt #0xf000",
+			0xd45e0000,
+		},
+		{
+			"hlt #0x1",
+			0xd4400020,
+		},
+		{
+			"hvc #0",
+			0xd4000002,
+		},
+		{
+			"smc #0",
+			0xd4000003,
+		},
+		{
 			"dmb sy",
 			0xd5033fbf,
 		},

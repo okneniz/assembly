@@ -14,7 +14,7 @@ type sysImm struct {
 	name  string
 	imm16 uint32
 	enc   uint32
-	shift uint // offset of the imm16 field (5 for svc/brk/udf, 21 for hlt/hvc)
+	shift uint // offset of the imm16 field (bits 20:5, shift 5, for the whole family)
 }
 
 func (i sysImm) ObjDump(_ disasm.ViewCtx) string {
@@ -71,6 +71,16 @@ func (Builder) Brk(imm Imm16) Instr {
 		name:  "brk",
 		imm16: imm.v,
 		enc:   0xD4200000,
+		shift: 5,
+	}
+}
+
+// Smc — smc #imm16 (the secure-monitor call; PSCI rides it at #0).
+func (Builder) Smc(imm Imm16) Instr {
+	return sysImm{
+		name:  "smc",
+		imm16: imm.v,
+		enc:   0xD4000003,
 		shift: 5,
 	}
 }

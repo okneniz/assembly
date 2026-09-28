@@ -1547,6 +1547,17 @@ func (p *Program) Brk(imm int64) *Program {
 	return p.instrLine(pos, "brk", p.b.Brk(v), nil)
 }
 
+// Smc - smc #imm (the secure-monitor call; PSCI rides it at #0).
+func (p *Program) Smc(imm int64) *Program {
+	pos := p.pos()
+	v, err := p.b.Imm16(imm)
+	if err != nil {
+		return p.fail("smc", err)
+	}
+
+	return p.instrLine(pos, "smc", p.b.Smc(v), nil)
+}
+
 // Dmb - dmb domain (the memory barrier of the domain).
 func (p *Program) Dmb(domain arch.BarrierDomain) *Program {
 	pos := p.pos()

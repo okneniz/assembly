@@ -94,8 +94,8 @@ func WriteMachO(text []byte, entry uint64) ([]byte, error) {
 	}
 
 	img, err := NewMachOImage(
-		[]MachOSection{{Segment: "__TEXT", Name: "__text", Data: text, Align: 4}},
-		[]MachOSym{{Name: "_main", Section: "__text", Off: entry, Global: true}},
+		[]MachOSection{NewMachOSection("__TEXT", "__text", text, 0, 4)},
+		[]MachOSym{NewMachOSym("_main", "__text", entry, true)},
 		"_main",
 	)
 	if err != nil {
@@ -192,8 +192,8 @@ func emitMachO(m *MachOImage) []byte {
 	trieLen := le.fstartAt - le.trieAt
 	fstartLen := le.symAt - le.fstartAt
 
-	lc16(machoChainedFix, uint32(le.leOff), 56)                  // empty fixups header
-	lc16(machoExportsTrie, uint32(le.leOff)+le.trieAt, trieLen)  // __mh_execute_header + globals
+	lc16(machoChainedFix, uint32(le.leOff), 56)                 // empty fixups header
+	lc16(machoExportsTrie, uint32(le.leOff)+le.trieAt, trieLen) // __mh_execute_header + globals
 
 	// LC_SYMTAB: __mh_execute_header plus the input symbols.
 	b.PutUint32(out[pos:], machoSymtab)

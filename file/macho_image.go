@@ -36,6 +36,25 @@ type MachOSection struct {
 	Align   int
 }
 
+// NewMachOSection - the section of an image: its segment, bare name,
+// the file bytes (nil for a NOBITS reserve), the reserve when Nobits > 0,
+// and the byte alignment (a power of two; 0 means 1).
+func NewMachOSection(
+	segment string,
+	name string,
+	data []byte,
+	nobits int,
+	align int,
+) MachOSection {
+	return MachOSection{
+		Segment: segment,
+		Name:    name,
+		Data:    data,
+		Nobits:  nobits,
+		Align:   align,
+	}
+}
+
 // machoSectMem - the memory size of a section: its data or its reserve.
 func machoSectMem(s MachOSection) uint64 {
 	if s.Nobits > 0 {
@@ -53,6 +72,22 @@ type MachOSym struct {
 	Section string
 	Off     uint64
 	Global  bool
+}
+
+// NewMachOSym - the symbol: a name at an offset inside the section of
+// that name; a global one is exported (external nlist + exports trie).
+func NewMachOSym(
+	name string,
+	section string,
+	off uint64,
+	global bool,
+) MachOSym {
+	return MachOSym{
+		Name:    name,
+		Section: section,
+		Off:     off,
+		Global:  global,
+	}
 }
 
 // MachOImage - the assembled image: built only by NewMachOImage (all

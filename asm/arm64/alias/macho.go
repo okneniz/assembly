@@ -77,12 +77,9 @@ func MachOFromResult(res *asm.Result, entry string) (*file.MachOImage, error) {
 			return nil, err
 		}
 
-		syms = append(syms, file.MachOSym{
-			Name:    name,
-			Section: sections[at].Name,
-			Off:     addr - res.Sections[at].Addr,
-			Global:  globals[name],
-		})
+		syms = append(syms, file.NewMachOSym(
+			name, sections[at].Name, addr-res.Sections[at].Addr, globals[name],
+		))
 	}
 
 	if entry == "" {
@@ -96,11 +93,9 @@ func MachOFromResult(res *asm.Result, entry string) (*file.MachOImage, error) {
 
 	if entry == "" {
 		entry = "_main"
-		syms = append(syms, file.MachOSym{
-			Name:    "_main",
-			Section: sections[0].Name,
-			Global:  true,
-		})
+		syms = append(syms, file.NewMachOSym(
+			"_main", sections[0].Name, 0, true,
+		))
 	}
 
 	return file.NewMachOImage(sections, syms, entry)

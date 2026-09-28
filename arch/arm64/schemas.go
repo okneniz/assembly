@@ -23,11 +23,14 @@ var arm64Schemas = []Schema{
 		NewField("imm16", 5, 16),
 	}, NewMeta("brk", "System"), "brkFormatter", false, decodeSysImmOf("brk", 0xD4200000, 5)),
 	NewSchema(0xFFE0001F, 0xD4400000, []Field{
-		NewField("imm16", 21, 16),
-	}, NewMeta("hlt", "Exception"), "brkFormatter", false, decodeSysImmOf("hlt", 0xD4400000, 21)),
+		NewField("imm16", 5, 16),
+	}, NewMeta("hlt", "Exception"), "brkFormatter", false, decodeSysImmOf("hlt", 0xD4400000, 5)),
 	NewSchema(0xFFE0001F, 0xD4000002, []Field{
-		NewField("imm16", 21, 16),
-	}, NewMeta("hvc", "Exception"), "brkFormatter", false, decodeSysImmOf("hvc", 0xD4000002, 21)),
+		NewField("imm16", 5, 16),
+	}, NewMeta("hvc", "Exception"), "brkFormatter", false, decodeSysImmOf("hvc", 0xD4000002, 5)),
+	NewSchema(0xFFE0001F, 0xD4000003, []Field{
+		NewField("imm16", 5, 16),
+	}, NewMeta("smc", "Exception"), "brkFormatter", false, decodeSysImmOf("smc", 0xD4000003, 5)),
 	NewSchema(0xFF000000, 0x91000000, []Field{
 		NewField("Rd", 0, 5),
 		NewField("Rn", 5, 5),

@@ -110,6 +110,7 @@ var armAliasMap = map[string][][2]string{
 	"brk":   {{"brk", "brkFormatter"}},
 	"hlt":   {{"hlt", "brkFormatter"}}, // bare-metal semihosting exit
 	"hvc":   {{"hvc", "brkFormatter"}}, // bare-metal PSCI call (qemu virt)
+	"smc":   {{"smc", "brkFormatter"}}, // the secure-monitor PSCI call
 	"b":     {{"b", "bAbs"}},
 	"bl":    {{"bl", "bAbs"}},
 }

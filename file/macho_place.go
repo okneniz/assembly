@@ -124,13 +124,7 @@ func MachoPlaceGas(specs []MachoGasSpec) ([]uint64, error) {
 func MachoGasSection(name string, data []byte, reserve int) MachOSection {
 	segment, sect, align := machoGasMap(name)
 
-	return MachOSection{
-		Segment: segment,
-		Name:    sect,
-		Data:    data,
-		Nobits:  reserve,
-		Align:   align,
-	}
+	return NewMachOSection(segment, sect, data, reserve, align)
 }
 
 // machoGasMap - the gas-style section name to segment, section, and

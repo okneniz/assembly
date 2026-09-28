@@ -46,9 +46,11 @@ func TestFragmentOracle(t *testing.T) {
 		"cset x0, eq", // the cset alias
 		"nop",
 		"nop\nnop\nnop",
-		"1: nop\nb 1b",  // a numeric backward branch
-		"b 1f\nnop\n1:", // a numeric forward branch
-		"adr x0, .",     // the fragment's own address
+		"hlt #0xf000",    // the semihosting exit of an inline-asm body
+		"hvc #0\nsmc #0", // the monitor calls of PSCI
+		"1: nop\nb 1b",   // a numeric backward branch
+		"b 1f\nnop\n1:",  // a numeric forward branch
+		"adr x0, .",      // the fragment's own address
 		"1: ldaxr w8, [x0]\nadd w8, w8, w1\nstlxr w9, w8, [x0]\ncbnz w9, 1b", // the atomic idiom
 	}
 

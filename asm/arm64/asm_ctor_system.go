@@ -1,7 +1,7 @@
 package arm64
 
 // Assembler constructors: adr/adrp, b.cond, tbz/tbnz, system ones
-// (svc/brk/hlt/hvc/udf, mrs/msr), adr points. The imm structs accept
+// (svc/brk/hlt/hvc/smc/udf, mrs/msr), adr points. The imm structs accept
 // concrete numbers — the constructor validates the form.
 
 import (
@@ -107,14 +107,14 @@ func newUdfArm(ops []vOp) (Instr, error) {
 	return arch.SysImmOf("udf", uint32(v), 0x00000000, 5), nil
 }
 
-// newHlt — hlt #imm16; newHvc — hvc.
+// newHlt — hlt #imm16; newHvc — hvc; newSmc — smc.
 func newHlt(ops []vOp) (Instr, error) {
 	v, err := sysImm16(ops, "hlt")
 	if err != nil {
 		return nil, err
 	}
 
-	return arch.SysImmOf("hlt", uint32(v), 0xD4400000, 21), nil
+	return arch.SysImmOf("hlt", uint32(v), 0xD4400000, 5), nil
 }
 
 func newHvc(ops []vOp) (Instr, error) {
@@ -123,7 +123,16 @@ func newHvc(ops []vOp) (Instr, error) {
 		return nil, err
 	}
 
-	return arch.SysImmOf("hvc", uint32(v), 0xD4000002, 21), nil
+	return arch.SysImmOf("hvc", uint32(v), 0xD4000002, 5), nil
+}
+
+func newSmc(ops []vOp) (Instr, error) {
+	v, err := sysImm16(ops, "smc")
+	if err != nil {
+		return nil, err
+	}
+
+	return arch.SysImmOf("smc", uint32(v), 0xD4000003, 5), nil
 }
 
 // sysImm16 — a single immediate operand.

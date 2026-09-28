@@ -215,6 +215,7 @@ func TestTwinsControl(t *testing.T) {
 		Ret(X30).
 		Nop().
 		Brk(0x10).
+		Smc(0).
 		Mrs(X0, "CNTFRQ_EL0").
 		Msr("TPIDR_EL0", X0).
 		Prfm(X1).
@@ -227,6 +228,8 @@ func TestTwinsControl(t *testing.T) {
 	require.NoError(t, err)
 	v16brk, err := b.Imm16(0x10)
 	require.NoError(t, err)
+	v0smc, err := b.Imm16(0)
+	require.NoError(t, err)
 
 	require.Equal(t, []uint32{
 		enc(b.Movn(X0, v16, arch.Hw0)),
@@ -235,6 +238,7 @@ func TestTwinsControl(t *testing.T) {
 		enc(b.Ret(X30)),
 		enc(b.Nop(), nil),
 		enc(b.Brk(v16brk), nil),
+		enc(b.Smc(v0smc), nil),
 		enc(b.Mrs(X0, "CNTFRQ_EL0")),
 		enc(b.Msr("TPIDR_EL0", X0)),
 		enc(b.Prfm(X1)),

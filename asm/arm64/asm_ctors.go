@@ -156,6 +156,7 @@ func buildArmCtors() map[string]func(ops []vOp) (Instr, error) {
 		"udf":        newUdfArm,
 		"hlt":        newHlt,
 		"hvc":        newHvc,
+		"smc":        newSmc,
 		"mrs":        newMrsArm,
 		"msr":        newMsrArm,
 		"fadd":       newFp3Arm("fadd", arch.Builder.Fadd),

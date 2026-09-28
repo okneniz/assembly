@@ -34,19 +34,19 @@ func Macho(u *unit.Unit, entry string) (*file.MachOImage, error) {
 	}
 
 	sections := []file.MachOSection{
-		{Segment: "__TEXT", Name: "__text", Data: code, Align: 4},
+		file.NewMachOSection("__TEXT", "__text", code, 0, 4),
 	}
 
 	if len(data) > 0 {
-		sections = append(sections, file.MachOSection{
-			Segment: "__DATA", Name: "__data", Data: data, Align: 8,
-		})
+		sections = append(sections, file.NewMachOSection(
+			"__DATA", "__data", data, 0, 8,
+		))
 	}
 
 	if tail := f.DataMem - len(data); tail > 0 {
-		sections = append(sections, file.MachOSection{
-			Segment: "__DATA", Name: "__bss", Nobits: tail, Align: 8,
-		})
+		sections = append(sections, file.NewMachOSection(
+			"__DATA", "__bss", nil, tail, 8,
+		))
 	}
 
 	addrs, err := file.MachoPlaceSections(sections)
@@ -67,19 +67,21 @@ func Macho(u *unit.Unit, entry string) (*file.MachOImage, error) {
 			return nil, err
 		}
 
-		syms = append(syms, file.MachOSym{
-			Name:    name,
-			Section: sections[at].Name,
-			Off:     f.Syms[name] - addrs[at],
-			Global:  true,
-		})
+		syms = append(syms, file.NewMachOSym(
+			name, sections[at].Name, f.Syms[name]-addrs[at], true,
+		))
 	}
 
 	return file.NewMachOImage(sections, syms, entry)
 }
 
-// machoSectOf is the index of the section holding addr.
+// machoSectOf is the index of the section holding addr. A label may also
+// sit exactly at the end of its stream (the fixup tables of a compiler
+// close on one, the linker's _end is the same shape): containment wins
+// first, a boundary address falls to the section it ends - at offset
+// == size.
 func machoSectOf(addr uint64, sections []file.MachOSection, addrs []uint64) (int, error) {
+	end := -1
 	for i := range sections {
 		size := uint64(len(sections[i].Data))
 		if sections[i].Nobits > 0 {
@@ -89,6 +91,14 @@ func machoSectOf(addr uint64, sections []file.MachOSection, addrs []uint64) (int
 		if addr >= addrs[i] && addr < addrs[i]+size {
 			return i, nil
 		}
+
+		if addr == addrs[i]+size {
+			end = i
+		}
+	}
+
+	if end >= 0 {
+		return end, nil
 	}
 
 	return -1, fmt.Errorf("macho: symbol at %#x sits in no section of the program", addr)
