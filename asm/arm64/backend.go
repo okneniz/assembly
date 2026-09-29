@@ -120,29 +120,27 @@ func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, 
 	return b.parseInstruction
 }
 
-// Comment parses ';' and '//' to the end of the line ('#' is NOT a
-// comment - it is the imm prefix!); built once in NewWithCtors.
+// Comment parses '//' to the end of the line ('#' is NOT a comment - it
+// is the imm prefix!, ';' is the statement separator); built once in
+// NewWithCtors.
 func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return b.parseComment
 }
 
-// newComment builds the comment combinator (';' and '//' to the end of
-// the line).
+// Separator — ';' separates statements on one line (as in GAS).
+func (b *Backend) Separator() rune {
+	return ';'
+}
+
+// newComment builds the comment combinator ('//' to the end of the line).
 func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
-	semi := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", ';')), body),
-		func(rs []rune) (string, error) {
-			return string(rs), nil
-		},
-	)
-	slash := parsecstrings.Cast(
+	return parsecstrings.Cast(
 		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")), body),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
 	)
-	return parsecstrings.Choice("comment", parsecstrings.Try(slash), parsecstrings.Try(semi))
 }
 
 // makeInstructionParser builds the instruction combinator: the mnemonic
@@ -158,14 +156,22 @@ func (b *Backend) makeInstructionParser() parsec.Combinator[rune, parsecstrings.
 			return nil, err
 		}
 
-		if r, ok := expr.PeekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' {
+		if r, ok := expr.PeekRune(buf); ok && r != ' ' && r != '\t' && r != ',' && r != '\n' &&
+			r != b.Separator() && r != '/' {
 			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown mnemonic %q", mnem))
 		}
 
 		in := newArmAsmInstr(mnem, b.extraCtors)
 
 		expr.SkipSpaces(buf)
+		// the operand list also ends at the statement separator and the
+		// start of a comment (an operandless mnemonic before them - the
+		// comment is consumed by parseLine)
 		if expr.AtEOL(buf) {
+			return in, nil
+		}
+
+		if r, ok := expr.PeekRune(buf); ok && (r == b.Separator() || r == '/') {
 			return in, nil
 		}
 

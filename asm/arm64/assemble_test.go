@@ -107,6 +107,54 @@ func TestArmAssembleWords(t *testing.T) {
 			"mrs x0, CNTVCT_EL0",
 			0xd53be040,
 		},
+		{
+			"wfi",
+			0xd503207f,
+		},
+		{
+			"wfe",
+			0xd503205f,
+		},
+		{
+			"sev",
+			0xd503209f,
+		},
+		{
+			"sevl",
+			0xd50320bf,
+		},
+		{
+			"msr daifset, #1",
+			0xd50341df,
+		},
+		{
+			"msr daifset, #3",
+			0xd50343df,
+		},
+		{
+			"msr spsel, #1",
+			0xd50041bf,
+		},
+		{
+			"msr daifclr, #2",
+			0xd50342ff,
+		},
+		{
+			"msr pan, #1",
+			0xd500419f,
+		},
+		{
+			"msr allint, #1",
+			0xd501411f,
+		},
+		{
+			"msr pm, #1",
+			0xd501431f,
+		},
+		{
+			"msr cntvct_el0, x0",
+			0xd51be040,
+		},
 	}
 	for _, c := range cases {
 		if c.src == "add x0, x1, #0x42" {
@@ -133,6 +181,31 @@ func TestArmAssembleWords(t *testing.T) {
 		"add = %#08x",
 		got,
 	)
+}
+
+// TestMsrPstateImmediate — the PSTATE field name is case-insensitive,
+// the imm range is CRm 0..15 (allint/pm take a single bit), the unknown
+// fields keep the sysreg-path error.
+func TestMsrPstateImmediate(t *testing.T) {
+	require.Equal(
+		t,
+		armAssembleOne(t, "msr daifset, #1", 0),
+		armAssembleOne(t, "msr DAIFSet, #1", 0),
+	)
+
+	for _, src := range []string{
+		"msr daifset, #16",
+		"msr daifset, #-1",
+		"msr allint, #2",
+		"msr pm, #4",
+		"msr nosuch, #1",
+		"msr daifset",
+		"msr daifset, x0",
+		"wfi x0",
+	} {
+		_, errs := asm.Assemble(src, 0, New())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+	}
 }
 
 func TestArmBranchAndMem(t *testing.T) {
@@ -373,6 +446,105 @@ sym:
 // the self-verify canonicalizes the input spelling. Words pinned against
 // llvm-mc (docker assembly-tests, 2026-09-08); the mov input alias and
 // the rejection cases are in asm/arm64/alias/assemble_test.go.
+// TestLdrLiteralPoolUndef — an undefined symbol in a literal pool slot is
+// an error, not a silent zero (as with .word).
+func TestLdrLiteralPoolUndef(t *testing.T) {
+	_, errs := asm.Assemble("ldr x0, =undef", 0, New())
+	require.NotEmpty(t, errs, "an undefined pool symbol must error")
+}
+
+// TestStmtSeparator — the GAS ';': statements on one line (a label may
+// follow the separator - the BEGIN_FUNC expansion shape), empty segments
+// are legal, '//' still comments to the end of the line, a ';' inside a
+// string literal is data.
+func TestStmtSeparator(t *testing.T) {
+	cases := []struct {
+		src   string
+		words []uint32
+	}{
+		{
+			"nop ; ret",
+			[]uint32{0xd503201f, 0xd65f03c0},
+		},
+		{
+			"; nop",
+			[]uint32{0xd503201f},
+		},
+		{
+			"nop ; ; nop",
+			[]uint32{0xd503201f, 0xd503201f},
+		},
+		{
+			"nop ; // comment",
+			[]uint32{0xd503201f},
+		},
+		{
+			"nop;ret",
+			[]uint32{0xd503201f, 0xd65f03c0},
+		},
+	}
+	for _, c := range cases {
+		res, errs := asm.Assemble(c.src, 0, New())
+		require.Empty(t, errs, "case %q", c.src)
+		require.Len(t, res.Sections[0].Data, 4*len(c.words), "case %q", c.src)
+		for i, w := range c.words {
+			require.Equal(
+				t,
+				w,
+				binary.LittleEndian.Uint32(res.Sections[0].Data[i*4:]),
+				"case %q word %d",
+				c.src,
+				i,
+			)
+		}
+	}
+
+	// the BEGIN_FUNC shape: the directive tail stops at the separator,
+	// the label after it is its own statement
+	res, errs := asm.Assemble(".global _start ; _start: ret", 0, New())
+	require.Empty(t, errs)
+	require.Len(t, res.Sections[0].Data, 4)
+	require.Equal(t, uint32(0xd65f03c0), binary.LittleEndian.Uint32(res.Sections[0].Data))
+	require.Equal(t, uint64(0), res.Symbols["_start"])
+
+	// a ';' inside a string literal is data, not a separator
+	res, errs = asm.Assemble(".asciz \"a;b\"", 0, New())
+	require.Empty(t, errs)
+	require.Equal(t, []byte{'a', ';', 'b', 0}, res.Sections[0].Data)
+}
+
+// TestSectionFlags — the GAS flag strings after the section name are
+// recognized and ignored (the core carries no flag semantics); anything
+// but a comma list of quoted strings is an error.
+func TestSectionFlags(t *testing.T) {
+	for _, name := range []string{
+		".boot.text",
+		".text",
+		".mydata",
+	} {
+		src := ".section " + name + ", \"ax\"\nret\n"
+		res, errs := asm.Assemble(src, 0, New())
+		require.Empty(t, errs, "section %q", name)
+		require.NotEmpty(t, res.Sections, "section %q", name)
+		require.Equal(t, name, res.Sections[0].Name, "section %q", name)
+		require.Len(t, res.Sections[0].Data, 4, "section %q", name)
+	}
+
+	// several quoted strings after the name (flags, type)
+	res, errs := asm.Assemble(".section .data, \"aw\", \"progbits\"\n.word 1\n", 0, New())
+	require.Empty(t, errs)
+	require.Equal(t, ".data", res.Sections[0].Name)
+
+	// the name without flags is unchanged
+	res, errs = asm.Assemble(".section .text\nret\n", 0, New())
+	require.Empty(t, errs)
+	require.Len(t, res.Sections[0].Data, 4)
+
+	// an unquoted tail is not a flag list
+	_, errs = asm.Assemble(".section .text, ax\nret\n", 0, New())
+	require.NotEmpty(t, errs, "an unquoted flag tail must error")
+}
+
 func TestMovUmovAlias(t *testing.T) {
 	for _, c := range []struct {
 		src  string

@@ -70,7 +70,7 @@ const (
 	argsStrs                          // comma-separated string list
 	argsSymExpr                       // symbol, comma, expression (.set)
 	argsSymRest                       // symbol, the rest of the line is ignored (.type/.size)
-	argsSecName                       // section name [.section], the rest is ignored
+	argsSecName                       // section name, then ignored quoted flags [.section]
 	argsRestIgnore                    // the whole argument line is ignored (.file, .cfi_*, ...)
 	argsIncbin                        // path string + optional skip/count (.incbin)
 	argsSubsec                        // optional subsection number (.text/.data/.bss)
@@ -103,7 +103,8 @@ var directives = map[string]dirArgsKind{
 // backend (Try-wrapped), the label and directive grammars, the shared
 // atoms (identifier, string literal, comma) and the expression ladder
 // (expr.CExpr is a fresh ladder per call - capturing it once is the
-// point). A struct: everything below captures its fields.
+// point). A struct: everything below captures its fields. sep is the
+// backend's statement separator (0: one statement per line).
 type lineGrammar struct {
 	parseInstruction parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless]
 	parseComment     parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
@@ -113,6 +114,7 @@ type lineGrammar struct {
 	parseStringLit   parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
 	parseComma       parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 	parseExpr        parsec.Combinator[rune, parsecstrings.Position, *expr.Expr, parsec.Stateless]
+	sep              rune
 }
 
 // makeLineGrammar builds the whole line grammar once; be is the syntax
@@ -125,6 +127,7 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 		parseStringLit:   makeStringLitParser(),
 		parseComma:       expr.MakeCommaParser(),
 		parseExpr:        expr.MakeExprParser(),
+		sep:              be.Separator(),
 	}
 
 	identColon := func() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
@@ -215,7 +218,7 @@ func (g *lineGrammar) parseArgs(
 	case argsNone:
 		return nil, nil
 	case argsRestIgnore:
-		skipLineBody(buf)
+		g.skipStmtBody(buf)
 		return nil, nil
 	case argsOneExpr, argsExprs:
 		return g.exprList(buf, kind == argsOneExpr)
@@ -240,15 +243,40 @@ func (g *lineGrammar) parseArgs(
 		}
 
 		return []dirArg{newDirArg(nil, sym, false), newDirArg(e, "", false)}, nil
-	case argsSymRest, argsSecName:
+	case argsSymRest:
 		expr.SkipSpaces(buf)
 		sym, err := g.parseIdent(parsec.Stateless{}, buf)
 		if err != nil {
 			return nil, err
 		}
 
-		if kind == argsSymRest {
-			skipLineBody(buf)
+		g.skipStmtBody(buf)
+		return []dirArg{newDirArg(nil, sym, false)}, nil
+	case argsSecName:
+		// the section name, then the GAS flags - a comma list of quoted
+		// strings (or a numeric subsection) - recognized and ignored: the
+		// core carries no flag semantics
+		expr.SkipSpaces(buf)
+		sym, err := g.parseIdent(parsec.Stateless{}, buf)
+		if err != nil {
+			return nil, err
+		}
+
+		for {
+			save := buf.Position()
+			expr.SkipSpaces(buf)
+			if _, cerr := g.parseComma(parsec.Stateless{}, buf); cerr != nil {
+				if rerr := expr.Rewind(buf, save); rerr != nil {
+					return nil, rerr
+				}
+
+				break
+			}
+
+			expr.SkipSpaces(buf)
+			if _, serr := g.parseStringLit(parsec.Stateless{}, buf); serr != nil {
+				return nil, serr
+			}
 		}
 
 		return []dirArg{newDirArg(nil, sym, false)}, nil
@@ -383,20 +411,22 @@ func parseSource(src []rune, be Syntax) []statement {
 
 	var out []statement
 	for !buf.IsEOF() {
-		st, err := parseLine(buf, g)
+		sts, err := parseLine(buf, g)
 		if err != nil {
 			out = append(out, newStatement(err.Position(), newPosErr(err)))
 			skipToEOL(buf)
 			continue
 		}
 
-		out = append(out, st)
+		out = append(out, sts...)
 
 		// .end is the end of the source: lines below are not read at all
 		// (as in GAS - not merely not assembled, their parse errors are not
 		// reported either)
-		if st.directive != nil && st.directive.name == ".end" {
-			break
+		for _, st := range sts {
+			if st.directive != nil && st.directive.name == ".end" {
+				return out
+			}
 		}
 	}
 
@@ -413,73 +443,126 @@ func newPosErr(e parsec.Error[parsecstrings.Position]) *AsmError {
 	return &err
 }
 
-// parseLine is the grammar of one line. Consumes the newline (or reaches
-// EOF).
+// atSep — the backend's statement separator follows (0: the backend has
+// none).
+func (g *lineGrammar) atSep(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
+	if g.sep == 0 {
+		return false
+	}
+
+	r, ok := expr.PeekRune(buf)
+	return ok && r == g.sep
+}
+
+// parseLine is the grammar of one line: one or more statements separated
+// by the backend's separator (a single statement when it is 0). Consumes
+// the newline (or reaches EOF); a parse error kills the rest of the line.
 func parseLine(
 	buf parsec.Buffer[rune, parsecstrings.Position],
 	g *lineGrammar,
-) (statement, parsec.Error[parsecstrings.Position]) {
-	start := buf.Position()
-	st := newStatement(start, nil)
-
-	expr.SkipSpaces(buf)
-
-	// a full comment or an empty line
-	if _, err := g.parseComment(parsec.Stateless{}, buf); err == nil {
-		consumeEOL(buf)
-		return st, nil
-	}
-
-	if atEOL(buf) {
-		consumeEOL(buf)
-		return st, nil
-	}
-
-	// labels: "name:" (there may be several: "a: b: ...")
+) ([]statement, parsec.Error[parsecstrings.Position]) {
+	var out []statement
 	for {
-		save := buf.Position()
+		st := newStatement(buf.Position(), nil)
+
 		expr.SkipSpaces(buf)
-		lbl, err := g.parseLabel(parsec.Stateless{}, buf)
-		if err != nil {
-			if rerr := expr.Rewind(buf, save); rerr != nil {
-				return statement{}, rerr
+
+		// a full comment or an empty line
+		if _, err := g.parseComment(parsec.Stateless{}, buf); err == nil {
+			consumeEOL(buf)
+			return append(out, st), nil
+		}
+
+		if atEOL(buf) {
+			consumeEOL(buf)
+			return append(out, st), nil
+		}
+
+		// labels: "name:" (there may be several: "a: b: ...")
+		for {
+			save := buf.Position()
+			expr.SkipSpaces(buf)
+			lbl, err := g.parseLabel(parsec.Stateless{}, buf)
+			if err != nil {
+				if rerr := expr.Rewind(buf, save); rerr != nil {
+					return nil, rerr
+				}
+
+				break
 			}
 
-			break
+			st.labels = append(st.labels, lbl)
 		}
 
-		st.labels = append(st.labels, lbl)
-	}
-
-	expr.SkipSpaces(buf)
-	if atEOL(buf) {
-		consumeEOL(buf)
-		return st, nil
-	}
-
-	if r, ok := expr.PeekRune(buf); ok && r == '.' {
-		d, err := g.parseDirective(parsec.Stateless{}, buf)
-		if err != nil {
-			return statement{}, err
+		expr.SkipSpaces(buf)
+		if atEOL(buf) {
+			consumeEOL(buf)
+			return append(out, st), nil
 		}
 
-		st.directive = d
-	} else {
-		payload, err := g.parseInstruction(parsec.Stateless{}, buf)
-		if err != nil {
-			return statement{}, err
+		// a label-only (or empty) segment before the separator
+		if g.atSep(buf) {
+			_ = expr.ConsumeRune(buf)
+			out = append(out, st)
+			continue
 		}
 
-		st.instr = payload
-		st.hasInstr = true
-	}
+		if r, ok := expr.PeekRune(buf); ok && r == '.' {
+			d, err := g.parseDirective(parsec.Stateless{}, buf)
+			if err != nil {
+				return nil, err
+			}
 
-	expr.SkipSpaces(buf)
-	consumeComment(buf, g.parseComment)
-	if !atEOL(buf) {
-		return statement{}, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
-	}
+			st.directive = d
+		} else {
+			payload, err := g.parseInstruction(parsec.Stateless{}, buf)
+			if err != nil {
+				return nil, err
+			}
 
-	consumeEOL(buf)
-	return st, nil
+			st.instr = payload
+			st.hasInstr = true
+		}
+
+		expr.SkipSpaces(buf)
+		consumeComment(buf, g.parseComment)
+		if atEOL(buf) {
+			consumeEOL(buf)
+			return append(out, st), nil
+		}
+
+		if g.atSep(buf) {
+			_ = expr.ConsumeRune(buf)
+			out = append(out, st)
+			continue
+		}
+
+		return nil, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
+	}
+}
+
+// skipStmtBody consumes everything up to the statement separator or end
+// of line, quote-aware (a separator inside a string literal is data),
+// NOT consuming the newline/separator itself - parseLine eats them. The
+// ignored directive tails stop before a next statement begins.
+func (g *lineGrammar) skipStmtBody(buf parsec.Buffer[rune, parsecstrings.Position]) {
+	inStr := false
+	for {
+		r, ok := expr.PeekRune(buf)
+		if !ok || r == '\n' {
+			return
+		}
+
+		if !inStr && g.sep != 0 && r == g.sep {
+			return
+		}
+
+		if r == '"' {
+			inStr = !inStr
+		}
+
+		if err := expr.ConsumeRune(buf); err != nil {
+			return // the rune just peeked - unreadable only at I/O failure
+		}
+	}
 }

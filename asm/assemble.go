@@ -217,19 +217,22 @@ func newNumLabelDef(stmtIdx int, ref labelRef) numLabelDef {
 
 // poolEntry is a literal pool slot of a subsection (see PoolUser): the value
 // is an expression evaluated when the pool is written; name is the auto-name
-// of the slot.
+// of the slot; pos is the instruction that requested it (an expression
+// error is reported there, as the data directives do).
 type poolEntry struct {
 	name string
 	expr *expr.Expr
 	slot int
+	pos  parsecstrings.Position
 }
 
 // newPoolEntry - a pool slot under its auto-name.
-func newPoolEntry(name string, expr *expr.Expr, slot int) poolEntry {
+func newPoolEntry(name string, expr *expr.Expr, slot int, pos parsecstrings.Position) poolEntry {
 	return poolEntry{
 		name: name,
 		expr: expr,
 		slot: slot,
+		pos:  pos,
 	}
 }
 
@@ -602,7 +605,7 @@ func (a *assembler) snapshotSyms() *frozenSyms {
 
 // poolAdd registers a literal pool slot of the current subsection (dedup by
 // auto-name: PoolName(slot, ExprKey)); the order is first appearance.
-func (a *assembler) poolAdd(val *expr.Expr, slot int) {
+func (a *assembler) poolAdd(val *expr.Expr, slot int, pos parsecstrings.Position) {
 	name := poolName(slot, expr.ExprKey(val))
 	for _, e := range a.pools[a.curSub] {
 		if e.name == name {
@@ -610,14 +613,13 @@ func (a *assembler) poolAdd(val *expr.Expr, slot int) {
 		}
 	}
 
-	a.pools[a.curSub] = append(a.pools[a.curSub], newPoolEntry(name, val, slot))
+	a.pools[a.curSub] = append(a.pools[a.curSub], newPoolEntry(name, val, slot, pos))
 }
 
 // emitPoolRecords appends the literal pools to the subsection data (after
 // encoding: the expression values are evaluated with the full resolver; an
-// expression error makes the element zeros - the AsmError with the
-// instruction position was already recorded at encoding, zeros here
-// silently).
+// expression error is reported at the requesting instruction and the
+// element becomes zeros, as with the data directives).
 func (a *assembler) emitPoolRecords() {
 	for _, s := range a.secs {
 		for _, sub := range s.sortedSubs() {
@@ -625,6 +627,7 @@ func (a *assembler) emitPoolRecords() {
 				addr := a.poolAddr[e.name]
 				v, err := e.expr.Eval(a.resolver(-1, addr, nil))
 				if err != nil {
+					a.errf(e.pos, "literal pool: %v", err)
 					v = 0
 				}
 
@@ -652,7 +655,7 @@ func (a *assembler) doInstr(st *statement, idx int, pass2 bool) {
 		// layout)
 		if pu, ok := st.instr.(PoolUser); ok {
 			if e, slot, ok2 := pu.PoolReq(); ok2 {
-				a.poolAdd(e, slot)
+				a.poolAdd(e, slot, st.pos)
 			}
 		}
 	}

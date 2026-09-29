@@ -124,6 +124,11 @@ func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string
 	return s.be.Comment()
 }
 
+// Separator is delegated to the syntax layer.
+func (s source) Separator() rune {
+	return s.be.Separator()
+}
+
 // ApplyOption is delegated to the syntax layer.
 func (s source) ApplyOption(name string) error {
 	return s.be.ApplyOption(name)

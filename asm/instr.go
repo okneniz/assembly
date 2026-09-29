@@ -22,9 +22,14 @@ type Syntax interface {
 	Instruction() (comb parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless])
 
 	// Comment is the parsec grammar of a comment up to end of line (the
-	// characters are arch-dependent: '#' - RISC-V, ';' - ARM, '//' - both).
-	// The newline is not consumed.
+	// characters are arch-dependent: '#' - RISC-V, '//' - both). The
+	// newline is not consumed.
 	Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless]
+
+	// Separator is the statement separator rune of the syntax: ';' - ARM
+	// (a line may hold several statements, as in GAS), 0 - the newline is
+	// the only separator (RISC-V, Loong).
+	Separator() rune
 
 	// ApplyOption applies a .option value (each arch interprets its own).
 	ApplyOption(name string) error

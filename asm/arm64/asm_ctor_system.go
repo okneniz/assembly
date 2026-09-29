@@ -163,8 +163,13 @@ func newMrsArm(ops []vOp) (Instr, error) {
 	return MrsOf(rd, ops[1].Sym())
 }
 
-// newMsrArm — msr sysreg, rt.
+// newMsrArm — msr sysreg, rt; an immediate second operand routes to the
+// PSTATE spellings of the MSR (immediate) form (msr daifset, #1).
 func newMsrArm(ops []vOp) (Instr, error) {
+	if len(ops) == 2 && ops[1].Kind() == arch.ArmOpImm {
+		return newMsrPstate(ops)
+	}
+
 	if len(ops) != 2 || ops[0].Sym() == "" {
 		return nil, errors.New("msr: want sysreg, rt")
 	}

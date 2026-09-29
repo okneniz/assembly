@@ -177,6 +177,11 @@ func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, stri
 	return b.parseComment
 }
 
+// Separator — none: the newline is the only statement separator.
+func (b *Backend) Separator() rune {
+	return 0
+}
+
 // newComment builds the comment combinator ('#' and '//' to the end of
 // the line).
 func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {

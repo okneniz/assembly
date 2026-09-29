@@ -46,13 +46,16 @@ func newBarrierArm(name string) func([]vOp) (Instr, error) {
 	}
 }
 
-// newYield — yield (no operands).
-func newYield(ops []vOp) (Instr, error) {
-	if len(ops) != 0 {
-		return nil, errors.New("yield expects no operands")
-	}
+// newHint — the operandless aliases of the HINT space (yield/wfi/wfe/
+// sev/sevl); the word is fixed.
+func newHint(name string, enc uint32) func([]vOp) (Instr, error) {
+	return func(ops []vOp) (Instr, error) {
+		if len(ops) != 0 {
+			return nil, errors.New(name + " expects no operands")
+		}
 
-	return arch.SysFixedOf("yield", "", "Hint", 0xD503203F), nil
+		return arch.SysFixedOf(name, "", "Hint", enc), nil
+	}
 }
 
 // newDc — dc zva, x0 (fixed).

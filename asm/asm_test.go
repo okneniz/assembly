@@ -129,6 +129,10 @@ func (m mockPoolInstr) PoolReq() (*expr.Expr, int, bool) {
 	return m.v, 8, true
 }
 
+func (mockBackend) Separator() rune {
+	return 0
+}
+
 func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	hash := parsecstrings.Cast(
 		parsecstrings.Skip(
