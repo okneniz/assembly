@@ -18,6 +18,7 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/asm"
 	arm64 "github.com/okneniz/assembly/asm/arm64"
+	"github.com/okneniz/assembly/unit"
 )
 
 // NewASMBackend returns the ARM64 Syntax with aliases on top of the
@@ -44,6 +45,14 @@ func AssembleLayout(src string, layout asm.Layout) (*asm.Result, []asm.AsmError)
 // asm.ParseFragment).
 func Fragment(src string) (*asm.Fragment, []asm.AsmError) {
 	return asm.ParseFragment(src, NewASMBackend())
+}
+
+// AssembleUnit assembles a whole .S source into the unit: the named
+// labels join the unit's namespace, the sections deposit as deferred
+// runs - a name the source does not define (a C function called by bl)
+// waits for the program's resolve phase (see asm.AssembleUnit).
+func AssembleUnit(u *unit.Unit, file, src string) []asm.AsmError {
+	return asm.AssembleUnit(u, file, src, NewASMBackend())
 }
 
 // aliasCtors maps mnemonics to alias constructors.
