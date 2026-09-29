@@ -15,9 +15,10 @@
 // assemble(ObjDump(instr)) == instr.
 //
 // v1 limitations: no relocations and no .o writing (la/call/tail resolve to
-// absolute addresses), no .macro; value-driven size decisions (RVC
+// absolute addresses); value-driven size decisions (RVC
 // compression of label targets) are handled by the layout relaxation (see
-// walkLayout), not left to the caller.
+// walkLayout), not left to the caller. Macros (see macro.go) are the GAS
+// ones: definitions before use, textual \param substitution.
 package asm
 
 import (

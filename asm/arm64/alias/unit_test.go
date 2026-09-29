@@ -156,8 +156,8 @@ main:
 	require.Equal(t, uint64(0x80000004), fixed.Syms["buf"])
 }
 
-// errStrings flattens the resolve errors for matching.
-func errStrings(errs []error) []string {
+// errStrings flattens the errors (resolve or assemble) for matching.
+func errStrings[E interface{ Error() string }](errs []E) []string {
 	out := make([]string, 0, len(errs))
 	for _, e := range errs {
 		out = append(out, e.Error())
