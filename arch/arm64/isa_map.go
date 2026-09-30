@@ -85,6 +85,10 @@ var widenExcluded = map[string]bool{
 	// The N bit (bit22) is an OPCODE distinguishing ubfm/sbfm, not an operand:
 	// freeing it let the ubfm ctor accept SBFM encodings (+1 hard in round-trip)
 	"ubfm": true, "sbfm": true, "bfm": true,
+	// ERETAB is the ERETAA iclass with the M bit clear: freeing the bit
+	// would let the eretaa schema swallow the eretab word (the fixed
+	// eretab schema follows and never gets a chance)
+	"eretaa": true,
 }
 
 // widenAcceptable — whether schema s's bits may be replaced by entry g's

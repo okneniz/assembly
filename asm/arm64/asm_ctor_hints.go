@@ -7,7 +7,7 @@ import (
 )
 
 // Assembler constructors for hints and system hints: the barrier
-// family, yield, dc zva, prfm pldl1keep.
+// family, yield, prfm pldl1keep.
 
 // newBarrierArm — dmb/dsb option, isb [sy]: the text spelling becomes
 // the typed domain (dmb/dsb choose one, isb has none to choose).
@@ -56,17 +56,6 @@ func newHint(name string, enc uint32) func([]vOp) (Instr, error) {
 
 		return arch.SysFixedOf(name, "", "Hint", enc), nil
 	}
-}
-
-// newDc — dc zva, x0 (fixed).
-func newDc(ops []vOp) (Instr, error) {
-	if len(ops) != 2 {
-		return nil, errors.New("dc: want zva, x0")
-	}
-
-	return arch.SysFixedOf(
-		"dc", "zva, x0",
-		"System", 0xD50B7420), nil
 }
 
 // newPrfmArm — prfm pldl1keep, [rn] (fixed form).

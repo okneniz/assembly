@@ -48,6 +48,13 @@ func TestFragmentOracle(t *testing.T) {
 		"nop\nnop\nnop",
 		"hlt #0xf000",    // the semihosting exit of an inline-asm body
 		"hvc #0\nsmc #0", // the monitor calls of PSCI
+		// the setCurrentKernelVSpaceRoot idiom of machine.h and the
+		// cache-line ops around it
+		"dsb sy\nic iallu\ntlbi vmalls12e1\ndc zva, x0\nisb",
+		"ic ivau, x0\ndc cvau, x1\ntlbi vae1, x2",
+		"eret",           // the exception return
+		"cmp x0, #-1",    // the negative-imm alias flip
+		"msr sp_el0, x0", // the underscore sysreg operand
 		"1: nop\nb 1b",   // a numeric backward branch
 		"b 1f\nnop\n1:",  // a numeric forward branch
 		"adr x0, .",      // the fragment's own address

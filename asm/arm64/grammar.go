@@ -157,6 +157,16 @@ func makeGrammar() *armGrammar {
 		}
 
 		name := string(rs)
+		// an identifier continues past the token (sp_el0, cntvct_el0):
+		// a register never continues with '_' - give the token back to
+		// the expression lexer (Try rewinds the position)
+		if r, ok := expr.PeekRune(buf); ok && r == '_' {
+			return armOp{}, parsec.NewParseError(
+				buf.Position(),
+				fmt.Sprintf("not a register: %q", name),
+			)
+		}
+
 		if !isRegisterName(name) {
 			// the position did not move - no rewind needed, the error
 			// goes to the caller's Try

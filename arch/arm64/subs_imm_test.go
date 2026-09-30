@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/okneniz/assembly/disasm"
 )
 
 func TestSubsImmBuild(t *testing.T) {
@@ -46,5 +48,25 @@ func TestSubsImmBuild(t *testing.T) {
 	for _, c := range errCases {
 		_, err := New().SubsImm(reg(t, c.rd), reg(t, c.rn), imm12(t, c.imm), c.sh)
 		assertErr(t, c.name, err)
+	}
+}
+
+// TestSubsImmDecode - the Rd=31 imm word decodes as the cmp alias:
+// register 31 reads as zr when S=1 (the decode used to map it to sp
+// and refuse the word).
+func TestSubsImmDecode(t *testing.T) {
+	cases := []struct {
+		word uint32
+		text string
+	}{
+		{0xf100041f, "cmp x0, #0x1"},
+		{0x7100141f, "cmp w0, #0x5"},
+		{0xf140041f, "cmp x0, #0x1, lsl #12"},
+	}
+
+	for _, c := range cases {
+		in, err := DecodeWord(c.word)
+		require.NoError(t, err, "case %q", c.text)
+		require.Equal(t, c.text, in.ObjDump(disasm.ViewCtxAt(0)), "case %q", c.text)
 	}
 }

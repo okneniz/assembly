@@ -333,12 +333,17 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 				return nil, err
 			}
 
+			imm, shift, err := foldImm12(imm, false)
+			if err != nil {
+				return nil, err
+			}
+
 			rnN, err := addSubRegNum(rn)
 			if err != nil {
 				return nil, err
 			}
 
-			return map[string]any{"Rd": 31, "Rn": rnN, "imm12": imm, "shift": "lsl #0"}, nil
+			return map[string]any{"Rd": 31, "Rn": rnN, "imm12": imm, "shift": shift}, nil
 		case 3, 4:
 			rd, err := opRegOf(in, 0)
 			if err != nil {
@@ -356,11 +361,22 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 			}
 
 			shift := "lsl #0"
+			explicit := false
 			if len(in.ops) == 4 && in.ops[3].Kind() == arch.ArmOpShift {
+				explicit = true
 				shift = fmt.Sprintf("%s #%d", in.ops[3].ShiftName(), shiftAmt(in.ops[3]))
 				if shift != "lsl #0" && shift != "lsl #12" {
 					return nil, fmt.Errorf("bad immediate shift %q", shift)
 				}
+			}
+
+			imm, foldShift, err := foldImm12(imm, explicit)
+			if err != nil {
+				return nil, err
+			}
+
+			if !explicit {
+				shift = foldShift
 			}
 
 			rdN, err := addSubRegNum(rd)
@@ -1738,6 +1754,22 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 	}
 
 	return nil, fmt.Errorf("formatter %q not supported by assembler", s.Formatter)
+}
+
+// foldImm12 - the plain immediate of the add/sub family: a value beyond
+// 12 bits folds into the imm12, lsl #12 form when the low 12 bits are
+// zero (the #4096 spelling of #1, lsl #12). An explicit shift operand
+// means no folding - the immediate is the pre-shift value there.
+func foldImm12(v int64, explicit bool) (int64, string, error) {
+	if v >= 0 && v <= 0xfff {
+		return v, "lsl #0", nil
+	}
+
+	if !explicit && v > 0xfff && v <= 0xffffff && v&0xfff == 0 {
+		return v >> 12, "lsl #12", nil
+	}
+
+	return 0, "", fmt.Errorf("field imm12: %#x does not fit in 12 bits", v)
 }
 
 // --- helpers ---

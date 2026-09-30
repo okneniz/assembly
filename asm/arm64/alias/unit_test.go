@@ -165,3 +165,37 @@ func errStrings[E interface{ Error() string }](errs []E) []string {
 
 	return out
 }
+
+// TestUnitSysOps - the machine.h system-operation idiom in the unit
+// mode: the same bytes as the byte mode (the fragment oracle shape,
+// through the .S deposit path dcc links with).
+func TestUnitSysOps(t *testing.T) {
+	src := `vspace_switch:
+  dsb sy
+  ic iallu
+  dsb sy
+  isb
+  tlbi vmalls12e1
+  dsb sy
+  isb
+  dc zva, x0
+  ic ivau, x1
+  msr sp_el0, x2
+  eret
+`
+
+	res, errs := Assemble(src, 0x1000)
+	require.Empty(t, errs, "bytes mode")
+
+	u := unit.New()
+	errs = AssembleUnit(u, "t.s", src)
+	require.Empty(t, errs, "unit mode")
+
+	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	require.Empty(t, fixed.Errs)
+
+	text, err := fixed.EncodeText()
+	require.NoError(t, err)
+	require.Equal(t, res.Sections[0].Data, text, "unit bytes == byte-mode bytes")
+	require.Len(t, text, 44, "eleven words")
+}

@@ -121,7 +121,7 @@ func (Builder) AddsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
 
 func decodeAddsImm(w uint32) (Instr, error) {
 	in, err := newAddsImm(newBase(w),
-		numReg(w&0x1f, w>>31&1 == 1),
+		gprOf(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
 	if err != nil {
 		return nil, err

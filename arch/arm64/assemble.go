@@ -57,8 +57,8 @@ type vMem struct {
 }
 
 // isKeyword — a name operand from the keyword tables (conditions, system
-// registers, prfm hints, barrier domains, PSTATE fields): it stays a name
-// instead of being computed by the resolver.
+// registers, prfm hints, barrier domains, PSTATE fields, IC/DC/TLBI
+// operations): it stays a name instead of being computed by the resolver.
 func isKeyword(sym string) bool {
 	if _, err := condNum(sym); err == nil {
 		return true
@@ -73,6 +73,10 @@ func isKeyword(sym string) bool {
 	}
 
 	if _, ok := pstateLookup(sym); ok {
+		return true
+	}
+
+	if _, ok := sysOpLookup(sym); ok {
 		return true
 	}
 

@@ -62,7 +62,8 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 		return 0, fmt.Errorf("%s: %w", in.mnem, rerr)
 	}
 
-	res := newResolvedInstr(in.mnem, ops)
+	mnem, ops := negImmSwap(in.mnem, ops)
+	res := newResolvedInstr(mnem, ops)
 	rendered := renderInstr(res, ctx.Addr)
 	loose := looseNormalize(rendered)
 
@@ -161,6 +162,42 @@ func encodeARM(in armAsmInstr, ctx ctx) (uint32, error) {
 	}
 
 	return 0, fmt.Errorf("%q: %w", rendered, lastErr)
+}
+
+// addSubSwap - the negative-imm flip table of the add/sub family.
+var addSubSwap = map[string]string{
+	"add":  "sub",
+	"sub":  "add",
+	"adds": "subs",
+	"subs": "adds",
+	"cmp":  "cmn",
+	"cmn":  "cmp",
+}
+
+// negImmSwap - the LLVM negative-immediate canon: a negative imm12
+// operand flips the base of the add/sub family (add x0, x1, #-1 is the
+// sub x0, x1, #1 alias, cmp x0, #-1 the cmn one); the flipped spelling
+// is what the decoder prints, so the swap happens before the render and
+// every downstream path (ctor, legacy, self-verify) sees the canonical
+// form. The imm index is 2 for the base forms, 1 for the compare ones.
+func negImmSwap(mnem string, ops []arch.VOp) (string, []arch.VOp) {
+	alt, ok := addSubSwap[mnem]
+	if !ok {
+		return mnem, ops
+	}
+
+	idx := 2
+	if mnem == "cmp" || mnem == "cmn" {
+		idx = 1
+	}
+
+	if idx >= len(ops) || !ops[idx].IsImm() || ops[idx].Sym() != "" || ops[idx].Num() >= 0 {
+		return mnem, ops
+	}
+
+	flipped := append([]arch.VOp(nil), ops...)
+	flipped[idx] = arch.VOpImm(-ops[idx].Num(), "")
+	return alt, flipped
 }
 
 // verifyWord is encoding + self-verify (the SkipVerify marker is for
