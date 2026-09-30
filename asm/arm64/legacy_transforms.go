@@ -24,6 +24,7 @@ var inverseTransforms = map[string]inverseTransformFunc{
 	"regV":        invRegV,
 	"fpRegD":      invFpReg('d'),
 	"fpRegS":      invFpReg('s'),
+	"fpRegQ":      invFpReg('q'),
 	"intX":        invRegX,
 	"intW":        invRegW,
 	"regIndex":    invInt,

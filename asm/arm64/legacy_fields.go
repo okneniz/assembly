@@ -1090,8 +1090,15 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 		}
 
 		scale := int64(8)
-		if regIsW(rt) {
+		switch {
+		case in.mnem == "ldpsw", regIsW(rt), rt[0] == 's':
 			scale = 4
+		case rt[0] == 'q':
+			scale = 16
+		}
+
+		if off%scale != 0 || off/scale < -64 || off/scale > 63 {
+			return nil, fmt.Errorf("%s: offset %d is not a multiple of %d or out of the imm7 range", in.mnem, off, scale)
 		}
 
 		fields["imm7"] = off / scale // raw bits: the lsPairImm7_* context transform
@@ -1922,7 +1929,7 @@ func encodeVFPImm32(v float64) (uint32, bool) {
 var contextTransforms = map[string]bool{
 	"brOff26": true, "brOff19": true, "brOff14": true,
 	"sext19": true, "sext9": true,
-	"lsPairImm7_64": true, "lsPairImm7_32": true,
+	"lsPairImm7_64": true, "lsPairImm7_32": true, "lsPairImm7_128": true,
 }
 
 // packFields assembles the word: Schema.Value | fields (inverse transforms).

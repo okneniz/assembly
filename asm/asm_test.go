@@ -305,7 +305,8 @@ func TestCommentStyles(t *testing.T) {
 }
 
 func TestIgnoredDirectives(t *testing.T) {
-	src := ".file 1 \"a.c\"\n.loc 1 2 0\n.cfi_startproc\npad 4\n.cfi_endproc\n"
+	src := ".file 1 \"a.c\"\n.loc 1 2 0\n.cfi_startproc\npad 4\n.cfi_endproc\n" +
+		".arch_extension fp\n.arch_extension nofp\n"
 	res, errs := Assemble(src, 0, mockBackend{})
 	require.Empty(t, errs, "errors: %v", errs)
 	require.Len(t, res.Sections[0].Data, 4)

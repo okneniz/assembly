@@ -910,11 +910,12 @@ var arm64Schemas = []Schema{
 		NewField("Rn", 5, 5, "regXSP"),
 		NewField("imm9", 12, 9, "sext9"),
 	}, NewMeta("ldurh", "Load/Store"), "lsUnscaled", false, decodeLdurhOf(0x78400000, memUnscaled, "w")),
-	NewSchema(0xFFC00000, 0x69400000, []Field{
+	NewSchema(0xFE400000, 0x68400000, []Field{
 		NewField("Rt", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regXSP"),
 		NewField("Rt2", 10, 5, "regX"),
 		NewField("imm7", 15, 7, "lsPairImm7_32"),
+		NewField("idx", 23, 2),
 	}, NewMeta("ldpsw", "Load/Store"), "lsPair", false, decodeLdpsw),
 	NewSchema(0xFC000000, 0xA8000000, []Field{
 		NewField("Rt", 0, 5, "regX"),
@@ -934,7 +935,7 @@ var arm64Schemas = []Schema{
 		NewField("L", 22, 1),
 		NewField("opc", 30, 2),
 	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x28000000, 2, false, "")),
-	NewSchema(0xFEA00000, 0x6C000000, []Field{
+	NewSchema(0xFE000000, 0x6C000000, []Field{
 		NewField("Rt", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "regXSP"),
 		NewField("Rt2", 10, 5, "fpRegD"),
@@ -942,7 +943,25 @@ var arm64Schemas = []Schema{
 		NewField("idx", 23, 2),
 		NewField("L", 22, 1),
 		NewField("opc", 30, 2),
-	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x6C000000, 3, true, "d")),
+	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x6D400000, 3, true, "d")),
+	NewSchema(0xFE000000, 0x2C000000, []Field{
+		NewField("Rt", 0, 5, "fpRegS"),
+		NewField("Rn", 5, 5, "regXSP"),
+		NewField("Rt2", 10, 5, "fpRegS"),
+		NewField("imm7", 15, 7, "lsPairImm7_32"),
+		NewField("idx", 23, 2),
+		NewField("L", 22, 1),
+		NewField("opc", 30, 2),
+	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x2D400000, 2, false, "s")),
+	NewSchema(0xFE000000, 0xAC000000, []Field{
+		NewField("Rt", 0, 5, "fpRegQ"),
+		NewField("Rn", 5, 5, "regXSP"),
+		NewField("Rt2", 10, 5, "fpRegQ"),
+		NewField("imm7", 15, 7, "lsPairImm7_128"),
+		NewField("idx", 23, 2),
+		NewField("L", 22, 1),
+		NewField("opc", 30, 2),
+	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0xAD400000, 4, true, "q")),
 	NewSchema(0xFFE00C00, 0xF8200800, []Field{
 		NewField("Rt", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regXSP"),

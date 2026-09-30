@@ -345,11 +345,15 @@ func pairDecode(
 	return rt, rt2, rn, kind, signExtendN(w>>15&0x7f, 7) << scale, w>>22&1 == 1
 }
 
-// pairRegName — the pair register name by type ("x"/"w"/"d").
+// pairRegName — the pair register name by type ("x"/"w"/"s"/"d"/"q").
 func pairRegName(n uint32, kind string) string {
 	switch kind {
+	case "s":
+		return fpRegNameS(n)
 	case "d":
 		return fpRegNameD(n)
+	case "q":
+		return fpRegNameQ(n)
 	case "w":
 		return regNameW(n)
 	default:

@@ -36,14 +36,23 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 
 	rn := m.Base()
 	scale := uint32(2)
-	enc := uint32(0xA9400000) // ldp x pair offset form
+	enc := uint32(0x29400000) // ldp w pair offset form
 	switch rt[0] {
-	case 'd':
-		scale, enc = 3, 0x6C400000
+	case 'x':
+		scale, enc = 3, 0xA9400000
 	case 's':
-		enc = 0x2C400000
-	case 'w':
-		scale, enc = 2, 0x28400000
+		enc = 0x2D400000
+	case 'd':
+		scale, enc = 3, 0x6D400000
+	case 'q':
+		scale, enc = 4, 0xAD400000
+	case 'w': // the w defaults stand
+	default:
+		return nil, fmt.Errorf("%s: x/w/s/d/q register expected, got %q", name, rt)
+	}
+
+	if rt2[0] != rt[0] {
+		return nil, fmt.Errorf("%s: pair registers must share the width, got %q and %q", name, rt, rt2)
 	}
 
 	if name == "stp" {
@@ -61,6 +70,10 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 		enc |= 0x01800000
 	default:
 		kind, off = arch.MemImm, m.Off()
+	}
+
+	if off&(int64(1)<<scale-1) != 0 || off>>scale < -64 || off>>scale > 63 {
+		return nil, fmt.Errorf("%s: offset %d is not a multiple of %d or out of the imm7 range", name, off, 1<<scale)
 	}
 
 	if name == "ldp" {

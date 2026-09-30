@@ -95,6 +95,7 @@ var directives = map[string]dirArgsKind{
 	// .option is semantic (encoding modes), applied by Syntax
 	".file": argsRestIgnore, ".loc": argsRestIgnore, ".ident": argsRestIgnore,
 	".attribute": argsRestIgnore, ".abicalls": argsRestIgnore, ".nan": argsRestIgnore,
+	".arch_extension": argsRestIgnore,
 	".module": argsRestIgnore, ".p2align_manual": argsRestIgnore,
 	".option": argsSymRest,
 }

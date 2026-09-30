@@ -143,4 +143,9 @@ func fpRegNameS(r uint32) string {
 	return fmt.Sprintf("s%d", r)
 }
 
+// fpRegNameQ - the name of a quad FP register (q0..).
+func fpRegNameQ(r uint32) string {
+	return fmt.Sprintf("q%d", r)
+}
+
 var shiftNames = [4]string{"lsl", "lsr", "asr", "ror"}
