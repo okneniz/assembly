@@ -93,6 +93,17 @@ func TestFragmentRejects(t *testing.T) {
 	}
 }
 
+func TestFragmentToleratesIgnoredDirectives(t *testing.T) {
+	// the compiler-output class the file path ignores (.arch_extension of
+	// the kernel's inline asm among it) produces nothing to layout - the
+	// fragment skips it; everything else still rejects (TestFragmentRejects)
+	src := ".arch_extension fp\npad 4\n.arch_extension nofp\npad 4\n"
+	f, errs := ParseFragment(src, mockBackend{})
+	require.Empty(t, errs, src)
+	require.NotNil(t, f, src)
+	require.Equal(t, 8, f.Size(), src)
+}
+
 func TestFragmentRejectsReportLines(t *testing.T) {
 	_, errs := ParseFragment("pad 4\nname:\npad 4", mockBackend{})
 	require.Len(t, errs, 1)

@@ -56,7 +56,10 @@ func TestFragmentOracle(t *testing.T) {
 		"eret",                      // the exception return
 		"cmp x0, #-1",               // the negative-imm alias flip
 		"msr sp_el0, x0",            // the underscore sysreg operand
-		"1: nop\nb 1b",              // a numeric backward branch
+		// the fpu.h save idiom: the inline-asm body opens with the fp
+		// extension and closes with its restoration
+		".arch_extension fp\nstp q0, q1, [sp, #-32]!\nstp q2, q3, [sp, #-32]!\n.arch_extension nofp",
+		"1: nop\nb 1b", // a numeric backward branch
 		"b 1f\nnop\n1:",             // a numeric forward branch
 		"adr x0, .",                 // the fragment's own address
 		"1: ldaxr w8, [x0]\nadd w8, w8, w1\nstlxr w9, w8, [x0]\ncbnz w9, 1b", // the atomic idiom

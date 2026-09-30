@@ -3,11 +3,14 @@ package asm
 // The inline-asm fragment: the parsed body of an asm("...") template.
 // The contract is instructions and numeric local labels only - the GAS
 // 1:/1b/1f discipline (named labels would collide between inlined
-// copies; directives and literal pools have no meaning inside a host
-// program). A Fragment is a unit.Sym: the host program resolves it - each
-// instruction at its own address, numeric locals against the fragment's
-// own table, every other name against the host's symbols (asm("bl foo")
-// calls the host's foo).
+// copies; layout directives and literal pools have no meaning inside a
+// host program). The compiler-output directives the file path silently
+// ignores (.arch_extension fp of the kernel headers, .cfi_*, ...) are
+// tolerated the same way - they produce nothing to layout. A Fragment
+// is a unit.Sym: the host program resolves it - each instruction at its
+// own address, numeric locals against the fragment's own table, every
+// other name against the host's symbols (asm("bl foo") calls the host's
+// foo).
 
 import (
 	"fmt"
@@ -123,10 +126,11 @@ func (f *Fragment) localAddr(name string, stmt int, base uint64) (uint64, bool) 
 
 // ParseFragment parses an inline-asm template body into a Fragment: a
 // sequence of instructions with numeric local labels (1:/1b/1f). Named
-// labels, directives, and literal pool requests (=expr) are rejected -
-// a fragment is instructions, the host program owns the rest. The sizes
-// are computed under the placeholder environment, so the layout knows
-// the byte count before any symbol exists.
+// labels, layout directives, and literal pool requests (=expr) are
+// rejected - a fragment is instructions, the host program owns the rest;
+// the compiler-output directives the file path ignores are tolerated. The
+// sizes are computed under the placeholder environment, so the layout
+// knows the byte count before any symbol exists.
 func ParseFragment(src string, be Syntax) (*Fragment, []AsmError) {
 	be.ResetOptions()
 	stmts := parseSource([]rune(src), be)
@@ -154,8 +158,12 @@ func ParseFragment(src string, be Syntax) (*Fragment, []AsmError) {
 		}
 
 		if st.directive != nil {
-			errs = append(errs, NewAsmError(line, 0, fmt.Sprintf(
-				"directive %q is not allowed in a fragment", st.directive.name)))
+			// the ignored class produces nothing in the file path either;
+			// every other directive lays out or names - the host owns that
+			if kind, ok := directiveKind(st.directive.name); !ok || kind != argsRestIgnore {
+				errs = append(errs, NewAsmError(line, 0, fmt.Sprintf(
+					"directive %q is not allowed in a fragment", st.directive.name)))
+			}
 		}
 
 		if !st.hasInstr {

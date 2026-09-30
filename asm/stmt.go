@@ -100,6 +100,17 @@ var directives = map[string]dirArgsKind{
 	".option": argsSymRest,
 }
 
+// directiveKind - the args spec of a directive name; the .cfi_ family has
+// no table rows, the whole family is argsRestIgnore (call frame info).
+func directiveKind(full string) (dirArgsKind, bool) {
+	kind, ok := directives[full]
+	if !ok && strings.HasPrefix(full, ".cfi_") {
+		return argsRestIgnore, true
+	}
+
+	return kind, ok
+}
+
 // lineGrammar is the line-level grammar state built once per source
 // (parseSource): the instruction/comment combinators of the Syntax
 // backend (Try-wrapped), the label and directive grammars, the shared
@@ -193,11 +204,7 @@ func (g *lineGrammar) makeDirectiveParser() parsec.Combinator[rune, parsecstring
 		}
 
 		full := "." + name
-		kind, ok := directives[full]
-		if !ok && strings.HasPrefix(full, ".cfi_") {
-			kind, ok = argsRestIgnore, true // call frame info - the whole family
-		}
-
+		kind, ok := directiveKind(full)
 		if !ok {
 			return nil, parsec.NewParseError(pos, fmt.Sprintf("unknown directive %q", full))
 		}
