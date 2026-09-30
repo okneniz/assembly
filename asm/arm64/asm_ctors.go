@@ -270,6 +270,7 @@ func buildArmCtors() map[string]func(ops []vOp) (Instr, error) {
 		"ic":         newSysOpArm("ic"),
 		"dc":         newSysOpArm("dc"),
 		"tlbi":       newSysOpArm("tlbi"),
+		"at":         newSysOpArm("at"),
 		"eret":       newEret("eret", 0xD69F03E0),
 		"eretaa":     newEret("eretaa", 0xD69F0BFF),
 		"eretab":     newEret("eretab", 0xD69F0FFF),

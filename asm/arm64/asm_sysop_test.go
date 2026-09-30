@@ -74,6 +74,19 @@ func TestSysOpAssembleWords(t *testing.T) {
 		{"eret", 0xd69f03e0},
 		{"eretaa", 0xd69f0bff},
 		{"eretab", 0xd69f0fff},
+		{"at s1e1r, x5", 0xd5087805},
+		{"at s1e1w, x5", 0xd5087825},
+		{"at s1e0r, x5", 0xd5087845},
+		{"at s1e0w, x5", 0xd5087865},
+		{"at s1e1rp, x5", 0xd5087905},
+		{"at s1e1wp, x5", 0xd5087925},
+		{"at s12e1r, x5", 0xd50c7885},
+		{"at s12e1w, x5", 0xd50c78a5},
+		{"at s12e0r, x0", 0xd50c78c0},
+		{"at s1e2r, x0", 0xd50c7800},
+		{"at s1e2w, x5", 0xd50c7825},
+		{"at s1e3r, x5", 0xd50e7805},
+		{"at s1e3w, x5", 0xd50e7825},
 		{"msr sp_el0, x0", 0xd5184100},
 		{"mrs x0, sp_el0", 0xd5384100},
 		{"msr sp_el1, x0", 0xd51c4100},
@@ -100,6 +113,10 @@ func TestSysOpAssembleErrors(t *testing.T) {
 		"tlbi vae1, x3, x4",
 		"eret x0",
 		"eretaa #1",
+		"at bogus, x0",
+		"at s1e2r",
+		"at s1e2r, w5",
+		"ats1e2r x0", // the fused spelling: refused by gas and clang too
 	}
 
 	for _, src := range cases {

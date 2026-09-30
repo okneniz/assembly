@@ -8,13 +8,14 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// The IC/DC/TLBI system operations: sys instructions whose first operand
-// is an operation keyword (ic iallu, dc zva, x0, tlbi alle1). The word
-// formula is 0xd5080000 | op1<<16 | CRn<<12 | CRm<<8 | op2<<5 | Rt - the
-// class (ic/dc vs tlbi) is CRn 7 vs 8, the operation is the op1/CRm/op2
-// triple. Every spelling below pins its full word (clang-oracled); the
-// Rt-bearing forms keep the base with Rt=0 and join the register at
-// assembly, the operandless ones encode Rt=31.
+// The IC/DC/TLBI/AT system operations: sys instructions whose first
+// operand is an operation keyword (ic iallu, dc zva, x0, tlbi alle1,
+// at s1e2r, x0). The word formula is 0xd5080000 | op1<<16 | CRn<<12 |
+// CRm<<8 | op2<<5 | Rt - the class (ic/dc/at vs tlbi) is CRn 7 vs 8,
+// the operation is the op1/CRm/op2 triple. Every spelling below pins
+// its full word (clang-oracled); the Rt-bearing forms keep the base
+// with Rt=0 and join the register at assembly, the operandless ones
+// encode Rt=31.
 
 // sysOpRec - one operation spelling: its mnemonic class, its word (the
 // Rt forms carry Rt=0) and whether an Xt operand joins the word.
@@ -80,6 +81,19 @@ var sysOps = map[string]sysOpRec{
 	"ripas2e1":     {mnem: "tlbi", enc: 0xD50C8440, hasRt: true},
 	"ripas2e1is":   {mnem: "tlbi", enc: 0xD50C8040, hasRt: true},
 	"ripas2e1os":   {mnem: "tlbi", enc: 0xD50C8460, hasRt: true},
+	"s1e1r":        {mnem: "at", enc: 0xD5087800, hasRt: true},
+	"s1e1w":        {mnem: "at", enc: 0xD5087820, hasRt: true},
+	"s1e0r":        {mnem: "at", enc: 0xD5087840, hasRt: true},
+	"s1e0w":        {mnem: "at", enc: 0xD5087860, hasRt: true},
+	"s1e1rp":       {mnem: "at", enc: 0xD5087900, hasRt: true},
+	"s1e1wp":       {mnem: "at", enc: 0xD5087920, hasRt: true},
+	"s12e1r":       {mnem: "at", enc: 0xD50C7880, hasRt: true},
+	"s12e1w":       {mnem: "at", enc: 0xD50C78A0, hasRt: true},
+	"s12e0r":       {mnem: "at", enc: 0xD50C78C0, hasRt: true},
+	"s1e2r":        {mnem: "at", enc: 0xD50C7800, hasRt: true},
+	"s1e2w":        {mnem: "at", enc: 0xD50C7820, hasRt: true},
+	"s1e3r":        {mnem: "at", enc: 0xD50E7800, hasRt: true},
+	"s1e3w":        {mnem: "at", enc: 0xD50E7820, hasRt: true},
 }
 
 // sysOpLookup - the operation spelling, case-insensitive.
