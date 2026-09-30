@@ -800,10 +800,13 @@ func (a *assembler) doDirective(st *statement, idx int, pass2 bool) {
 				a.errf(st.pos, ".option: %v", oerr)
 			}
 		}
-	case ".global", ".globl", ".local":
-		if len(d.args) > 0 {
-			a.globals = append(a.globals, d.args[0].str)
+	case ".global", ".globl":
+		for _, arg := range d.args {
+			a.globals = append(a.globals, arg.str)
 		}
+	case ".local":
+		// recognized, carries no semantics (the byte mode has no symbol
+		// visibility: every label lands in Result.Symbols)
 	case ".word", ".half", ".short", ".byte", ".quad", ".dword":
 		if a.cur().nobits {
 			if !pass2 {

@@ -14,15 +14,23 @@ import (
 )
 
 // Macho - resolve the output with the Mach-O streams policy (the same
-// placement the writer uses) and wrap it as a native arm64 Mach-O image.
-// entry names the entry symbol; every label of the program becomes a
-// global symbol.
+// placement the writer uses) and wrap it as a native arm64 Mach-O
+// image. entry names the entry symbol; every label of the program
+// becomes a global symbol.
 func Macho(u *unit.Unit, entry string) (*file.MachOImage, error) {
 	f := u.Resolve(file.MachoPlaceStreams)
 	if len(f.Errs) > 0 {
 		return nil, fmt.Errorf("macho: %w", f.Errs[0])
 	}
 
+	return MachoOf(f, entry)
+}
+
+// MachoOf wraps a RESOLVED output as a native arm64 Mach-O image: the
+// streams encode, the sections place on the writer's own engine, every
+// label of the program becomes a global symbol. The twin for callers
+// that resolved through their own policy - a linker.
+func MachoOf(f *unit.Fixed, entry string) (*file.MachOImage, error) {
 	code, codeErr := f.EncodeText()
 	if codeErr != nil {
 		return nil, fmt.Errorf("macho: %w", codeErr)

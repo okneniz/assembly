@@ -23,13 +23,14 @@ import (
 // compiler its source node, a chain its caller); there is no resolver to
 // guess it.
 type Unit struct {
-	slots  []slot
-	labels []labelAt
-	entry  string
-	cur    int    // the deposit stream: 0 text (default), 1 data
-	mem    [2]int // the running memory size per stream (the bss tail included)
-	file   [2]int // the running file size per stream (bss excluded)
-	errs   []error
+	slots   []slot
+	labels  []labelAt
+	defined map[string]bool
+	entry   string
+	cur     int    // the deposit stream: 0 text (default), 1 data
+	mem     [2]int // the running memory size per stream (the bss tail included)
+	file    [2]int // the running file size per stream (bss excluded)
+	errs    []error
 }
 
 // slot is one deposited record: a ready one (res), a deferred one (sym),
@@ -54,7 +55,7 @@ type labelAt struct {
 
 // New - an empty output.
 func New() *Unit {
-	return &Unit{}
+	return &Unit{defined: map[string]bool{}}
 }
 
 // Entry - the label the program starts at.
@@ -78,8 +79,16 @@ func (u *Unit) Data() *Unit {
 }
 
 // Label - define a label at the current position of the current stream.
-// A redefinition moves the label (the later position wins).
+// A redefinition is an error (the first definition stands, GAS rules);
+// the error is recorded and surfaces at Resolve - the position does not
+// move, so the addresses of everything around stay true. A linker needs
+// the collision reported, not silently resolved.
 func (u *Unit) Label(name string) *Unit {
+	if u.defined[name] {
+		return u.fail(fmt.Errorf("label %q redefined", name))
+	}
+
+	u.defined[name] = true
 	u.labels = append(u.labels, labelAt{name: name, stream: u.cur, off: u.mem[u.cur]})
 	return u
 }

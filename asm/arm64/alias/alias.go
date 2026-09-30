@@ -55,6 +55,14 @@ func AssembleUnit(u *unit.Unit, file, src string) []asm.AsmError {
 	return asm.AssembleUnit(u, file, src, NewASMBackend())
 }
 
+// ParseSourceUnit parses a whole .S source short of depositing it: the
+// link driver's entry (see asm.ParseSourceUnit) - a link parses every
+// source once, then deposits the sections of all of them and the bss
+// reserves of all of them.
+func ParseSourceUnit(file, src string) (*asm.SourceUnit, []asm.AsmError) {
+	return asm.ParseSourceUnit(file, src, NewASMBackend())
+}
+
 // aliasCtors maps mnemonics to alias constructors.
 var aliasCtors = map[string]arch.ArmCtor{
 	// add/sub family: cmp/cmn (Rd = zr), neg/negs (Rn = zr)

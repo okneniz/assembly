@@ -11,9 +11,11 @@ package asm
 //
 // v1: the sections map to the two unit streams by name - anything ending
 // in ".text" is text, ".bss" is a zero-fill reserve, everything else is
-// data; subsection numbers merge into their section; .global carries no
-// semantics (the entry is the caller's, as with the prog chains);
-// .incbin and .ltorg are not supported.
+// data; subsection numbers merge into their section. The .L-prefixed
+// labels are local to the source: they deposit and resolve under the
+// "file:name" key, so sources linked into one unit never collide on
+// them; .global (and .globl) promotes its names into the shared
+// namespace. .incbin and .ltorg are not supported.
 
 import (
 	"encoding/binary"
@@ -107,12 +109,12 @@ func (b srcBytes) Encode(w io.Writer) (int64, error) {
 // resolve at their own addresses against the unit - the fragment
 // discipline, grown to labels, sections and directives.
 type srcRun struct {
-	sec  *srcSection
-	sets map[string]*expr.Expr
-	recs []srcRec
-	from int // the section record index of the first record (the locals coordinate)
-	off  int // the run's section offset
-	size int
+	sec   *srcSection
+	scope nameScope
+	recs  []srcRec
+	from  int // the section record index of the first record (the locals coordinate)
+	off   int // the run's section offset
+	size  int
 }
 
 // Size is the run's byte count (the placeholder sizing of the build).
@@ -131,7 +133,7 @@ func (r *srcRun) Resolve(ctx unit.Ctx) ([]unit.Resolved, error) {
 	for i := range r.recs {
 		rec := &r.recs[i]
 		addr := base + uint64(rec.off)
-		resolve := r.sec.resolveNames(ctx, base, r.from+i, addr, rec.poolIdx, r.sets)
+		resolve := r.sec.resolveNames(ctx, base, r.from+i, addr, rec.poolIdx, r.scope)
 
 		switch {
 		case rec.in != nil:
@@ -161,17 +163,39 @@ func (r *srcRun) Resolve(ctx unit.Ctx) ([]unit.Resolved, error) {
 	return out, nil
 }
 
+// nameScope is the file-scoped name environment of a source: the .set
+// expressions, the .global-promoted names, and the file key that
+// isolates the .L locals of different sources linked into one unit.
+type nameScope struct {
+	file    string
+	sets    map[string]*expr.Expr
+	globals map[string]bool
+}
+
+// linkName is the unit name of a source symbol: a .L local sits behind
+// its file key (invisible to the other sources of the link), everything
+// else - and a .global-promoted name whatever its spelling - joins the
+// shared namespace.
+func (n nameScope) linkName(name string) string {
+	if strings.HasPrefix(name, ".L") && !n.globals[name] {
+		return n.file + ":" + name
+	}
+
+	return name
+}
+
 // resolveNames is the name resolver of one record: numeric locals
 // against the section, "." the record itself, PoolSelf the record's pool
 // slot, .set names the source's expressions (cycle-guarded), the rest
-// the unit.
+// the unit (through the source's name scope - the .L locals behind
+// their file key).
 func (s *srcSection) resolveNames(
 	ctx unit.Ctx,
 	base uint64,
 	rec int,
 	addr uint64,
 	poolIdx int,
-	sets map[string]*expr.Expr,
+	scope nameScope,
 ) func(string) (uint64, bool) {
 	visiting := map[string]bool{}
 
@@ -186,7 +210,7 @@ func (s *srcSection) resolveNames(
 			return base + uint64(s.pool[poolIdx].off), true
 		}
 
-		if e, ok := sets[name]; ok {
+		if e, ok := scope.sets[name]; ok {
 			if visiting[name] {
 				return 0, false
 			}
@@ -202,7 +226,7 @@ func (s *srcSection) resolveNames(
 			return uint64(v), true
 		}
 
-		return ctx.Resolve(name)
+		return ctx.Resolve(scope.linkName(name))
 	}
 
 	return resolve
@@ -233,10 +257,22 @@ func (s *srcSection) localAddr(name string, rec int, base uint64) (uint64, bool)
 }
 
 // unitSource is the interpreted source: the sections in first-appearance
-// order and the shared .set expressions.
+// order, the shared .set expressions, the .global-promoted names, and
+// the file key of the .L locals' namespace.
 type unitSource struct {
-	secs []*srcSection
-	sets map[string]*expr.Expr
+	secs    []*srcSection
+	sets    map[string]*expr.Expr
+	file    string
+	globals map[string]bool
+}
+
+// scope is the name environment the source's runs resolve in.
+func (s *unitSource) scope() nameScope {
+	return nameScope{
+		file:    s.file,
+		sets:    s.sets,
+		globals: s.globals,
+	}
 }
 
 // sectionFor is the section of a switch: an existing one by name, a new
@@ -273,7 +309,10 @@ func unitStreamOf(name string) (stream int, nobits bool) {
 // .text materializes lazily - a source opening with another section
 // deposits that one first.
 func buildUnitSource(stmts []statement, be Syntax) (*unitSource, []AsmError) {
-	src := &unitSource{sets: map[string]*expr.Expr{}}
+	src := &unitSource{
+		sets:    map[string]*expr.Expr{},
+		globals: map[string]bool{},
+	}
 	var errs []AsmError
 
 	var sec *srcSection
@@ -415,6 +454,12 @@ func doUnitDirective(
 		}
 
 		return sec
+	case ".global", ".globl":
+		for _, arg := range d.args {
+			src.globals[arg.str] = true
+		}
+
+		return sec
 	}
 
 	if sec == nil {
@@ -508,7 +553,7 @@ func doUnitDirective(
 		})
 	}
 
-	// .global/.type/.size/... - recognized, carry no semantics (v1)
+	// .type/.size/... - recognized, carry no semantics (v1)
 	return sec
 }
 
@@ -575,47 +620,59 @@ func appendIntLE(b []byte, width int, v int64) []byte {
 }
 
 // AssembleUnit assembles a whole .S source into the unit: the named
-// labels join the unit's namespace, the sections deposit as deferred
-// runs - a name the source does not define (a C function called by bl)
-// waits for the program's resolve phase, like every other deferred
-// record. file names the origin in the unit's line map.
+// labels join the unit's namespace (the .L locals behind the file key),
+// the sections deposit as deferred runs - a name the source does not
+// define (a C function called by bl) waits for the program's resolve
+// phase, like every other deferred record. file names the origin in the
+// unit's line map. It is the single-source shorthand of ParseSourceUnit
+// + Deposit + DepositBss (see source_unit.go).
 func AssembleUnit(u *unit.Unit, file, src string, be Syntax) []AsmError {
-	be.ResetOptions()
-	stmts := parseSource([]rune(src), be)
-
-	us, errs := buildUnitSource(stmts, be)
+	su, errs := ParseSourceUnit(file, src, be)
 	if len(errs) > 0 {
 		return errs
 	}
 
-	depositUnit(u, file, us)
+	su.Deposit(u)
+	su.DepositBss(u)
 	return nil
 }
 
-// depositUnit lays the source into the unit: per section (in
-// first-appearance order) the stream is switched, the named labels are
-// defined at their boundaries, the record runs between them deposit as
-// one deferred record each (a NOBITS section reserves instead).
-func depositUnit(u *unit.Unit, file string, src *unitSource) {
+// depositUnit lays the source into the unit, one section class at a
+// time: bss=false deposits the text and data sections (in
+// first-appearance order), bss=true the NOBITS ones. A linker deposits
+// the former of every source first and the latter of all of them after -
+// the unit's data stream carries one bss tail, so the zero-fill reserves
+// of the whole program aggregate at its end. Per section the stream is
+// switched, the named labels are defined at their boundaries through the
+// source's name scope (the .L locals behind their file key), the record
+// runs between them deposit as one deferred record each (a NOBITS
+// section reserves instead).
+func depositUnit(u *unit.Unit, src *unitSource, bss bool) {
+	scope := src.scope()
+
 	for _, sec := range src.secs {
-		if sec.stream == 0 && !sec.nobits {
+		if sec.nobits != bss {
+			continue
+		}
+
+		if sec.stream == 0 {
 			u.Text()
 		} else {
 			u.Data()
 		}
 
 		pos := func(line int) unit.Pos {
-			return unit.NewPos(file, line)
+			return unit.NewPos(src.file, line)
 		}
 
 		bound := 0
 		for _, lbl := range sec.labels {
-			sec.depositSpan(u, src, bound, lbl.rec, pos)
-			u.Label(lbl.name)
+			sec.depositSpan(u, scope, bound, lbl.rec, pos)
+			u.Label(scope.linkName(lbl.name))
 			bound = lbl.rec
 		}
 
-		sec.depositSpan(u, src, bound, len(sec.recs), pos)
+		sec.depositSpan(u, scope, bound, len(sec.recs), pos)
 	}
 }
 
@@ -623,7 +680,7 @@ func depositUnit(u *unit.Unit, file string, src *unitSource) {
 // deferred run, or the NOBITS reserves.
 func (s *srcSection) depositSpan(
 	u *unit.Unit,
-	src *unitSource,
+	scope nameScope,
 	from, to int,
 	pos func(int) unit.Pos,
 ) {
@@ -641,12 +698,12 @@ func (s *srcSection) depositSpan(
 
 	recs := s.recs[from:to]
 	u.Sym(pos(recs[0].line), &srcRun{
-		sec:  s,
-		sets: src.sets,
-		recs: recs,
-		from: from,
-		off:  recs[0].off,
-		size: recs[len(recs)-1].off + recs[len(recs)-1].size - recs[0].off,
+		sec:   s,
+		scope: scope,
+		recs:  recs,
+		from:  from,
+		off:   recs[0].off,
+		size:  recs[len(recs)-1].off + recs[len(recs)-1].size - recs[0].off,
 	})
 }
 

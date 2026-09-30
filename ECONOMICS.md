@@ -152,7 +152,8 @@ unit suite (cat as the spawned child).
 | 09-17 | universal Mach-O writer: arbitrary sections/symbols/bss with generated linkedit (byte-identical legacy), placement policies for prog and asm, streams+La in the DSL, symbolic adrp page fix | 1 | +2,856 | 25 | 1 | — | — | — |
 | 09-18 | arm64 scalar FP: per-op instruction types on the Builder (the one construction API — the asm FP ctors and FP ldr/str route through it), FReg operands, 22 prog twins + D0-D7/S0-S7, llvm-pinned encodings | 1 | +1,853 | 36 | 1 | — | — | — |
 | 09-18 | arm64 SIMD decomposition: the op-stringed Simd2/3/Shift/Widen/CopyGPR/DupElem/V1arr/ByElem families replaced by ~60 per-op types + VReg, asm ctors through the Builder, 60 prog twins (parity 119→179), llvm-pinned encodings fix the by-element table, shifts, rbit, ins and tbl | 1 | +4,988 | 86 | 1 | — | — | — |
-| **total** | | **33** | **135,513** | **1,529** | **155** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-30 | in-memory linker (library): the link/ driver over asm.SourceUnit (parse → deposit text+data of all → bss of all → resolve), .L locals namespaced per file, .global promoted, Unit.Label dup-error, bss aggregated as the single tail, link/arm64 Macho/ELF twins, the link==monolithic property, macho+elf native-exec gates | 1 | +1,101 | 14 | 1 | — | — | — |
+| **total** | | **34** | **136,614** | **1,543** | **156** | **~11,135** | **~2.64B** | **~8.08M** |
 
 ### Cost
 

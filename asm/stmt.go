@@ -68,6 +68,7 @@ const (
 	argsExprs                         // comma-separated expression list
 	argsOneExpr                       // exactly one expression
 	argsStrs                          // comma-separated string list
+	argsSyms                          // comma-separated symbol list (.global)
 	argsSymExpr                       // symbol, comma, expression (.set)
 	argsSymRest                       // symbol, the rest of the line is ignored (.type/.size)
 	argsSecName                       // section name, then ignored quoted flags [.section]
@@ -86,7 +87,7 @@ var directives = map[string]dirArgsKind{
 	".align": argsOneExpr, ".p2align": argsOneExpr, ".balign": argsOneExpr,
 	".string": argsStrs, ".asciz": argsStrs, ".ascii": argsStrs,
 	".incbin": argsIncbin,
-	".global": argsRestIgnore, ".globl": argsRestIgnore, ".local": argsRestIgnore,
+	".global": argsSyms, ".globl": argsSyms, ".local": argsRestIgnore,
 	".set": argsSymExpr, ".equ": argsSymExpr,
 	".type": argsSymRest, ".size": argsSymRest,
 	".section": argsSecName,
@@ -224,6 +225,35 @@ func (g *lineGrammar) parseArgs(
 		return g.exprList(buf, kind == argsOneExpr)
 	case argsStrs:
 		return g.strList(buf)
+	case argsSyms:
+		// a comma-separated symbol list; the line may continue past the
+		// statement separator after it (.global _start ; _start: ret)
+		expr.SkipSpaces(buf)
+		out := []dirArg{}
+
+		for {
+			sym, err := g.parseIdent(parsec.Stateless{}, buf)
+			if err != nil {
+				return nil, err
+			}
+
+			out = append(out, newDirArg(nil, sym, false))
+
+			save := buf.Position()
+			expr.SkipSpaces(buf)
+			if _, cerr := g.parseComma(parsec.Stateless{}, buf); cerr != nil {
+				if rerr := expr.Rewind(buf, save); rerr != nil {
+					return nil, rerr
+				}
+
+				break
+			}
+
+			expr.SkipSpaces(buf)
+		}
+
+		g.skipStmtBody(buf)
+		return out, nil
 	case argsSymExpr:
 		expr.SkipSpaces(buf)
 		sym, err := g.parseIdent(parsec.Stateless{}, buf)
