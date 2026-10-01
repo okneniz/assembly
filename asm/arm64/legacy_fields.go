@@ -404,6 +404,10 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 			imm6 = amt
 		}
 
+		if sh != "lsl" && sh != "lsr" && sh != "asr" {
+			return nil, fmt.Errorf("%s is not allowed for add/sub (only lsl/lsr/asr)", sh)
+		}
+
 		switch len(in.ops) - boolToInt(hasShift) {
 		case 2:
 			switch in.mnem {
@@ -799,17 +803,19 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 						}
 					}
 				} else {
-					// mov Rd, #negative → MOVN: val = ~(imm16 << 16hw)
+					// mov Rd, #negative → MOVN: x = -imm is imm16<<16hw + 1
+					// (x ≡ 1 mod the lane); hw 2/3 exist only in the
+					// 64-bit form.
 					x := uint64(-imm)
 					switch {
 					case x <= 0x10000 && x > 0:
 						hw, imm = 0, int64(x-1)
-					case x <= 0x100000000 && x%0x10000 == 0:
-						hw, imm = 1, int64(x/0x10000-1)
-					case x <= 0x1000000000000 && x%0x100000000 == 0:
-						hw, imm = 2, int64(x/0x100000000-1)
-					case x%0x1000000000000 == 0:
-						hw, imm = 3, int64(x/0x1000000000000-1)
+					case x <= 0xffff0001 && x%0x10000 == 1:
+						hw, imm = 1, int64((x-1)/0x10000)
+					case rd[0] == 'x' && x <= 0xffff00000001 && x%0x100000000 == 1:
+						hw, imm = 2, int64((x-1)/0x100000000)
+					case rd[0] == 'x' && x <= 0xffff000000000001 && x%0x1000000000000 == 1:
+						hw, imm = 3, int64((x-1)/0x1000000000000)
 					default:
 						return nil, fmt.Errorf("immediate %#x not movn-encodable", imm)
 					}

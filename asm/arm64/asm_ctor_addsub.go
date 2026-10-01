@@ -105,6 +105,12 @@ func addSubThird(ops []vOp, base string, rdN, rnN uint32, idx int) (Instr, error
 
 // makeImmStruct/makeShiftStruct/makeExtStruct — struct assembly by the base name.
 func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) (Instr, error) {
+	if rd == 31 && (base == "adds" || base == "subs") {
+		// the S-forms read rd 31 as zr (the cmp/cmn shape); the number
+		// shims spell it sp — the typed constructors take the class.
+		return sFlagImm(base, rn, imm12, sh, isf)
+	}
+
 	switch base {
 	case "adds":
 		return AddsImmOf(rd, rn, imm12, sh, isf)
@@ -115,6 +121,36 @@ func makeImmStruct(base string, rd, rn, imm12 uint32, sh, isf bool) (Instr, erro
 	default:
 		return AddImmOf(rd, rn, imm12, sh, isf)
 	}
+}
+
+// sFlagImm — the S-form immediate with rd 31: adds/subs of the alias
+// forms cmp/cmn (rd = zr).
+func sFlagImm(base string, rn, imm12 uint32, sh, isf bool) (Instr, error) {
+	rdR, err := arch.RegOf(addSubRegName(31, isf, true))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", base, err)
+	}
+
+	rnR, err := arch.RegOf(addSubRegName(rn, isf, false))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", base, err)
+	}
+
+	imm, err := arch.New().Imm12(int64(imm12))
+	if err != nil {
+		return nil, fmt.Errorf("%s: %w", base, err)
+	}
+
+	sh12 := arch.NoSh12
+	if sh {
+		sh12 = arch.LSL12
+	}
+
+	if base == "adds" {
+		return arch.New().AddsImm(rdR, rnR, imm, sh12)
+	}
+
+	return arch.New().SubsImm(rdR, rnR, imm, sh12)
 }
 
 func makeShiftStruct(

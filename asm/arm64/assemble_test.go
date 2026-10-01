@@ -53,6 +53,18 @@ func TestArmAssembleWords(t *testing.T) {
 			0xd2800020,
 		},
 		{
+			"lsl x0, x0, #1",
+			0xd37ff800,
+		},
+		{
+			"lsl x0, x0, #57",
+			0xd3471800,
+		},
+		{
+			"lsl w0, w0, #17",
+			0x530f3800,
+		},
+		{
 			"movz x0, #0x1234",
 			0xd2824680,
 		},

@@ -198,21 +198,23 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 		return nil, fmt.Errorf("mov: %#x not encodable", v)
 	}
 
-	// negatives: MOVN = ~(imm16 << 16hw); x = -imm picks hw.
+	// negatives: MOVN = ~(imm16 << 16hw), so x = -v is imm16<<16hw + 1
+	// (x ≡ 1 mod the lane); hw 2/3 exist only in the 64-bit form.
 	x := uint64(-v)
 	switch {
 	case x <= 0x10000:
 		return arch.MovnOf(rd, uint32(x-1), 0)
-	case x <= 0x100000000 && x%0x10000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x10000-1), 1)
-	case x <= 0x1000000000000 && x%0x100000000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x100000000-1), 2)
-	case x%0x1000000000000 == 0:
-		return arch.MovnOf(rd, uint32(x/0x1000000000000), 3)
+	case x <= 0xffff0001 && x%0x10000 == 1:
+		return arch.MovnOf(rd, uint32((x-1)/0x10000), 1)
+	case x <= 0xffff00000001 && x%0x100000000 == 1:
+		return arch.MovnOf(rd, uint32((x-1)/0x100000000), 2)
+	case x <= 0xffff000000000001 && x%0x1000000000000 == 1:
+		return arch.MovnOf(rd, uint32((x-1)/0x1000000000000), 3)
 	}
 
-	// a negative not MOVN-encodable - an ORR bitmask (the xzr form of mov)
-	if n, immr, imms, ok := arch.EncodeBitMasks(is64, ^x); ok {
+	// a negative not MOVN-encodable - an ORR bitmask (the xzr form of mov);
+	// v as unsigned is ^(x-1).
+	if n, immr, imms, ok := arch.EncodeBitMasks(is64, ^(x - 1)); ok {
 		return arch.OrrImmOf(rd, arch.ZeroReg(rd), immr, imms, n == 1, is64)
 	}
 

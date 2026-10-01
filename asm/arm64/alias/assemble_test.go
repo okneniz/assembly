@@ -50,10 +50,36 @@ func TestAliasWords(t *testing.T) {
 			"mul x0, x1, x2",
 			0x9b027c20,
 		}, // madd x0, x1, x2, xzr
+		{
+			"mov x6, #-0x66660001",
+			0x92acccc6,
+		}, // movn x6, #0x6666, lsl #16
+		{
+			"mov x0, #-0x123400000001",
+			0x92c24680,
+		}, // movn x0, #0x1234, lsl #32
+		{
+			"mov w0, #-0x12340001",
+			0x12a24680,
+		}, // movn w0, #0x1234, lsl #16
 	}
 	for _, c := range cases {
 		got := assembleOne(t, c.src, 0)
 		require.Equal(t, c.word, got, "case %q", c.src)
+	}
+}
+
+// TestMovNegImmRefusal — the mov #imm negatives that no single
+// instruction encodes (not MOVN-shaped, not a logical immediate) are
+// refused, and the 64-bit-only lanes never reach a W form.
+func TestMovNegImmRefusal(t *testing.T) {
+	for _, src := range []string{
+		"mov x6, #-0x66660000",  // not ~(imm16 << 16hw)
+		"mov w0, #-0x100000001", // hw>=2 in a W form
+	} {
+		res, errs := asm.Assemble(src, 0, NewASMBackend())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+		require.Empty(t, res.Sections, "case %q", src)
 	}
 }
 

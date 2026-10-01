@@ -15,7 +15,8 @@ import (
 )
 
 // makeUbfmLSL — the UBFM encoding of lsl rd, rn, #sh: immr = -sh mod
-// regsize, imms = regsize-1 (scalable width).
+// regsize, imms = regsize-1-sh (the moved-up width; imms = regsize-1
+// would be the LSR shape).
 func makeUbfmLSL(rd, rn string, sh uint32, isf bool) (arch.Ubfm, bool) {
 	regsize := uint32(64)
 	if !isf {
@@ -26,7 +27,7 @@ func makeUbfmLSL(rd, rn string, sh uint32, isf bool) (arch.Ubfm, bool) {
 		return arch.Ubfm{}, false
 	}
 
-	u, err := UbfmOfC(rd, rn, (regsize-sh)%regsize, regsize-1, isf)
+	u, err := UbfmOfC(rd, rn, (regsize-sh)%regsize, regsize-1-sh, isf)
 	if err != nil {
 		return arch.Ubfm{}, false
 	}

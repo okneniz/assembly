@@ -22,6 +22,7 @@ import (
 
 	"github.com/okneniz/assembly/arb"
 	a64 "github.com/okneniz/assembly/arb/arm64"
+	acmp "github.com/okneniz/assembly/arb/arm64/alias"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/asm/arm64/alias"
 	"github.com/okneniz/assembly/disasm"
@@ -211,6 +212,31 @@ func TestPropertySingleInstrRoundTrip(t *testing.T) {
 		newPropFamily("SubShift", a64.SubShift),
 		newPropFamily("Ldr", a64.Ldr),
 		newPropFamily("Str", a64.Str),
+		newPropFamily("Nop", a64.Nop),
+		newPropFamily("Isb", a64.Isb),
+		newPropFamily("Dsb", a64.Dsb),
+		newPropFamily("Dmb", a64.Dmb),
+		newPropFamily("Smc", a64.Smc),
+		newPropFamily("Br", a64.Br),
+		newPropFamily("Blr", a64.Blr),
+		newPropFamily("Movn", a64.Movn),
+		newPropFamily("Adc", a64.Adc),
+		newPropFamily("Smulh", a64.Smulh),
+		newPropFamily("Umulh", a64.Umulh),
+		newPropFamily("Rev", a64.Rev),
+		newPropFamily("Rev16", a64.Rev16),
+		newPropFamily("Rev32", a64.Rev32),
+		newPropFamily("Cls", a64.Cls),
+		newPropFamily("Clz", a64.Clz),
+		newPropFamily("Rbit", a64.Rbit),
+		newPropFamily("Sdiv", a64.Sdiv),
+		newPropFamily("Udiv", a64.Udiv),
+		newPropFamily("LslReg", a64.LslReg),
+		newPropFamily("LsrReg", a64.LsrReg),
+		newPropFamily("AsrReg", a64.AsrReg),
+		newPropFamily("RorReg", a64.RorReg),
+		newPropFamily("Mrs", a64.Mrs),
+		newPropFamily("Msr", a64.Msr),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
@@ -219,62 +245,34 @@ func TestPropertySingleInstrRoundTrip(t *testing.T) {
 	}
 }
 
-// newAliasFamily - like newPropFamily, but the parameters are first pinned
-// (alias condition: a specific register/immediate under which the instruction
-// is written as an alias). Combinations that are invalid after pinning (the
-// constructor refused) are outside the property.
-func newAliasFamily[P instrParam](
-	name string,
-	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
-	pin func(P) P,
-) propFamilyEntry {
-	return propFamilyEntry{
-		name: name,
-		run: func(t *testing.T, rnd *mrnd.Rand) {
-			t.Helper()
-			pinned := func(p P) (arm64.Instr, bool) {
-				q := pin(p)
-				if q.Instr() == nil {
-					return nil, false
-				}
-
-				return q.Instr(), true
-			}
-
-			t.Run("bytes", func(t *testing.T) {
-				ohsnap.Check(t, 100000, mk(rnd), func(p P) bool {
-					if in, ok := pinned(p); ok {
-						return propBytesRoundTrip(t, in)
-					}
-
-					return true
-				})
-			})
-
-			t.Run("text", func(t *testing.T) {
-				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
-					if in, ok := pinned(p); ok {
-						return propTextRoundTrip(t, in)
-					}
-
-					return true
-				}, ohsnap.CheckOptions{Budget: textShrinkBudget})
-			})
-		},
-	}
-}
-
-// TestPropertyAliasRoundTrip - the "alias" property: an instruction written
-// as an alias survives the cycle struct → alias → struct without loss - the
-// alias text assembles and decodes back into the same instruction (each entry
-// is its own subtest). mov is covered by the Movz family: a struct movz always
-// renders as "mov #imm".
+// TestPropertyAliasRoundTrip - the "alias" property: the alias families
+// of arb/arm64/alias - the parameters render the alias text, it assembles
+// into the base instruction, and the round trips hold (each entry is its
+// own subtest). mov is covered both ways: the Movz family renders the
+// canonical mov #imm, the alias family walks the alias operand space.
 func TestPropertyAliasRoundTrip(t *testing.T) {
 	families := []propFamilyEntry{
-		newAliasFamily("neg", a64.SubShift, func(p a64.SubShiftParams) a64.SubShiftParams {
-			p.Rn = arm64.XZR
-			return p
-		}),
+		newPropFamily("Cmp", acmp.Cmp),
+		newPropFamily("Cmn", acmp.Cmn),
+		newPropFamily("Neg", acmp.Neg),
+		newPropFamily("Negs", acmp.Negs),
+		newPropFamily("Tst", acmp.Tst),
+		newPropFamily("Mvn", acmp.Mvn),
+		newPropFamily("Mov", acmp.Mov),
+		newPropFamily("Mul", acmp.Mul),
+		newPropFamily("Mneg", acmp.Mneg),
+		newPropFamily("Cset", acmp.Cset),
+		newPropFamily("Csetm", acmp.Csetm),
+		newPropFamily("Cinc", acmp.Cinc),
+		newPropFamily("Cinv", acmp.Cinv),
+		newPropFamily("Cneg", acmp.Cneg),
+		newPropFamily("Sxtb", acmp.Sxtb),
+		newPropFamily("Sxth", acmp.Sxth),
+		newPropFamily("Sxtw", acmp.Sxtw),
+		newPropFamily("Ubfiz", acmp.Ubfiz),
+		newPropFamily("Ubfx", acmp.Ubfx),
+		newPropFamily("Sbfiz", acmp.Sbfiz),
+		newPropFamily("Sbfx", acmp.Sbfx),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
@@ -306,6 +304,31 @@ func propFamilies(rnd *mrnd.Rand) []func() arm64.Instr {
 		instrOf(a64.SubShift(rnd)),
 		instrOf(a64.Ldr(rnd)),
 		instrOf(a64.Str(rnd)),
+		instrOf(a64.Nop(rnd)),
+		instrOf(a64.Isb(rnd)),
+		instrOf(a64.Dsb(rnd)),
+		instrOf(a64.Dmb(rnd)),
+		instrOf(a64.Smc(rnd)),
+		instrOf(a64.Br(rnd)),
+		instrOf(a64.Blr(rnd)),
+		instrOf(a64.Movn(rnd)),
+		instrOf(a64.Adc(rnd)),
+		instrOf(a64.Smulh(rnd)),
+		instrOf(a64.Umulh(rnd)),
+		instrOf(a64.Rev(rnd)),
+		instrOf(a64.Rev16(rnd)),
+		instrOf(a64.Rev32(rnd)),
+		instrOf(a64.Cls(rnd)),
+		instrOf(a64.Clz(rnd)),
+		instrOf(a64.Rbit(rnd)),
+		instrOf(a64.Sdiv(rnd)),
+		instrOf(a64.Udiv(rnd)),
+		instrOf(a64.LslReg(rnd)),
+		instrOf(a64.LsrReg(rnd)),
+		instrOf(a64.AsrReg(rnd)),
+		instrOf(a64.RorReg(rnd)),
+		instrOf(a64.Mrs(rnd)),
+		instrOf(a64.Msr(rnd)),
 	}
 }
 

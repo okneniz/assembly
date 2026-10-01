@@ -33,6 +33,19 @@ func Reg(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Reg] {
 	return newRegArb(rnd)
 }
 
+// GenReg — a register of the given width for the dependent generation of
+// instruction families (several positions of one instruction share the
+// width); the exposed face of genReg for the subpackages (alias).
+func GenReg(rnd *rand.Rand, is64 bool, spOK, zrOK bool) arm64.Reg {
+	return genReg(rnd, is64, spOK, zrOK)
+}
+
+// RegShrunk — the shrink candidates of a register; the exposed face of
+// regShrunk for the subpackages (alias).
+func RegShrunk(r arm64.Reg) []arm64.Reg {
+	return regShrunk(r)
+}
+
 func (a regArb) Generate() iter.Seq[arm64.Reg] {
 	return arb.Stream(func() arm64.Reg {
 		return genReg(a.rnd, a.rnd.IntN(2) == 1, true, true)

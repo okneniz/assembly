@@ -176,6 +176,40 @@ func TestEnumGen(t *testing.T) {
 	require.Equal(t, arm64.NoSh12, sh12s[0], "Sh12.Shrink(LSL12) = %v", sh12s)
 }
 
+// TestBarrierDomainGen — domains from the eight spellings, shrink to Sy.
+func TestBarrierDomainGen(t *testing.T) {
+	rnd := arb.Rnd(42)
+	ohsnap.Check(t, 200, BarrierDomain(rnd), func(d arm64.BarrierDomain) bool {
+		return d >= arm64.Oshst && d <= arm64.Sy
+	})
+
+	domains := slices.Collect(BarrierDomain(arb.Rnd(1)).Shrink(arm64.Ish))
+	require.Len(t, domains, 1, "BarrierDomain.Shrink(Ish) = %v", domains)
+	require.Equal(t, arm64.Sy, domains[0], "BarrierDomain.Shrink(Ish) = %v", domains)
+}
+
+// TestSysregGen — every sample is a name of the arch table; the sorted
+// order makes both the generation and the shrink target deterministic.
+func TestSysregGen(t *testing.T) {
+	names := sysregNamesSorted()
+	require.NotEmpty(t, names, "the sysreg table is empty")
+	require.True(t, slices.IsSorted(names), "sysregNamesSorted() is not sorted")
+
+	valid := map[string]bool{}
+	for _, name := range arm64.SysregNames() {
+		valid[name] = true
+	}
+
+	rnd := arb.Rnd(42)
+	ohsnap.Check(t, 300, Sysreg(rnd), func(name string) bool {
+		return valid[name]
+	})
+
+	shrunk := slices.Collect(Sysreg(arb.Rnd(1)).Shrink(names[len(names)-1]))
+	require.Len(t, shrunk, 1, "Sysreg.Shrink(last) = %v", shrunk)
+	require.Equal(t, names[0], shrunk[0], "Sysreg.Shrink(last) = %v", shrunk)
+}
+
 // TestOffGen — aligned offsets, shrinking preserves alignment.
 func TestOffGen(t *testing.T) {
 	rnd := arb.Rnd(42)
@@ -238,6 +272,81 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("Str", func() arm64.Instr {
 			return ohsnap.First(Str(rnd).Generate()).Instr()
 		}),
+		newInstrCase("Nop", func() arm64.Instr {
+			return ohsnap.First(Nop(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Isb", func() arm64.Instr {
+			return ohsnap.First(Isb(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Dsb", func() arm64.Instr {
+			return ohsnap.First(Dsb(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Dmb", func() arm64.Instr {
+			return ohsnap.First(Dmb(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Smc", func() arm64.Instr {
+			return ohsnap.First(Smc(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Br", func() arm64.Instr {
+			return ohsnap.First(Br(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Blr", func() arm64.Instr {
+			return ohsnap.First(Blr(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Movn", func() arm64.Instr {
+			return ohsnap.First(Movn(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Adc", func() arm64.Instr {
+			return ohsnap.First(Adc(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Smulh", func() arm64.Instr {
+			return ohsnap.First(Smulh(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Umulh", func() arm64.Instr {
+			return ohsnap.First(Umulh(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Rev", func() arm64.Instr {
+			return ohsnap.First(Rev(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Rev16", func() arm64.Instr {
+			return ohsnap.First(Rev16(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Rev32", func() arm64.Instr {
+			return ohsnap.First(Rev32(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Cls", func() arm64.Instr {
+			return ohsnap.First(Cls(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Clz", func() arm64.Instr {
+			return ohsnap.First(Clz(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Rbit", func() arm64.Instr {
+			return ohsnap.First(Rbit(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Sdiv", func() arm64.Instr {
+			return ohsnap.First(Sdiv(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Udiv", func() arm64.Instr {
+			return ohsnap.First(Udiv(rnd).Generate()).Instr()
+		}),
+		newInstrCase("LslReg", func() arm64.Instr {
+			return ohsnap.First(LslReg(rnd).Generate()).Instr()
+		}),
+		newInstrCase("LsrReg", func() arm64.Instr {
+			return ohsnap.First(LsrReg(rnd).Generate()).Instr()
+		}),
+		newInstrCase("AsrReg", func() arm64.Instr {
+			return ohsnap.First(AsrReg(rnd).Generate()).Instr()
+		}),
+		newInstrCase("RorReg", func() arm64.Instr {
+			return ohsnap.First(RorReg(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Mrs", func() arm64.Instr {
+			return ohsnap.First(Mrs(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Msr", func() arm64.Instr {
+			return ohsnap.First(Msr(rnd).Generate()).Instr()
+		}),
 	}
 }
 
@@ -268,7 +377,7 @@ func TestInstrGenText(t *testing.T) {
 // (component-wise shrinking does not break contextual invariants).
 func TestInstrGenShrinkValid(t *testing.T) {
 	rnd := arb.Rnd(9)
-	// Movz/Movk: shrinking a W-form never leaves hw>=2.
+	// Movz/Movk/Movn: shrinking a W-form never leaves hw>=2.
 	movz := Movz(rnd)
 	for range 200 {
 		p := ohsnap.First(movz.Generate())
@@ -283,12 +392,42 @@ func TestInstrGenShrinkValid(t *testing.T) {
 		}
 	}
 
+	movn := Movn(rnd)
+	for range 200 {
+		p := ohsnap.First(movn.Generate())
+		for s := range movn.Shrink(p) {
+			require.True(
+				t,
+				s.Rd.Is64() || s.Hw <= arm64.Hw1,
+				"shrink broke the invariant: %s",
+				s,
+			)
+			s.Instr()
+		}
+	}
+
 	// AddImm: the width of rd/rn matches after shrinking.
 	add := AddImm(rnd)
 	for range 200 {
 		p := ohsnap.First(add.Generate())
 		for s := range add.Shrink(p) {
 			require.Equal(t, s.Rd.Is64(), s.Rn.Is64(), "shrink broke the width: %s", s)
+			s.Instr()
+		}
+	}
+
+	// Sdiv: the width of rd/rn/rm matches after shrinking.
+	sdiv := Sdiv(rnd)
+	for range 200 {
+		p := ohsnap.First(sdiv.Generate())
+		for s := range sdiv.Shrink(p) {
+			require.Equal(
+				t,
+				s.Rd.Is64(),
+				s.Rn.Is64() && s.Rm.Is64(),
+				"shrink broke the width: %s",
+				s,
+			)
 			s.Instr()
 		}
 	}
