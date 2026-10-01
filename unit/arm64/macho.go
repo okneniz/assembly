@@ -51,9 +51,15 @@ func MachoOf(f *unit.Fixed, entry string) (*file.MachOImage, error) {
 		))
 	}
 
+	// the bss tail sits at the unaligned data end, align 1: the unit's
+	// memory accounting does not align the reserves, and a higher align
+	// would open a hole between the sections that the resolve-time
+	// placement never saw (a bss label then lands in no section). The
+	// section count itself is placement - the resolve and the writer
+	// must build the same image.
 	if tail := f.DataMem - len(data); tail > 0 {
 		sections = append(sections, file.NewMachOSection(
-			"__DATA", "__bss", nil, tail, 8,
+			"__DATA", "__bss", nil, tail, 1,
 		))
 	}
 

@@ -33,9 +33,11 @@ func (b *Binary) MachO(entry string) (*file.MachOImage, error) {
 		))
 	}
 
+	// the bss tail sits at the unaligned data end, align 1 (see
+	// unit/arm64.MachoOf - the placement must not open a hole)
 	if tail := res.DataMem - len(res.Data); tail > 0 {
 		sections = append(sections, file.NewMachOSection(
-			"__DATA", "__bss", nil, tail, 8,
+			"__DATA", "__bss", nil, tail, 1,
 		))
 	}
 
