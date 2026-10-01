@@ -347,6 +347,30 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("Msr", func() arm64.Instr {
 			return ohsnap.First(Msr(rnd).Generate()).Instr()
 		}),
+		newInstrCase("B", func() arm64.Instr {
+			return ohsnap.First(B(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Bl", func() arm64.Instr {
+			return ohsnap.First(Bl(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Bcond", func() arm64.Instr {
+			return ohsnap.First(Bcond(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Cbz", func() arm64.Instr {
+			return ohsnap.First(Cbz(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Cbnz", func() arm64.Instr {
+			return ohsnap.First(Cbnz(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Tbz", func() arm64.Instr {
+			return ohsnap.First(Tbz(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Adr", func() arm64.Instr {
+			return ohsnap.First(Adr(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Adrp", func() arm64.Instr {
+			return ohsnap.First(Adrp(rnd).Generate()).Instr()
+		}),
 	}
 }
 

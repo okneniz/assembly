@@ -413,7 +413,7 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 // TestPropertyRiscvDecodeRobustness - arbitrary bytes do not crash the decoder.
 func TestPropertyRiscvDecodeRobustness(t *testing.T) {
 	rnd := seedRnd(t)
-	ohsnap.Check(t, 100000, arb.Word(rnd), func(w uint32) bool {
+	ohsnap.CheckWith(t, 100000, arb.Word(rnd), func(w uint32) bool {
 		ok := true
 		func() {
 			defer func() {
@@ -444,7 +444,7 @@ func TestPropertyRiscvDecodeRobustness(t *testing.T) {
 			// not required to parse entirely; the requirement is not to crash
 		}()
 		return ok
-	})
+	}, ohsnap.CheckOptions{ProgressEvery: checkProgressEvery, LogShrinkSteps: true})
 }
 
 // TestPropertyRiscvVsObjdump - the differential: words produced by the riscv

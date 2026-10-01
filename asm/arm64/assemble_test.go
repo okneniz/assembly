@@ -228,6 +228,14 @@ func TestArmBranchAndMem(t *testing.T) {
 	// bl 0x2000 @ 0x1000
 	got = armAssembleOne(t, "bl 0x2000", 0x1000)
 	require.Equal(t, uint32(0x94000400), got, "bl")
+	// b.eq with a negative absolute target (base 0): the two's complement
+	// spelling must decode back into b.eq, not fall away to the plain b
+	// word of the self-verify fallback
+	got = armAssembleOne(t, "b.eq 0xfffffffffff80004", 0)
+	require.Equal(t, uint32(0x54c00020), got, "b.eq negative target")
+	// cbz with the same shape
+	got = armAssembleOne(t, "cbz x0, 0xfffffffffff80004", 0)
+	require.Equal(t, uint32(0xb4c00020), got, "cbz negative target")
 	// ldr x0, [x1]
 	got = armAssembleOne(t, "ldr x0, [x1]", 0)
 	require.Equal(t, uint32(0xf9400020), got, "ldr x0,[x1]")

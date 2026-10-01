@@ -121,9 +121,12 @@ func immNum(v int64) imm {
 	return imm{val: v}
 }
 
-// textHex — 0x%x output (for ObjDump of decoded instructions).
+// textHex — the absolute address as hex (for ObjDump of branch targets);
+// unsigned: the address is a two's complement 64-bit value (a negative
+// offset over base 0 prints as 0xffff...c0, the spelling the text layer
+// parses back).
 func (m imm) textHex() string {
-	return fmt.Sprintf("0x%x", m.val)
+	return fmt.Sprintf("0x%x", uint64(m.val))
 }
 
 // Schema — a decode-table entry: mask/value for selecting the encoding plus

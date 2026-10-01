@@ -35,6 +35,11 @@ func propText(in arm64.Instr) string {
 	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
 }
 
+// propTextAt - propText in the context of an explicit base address.
+func propTextAt(in arm64.Instr, base uint64) string {
+	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(base))))
+}
+
 // bytesOf - instruction bytes (Encode encoding).
 func bytesOf(t *testing.T, in arm64.Instr) ([]byte, bool) {
 	t.Helper()
@@ -88,6 +93,19 @@ func assemblesTo(t *testing.T, src string) ([]byte, bool) {
 	return res.Sections[0].Data, true
 }
 
+// assemblesToAt - assemblesTo at an explicit base: the pc-relative texts
+// carry absolute targets, so the base must match the render context.
+func assemblesToAt(t *testing.T, src string, base uint64) ([]byte, bool) {
+	t.Helper()
+	res, errs := alias.Assemble(src, base)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble@%#x: %v", src, base, errs)
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
 // propBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
 // (RoundTrip) in the encoding context propAddr without symbols - bytes are
 // stable after the round trip.
@@ -121,13 +139,22 @@ func propBytesRoundTrip(t *testing.T, in arm64.Instr) bool {
 // decodes back into the same text.
 func propTextRoundTrip(t *testing.T, in arm64.Instr) bool {
 	t.Helper()
+	return propTextRoundTripAt(t, in, 0)
+}
+
+// propTextRoundTripAt - the text law at an explicit base: the text renders
+// from ViewCtxAt(base) (pc-relative operands print absolute targets of that
+// base) and assembles back at the same base. Base 0 is the DefaultViewCtx
+// render; propAddr is the historic assembly base - both must hold.
+func propTextRoundTripAt(t *testing.T, in arm64.Instr, base uint64) bool {
+	t.Helper()
 	return RoundTrip[disasm.ViewCtx, arm64.Instr, string](
-		disasm.DefaultViewCtx(),
+		disasm.ViewCtxAt(base),
 		func(_ disasm.ViewCtx, x arm64.Instr) (string, bool) {
-			return propText(x), true
+			return propTextAt(x, base), true
 		},
 		func(_ disasm.ViewCtx, src string) (arm64.Instr, bool) {
-			data, ok := assemblesTo(t, src)
+			data, ok := assemblesToAt(t, src, base)
 			if !ok {
 				return nil, false
 			}
@@ -161,6 +188,20 @@ type instrParam interface {
 // 1000 keeps a full minimization and cuts the pathological ones.
 const textShrinkBudget = 1000
 
+// checkProgressEvery - a progress message every N passed cases: a long
+// property run confirms being alive in the log (visible with go test -v).
+const checkProgressEvery = 10000
+
+// checkOpts - the common options of the suite's property checks: progress
+// lines and the accepted shrinking steps in the log.
+func checkOpts(budget int) ohsnap.CheckOptions {
+	return ohsnap.CheckOptions{
+		Budget:         budget,
+		ProgressEvery:  checkProgressEvery,
+		LogShrinkSteps: true,
+	}
+}
+
 // propFamilyEntry - one family in the TestPropertySingleInstrRoundTrip table.
 type propFamilyEntry struct {
 	name string
@@ -184,15 +225,20 @@ func newPropFamily[P instrParam](
 			t.Helper()
 
 			t.Run("bytes", func(t *testing.T) {
-				ohsnap.Check(t, 100000, mk(rnd), func(p P) bool {
+				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
 					return propBytesRoundTrip(t, p.Instr())
-				})
+				}, checkOpts(0))
 			})
 
 			t.Run("text", func(t *testing.T) {
-				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
-					return propTextRoundTrip(t, p.Instr())
-				}, ohsnap.CheckOptions{Budget: textShrinkBudget})
+				// both bases: 0 (the DefaultViewCtx render) and propAddr -
+				// the pc-relative texts carry absolute targets, the base
+				// shift must not break the law anywhere.
+				for _, base := range []uint64{0, propAddr} {
+					ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
+						return propTextRoundTripAt(t, p.Instr(), base)
+					}, checkOpts(textShrinkBudget))
+				}
 			})
 		},
 	}
@@ -237,6 +283,14 @@ func TestPropertySingleInstrRoundTrip(t *testing.T) {
 		newPropFamily("RorReg", a64.RorReg),
 		newPropFamily("Mrs", a64.Mrs),
 		newPropFamily("Msr", a64.Msr),
+		newPropFamily("B", a64.B),
+		newPropFamily("Bl", a64.Bl),
+		newPropFamily("Bcond", a64.Bcond),
+		newPropFamily("Cbz", a64.Cbz),
+		newPropFamily("Cbnz", a64.Cbnz),
+		newPropFamily("Tbz", a64.Tbz),
+		newPropFamily("Adr", a64.Adr),
+		newPropFamily("Adrp", a64.Adrp),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
@@ -329,6 +383,14 @@ func propFamilies(rnd *mrnd.Rand) []func() arm64.Instr {
 		instrOf(a64.RorReg(rnd)),
 		instrOf(a64.Mrs(rnd)),
 		instrOf(a64.Msr(rnd)),
+		instrOf(a64.B(rnd)),
+		instrOf(a64.Bl(rnd)),
+		instrOf(a64.Bcond(rnd)),
+		instrOf(a64.Cbz(rnd)),
+		instrOf(a64.Cbnz(rnd)),
+		instrOf(a64.Tbz(rnd)),
+		instrOf(a64.Adr(rnd)),
+		instrOf(a64.Adrp(rnd)),
 	}
 }
 
@@ -339,7 +401,7 @@ func TestPropertyBytesRoundTripList(t *testing.T) {
 	rnd := seedRnd(t)
 	seq := arb.Seq(rnd, propFamilies(rnd))
 
-	ohsnap.Check(t, 100000, seq, func(ins []arm64.Instr) bool {
+	ohsnap.CheckWith(t, 100000, seq, func(ins []arm64.Instr) bool {
 		raw, ok := a64EncodeAll(t, ins)
 		if !ok {
 			return false
@@ -371,8 +433,9 @@ func TestPropertyBytesRoundTripList(t *testing.T) {
 		}
 
 		return true
-	})
+	}, checkOpts(0))
 }
+
 
 // TestPropertyTextRoundTripList - the "text" property for a list of
 // instructions: the joined objdump text of the list assembles and decodes
@@ -381,10 +444,13 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 	rnd := seedRnd(t)
 	seq := arb.Seq(rnd, propFamilies(rnd))
 
-	ohsnap.Check(t, 100000, seq, func(ins []arm64.Instr) bool {
+	ohsnap.CheckWith(t, 100000, seq, func(ins []arm64.Instr) bool {
 		texts := make([]string, len(ins))
 		for i, in := range ins {
-			texts[i] = propText(in)
+			// the text renders at the instruction's own address in the
+			// list (pc-relative targets print absolute) - the joined text
+			// assembles at propAddr, the same base the render used.
+			texts[i] = propTextAt(in, propAddr+uint64(4*i))
 		}
 
 		data, ok := assemblesTo(t, strings.Join(texts, "\n"))
@@ -404,15 +470,16 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 		}
 
 		for i := range back {
-			if propText(back[i]) != texts[i] {
-				t.Logf("[%d] text %q ≠ %q", i, propText(back[i]), texts[i])
+			if propTextAt(back[i], propAddr+uint64(4*i)) != texts[i] {
+				t.Logf("[%d] text %q ≠ %q", i, propTextAt(back[i], propAddr+uint64(4*i)), texts[i])
 				return false
 			}
 		}
 
 		return true
-	})
+	}, checkOpts(0))
 }
+
 
 // TestPropertyDecodeRobustness - an arbitrary word does not crash the
 // decoder: Parse + ObjDump without panics, one instruction of
@@ -420,7 +487,7 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 func TestPropertyDecodeRobustness(t *testing.T) {
 	rnd := seedRnd(t)
 
-	ohsnap.Check(t, 100000, arb.Word(rnd), func(w uint32) bool {
+	ohsnap.CheckWith(t, 100000, arb.Word(rnd), func(w uint32) bool {
 		ok := true
 		func() {
 			defer func() {
@@ -446,7 +513,7 @@ func TestPropertyDecodeRobustness(t *testing.T) {
 			ok = len(ins) == 1 && ins[0].Len() == 4
 		}()
 		return ok
-	})
+	}, checkOpts(0))
 }
 
 // TestPropertyArm64VsObjdump - the differential: words produced by the

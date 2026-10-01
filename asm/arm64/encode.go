@@ -246,12 +246,17 @@ func renderInstr(in resolvedInstr, addr uint64) string {
 	for i, op := range in.ops {
 		b.WriteByte(' ')
 		if absTargetSlot(in.mnem) == i && (op.IsImm() || op.IsLit()) && op.Sym() == "" {
-			prefix := "#"
-			if op.IsLit() {
-				prefix = "="
+			target := int64(addr) + op.Num()
+			if op.IsImm() {
+				// the branch target prints as the decoder prints it: the
+				// unsigned hex of the absolute address (a negative offset
+				// over base 0 is 0xffff...; a signed decimal would never
+				// match the decoded text in the self-verify)
+				b.WriteString("0x" + strconv.FormatUint(uint64(target), 16))
+				continue
 			}
 
-			b.WriteString(prefix + strconv.FormatInt(int64(addr)+op.Num(), 10))
+			b.WriteString("=" + strconv.FormatInt(target, 10))
 			continue
 		}
 
