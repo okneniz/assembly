@@ -90,21 +90,24 @@ _start:
 	text, err := fixed.EncodeText()
 	require.NoError(t, err)
 
-	// bl @0x1000, ldr @0x1004, b @0x1008, pool slot @0x100c (8 bytes),
-	// the C nops @0x1014/0x1018 (kernel_init = 0x1014)
-	require.Len(t, text, 3*4+8+2*4)
+	// bl @0x1000, ldr @0x1004, b @0x1008, then the pool: the x-slot sits
+	// at its natural 8-byte alignment (the 12-byte tail is 4 mod 8 - the
+	// zero pad word is the udf #0 of the gas dump), the C nops
+	// @0x1018/0x101C (kernel_init = 0x1018)
+	require.Len(t, text, 3*4+4+8+2*4)
 	words := []uint32{
 		binary.LittleEndian.Uint32(text[0:]),
 		binary.LittleEndian.Uint32(text[4:]),
 		binary.LittleEndian.Uint32(text[8:]),
 	}
-	require.Equal(t, uint32(0x94000005), words[0], "bl kernel_init")
-	require.Equal(t, uint32(0x58000044), words[1], "ldr x4, =kernel_stack+16")
+	require.Equal(t, uint32(0x94000006), words[0], "bl kernel_init")
+	require.Equal(t, uint32(0x58000064), words[1], "ldr x4, =kernel_stack+16")
 	require.Equal(t, uint32(0x17FFFFFE), words[2], "b _start")
 
-	require.Equal(t, uint64(0x80000018), binary.LittleEndian.Uint64(text[12:20]), "the pool slot value")
-	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[20:]), "the C nop before kernel_init")
-	require.Equal(t, uint64(0x1014), fixed.Syms["kernel_init"])
+	require.Equal(t, []byte{0, 0, 0, 0}, text[12:16], "the alignment pad word")
+	require.Equal(t, uint64(0x80000018), binary.LittleEndian.Uint64(text[16:24]), "the pool slot value")
+	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[24:]), "the C nop before kernel_init")
+	require.Equal(t, uint64(0x1018), fixed.Syms["kernel_init"])
 	require.Equal(t, uint64(0x1000), fixed.Syms["_start"])
 
 	// without the C side the externals stay undefined at resolve
@@ -154,6 +157,38 @@ main:
 	require.Equal(t, uint64(0x1004), fixed.Syms["main"])
 	require.Equal(t, uint64(0x80000000), fixed.Syms["val"])
 	require.Equal(t, uint64(0x80000004), fixed.Syms["buf"])
+}
+
+// TestUnitPoolAlignment - the literal pool slots sit at their natural
+// alignment in the unit mode too (the head.S shape of the first kernel
+// image: the quad ldr= slot after a tail at 4 mod 8 was the alignment
+// fault); the unit bytes stay identical to the byte mode.
+func TestUnitPoolAlignment(t *testing.T) {
+	src := `
+  nop
+  nop
+  ldr x19, =0x1122334455667788
+`
+	res, errs := Assemble(src, 0x41000000)
+	require.Empty(t, errs, "bytes mode")
+
+	u := unit.New()
+	errs = AssembleUnit(u, "head.S", src)
+	require.Empty(t, errs, "unit mode")
+
+	fixed := u.Resolve(flatPlace(0x41000000, 0x80000000))
+	require.Empty(t, fixed.Errs)
+
+	text, err := fixed.EncodeText()
+	require.NoError(t, err)
+	require.Equal(t, res.Sections[0].Data, text, "unit bytes == byte-mode bytes")
+
+	require.Len(t, text, 12+4+8, "code + the pad word + the slot")
+	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[0:]))
+	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[4:]))
+	require.Equal(t, uint32(0x58000053), binary.LittleEndian.Uint32(text[8:]), "ldr x19 -> the slot @+8")
+	require.Equal(t, []byte{0, 0, 0, 0}, text[12:16], "the udf #0 pad word")
+	require.Equal(t, uint64(0x1122334455667788), binary.LittleEndian.Uint64(text[16:]), "the slot (LE64)")
 }
 
 // errStrings flattens the errors (resolve or assemble) for matching.

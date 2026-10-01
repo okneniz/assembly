@@ -383,7 +383,8 @@ func (a *assembler) finalizeLayout() {
 		for _, sub := range s.sortedSubs() {
 			sub.base = base
 			base += sub.size
-			base += a.poolSlots(sub)
+			_, end := a.poolOffsets(sub, base)
+			base = end
 		}
 
 		totals[i] = base
@@ -413,27 +414,40 @@ func (a *assembler) finalizeLayout() {
 		base := 0
 		for _, sub := range a.secs[i].sortedSubs() {
 			base += sub.size
-			off := base
-			for _, e := range a.pools[sub] {
-				a.poolAddr[e.name] = secAddr[i] + uint64(off)
-				off += e.slot
+			offs, end := a.poolOffsets(sub, base)
+			for j, e := range a.pools[sub] {
+				a.poolAddr[e.name] = secAddr[i] + uint64(offs[j])
 			}
 
-			base = off
+			base = end
 		}
 	}
 
 	a.secAddr = secAddr
 }
 
-// poolSlots - the literal-pool bytes appended to the subsection tail.
-func (a *assembler) poolSlots(sub *subBuf) int {
-	n := 0
+// alignTo rounds n up to the next multiple of a (a > 0).
+func alignTo(n, a int) int {
+	return (n + a - 1) / a * a
+}
+
+// poolOffsets lays the literal pool of a subsection whose content ends
+// at section offset start: every slot sits at its natural alignment —
+// the gas literal-pool rule (a quad literal after a tail at 4 mod 8
+// pads with one zero word, `udf #0` in the gas dump; an 8-byte ldr=
+// from a misaligned slot is an alignment fault). Returns the section
+// offsets of the slots in first-appearance order and the section offset
+// after the pool (padding included).
+func (a *assembler) poolOffsets(sub *subBuf, start int) (offs []int, end int) {
+	off := start
+	offs = make([]int, 0, len(a.pools[sub]))
 	for _, e := range a.pools[sub] {
-		n += e.slot
+		off = alignTo(off, e.slot)
+		offs = append(offs, off)
+		off += e.slot
 	}
 
-	return n
+	return offs, off
 }
 
 // maxLayoutIterations bounds the layout relaxation: consecutive walks must
@@ -619,11 +633,21 @@ func (a *assembler) poolAdd(val *expr.Expr, slot int, pos parsecstrings.Position
 // emitPoolRecords appends the literal pools to the subsection data (after
 // encoding: the expression values are evaluated with the full resolver; an
 // expression error is reported at the requesting instruction and the
-// element becomes zeros, as with the data directives).
+// element becomes zeros, as with the data directives). The zero gap the
+// pool layout pads a wider slot with (see poolOffsets) is emitted as zero
+// bytes — the `udf #0` fill words of the gas dump.
 func (a *assembler) emitPoolRecords() {
-	for _, s := range a.secs {
-		for _, sub := range s.sortedSubs() {
-			for _, e := range a.pools[sub] {
+	for i := range a.secs {
+		base := 0
+		for _, sub := range a.secs[i].sortedSubs() {
+			base += len(sub.data)
+			offs, _ := a.poolOffsets(sub, base)
+			written := 0
+			for j, e := range a.pools[sub] {
+				pad := offs[j] - base - written
+				sub.data = append(sub.data, make([]byte, pad)...)
+				written += pad
+
 				addr := a.poolAddr[e.name]
 				v, err := e.expr.Eval(a.resolver(-1, addr, nil))
 				if err != nil {
@@ -634,7 +658,10 @@ func (a *assembler) emitPoolRecords() {
 				var buf [8]byte
 				binary.LittleEndian.PutUint64(buf[:], uint64(v))
 				sub.data = append(sub.data, buf[:e.slot]...)
+				written += e.slot
 			}
+
+			base += written
 		}
 	}
 }

@@ -27,6 +27,7 @@ func TestSysOpAssembleWords(t *testing.T) {
 		{"dc cvac, x3", 0xd50b7a23},
 		{"dc cvau, x3", 0xd50b7b23},
 		{"dc civac, x3", 0xd50b7e23},
+		{"dc csw, x3", 0xd5087a43},
 		{"dc cisw, x3", 0xd5087e43},
 		{"dc cvadp, x3", 0xd50b7d23},
 		{"tlbi alle1", 0xd50c879f},

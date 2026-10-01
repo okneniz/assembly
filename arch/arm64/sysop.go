@@ -37,6 +37,7 @@ var sysOps = map[string]sysOpRec{
 	"cvac":         {mnem: "dc", enc: 0xD50B7A20, hasRt: true},
 	"cvau":         {mnem: "dc", enc: 0xD50B7B20, hasRt: true},
 	"civac":        {mnem: "dc", enc: 0xD50B7E20, hasRt: true},
+	"csw":          {mnem: "dc", enc: 0xD5087A40, hasRt: true},
 	"cisw":         {mnem: "dc", enc: 0xD5087E40, hasRt: true},
 	"cvadp":        {mnem: "dc", enc: 0xD50B7D20, hasRt: true},
 	"alle1":        {mnem: "tlbi", enc: 0xD50C879F},

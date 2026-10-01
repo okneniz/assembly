@@ -381,10 +381,23 @@ func buildUnitSource(stmts []statement, be Syntax) (*unitSource, []AsmError) {
 	}
 
 	// the literal pools sit at the tail of their section, in
-	// first-appearance order (the byte mode layout)
+	// first-appearance order, every slot at its natural alignment (the
+	// byte mode layout): the zero gap before a wider slot is a fixed
+	// record — the `udf #0` fill words of the gas dump
 	for _, s := range src.secs {
 		for i := range s.pool {
 			p := &s.pool[i]
+			pad := alignTo(s.size, p.size) - s.size
+			if pad > 0 {
+				s.recs = append(s.recs, srcRec{
+					fixed: make([]byte, pad),
+					size:  pad,
+					off:   s.size,
+					line:  p.line,
+				})
+				s.size += pad
+			}
+
 			p.off = s.size
 			s.recs = append(s.recs, srcRec{
 				exprs: []*expr.Expr{p.expr},

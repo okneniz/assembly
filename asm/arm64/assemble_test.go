@@ -2,6 +2,7 @@ package arm64
 
 import (
 	"encoding/binary"
+	"encoding/hex"
 	"strings"
 	"testing"
 
@@ -413,14 +414,16 @@ sym:
 	require.Empty(t, errs, "errors: %v", errs)
 	d := res.Sections[0].Data
 
-	// 4 instructions x 4 + pool: slots x8 (0x1122...), w4 (0x99), x8 (sym) = 20
-	require.Len(t, d, 36, "total: % x", d)
+	// 4 instructions x 4 + pool: slot1 x8 (0x1122...), slot2 w4 (0x99),
+	// 4 bytes of zero padding (slot3 is x8 and the tail after slot2 sits
+	// at 4 mod 8 - the gas literal-pool alignment), slot3 x8 (sym)
+	require.Len(t, d, 40, "total: % x", d)
 
 	want := []uint32{
 		0x58000080, // ldr x0 @0x1000 -> slot1 @0x1010 (imm19=4)
 		0x180000A1, // ldr w1 @0x1004 -> slot2 @0x1018 (imm19=5)
 		0x58000042, // ldr x2 @0x1008 -> slot1 (dedup, imm19=2)
-		0x58000083, // ldr x3 @0x100C -> slot3 @0x101C (imm19=4)
+		0x580000A3, // ldr x3 @0x100C -> slot3 @0x1020 (imm19=5)
 	}
 	for i, w := range want {
 		require.Equal(t, w, binary.LittleEndian.Uint32(d[i*4:]), "word %d", i)
@@ -435,10 +438,67 @@ sym:
 		"slot 0x1122... (LE64)",
 	)
 	require.Equal(t, []byte{0x99, 0, 0, 0}, pool[8:12], "slot 0x99 (LE32, w-slot)")
-	require.Equal(t, []byte{0x0C, 0x10, 0, 0, 0, 0, 0, 0}, pool[12:20], "slot sym=0x100C (LE64)")
+	require.Equal(t, []byte{0, 0, 0, 0}, pool[12:16], "alignment padding (udf #0)")
+	require.Equal(t, []byte{0x0C, 0x10, 0, 0, 0, 0, 0, 0}, pool[16:24], "slot sym=0x100C (LE64)")
 
 	require.Equal(t, uint64(0x100C), res.Symbols["sym"], "sym")
 	require.Len(t, res.Symbols, 1, "pool names must not be in Symbols: %v", res.Symbols)
+}
+
+// TestLdrLiteralPoolAlignment — every pool slot sits at its natural
+// alignment, the gas literal-pool rule (the seL4 head.S shape: an 8-byte
+// ldr= slot after a tail at 4 mod 8 pads with one zero word - udf #0 in
+// the gas dump; loading the quad from the misaligned slot was the
+// alignment fault of the first kernel image). Pinned bit-exact.
+func TestLdrLiteralPoolAlignment(t *testing.T) {
+	slot64 := "8877665544332211"
+	cases := []struct {
+		name  string
+		src   string
+		words []uint32
+		tail  string
+	}{
+		{
+			name:  "x-slot after a tail at 4 mod 8: one zero word",
+			src:   "nop\nnop\nldr x19, =0x1122334455667788\n",
+			words: []uint32{0xD503201F, 0xD503201F, 0x58000053},
+			tail:  "00000000" + slot64,
+		},
+		{
+			name:  "aligned tail: no padding",
+			src:   "nop\nldr x19, =0x1122334455667788\n",
+			words: []uint32{0xD503201F, 0x58000033},
+			tail:  slot64,
+		},
+		{
+			name:  "w-slot after a tail at 4 mod 8: its own 4 alignment",
+			src:   "nop\nnop\nnop\nldr w1, =0x99\n",
+			words: []uint32{0xD503201F, 0xD503201F, 0xD503201F, 0x18000021},
+			tail:  "99000000",
+		},
+		{
+			name:  "w-slot then x-slot: the pad lands between them",
+			src:   "ldr w1, =0x99\nldr x2, =0x1122334455667788\n",
+			words: []uint32{0x18000041, 0x58000062},
+			tail:  "99000000" + "00000000" + slot64,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, errs := asm.Assemble(tc.src, 0x41000000, New())
+			require.Empty(t, errs, "errors: %v", errs)
+			d := res.Sections[0].Data
+
+			for i, w := range tc.words {
+				require.Equal(t, w, binary.LittleEndian.Uint32(d[i*4:]), "word %d", i)
+			}
+
+			want, err := hex.DecodeString(tc.tail)
+			require.NoError(t, err)
+			require.Equal(t, want, d[len(tc.words)*4:], "pool tail: % x", d[len(tc.words)*4:])
+		})
+	}
 }
 
 // TestMovUmovAlias - the UMOV input spellings and the LLVM print alias:

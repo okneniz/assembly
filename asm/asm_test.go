@@ -3,13 +3,15 @@ package asm
 import (
 	"bytes"
 	"encoding/binary"
+	"encoding/hex"
 	"errors"
-	"github.com/okneniz/assembly/unit"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
+	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 	"github.com/stretchr/testify/require"
@@ -648,21 +650,68 @@ func TestLiteralPool(t *testing.T) {
 	require.Len(t, res.Sections, 1)
 
 	d := res.Sections[0].Data
-	// 3 instructions × 4 bytes + the pool: slots 0x101 and 0x202 (dedup)
-	// × 8 bytes
-	require.Len(t, d, 12+16, "data: % x", d)
+	// 3 instructions × 4 bytes + the pool: 4 bytes of zero padding (the
+	// 12-byte tail is 4 mod 8, a slot is 8 wide - the gas literal-pool
+	// alignment) + slots 0x101 and 0x202 (dedup) × 8 bytes
+	require.Len(t, d, 12+4+16, "data: % x", d)
 
 	// the instructions encoded the ADDRESSES of their slots (LE32):
-	// slot 0x101 @0x100C, slot 0x202 @0x1014, the repeat of 0x101 @0x100C
-	require.Equal(t, uint64(0x100C), le32(d[0:4]), "pool 1 → slot 1")
-	require.Equal(t, uint64(0x1014), le32(d[4:8]), "pool 2 → slot 2")
-	require.Equal(t, uint64(0x100C), le32(d[8:12]), "dedup: the same slot")
+	// slot 0x101 @0x1010, slot 0x202 @0x1018, the repeat of 0x101 @0x1010
+	require.Equal(t, uint64(0x1010), le32(d[0:4]), "pool 1 → slot 1")
+	require.Equal(t, uint64(0x1018), le32(d[4:8]), "pool 2 → slot 2")
+	require.Equal(t, uint64(0x1010), le32(d[8:12]), "dedup: the same slot")
 
-	// the pool tail: slot values LE64 in first-appearance order
-	require.Equal(t, []byte{0x01, 0x01, 0, 0, 0, 0, 0, 0}, d[12:20], "slot 0x101")
-	require.Equal(t, []byte{0x02, 0x02, 0, 0, 0, 0, 0, 0}, d[20:28], "slot 0x202")
+	// the pool tail: the zero padding (udf #0 in the gas dump), then the
+	// slot values LE64 in first-appearance order
+	require.Equal(t, []byte{0, 0, 0, 0}, d[12:16], "alignment padding")
+	require.Equal(t, []byte{0x01, 0x01, 0, 0, 0, 0, 0, 0}, d[16:24], "slot 0x101")
+	require.Equal(t, []byte{0x02, 0x02, 0, 0, 0, 0, 0, 0}, d[24:32], "slot 0x202")
 
 	require.NotContains(t, res.Symbols, poolName(8, "257"), "the pool is not in Symbols")
+}
+
+func TestLiteralPoolAlignment(t *testing.T) {
+	// every slot lands at its natural alignment (the gas literal-pool
+	// rule): a quad slot after a tail at 4 mod 8 pads with one zero word,
+	// an aligned tail adds nothing; the padding counts toward the layout
+	// (the section size, the pool addresses of later subsections)
+	slot1 := "0101000000000000"
+	slot2 := "0202000000000000"
+	cases := []struct {
+		name string
+		src  string
+		want string
+	}{
+		{
+			name: "aligned tail: no padding",
+			src:  "pad 8\npool 1\npool 2\n",
+			want: strings.Repeat("ab", 8) + "10100000" + "18100000" + slot1 + slot2,
+		},
+		{
+			name: "tail at 4 mod 8: one zero word before the pool",
+			src:  "pad 12\npool 1\npool 2\n",
+			want: strings.Repeat("ab", 12) + "18100000" + "20100000" +
+				"00000000" + slot1 + slot2,
+		},
+		{
+			name: "subsections: each pool aligns at its own tail",
+			src:  "pad 1\npool 1\n.text 1\npad 1\npool 2\n",
+			want: "ab" + "08100000" + "000000" + slot1 +
+				"ab" + "18100000" + "000000" + slot2,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			res, errs := Assemble(tc.src, 0x1000, mockBackend{})
+			require.Empty(t, errs, "errors: %v", errs)
+			require.Len(t, res.Sections, 1)
+
+			want, err := hex.DecodeString(tc.want)
+			require.NoError(t, err)
+			require.Equal(t, want, res.Sections[0].Data, "data: % x", res.Sections[0].Data)
+		})
+	}
 }
 
 func TestLtorgUnsupported(t *testing.T) {

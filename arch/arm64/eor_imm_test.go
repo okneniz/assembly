@@ -4,6 +4,8 @@ import (
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/okneniz/assembly/disasm"
 )
 
 func TestEorImmBuild(t *testing.T) {
@@ -44,5 +46,33 @@ func TestEorImmBuild(t *testing.T) {
 	for _, c := range errCases {
 		_, err := New().EorImm(reg(t, c.rd), reg(t, c.rn), c.imm)
 		assertErr(t, c.name, err)
+	}
+}
+
+// TestEorImmDecodeSmallEsize — the clang word of the seL4 audit: the
+// mask replicates a 4-bit element (esize 4, N=0, immr=2, imms=57), not a
+// rotation of one full-width run — the decoder must read it back instead
+// of falling to .word.
+func TestEorImmDecodeSmallEsize(t *testing.T) {
+	cases := []struct {
+		name string
+		word uint32
+		text string
+	}{
+		{
+			"eor w2, w3, #0xcccccccc",
+			0x5202e462,
+			"eor w2, w3, #0xcccccccc",
+		},
+		{
+			"eor x2, x3, #0xcccccccccccccccc",
+			0xd20ee462,
+			"eor x2, x3, #0xcccccccccccccccc",
+		},
+	}
+	for _, c := range cases {
+		back, err := decodeOne(c.word)
+		require.NoError(t, err, "case %q", c.name)
+		require.Equal(t, c.text, back.ObjDump(disasm.DefaultViewCtx()), "case %q", c.name)
 	}
 }
