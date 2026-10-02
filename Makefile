@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check vet lint tests build cli vscode tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data
+.PHONY: fmt fmt-check vet lint tests build cli vscode tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data prop-a64 prop-a64-1 prop-a64-2 prop-a64-rest
 
 # GOLANGCI_LINT_VERSION pins the project-local linter (see bin/golangci-lint).
 GOLANGCI_LINT_VERSION ?= v2.13.2
@@ -43,6 +43,30 @@ vet:
 # individually: make -C tests <target>.
 tests:
 	$(MAKE) -C tests all
+
+# prop-a64 — the arm64 property suite of the root package. The
+# single-instruction families (114 now) no longer fit one go-test timeout,
+# so the table is split in two halves by family name; the halves and the
+# remaining properties (the list round trips, the alias families, the
+# decode robustness) run as separate processes. Progress lines land in
+# the log via oh-snap (ProgressEvery) — visible with -v (the default
+# here); the exit code is the go test one.
+prop-a64: prop-a64-1 prop-a64-2 prop-a64-rest
+
+# prop-a64-1 — the single-instruction families A..L.
+prop-a64-1:
+	go test -run 'TestPropertySingleInstrRoundTrip/(A|B|C|D|E|F|G|H|I|J|K|L)[a-zA-Z0-9]*$$' -count=1 -timeout 30m -v .
+
+# prop-a64-2 — the single-instruction families M..Z.
+prop-a64-2:
+	go test -run 'TestPropertySingleInstrRoundTrip/(M|N|O|P|Q|R|S|T|U|V|W|X|Y|Z)[a-zA-Z0-9]*$$' -count=1 -timeout 30m -v .
+
+# prop-a64-rest — the list round trips, the alias families and the decode
+# robustness (the sources of the lists are the same families).
+prop-a64-rest:
+	go test -run 'TestPropertyBytesRoundTripList|TestPropertyTextRoundTripList|TestPropertyDecodeRobustness' -count=1 -timeout 30m -v .
+	go test -run 'TestPropertyAliasRoundTrip' -count=1 -timeout 30m -v .
+
 
 build:
 	go build ./...
