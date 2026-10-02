@@ -3,6 +3,7 @@ package loong64
 import (
 	"bytes"
 	"math/rand/v2"
+	"reflect"
 	"slices"
 	"testing"
 
@@ -543,4 +544,26 @@ func TestFamilyCoverage(t *testing.T) {
 	}
 
 	require.Len(t, empty, len(emptyForms), "EmptyForms returns a copy")
+}
+
+// TestOracleLaws — the two llvm-mc acceptance laws the generators
+// honor (pinned 2026-10-02 against the docker llvm-mc, LLVM 19.1.7):
+// the am* forms refuse rd == rj / rd == rk (the LAS hazard errata
+// restriction; sc.q is exempt), and the csrxchg mask register must not
+// be $r0/$r1. The words themselves encode — the restriction is the
+// canonical assembler's acceptance rule, the generators stay inside it.
+func TestOracleLaws(t *testing.T) {
+	rnd := arb.Rnd(42)
+
+	ohsnap.Check(t, 300, Atomics(rnd), func(p R3Params) bool {
+		if reflect.ValueOf(p.Ctor).Pointer() == scQCtorPtr {
+			return true
+		}
+
+		return p.Rd.Num() != p.Rj.Num() && p.Rd.Num() != p.Rk.Num()
+	})
+
+	ohsnap.Check(t, 300, CsrXchg(rnd), func(p R2RoleParams[arch.UImm14]) bool {
+		return p.B.Num() > 1
+	})
 }

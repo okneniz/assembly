@@ -6,10 +6,14 @@ package loong64
 // of arch/loong64 already carry it, so the table is a plain R3 table.
 
 import (
+	"iter"
 	"math/rand/v2"
+	"reflect"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -70,7 +74,56 @@ var atomics = []r3Entry{
 	{name: "sc.q", ctor: arch.New().ScQ},
 }
 
+// atomicsGen — the am*/sc.q core with the LAS hazard law: llvm-mc
+// refuses rd == rj or rd == rk for the am* forms (the ALS errata
+// restriction); sc.q is exempt. The generator keeps the am*
+// destination apart from both sources, the shrink drops the
+// colliding candidates the same way.
+type atomicsGen struct {
+	base r3Gen
+}
+
+func newAtomicsGen(rnd *rand.Rand) atomicsGen {
+	return atomicsGen{base: newR3Gen(rnd, atomics)}
+}
+
+// scQCtorPtr — the identity of the sc.q constructor (the one exempt
+// entry of the hazard law below).
+var scQCtorPtr = reflect.ValueOf(arch.New().ScQ).Pointer()
+
+// amHazardFree — the am* forms pass the LAS hazard law (rd differs
+// from both sources); sc.q is exempt.
+func amHazardFree(p R3Params) bool {
+	if reflect.ValueOf(p.Ctor).Pointer() == scQCtorPtr {
+		return true
+	}
+
+	return p.Rd.Num() != p.Rj.Num() && p.Rd.Num() != p.Rk.Num()
+}
+
 // Atomics — an arbitrary am*/sc.q instruction.
 func Atomics(rnd *rand.Rand) ohsnap.Arbitrary[R3Params] {
-	return newR3Gen(rnd, atomics)
+	return newAtomicsGen(rnd)
+}
+
+func (g atomicsGen) Generate() iter.Seq[R3Params] {
+	return arb.Stream(func() R3Params {
+		p := ohsnap.First(g.base.Generate())
+		for !amHazardFree(p) {
+			p = ohsnap.First(g.base.Generate())
+		}
+
+		return p
+	})
+}
+
+func (g atomicsGen) Shrink(p R3Params) iter.Seq[R3Params] {
+	out := make([]R3Params, 0, 8)
+	for _, s := range slices.Collect(g.base.Shrink(p)) {
+		if amHazardFree(s) {
+			out = append(out, s)
+		}
+	}
+
+	return slices.Values(out)
 }

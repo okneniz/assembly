@@ -8,10 +8,13 @@ package loong64
 // words of the differential corpus (EmptyForms below).
 
 import (
+	"iter"
 	"math/rand/v2"
+	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
+	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -31,9 +34,47 @@ var csrXchg = []r2RoleEntry[arch.UImm14]{
 	{name: "csrxchg", ctor: arch.New().Csrxchg},
 }
 
+// csrXchgGen — the csrxchg core with the mask law: llvm-mc refuses
+// the mask register r0/$r1 (the reserved numbers), so the generator
+// keeps the second operand in 2..31; the shrink drops the colliding
+// candidates the same way.
+type csrXchgGen struct {
+	base r2RoleGen[arch.UImm14]
+}
+
+func newCsrXchgGen(rnd *rand.Rand) csrXchgGen {
+	return csrXchgGen{base: newR2RoleGen(rnd, csrXchg, UImm14(rnd))}
+}
+
+func csrXchgMaskOK(r arch.Reg) bool {
+	return r.Num() > 1
+}
+
 // CsrXchg — an arbitrary csrxchg instruction.
 func CsrXchg(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
-	return newR2RoleGen(rnd, csrXchg, UImm14(rnd))
+	return newCsrXchgGen(rnd)
+}
+
+func (g csrXchgGen) Generate() iter.Seq[R2RoleParams[arch.UImm14]] {
+	return arb.Stream(func() R2RoleParams[arch.UImm14] {
+		p := ohsnap.First(g.base.Generate())
+		for !csrXchgMaskOK(p.B) {
+			p = ohsnap.First(g.base.Generate())
+		}
+
+		return p
+	})
+}
+
+func (g csrXchgGen) Shrink(p R2RoleParams[arch.UImm14]) iter.Seq[R2RoleParams[arch.UImm14]] {
+	out := make([]R2RoleParams[arch.UImm14], 0, 8)
+	for _, s := range slices.Collect(g.base.Shrink(p)) {
+		if csrXchgMaskOK(s.B) {
+			out = append(out, s)
+		}
+	}
+
+	return slices.Values(out)
 }
 
 // ioCsr — the iocsr 2R family (8 ctors).
