@@ -341,6 +341,26 @@ func TestPropertySingleInstrRoundTrip(t *testing.T) {
 		newPropFamily("Stxrb", a64.Stxrb),
 		newPropFamily("Stlxrb", a64.Stlxrb),
 		newPropFamily("Prfm", a64.Prfm),
+		newPropFamily("Fadd", a64.Fadd),
+		newPropFamily("Fsub", a64.Fsub),
+		newPropFamily("Fmul", a64.Fmul),
+		newPropFamily("Fdiv", a64.Fdiv),
+		newPropFamily("Fmax", a64.Fmax),
+		newPropFamily("Fmin", a64.Fmin),
+		newPropFamily("Fcmp", a64.Fcmp),
+		newPropFamily("FcmpZero", a64.FcmpZero),
+		newPropFamily("Fneg", a64.Fneg),
+		newPropFamily("Fmov", a64.Fmov),
+		newPropFamily("Fcvt", a64.Fcvt),
+		newPropFamily("Fmadd", a64.Fmadd),
+		newPropFamily("Fnmsub", a64.Fnmsub),
+		newPropFamily("FmovFromGpr", a64.FmovFromGpr),
+		newPropFamily("FmovToGpr", a64.FmovToGpr),
+		newPropFamily("Fcvtzs", a64.Fcvtzs),
+		newPropFamily("Fcvtzu", a64.Fcvtzu),
+		newPropFamily("Scvtf", a64.Scvtf),
+		newPropFamily("Ucvtf", a64.Ucvtf),
+		newPropFamily("FmovImm", a64.FmovImm),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
@@ -491,6 +511,26 @@ func propFamilies(rnd *mrnd.Rand) []func() arm64.Instr {
 		instrOf(a64.Stxrb(rnd)),
 		instrOf(a64.Stlxrb(rnd)),
 		instrOf(a64.Prfm(rnd)),
+		instrOf(a64.Fadd(rnd)),
+		instrOf(a64.Fsub(rnd)),
+		instrOf(a64.Fmul(rnd)),
+		instrOf(a64.Fdiv(rnd)),
+		instrOf(a64.Fmax(rnd)),
+		instrOf(a64.Fmin(rnd)),
+		instrOf(a64.Fcmp(rnd)),
+		instrOf(a64.FcmpZero(rnd)),
+		instrOf(a64.Fneg(rnd)),
+		instrOf(a64.Fmov(rnd)),
+		instrOf(a64.Fcvt(rnd)),
+		instrOf(a64.Fmadd(rnd)),
+		instrOf(a64.Fnmsub(rnd)),
+		instrOf(a64.FmovFromGpr(rnd)),
+		instrOf(a64.FmovToGpr(rnd)),
+		instrOf(a64.Fcvtzs(rnd)),
+		instrOf(a64.Fcvtzu(rnd)),
+		instrOf(a64.Scvtf(rnd)),
+		instrOf(a64.Ucvtf(rnd)),
+		instrOf(a64.FmovImm(rnd)),
 	}
 }
 
@@ -536,7 +576,6 @@ func TestPropertyBytesRoundTripList(t *testing.T) {
 	}, checkOpts(0))
 }
 
-
 // TestPropertyTextRoundTripList - the "text" property for a list of
 // instructions: the joined objdump text of the list assembles and decodes
 // line by line into the same texts (struct → objdump → struct, without loss).
@@ -579,7 +618,6 @@ func TestPropertyTextRoundTripList(t *testing.T) {
 		return true
 	}, checkOpts(0))
 }
-
 
 // TestPropertyDecodeRobustness - an arbitrary word does not crash the
 // decoder: Parse + ObjDump without panics, one instruction of

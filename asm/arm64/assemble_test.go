@@ -65,6 +65,10 @@ func TestArmAssembleWords(t *testing.T) {
 			0x530f3800,
 		},
 		{
+			"fmov s0, #-18.0",
+			0x1e365000,
+		},
+		{
 			"movz x0, #0x1234",
 			0xd2824680,
 		},

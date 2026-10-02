@@ -1679,10 +1679,10 @@ var arm64Schemas = []Schema{
 		NewField("Rd", 0, 5, "intX"),
 		NewField("Rn", 5, 5, "fpRegS"),
 	}, NewMeta("fcvtzu", "Float"), "op2", true, decodeFcvtzu),
-	NewSchema(0xFFFFFE0F, 0x1E202008, []Field{
+	NewSchema(0xFFFFFC1F, 0x1E202008, []Field{
 		NewField("Rn", 5, 5, "fpRegS"),
 	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpZero),
-	NewSchema(0xFFFFFE0F, 0x1E602008, []Field{
+	NewSchema(0xFFFFFC1F, 0x1E602008, []Field{
 		NewField("Rn", 5, 5, "fpRegD"),
 	}, NewMeta("fcmp", "Float"), "fcmp0", true, decodeFcmpZero),
 	NewSchema(0xFFE0FC1F, 0x1E202000, []Field{

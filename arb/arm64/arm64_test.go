@@ -521,6 +521,66 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("Prfm", func() arm64.Instr {
 			return ohsnap.First(Prfm(rnd).Generate()).Instr()
 		}),
+		newInstrCase("Fadd", func() arm64.Instr {
+			return ohsnap.First(Fadd(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fsub", func() arm64.Instr {
+			return ohsnap.First(Fsub(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fmul", func() arm64.Instr {
+			return ohsnap.First(Fmul(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fdiv", func() arm64.Instr {
+			return ohsnap.First(Fdiv(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fmax", func() arm64.Instr {
+			return ohsnap.First(Fmax(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fmin", func() arm64.Instr {
+			return ohsnap.First(Fmin(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fcmp", func() arm64.Instr {
+			return ohsnap.First(Fcmp(rnd).Generate()).Instr()
+		}),
+		newInstrCase("FcmpZero", func() arm64.Instr {
+			return ohsnap.First(FcmpZero(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fneg", func() arm64.Instr {
+			return ohsnap.First(Fneg(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fmov", func() arm64.Instr {
+			return ohsnap.First(Fmov(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fcvt", func() arm64.Instr {
+			return ohsnap.First(Fcvt(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fmadd", func() arm64.Instr {
+			return ohsnap.First(Fmadd(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fnmsub", func() arm64.Instr {
+			return ohsnap.First(Fnmsub(rnd).Generate()).Instr()
+		}),
+		newInstrCase("FmovFromGpr", func() arm64.Instr {
+			return ohsnap.First(FmovFromGpr(rnd).Generate()).Instr()
+		}),
+		newInstrCase("FmovToGpr", func() arm64.Instr {
+			return ohsnap.First(FmovToGpr(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fcvtzs", func() arm64.Instr {
+			return ohsnap.First(Fcvtzs(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Fcvtzu", func() arm64.Instr {
+			return ohsnap.First(Fcvtzu(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Scvtf", func() arm64.Instr {
+			return ohsnap.First(Scvtf(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Ucvtf", func() arm64.Instr {
+			return ohsnap.First(Ucvtf(rnd).Generate()).Instr()
+		}),
+		newInstrCase("FmovImm", func() arm64.Instr {
+			return ohsnap.First(FmovImm(rnd).Generate()).Instr()
+		}),
 	}
 }
 

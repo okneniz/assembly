@@ -463,10 +463,18 @@ func makeGrammar() *armGrammar {
 	return g
 }
 
-// floatRun parses a decimal parseFloat: digits [. digits] ([eE]...).
+// floatRun parses a decimal parseFloat: [-] digits [. digits] ([eE]...) —
+// the sign included (the fmov immediates render negative: #-18.0).
 func makeFloatRun() parsec.Combinator[rune, parsecstrings.Position, []rune, parsec.Stateless] {
 	return func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) ([]rune, parsec.Error[parsecstrings.Position]) {
 		var out []rune
+		if r, ok := expr.PeekRune(buf); ok && r == '-' {
+			out = append(out, r)
+			if rerr := expr.ConsumeRune(buf); rerr != nil {
+				return nil, rerr
+			}
+		}
+
 		digits := func() bool {
 			n := 0
 			for {
