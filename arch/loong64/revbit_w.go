@@ -9,8 +9,6 @@ import (
 
 // RevbitW - bitrev.w rd, rj (2R): rd = low32(rj) with all 32 bits reversed.
 type RevbitW struct {
-	base
-
 	rd, rj uint8
 }
 

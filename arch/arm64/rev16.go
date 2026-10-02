@@ -9,15 +9,13 @@ import (
 
 // Rev16 — rev16 rd, rn.
 type Rev16 struct {
-	base
-
 	rd, rn string
 }
 
 // newRev16 - the Rev16 constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newRev16(b base, rd Reg, rn Reg) (Rev16, error) {
+func newRev16(rd Reg, rn Reg) (Rev16, error) {
 	err := requireClass(
 		rd,
 		"Rev16",
@@ -59,9 +57,8 @@ func newRev16(b base, rd Reg, rn Reg) (Rev16, error) {
 	}
 
 	return Rev16{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

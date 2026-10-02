@@ -40,15 +40,13 @@ var barrierBase = map[string]uint32{
 
 // Barrier - dmb/dsb/isb with a shareability domain.
 type Barrier struct {
-	base
-
 	name   string
 	domain BarrierDomain
 }
 
 // newBarrier - the Barrier constructor (the decoder calls it with the
 // nibble it read; the typed ctors below are the user surface).
-func newBarrier(b base, name string, domain BarrierDomain) (Barrier, error) {
+func newBarrier(name string, domain BarrierDomain) (Barrier, error) {
 	if _, ok := barrierBase[name]; !ok {
 		return Barrier{}, unknownBarrier(name)
 	}
@@ -57,7 +55,7 @@ func newBarrier(b base, name string, domain BarrierDomain) (Barrier, error) {
 		return Barrier{}, unknownDomain(name, domain)
 	}
 
-	return Barrier{base: b, name: name, domain: domain}, nil
+	return Barrier{name: name, domain: domain}, nil
 }
 
 func (i Barrier) ObjDump(_ disasm.ViewCtx) string {

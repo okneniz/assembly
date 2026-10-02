@@ -9,8 +9,6 @@ import (
 
 // LdBu - ld.bu rd, rj, si12 (2RI12): rd = the byte at rj + si12, zero-extended.
 type LdBu struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

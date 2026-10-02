@@ -9,8 +9,6 @@ import (
 
 // sysImm - system instructions with imm16 (svc/brk/hlt/hvc/udf): "#0x..", brk #0 -> "#0".
 type sysImm struct {
-	base
-
 	name  string
 	imm16 uint32
 	enc   uint32

@@ -9,23 +9,21 @@ import (
 
 // Ldr — ldr ... (see lsBase for the addressing kinds).
 type Ldr struct {
-	base
 	lsBase
 }
 
 // newLdrBase - the Ldr constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdrBase(b base, e lsBase) Ldr {
+func newLdrBase(e lsBase) Ldr {
 	return Ldr{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newLdr - the Ldr constructor: validates the operands,
 // delegates the assembly to newLdrBase.
-func newLdr(b base, rt, rn Reg, off Off) (Ldr, error) {
+func newLdr(rt, rn Reg, off Off) (Ldr, error) {
 	if err := lsOperand(rt, rn, "Ldr"); err != nil {
 		return Ldr{}, err
 	}
@@ -40,7 +38,6 @@ func newLdr(b base, rt, rn Reg, off Off) (Ldr, error) {
 	}
 
 	return newLdrBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
 	), nil
 }

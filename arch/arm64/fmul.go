@@ -9,25 +9,22 @@ import (
 
 // Fmul — fmul fd, fn, fm (double/single by the operand kind).
 type Fmul struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFmul - the Fmul constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmul(b base, rd, rn, rm FReg) (Fmul, error) {
+func newFmul(rd, rn, rm FReg) (Fmul, error) {
 	err := requireFpKind("Fmul", rd, rn, rm)
 	if err != nil {
 		return Fmul{}, err
 	}
 
 	return Fmul{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

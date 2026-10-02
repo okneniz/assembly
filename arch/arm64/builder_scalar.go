@@ -22,7 +22,7 @@ func AdcOf(rd string, rn string, rm string) (Adc, error) {
 		return Adc{}, err
 	}
 
-	in, err := newAdc(base{}, r_rd, r_rn, r_rm)
+	in, err := newAdc(r_rd, r_rn, r_rm)
 	if err != nil {
 		return Adc{}, err
 	}
@@ -38,7 +38,7 @@ func AdrOf(rd string, off int64) (Adr, error) {
 		return Adr{}, err
 	}
 
-	return newAdr(base{}, r, off)
+	return newAdr(r, off)
 }
 
 // AdrpOf — the Adrp family constructor (string-operands form for the
@@ -49,7 +49,7 @@ func AdrpOf(rd string, off int64) (Adrp, error) {
 		return Adrp{}, err
 	}
 
-	return newAdrp(base{}, r, off)
+	return newAdrp(r, off)
 }
 
 // AsrRegOf — the AsrReg family constructor (string-operands form for the
@@ -70,7 +70,7 @@ func AsrRegOf(rd string, rn string, rm string) (AsrReg, error) {
 		return AsrReg{}, err
 	}
 
-	in, err := newAsrReg(base{}, r_rd, r_rn, r_rm)
+	in, err := newAsrReg(r_rd, r_rn, r_rm)
 	if err != nil {
 		return AsrReg{}, err
 	}
@@ -81,7 +81,7 @@ func AsrRegOf(rd string, rn string, rm string) (AsrReg, error) {
 // BOf — the B family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
 func BOf(off int64) (B, error) {
-	in, err := newB(base{}, immNum(off))
+	in, err := newB(immNum(off))
 	if err != nil {
 		return B{}, err
 	}
@@ -92,13 +92,13 @@ func BOf(off int64) (B, error) {
 // BcondOf — the Bcond family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
 func BcondOf(cond string, off int64) (Bcond, error) {
-	return newBcond(base{}, cond, immNum(off)), nil
+	return newBcond(cond, immNum(off)), nil
 }
 
 // BlOf — the Bl family constructor (string-operands form for the
 // assembler ctors, which build outside arch).
 func BlOf(off int64) (Bl, error) {
-	in, err := newBl(base{}, immNum(off))
+	in, err := newBl(immNum(off))
 	if err != nil {
 		return Bl{}, err
 	}
@@ -114,7 +114,7 @@ func BlrOf(rn string) (Blr, error) {
 		return Blr{}, err
 	}
 
-	in, err := newBlr(base{}, r_rn)
+	in, err := newBlr(r_rn)
 	if err != nil {
 		return Blr{}, err
 	}
@@ -130,7 +130,7 @@ func BrOf(rn string) (Br, error) {
 		return Br{}, err
 	}
 
-	in, err := newBr(base{}, r_rn)
+	in, err := newBr(r_rn)
 	if err != nil {
 		return Br{}, err
 	}
@@ -146,7 +146,7 @@ func CbnzOf(rt string, off int64) (Cbnz, error) {
 		return Cbnz{}, err
 	}
 
-	in, err := newCbnz(base{}, r_rt, off)
+	in, err := newCbnz(r_rt, off)
 	if err != nil {
 		return Cbnz{}, err
 	}
@@ -162,7 +162,7 @@ func CbzOf(rt string, off int64) (Cbz, error) {
 		return Cbz{}, err
 	}
 
-	in, err := newCbz(base{}, r_rt, off)
+	in, err := newCbz(r_rt, off)
 	if err != nil {
 		return Cbz{}, err
 	}
@@ -183,7 +183,7 @@ func CcmpOf(rn string, rm string, immVal uint32, cond string) (Ccmp, error) {
 		return Ccmp{}, err
 	}
 
-	in, err := newCcmp(base{}, r_rn, r_rm, immVal, cond)
+	in, err := newCcmp(r_rn, r_rm, immVal, cond)
 	if err != nil {
 		return Ccmp{}, err
 	}
@@ -204,7 +204,7 @@ func ClsOf(rd string, rn string) (Cls, error) {
 		return Cls{}, err
 	}
 
-	in, err := newCls(base{}, r_rd, r_rn)
+	in, err := newCls(r_rd, r_rn)
 	if err != nil {
 		return Cls{}, err
 	}
@@ -225,7 +225,7 @@ func ClzOf(rd string, rn string) (Clz, error) {
 		return Clz{}, err
 	}
 
-	in, err := newClz(base{}, r_rd, r_rn)
+	in, err := newClz(r_rd, r_rn)
 	if err != nil {
 		return Clz{}, err
 	}
@@ -251,7 +251,7 @@ func CselOf(rd string, rn string, rm string, cond string) (Csel, error) {
 		return Csel{}, err
 	}
 
-	in, err := newCsel(base{}, r_rd, r_rn, r_rm, cond)
+	in, err := newCsel(r_rd, r_rn, r_rm, cond)
 	if err != nil {
 		return Csel{}, err
 	}
@@ -277,7 +277,7 @@ func ExtrOf(rd string, rn string, rm string, lsb uint32) (Extr, error) {
 		return Extr{}, err
 	}
 
-	in, err := newExtr(base{}, r_rd, r_rn, r_rm, imm6Of(lsb))
+	in, err := newExtr(r_rd, r_rn, r_rm, imm6Of(lsb))
 	if err != nil {
 		return Extr{}, err
 	}
@@ -298,7 +298,7 @@ func LdrsbOf(rt string, rn string, off int64) (Ldrsb, error) {
 		return Ldrsb{}, err
 	}
 
-	in, err := newLdrsb(base{}, r_rt, r_rn, Off(off))
+	in, err := newLdrsb(r_rt, r_rn, Off(off))
 	if err != nil {
 		return Ldrsb{}, err
 	}
@@ -319,7 +319,7 @@ func LdrshOf(rt string, rn string, off int64) (Ldrsh, error) {
 		return Ldrsh{}, err
 	}
 
-	in, err := newLdrsh(base{}, r_rt, r_rn, Off(off))
+	in, err := newLdrsh(r_rt, r_rn, Off(off))
 	if err != nil {
 		return Ldrsh{}, err
 	}
@@ -345,7 +345,7 @@ func LslRegOf(rd string, rn string, rm string) (LslReg, error) {
 		return LslReg{}, err
 	}
 
-	in, err := newLslReg(base{}, r_rd, r_rn, r_rm)
+	in, err := newLslReg(r_rd, r_rn, r_rm)
 	if err != nil {
 		return LslReg{}, err
 	}
@@ -371,7 +371,7 @@ func LsrRegOf(rd string, rn string, rm string) (LsrReg, error) {
 		return LsrReg{}, err
 	}
 
-	in, err := newLsrReg(base{}, r_rd, r_rn, r_rm)
+	in, err := newLsrReg(r_rd, r_rn, r_rm)
 	if err != nil {
 		return LsrReg{}, err
 	}
@@ -402,7 +402,7 @@ func MaddOf(rd string, rn string, rm string, ra string) (Madd, error) {
 		return Madd{}, err
 	}
 
-	in, err := newMadd(base{}, r_rd, r_rn, r_rm, r_ra)
+	in, err := newMadd(r_rd, r_rn, r_rm, r_ra)
 	if err != nil {
 		return Madd{}, err
 	}
@@ -418,7 +418,7 @@ func MovkOf(rd string, imm16 uint32, hw uint32) (Movk, error) {
 		return Movk{}, err
 	}
 
-	in, err := newMovk(base{}, r_rd, imm16Of(imm16), Hw(hw))
+	in, err := newMovk(r_rd, imm16Of(imm16), Hw(hw))
 	if err != nil {
 		return Movk{}, err
 	}
@@ -434,7 +434,7 @@ func MrsOf(rd string, sysreg string) (Mrs, error) {
 		return Mrs{}, err
 	}
 
-	in, err := newMrs(base{}, r_rd, sysreg)
+	in, err := newMrs(r_rd, sysreg)
 	if err != nil {
 		return Mrs{}, err
 	}
@@ -450,7 +450,7 @@ func MsrOf(rt string, sysreg string) (Msr, error) {
 		return Msr{}, err
 	}
 
-	in, err := newMsr(base{}, rt, r_sysreg)
+	in, err := newMsr(rt, r_sysreg)
 	if err != nil {
 		return Msr{}, err
 	}
@@ -466,7 +466,7 @@ func PrfmOf(rn string) (Prfm, error) {
 		return Prfm{}, err
 	}
 
-	in, err := newPrfm(base{}, r_rn)
+	in, err := newPrfm(r_rn)
 	if err != nil {
 		return Prfm{}, err
 	}
@@ -487,7 +487,7 @@ func RbitOf(rd string, rn string) (Rbit, error) {
 		return Rbit{}, err
 	}
 
-	in, err := newRbit(base{}, r_rd, r_rn)
+	in, err := newRbit(r_rd, r_rn)
 	if err != nil {
 		return Rbit{}, err
 	}
@@ -503,7 +503,7 @@ func RetOf(rn string) (Ret, error) {
 		return Ret{}, err
 	}
 
-	in, err := newRet(base{}, r_rn)
+	in, err := newRet(r_rn)
 	if err != nil {
 		return Ret{}, err
 	}
@@ -524,7 +524,7 @@ func RevOf(rd string, rn string) (Rev, error) {
 		return Rev{}, err
 	}
 
-	in, err := newRev(base{}, r_rd, r_rn)
+	in, err := newRev(r_rd, r_rn)
 	if err != nil {
 		return Rev{}, err
 	}
@@ -545,7 +545,7 @@ func Rev16Of(rd string, rn string) (Rev16, error) {
 		return Rev16{}, err
 	}
 
-	in, err := newRev16(base{}, r_rd, r_rn)
+	in, err := newRev16(r_rd, r_rn)
 	if err != nil {
 		return Rev16{}, err
 	}
@@ -566,7 +566,7 @@ func Rev32Of(rd string, rn string) (Rev32, error) {
 		return Rev32{}, err
 	}
 
-	in, err := newRev32(base{}, r_rd, r_rn)
+	in, err := newRev32(r_rd, r_rn)
 	if err != nil {
 		return Rev32{}, err
 	}
@@ -592,7 +592,7 @@ func RorRegOf(rd string, rn string, rm string) (RorReg, error) {
 		return RorReg{}, err
 	}
 
-	in, err := newRorReg(base{}, r_rd, r_rn, r_rm)
+	in, err := newRorReg(r_rd, r_rn, r_rm)
 	if err != nil {
 		return RorReg{}, err
 	}
@@ -618,7 +618,7 @@ func SdivOf(rd string, rn string, rm string) (Sdiv, error) {
 		return Sdiv{}, err
 	}
 
-	in, err := newSdiv(base{}, r_rd, r_rn, r_rm)
+	in, err := newSdiv(r_rd, r_rn, r_rm)
 	if err != nil {
 		return Sdiv{}, err
 	}
@@ -644,7 +644,7 @@ func SmulhOf(rd string, rn string, rm string) (Smulh, error) {
 		return Smulh{}, err
 	}
 
-	in, err := newSmulh(base{}, r_rd, r_rn, r_rm)
+	in, err := newSmulh(r_rd, r_rn, r_rm)
 	if err != nil {
 		return Smulh{}, err
 	}
@@ -681,7 +681,7 @@ func UdivOf(rd string, rn string, rm string) (Udiv, error) {
 		return Udiv{}, err
 	}
 
-	in, err := newUdiv(base{}, r_rd, r_rn, r_rm)
+	in, err := newUdiv(r_rd, r_rn, r_rm)
 	if err != nil {
 		return Udiv{}, err
 	}
@@ -707,7 +707,7 @@ func UmulhOf(rd string, rn string, rm string) (Umulh, error) {
 		return Umulh{}, err
 	}
 
-	in, err := newUmulh(base{}, r_rd, r_rn, r_rm)
+	in, err := newUmulh(r_rd, r_rn, r_rm)
 	if err != nil {
 		return Umulh{}, err
 	}
@@ -738,7 +738,7 @@ func LdrOf(
 	rm, option string,
 	amt uint32,
 ) (Ldr, error) {
-	return newLdrBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdrBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdrbOf — the Ldrb family by the memory-operand base.
@@ -750,7 +750,7 @@ func LdrbOf(
 	rm, option string,
 	amt uint32,
 ) (Ldrb, error) {
-	return newLdrbBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdrbBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdrhOf — the Ldrh family by the memory-operand base.
@@ -762,7 +762,7 @@ func LdrhOf(
 	rm, option string,
 	amt uint32,
 ) (Ldrh, error) {
-	return newLdrhBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdrhBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // StrOf — the Str family by the memory-operand base.
@@ -774,7 +774,7 @@ func StrOf(
 	rm, option string,
 	amt uint32,
 ) (Str, error) {
-	return newStrBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newStrBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // StrbOf — the Strb family by the memory-operand base.
@@ -786,7 +786,7 @@ func StrbOf(
 	rm, option string,
 	amt uint32,
 ) (Strb, error) {
-	return newStrbBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newStrbBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // StrhOf — the Strh family by the memory-operand base.
@@ -798,7 +798,7 @@ func StrhOf(
 	rm, option string,
 	amt uint32,
 ) (Strh, error) {
-	return newStrhBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newStrhBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdurOf — the Ldur family by the memory-operand base.
@@ -810,7 +810,7 @@ func LdurOf(
 	rm, option string,
 	amt uint32,
 ) (Ldur, error) {
-	return newLdurBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdurBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // SturOf — the Stur family by the memory-operand base.
@@ -822,7 +822,7 @@ func SturOf(
 	rm, option string,
 	amt uint32,
 ) (Stur, error) {
-	return newSturBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newSturBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdurbOf — the Ldurb family by the memory-operand base.
@@ -834,7 +834,7 @@ func LdurbOf(
 	rm, option string,
 	amt uint32,
 ) (Ldurb, error) {
-	return newLdurbBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdurbBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdurhOf — the Ldurh family by the memory-operand base.
@@ -846,7 +846,7 @@ func LdurhOf(
 	rm, option string,
 	amt uint32,
 ) (Ldurh, error) {
-	return newLdurhBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdurhBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // SturbOf — the Sturb family by the memory-operand base.
@@ -858,7 +858,7 @@ func SturbOf(
 	rm, option string,
 	amt uint32,
 ) (Sturb, error) {
-	return newSturbBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newSturbBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // SturhOf — the Sturh family by the memory-operand base.
@@ -870,7 +870,7 @@ func SturhOf(
 	rm, option string,
 	amt uint32,
 ) (Sturh, error) {
-	return newSturhBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newSturhBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdrswOf — the Ldrsw family by the memory-operand base.
@@ -882,28 +882,27 @@ func LdrswOf(
 	rm, option string,
 	amt uint32,
 ) (Ldrsw, error) {
-	return newLdrswBase(base{}, makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
+	return newLdrswBase(makeLSBase(rt, rn, kind, off, enc, rm, option, amt)), nil
 }
 
 // LdrLitOf — the ldr literal form (ldr rt, =addr / label; lit — the
 // pc-relative byte offset of the literal).
 func LdrLitOf(rt string, lit int64, enc uint32) (Ldr, error) {
-	return newLdrBase(base{}, newLsBase(rt, "", memLiteral, 0, lit, enc, "", "", 0)), nil
+	return newLdrBase(newLsBase(rt, "", memLiteral, 0, lit, enc, "", "", 0)), nil
 }
 
 // LdpOf/StpOf — the load/store pair family.
 func LdpOf(rt, rt2, rn string, kind MemKind, off int64, scale, enc uint32) (Ldp, error) {
-	return newLdpBase(base{}, newPairBase(rt, rt2, rn, kind, off, scale, enc)), nil
+	return newLdpBase(newPairBase(rt, rt2, rn, kind, off, scale, enc)), nil
 }
 
 func StpOf(rt, rt2, rn string, kind MemKind, off int64, scale, enc uint32) (Stp, error) {
-	return newStpBase(base{}, newPairBase(rt, rt2, rn, kind, off, scale, enc)), nil
+	return newStpBase(newPairBase(rt, rt2, rn, kind, off, scale, enc)), nil
 }
 
 // AddExtOf — the AddExt family (register-extend operand).
 func AddExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) (AddExt, error) {
 	return newAddExtBase(
-		base{},
 		newExtBase(rdNum, rnNum, rmNum, option, imm3, isf),
 	), nil
 }
@@ -911,7 +910,6 @@ func AddExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) 
 // AddsExtOf — the AddsExt family (register-extend operand).
 func AddsExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) (AddsExt, error) {
 	return newAddsExtBase(
-		base{},
 		newExtBase(rdNum, rnNum, rmNum, option, imm3, isf),
 	), nil
 }
@@ -919,7 +917,6 @@ func AddsExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool)
 // SubExtOf — the SubExt family (register-extend operand).
 func SubExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) (SubExt, error) {
 	return newSubExtBase(
-		base{},
 		newExtBase(rdNum, rnNum, rmNum, option, imm3, isf),
 	), nil
 }
@@ -927,7 +924,6 @@ func SubExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) 
 // SubsExtOf — the SubsExt family (register-extend operand).
 func SubsExtOf(rdNum, rnNum, rmNum uint32, option string, imm3 uint32, isf bool) (SubsExt, error) {
 	return newSubsExtBase(
-		base{},
 		newExtBase(rdNum, rnNum, rmNum, option, imm3, isf),
 	), nil
 }
@@ -944,7 +940,7 @@ func AndImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (AndImm, error) {
 		return AndImm{}, err
 	}
 
-	in, err := newAndImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
+	in, err := newAndImm(r1, r2, decodeBitMasks(n, immr, imms, is64))
 	if err != nil {
 		return AndImm{}, err
 	}
@@ -964,7 +960,7 @@ func EorImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (EorImm, error) {
 		return EorImm{}, err
 	}
 
-	in, err := newEorImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
+	in, err := newEorImm(r1, r2, decodeBitMasks(n, immr, imms, is64))
 	if err != nil {
 		return EorImm{}, err
 	}
@@ -994,7 +990,7 @@ func AddsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (AddsSh
 		return AddsShift{}, err
 	}
 
-	in, err := newAddsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newAddsShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return AddsShift{}, err
 	}
@@ -1024,7 +1020,7 @@ func AddShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (AddShif
 		return AddShift{}, err
 	}
 
-	in, err := newAddShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newAddShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return AddShift{}, err
 	}
@@ -1054,7 +1050,7 @@ func AndShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (AndShif
 		return AndShift{}, err
 	}
 
-	in, err := newAndShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newAndShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return AndShift{}, err
 	}
@@ -1084,7 +1080,7 @@ func EorShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (EorShif
 		return EorShift{}, err
 	}
 
-	in, err := newEorShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newEorShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return EorShift{}, err
 	}
@@ -1114,7 +1110,7 @@ func EonShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (EonShif
 		return EonShift{}, err
 	}
 
-	in, err := newEonShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newEonShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return EonShift{}, err
 	}
@@ -1144,7 +1140,7 @@ func BicShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (BicShif
 		return BicShift{}, err
 	}
 
-	in, err := newBicShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newBicShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return BicShift{}, err
 	}
@@ -1174,7 +1170,7 @@ func BicsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (BicsSh
 		return BicsShift{}, err
 	}
 
-	in, err := newBicsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	in, err := newBicsShift(r1, r2, r3, imm6Of(imm6), sh)
 	if err != nil {
 		return BicsShift{}, err
 	}
@@ -1224,7 +1220,7 @@ func MsubOf(rd, rn, rm, ra string) (Msub, error) {
 		return Msub{}, err
 	}
 
-	m, err := newMadd(base{}, r1, r2, r4, r3)
+	m, err := newMadd(r1, r2, r4, r3)
 	if err != nil {
 		return Msub{}, err
 	}
@@ -1240,19 +1236,19 @@ func CsnegOf(c Csel) (Csneg, error) { return Csneg{Csel: c}, nil }
 // AddImmOf/AddsImmOf/SubImmOf/SubsImmOf — the immediate families
 // (register numbers: 31 means sp/wsp).
 func AddImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (AddImm, error) {
-	return newAddImm(base{}, numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
+	return newAddImm(numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
 }
 
 func AddsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (AddsImm, error) {
-	return newAddsImm(base{}, numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
+	return newAddsImm(numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
 }
 
 func SubImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (SubImm, error) {
-	return newSubImm(base{}, numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
+	return newSubImm(numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
 }
 
 func SubsImmOf(rdNum, rnNum, imm12 uint32, shift bool, isf bool) (SubsImm, error) {
-	return newSubsImm(base{}, numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
+	return newSubsImm(numReg(rdNum, isf), numReg(rnNum, isf), imm12Of(imm12), sh12Of(shift))
 }
 
 // UbfmOfC — the concrete UBFM (api.go's UbfmOf returns Instr; this form
@@ -1268,5 +1264,5 @@ func UbfmOfC(rd, rn string, immr, imms uint32, isf bool) (Ubfm, error) {
 		return Ubfm{}, err
 	}
 
-	return newUbfm(base{}, r1, r2, immr, imms)
+	return newUbfm(r1, r2, immr, imms)
 }

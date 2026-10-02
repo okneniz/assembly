@@ -9,8 +9,6 @@ import (
 
 // LdxH - ldx.h rd, rj, rk (3R): rd = sign16(MEM[rj + rk]).
 type LdxH struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -26,18 +26,10 @@ type Instr interface {
 	Encode(w io.Writer) (int64, error)
 }
 
-// base — the bookkeeping record of every instruction: the raw word.
-// The encoding is fixed 32-bit, so Len is a constant (unlike RISC-V,
-// where the compressed halfwords carry their length).
-type base struct {
-	raw uint32
-}
-
-func newBase(raw uint32) base {
-	return base{raw: raw}
-}
-
-func (b base) Len() int {
+// InstrLen — the byte length of the instruction at the head of code:
+// the ARM64 encoding is fixed 32-bit (unlike RISC-V, where the compressed
+// halfwords carry their length) — a stream property, not an instruction one.
+func InstrLen(_ []byte) int {
 	return 4
 }
 
@@ -167,8 +159,6 @@ func NewSchema(
 // Unknown — a word matching no encoding (the ".word" fallback): displayed
 // as .word #0x...; Encode re-emits the raw word.
 type Unknown struct {
-	base
-
 	word uint32
 }
 
@@ -178,7 +168,6 @@ func newUnknown(
 	w uint32,
 ) (Unknown, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return Unknown{
-		base: newBase(w),
 		word: w,
 	}, nil
 }

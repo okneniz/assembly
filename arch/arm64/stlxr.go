@@ -8,7 +8,6 @@ import (
 
 // Stlxr — stlxr rs, rt, [rn].
 type Stlxr struct {
-	base
 	excl
 
 	enc uint32
@@ -16,9 +15,8 @@ type Stlxr struct {
 
 // newStlxrBase - the Stlxr constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newStlxrBase(b base, e excl, enc uint32) Stlxr {
+func newStlxrBase(e excl, enc uint32) Stlxr {
 	return Stlxr{
-		base: b,
 		excl: e,
 		enc:  enc,
 	}
@@ -26,7 +24,7 @@ func newStlxrBase(b base, e excl, enc uint32) Stlxr {
 
 // newStlxr - the Stlxr constructor: validates the operands,
 // delegates the assembly to newStlxrBase.
-func newStlxr(b base, rs, rt, rn Reg) (Stlxr, error) {
+func newStlxr(rs, rt, rn Reg) (Stlxr, error) {
 	err := requireClass(
 		rs,
 		"Stlxr",
@@ -49,7 +47,7 @@ func newStlxr(b base, rs, rt, rn Reg) (Stlxr, error) {
 		enc = stlxrXEnc
 	}
 
-	return newStlxrBase(b, newExcl(rs.name(), rt.name(), rn.name()), enc), nil
+	return newStlxrBase(newExcl(rs.name(), rt.name(), rn.name()), enc), nil
 }
 
 // Encodings of the 64/32-bit forms: the access size is set by rt.

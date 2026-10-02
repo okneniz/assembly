@@ -10,8 +10,6 @@ import (
 // StleW - stle.w rd, rj, rk (DJK): store the low word of rd with a bounds
 // check against rk, trapping outside.
 type StleW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

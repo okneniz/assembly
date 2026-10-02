@@ -9,23 +9,21 @@ import (
 
 // Ldrb — ldrb ... (see lsBase for the addressing kinds).
 type Ldrb struct {
-	base
 	lsBase
 }
 
 // newLdrbBase - the Ldrb constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdrbBase(b base, e lsBase) Ldrb {
+func newLdrbBase(e lsBase) Ldrb {
 	return Ldrb{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newLdrb - the Ldrb constructor: validates the operands,
 // delegates the assembly to newLdrbBase.
-func newLdrb(b base, rt, rn Reg, off Off) (Ldrb, error) {
+func newLdrb(rt, rn Reg, off Off) (Ldrb, error) {
 	err := requireClass(
 		rt,
 		"Ldrb",
@@ -57,7 +55,6 @@ func newLdrb(b base, rt, rn Reg, off Off) (Ldrb, error) {
 	}
 
 	return newLdrbBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrbEnc, "", "", 0),
 	), nil
 }

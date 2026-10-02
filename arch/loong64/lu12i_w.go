@@ -10,8 +10,6 @@ import (
 // Lu12iW - lu12i.w rd, si20 (1RI20): rd = si20 << 12 (the low 32 bits are
 // emptied).
 type Lu12iW struct {
-	base
-
 	rd  uint8
 	imm imm
 }

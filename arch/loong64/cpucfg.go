@@ -9,8 +9,6 @@ import (
 
 // Cpucfg - cpucfg rd, rj (2R): rd = the configuration register selected by rj.
 type Cpucfg struct {
-	base
-
 	rd, rj uint8
 }
 

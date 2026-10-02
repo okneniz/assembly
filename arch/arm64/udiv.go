@@ -9,15 +9,13 @@ import (
 
 // Udiv — udiv rd, rn, rm.
 type Udiv struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newUdiv - the Udiv constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newUdiv(b base, rd Reg, rn Reg, rm Reg) (Udiv, error) {
+func newUdiv(rd Reg, rn Reg, rm Reg) (Udiv, error) {
 	err := requireClass(
 		rd,
 		"Udiv",
@@ -75,10 +73,9 @@ func newUdiv(b base, rd Reg, rn Reg, rm Reg) (Udiv, error) {
 	}
 
 	return Udiv{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

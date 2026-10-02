@@ -9,8 +9,6 @@ import (
 
 // Revbit4B - bitrev.4b rd, rj (2R): rd = rj with the bits reversed in each nibble.
 type Revbit4B struct {
-	base
-
 	rd, rj uint8
 }
 

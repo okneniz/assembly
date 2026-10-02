@@ -9,8 +9,6 @@ import (
 
 // LdxWu - ldx.wu rd, rj, rk (3R): rd = zero32(MEM[rj + rk]).
 type LdxWu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

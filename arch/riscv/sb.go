@@ -9,8 +9,6 @@ import (
 
 // Sb - sb rs2, off(rs1).
 type Sb struct {
-	base
-
 	rs1, rs2 string
 	off      imm
 }

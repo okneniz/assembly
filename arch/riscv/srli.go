@@ -9,16 +9,13 @@ import (
 
 // Srli - srli rd, rs1, shamt; compression: c.srli (shamt < 32).
 type Srli struct {
-	base
-
 	rd, rs1 string
 	shamt   imm
 }
 
 // cSrli - compressed forms (c.srli): base - halfword, length 2.
-func cSrli(h uint32, rd, rs1 string, shamt int64) Srli {
+func cSrli(rd, rs1 string, shamt int64) Srli {
 	return Srli{
-		base:  newHalfBase(h),
 		rd:    rd,
 		rs1:   rs1,
 		shamt: immNum(shamt),

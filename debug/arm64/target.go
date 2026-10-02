@@ -65,16 +65,17 @@ func (Target) Disasm(code []byte, addr uint64) []string {
 	off := 0
 	for _, in := range instrs {
 		if off < len(code) {
-			out = append(out, disasm.Line(addr+uint64(off), code[off:], in, opts))
+			n := arch.InstrLen(code[off:])
+			out = append(out, disasm.Line(addr+uint64(off), code[off:off+n], in, opts))
+			off += n
 		}
-
-		off += in.Len()
 	}
 
 	return out
 }
 
-// InstrLen - a fixed 4 bytes (no arm64 compressed form).
-func (Target) InstrLen([]byte) int {
-	return 4
+// InstrLen - the arch stream rule (a fixed 4 bytes: no arm64 compressed
+// form).
+func (Target) InstrLen(code []byte) int {
+	return arch.InstrLen(code)
 }

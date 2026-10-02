@@ -10,8 +10,6 @@ import (
 // Orn — orn.8b/16b vd, vn, vm (the logical three-same group:
 // bits 23:22 are the opcode, the arrangement is 8b/16b by Q).
 type Orn struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b
 }
@@ -19,18 +17,17 @@ type Orn struct {
 // newOrn - the Orn constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newOrn(b base, rd, rn, rm VReg, arr string) (Orn, error) {
+func newOrn(rd, rn, rm VReg, arr string) (Orn, error) {
 	err := requireArr("Orn", arr, "8b", "16b")
 	if err != nil {
 		return Orn{}, err
 	}
 
 	return Orn{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

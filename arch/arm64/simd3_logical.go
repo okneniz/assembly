@@ -15,28 +15,27 @@ func decodeSimd3Logical(w uint32) (Instr, error) {
 		arr = "16b"
 	}
 
-	b := newBase(w)
 	rd := newVReg(uint8(w & 0x1f))
 	rn := newVReg(uint8(w>>5) & 0x1f)
 	rm := newVReg(uint8(w>>16) & 0x1f)
 
 	switch w>>29&1<<2 | w>>22&3 {
 	case 0b0000:
-		return newAnd(b, rd, rn, rm, arr)
+		return newAnd(rd, rn, rm, arr)
 	case 0b0001:
-		return newBic(b, rd, rn, rm, arr)
+		return newBic(rd, rn, rm, arr)
 	case 0b0010:
-		return newOrr(b, rd, rn, rm, arr)
+		return newOrr(rd, rn, rm, arr)
 	case 0b0011:
-		return newOrn(b, rd, rn, rm, arr)
+		return newOrn(rd, rn, rm, arr)
 	case 0b0100:
-		return newEor(b, rd, rn, rm, arr)
+		return newEor(rd, rn, rm, arr)
 	case 0b0101:
-		return newBsl(b, rd, rn, rm, arr)
+		return newBsl(rd, rn, rm, arr)
 	case 0b0110:
-		return newBit(b, rd, rn, rm, arr)
+		return newBit(rd, rn, rm, arr)
 	default:
-		return newBif(b, rd, rn, rm, arr)
+		return newBif(rd, rn, rm, arr)
 	}
 }
 

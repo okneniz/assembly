@@ -10,8 +10,6 @@ import (
 // Csel — csel rd, rn, rm, cond. Csinc/Csinv/Csneg — the same encodings
 // with the inverse aliases cset/csetm/cinc/cinv/cneg.
 type Csel struct {
-	base
-
 	rd, rn, rm string
 	cond       string
 }
@@ -19,7 +17,7 @@ type Csel struct {
 // newCsel - the Csel constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newCsel(b base, rd Reg, rn Reg, rm Reg, cond string) (Csel, error) {
+func newCsel(rd Reg, rn Reg, rm Reg, cond string) (Csel, error) {
 	err := requireClass(
 		rd,
 		"Csel",
@@ -81,7 +79,6 @@ func newCsel(b base, rd Reg, rn Reg, rm Reg, cond string) (Csel, error) {
 	}
 
 	return Csel{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		rm:   rm.name(),

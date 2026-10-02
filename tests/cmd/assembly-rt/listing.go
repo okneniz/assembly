@@ -75,7 +75,7 @@ func buildListing(
 		}
 
 		for _, in := range insts {
-			n := in.Len()
+			n := riscv.InstrLen(data[off:])
 			addr := base + uint64(off)
 			line := cleanLine(in.ObjDump(disasm.ViewCtxAt(addr)))
 			if line == "" || line == "<unknown>" {

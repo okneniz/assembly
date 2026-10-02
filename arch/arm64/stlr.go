@@ -8,7 +8,6 @@ import (
 
 // Stlr — stlr rt, [rn].
 type Stlr struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Stlr struct {
 
 // newStlrBase - the Stlr constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newStlrBase(b base, e atomic, enc uint32) Stlr {
+func newStlrBase(e atomic, enc uint32) Stlr {
 	return Stlr{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newStlrBase(b base, e atomic, enc uint32) Stlr {
 
 // newStlr - the Stlr constructor: validates the operands,
 // delegates the assembly to newStlrBase.
-func newStlr(b base, rt, rn Reg) (Stlr, error) {
+func newStlr(rt, rn Reg) (Stlr, error) {
 	if err := lsOperand(rt, rn, "Stlr"); err != nil {
 		return Stlr{}, err
 	}
@@ -36,7 +34,7 @@ func newStlr(b base, rt, rn Reg) (Stlr, error) {
 		enc = stlrXEnc
 	}
 
-	return newStlrBase(b, newAtomic(rt.name(), rn.name()), enc), nil
+	return newStlrBase(newAtomic(rt.name(), rn.name()), enc), nil
 }
 
 // Encodings of the 64/32-bit forms: the access size is set by rt.

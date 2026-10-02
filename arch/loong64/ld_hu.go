@@ -9,8 +9,6 @@ import (
 
 // LdHu - ld.hu rd, rj, si12 (2RI12): rd = the halfword at rj + si12, zero-extended.
 type LdHu struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

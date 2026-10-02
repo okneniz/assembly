@@ -9,8 +9,6 @@ import (
 
 // CloW - clo.w rd, rj (2R): rd = the count of leading ones of low32(rj).
 type CloW struct {
-	base
-
 	rd, rj uint8
 }
 

@@ -13,16 +13,13 @@ import (
 
 // systemInstr - an operand-less system instruction: word = match.
 type systemInstr struct {
-	base
-
 	name  string
 	group string
 }
 
 // cSystem - compressed forms (c.ebreak): base - halfword, length 2.
-func cSystem(h uint32, name, group string) systemInstr {
+func cSystem(name, group string) systemInstr {
 	return systemInstr{
-		base:  newHalfBase(h),
 		name:  name,
 		group: group,
 	}
@@ -49,8 +46,6 @@ func newSystem(name string) func([]Op) (Instr, error) {
 // Fence - fence pred,succ (an optional numeric fm; the bare word 0xf
 // is printed as "fence").
 type Fence struct {
-	base
-
 	fm imm
 }
 

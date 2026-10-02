@@ -9,8 +9,6 @@ import (
 
 // ModWu - mod.wu rd, rj, rk (3R): rd = rj % rk (unsigned).
 type ModWu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

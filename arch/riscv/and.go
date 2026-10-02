@@ -9,18 +9,15 @@ import (
 
 // And - and rd, rs1, rs2.
 type And struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cAnd - compressed forms (c.and): base - halfword, length 2.
-func cAnd(h uint32, rd, rs1, rs2 string) And {
+func cAnd(rd, rs1, rs2 string) And {
 	return And{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

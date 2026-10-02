@@ -9,8 +9,6 @@ import (
 
 // Revh2W - revh.2w rd, rj (2R): rd = rj with the halfwords reversed in each word.
 type Revh2W struct {
-	base
-
 	rd, rj uint8
 }
 

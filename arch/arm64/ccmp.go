@@ -9,8 +9,6 @@ import (
 
 // Ccmp — ccmp rn, rm, #imm, cond.
 type Ccmp struct {
-	base
-
 	rn, rm string
 	immVal uint32
 	cond   string
@@ -19,7 +17,7 @@ type Ccmp struct {
 // newCcmp - the Ccmp constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newCcmp(b base, rn Reg, rm Reg, nzcv uint32, cond string) (Ccmp, error) {
+func newCcmp(rn Reg, rm Reg, nzcv uint32, cond string) (Ccmp, error) {
 	err := requireClass(
 		rn,
 		"Ccmp",
@@ -55,7 +53,6 @@ func newCcmp(b base, rn Reg, rm Reg, nzcv uint32, cond string) (Ccmp, error) {
 	}
 
 	return Ccmp{
-		base:   b,
 		rn:     rn.name(),
 		rm:     rm.name(),
 		immVal: nzcv,

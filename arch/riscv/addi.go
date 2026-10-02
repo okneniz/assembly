@@ -10,19 +10,16 @@ import (
 // Addi - addi rd, rs1, imm; pseudo: nop (zero,zero,0), li (rs1=zero),
 // mv (imm=0).
 type Addi struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }
 
 // cAddi - compressed forms (c.addi/c.nop/c.li/c.addi4spn/c.addi16sp): base - halfword, length 2.
-func cAddi(h uint32, rd, rs1 string, imm int64) Addi {
+func cAddi(rd, rs1 string, imm int64) Addi {
 	return Addi{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		imm:  immNum(imm),
+		rd:  rd,
+		rs1: rs1,
+		imm: immNum(imm),
 	}
 }
 

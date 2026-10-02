@@ -9,8 +9,6 @@ import (
 
 // RdtimelW - rdtimel.w rd, rj (2R): rd = low 32 bits of the stable counter + rj.
 type RdtimelW struct {
-	base
-
 	rd, rj uint8
 }
 

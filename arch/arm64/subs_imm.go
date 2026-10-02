@@ -10,8 +10,6 @@ import (
 
 // SubsImm — subs rd, rn, #imm12[, lsl #12]; pseudo: cmp (Rd = zr).
 type SubsImm struct {
-	base
-
 	rdNum, rnNum uint32 // 31: sp/wsp (Rd with S=1 - zr)
 	imm12        uint32
 	shift        bool // lsl #12
@@ -21,7 +19,7 @@ type SubsImm struct {
 // newSubsImm - the SubsImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSubsImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (SubsImm, error) {
+func newSubsImm(rd Reg, rn Reg, imm Imm12, sh Sh12) (SubsImm, error) {
 	err := requireClass(
 		rd,
 		"SubsImm",
@@ -63,7 +61,6 @@ func newSubsImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (SubsImm, error) {
 	}
 
 	return SubsImm{
-		base:  b,
 		rdNum: rd.bits(),
 		rnNum: rn.bits(),
 		imm12: imm.v,

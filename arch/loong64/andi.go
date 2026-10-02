@@ -9,8 +9,6 @@ import (
 
 // Andi - andi rd, rj, ui12 (2RI12): rd = rj & ui12.
 type Andi struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

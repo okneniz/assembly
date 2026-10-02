@@ -9,8 +9,6 @@ import (
 
 // Sbfm — sbfm rd, rn, #immr, #imms; aliases asr/sxtb/sxth/sxtw/sbfiz/sbfx.
 type Sbfm struct {
-	base
-
 	rd, rn     string
 	immr, imms uint32
 	rnNum      uint32 // for sxt*: the W name of Rn
@@ -20,7 +18,7 @@ type Sbfm struct {
 // newSbfm - the Sbfm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Sbfm, error) {
+func newSbfm(rd Reg, rn Reg, immr uint32, imms uint32) (Sbfm, error) {
 	err := requireClass(
 		rd,
 		"Sbfm",
@@ -78,7 +76,6 @@ func newSbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Sbfm, error) {
 	}
 
 	return Sbfm{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		immr:  immr,

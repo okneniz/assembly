@@ -9,25 +9,22 @@ import (
 
 // Fmax — fmax fd, fn, fm (double/single by the operand kind).
 type Fmax struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFmax - the Fmax constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmax(b base, rd, rn, rm FReg) (Fmax, error) {
+func newFmax(rd, rn, rm FReg) (Fmax, error) {
 	err := requireFpKind("Fmax", rd, rn, rm)
 	if err != nil {
 		return Fmax{}, err
 	}
 
 	return Fmax{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

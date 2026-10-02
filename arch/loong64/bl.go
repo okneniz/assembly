@@ -10,8 +10,6 @@ import (
 // ($ra = pc + 4), jump to pc + offs (word-scaled). The decoded form
 // stores the byte offset itself.
 type Bl struct {
-	base
-
 	off imm
 }
 

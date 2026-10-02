@@ -9,8 +9,6 @@ import (
 
 // Ldrsh — ldrsh rt, [rn, #imm12<<1].
 type Ldrsh struct {
-	base
-
 	rt, rn string
 	off    int64
 }
@@ -18,7 +16,7 @@ type Ldrsh struct {
 // newLdrsh - the Ldrsh constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newLdrsh(b base, rt Reg, rn Reg, off Off) (Ldrsh, error) {
+func newLdrsh(rt Reg, rn Reg, off Off) (Ldrsh, error) {
 	err := requireClass(
 		rt,
 		"Ldrsh",
@@ -50,10 +48,9 @@ func newLdrsh(b base, rt Reg, rn Reg, off Off) (Ldrsh, error) {
 	}
 
 	return Ldrsh{
-		base: b,
-		rt:   rt.name(),
-		rn:   rn.name(),
-		off:  int64(off),
+		rt:  rt.name(),
+		rn:  rn.name(),
+		off: int64(off),
 	}, nil
 }
 

@@ -9,7 +9,6 @@ import (
 // Tlbsrch - tlbsrch: search the TLB for an entry matching the address
 // in the TLB search registers (no operands).
 type Tlbsrch struct {
-	base
 }
 
 func (i Tlbsrch) ObjDump(_ disasm.ViewCtx) string {

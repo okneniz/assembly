@@ -9,8 +9,6 @@ import (
 
 // Fld - fld rd, off(rs1) (rd - floating).
 type Fld struct {
-	base
-
 	rd, rs1 string
 	off     imm
 }

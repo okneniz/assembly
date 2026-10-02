@@ -11,18 +11,15 @@ import (
 // Jal - jal rd, off; pseudo: j (rd=zero), "jal off" (rd=ra, rd
 // omitted). Compression: c.j (rd=zero).
 type Jal struct {
-	base
-
 	rd  string
 	off imm // pc-relative byte offset
 }
 
 // cJal - compressed forms (c.j): base - halfword, length 2.
-func cJal(h uint32, rd string, off int64) Jal {
+func cJal(rd string, off int64) Jal {
 	return Jal{
-		base: newHalfBase(h),
-		rd:   rd,
-		off:  immNum(off),
+		rd:  rd,
+		off: immNum(off),
 	}
 }
 

@@ -27,18 +27,10 @@ type Instr interface {
 	Encode(w io.Writer) (int64, error)
 }
 
-// base - the bookkeeping record of every instruction: the raw word.
-// The encoding is fixed 32-bit, so Len is a constant (unlike RISC-V,
-// where the compressed halfwords carry their length).
-type base struct {
-	raw uint32
-}
-
-func newBase(raw uint32) base {
-	return base{raw: raw}
-}
-
-func (b base) Len() int {
+// InstrLen - the byte length of the instruction at the head of code:
+// the LoongArch encoding is fixed 32-bit (no compressed form) - a
+// stream property, not an instruction one.
+func InstrLen(_ []byte) int {
 	return 4
 }
 
@@ -52,11 +44,11 @@ func writeWord(w io.Writer, word uint32) (int64, error) {
 // displayed as <unknown> (in angle brackets - objdiff comparison
 // treats it as an annotation), Encode re-emits the raw word.
 type Unknown struct {
-	base
+	raw uint32
 }
 
-func newUnknown(base_ base) Unknown {
-	return Unknown{base: base_}
+func newUnknown(raw uint32) Unknown {
+	return Unknown{raw: raw}
 }
 
 func (i Unknown) ObjDump(_ disasm.ViewCtx) string {

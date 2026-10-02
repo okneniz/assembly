@@ -9,15 +9,13 @@ import (
 
 // Cls — cls rd, rn.
 type Cls struct {
-	base
-
 	rd, rn string
 }
 
 // newCls - the Cls constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newCls(b base, rd Reg, rn Reg) (Cls, error) {
+func newCls(rd Reg, rn Reg) (Cls, error) {
 	err := requireClass(
 		rd,
 		"Cls",
@@ -59,9 +57,8 @@ func newCls(b base, rd Reg, rn Reg) (Cls, error) {
 	}
 
 	return Cls{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

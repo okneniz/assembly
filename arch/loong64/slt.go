@@ -9,8 +9,6 @@ import (
 
 // Slt - slt rd, rj, rk (3R): rd = (signed rj < signed rk) ? 1 : 0.
 type Slt struct {
-	base
-
 	rd, rj, rk uint8
 }
 

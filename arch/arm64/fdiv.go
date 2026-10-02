@@ -9,25 +9,22 @@ import (
 
 // Fdiv — fdiv fd, fn, fm (double/single by the operand kind).
 type Fdiv struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFdiv - the Fdiv constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFdiv(b base, rd, rn, rm FReg) (Fdiv, error) {
+func newFdiv(rd, rn, rm FReg) (Fdiv, error) {
 	err := requireFpKind("Fdiv", rd, rn, rm)
 	if err != nil {
 		return Fdiv{}, err
 	}
 
 	return Fdiv{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

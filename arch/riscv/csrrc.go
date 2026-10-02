@@ -9,7 +9,6 @@ import (
 
 // Csrrc - csrrc rd, csr, rs1.
 type Csrrc struct {
-	base
 	csrOp
 
 	rs1 string

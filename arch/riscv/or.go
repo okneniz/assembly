@@ -9,18 +9,15 @@ import (
 
 // Or - or rd, rs1, rs2.
 type Or struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cOr - compressed forms (c.or): base - halfword, length 2.
-func cOr(h uint32, rd, rs1, rs2 string) Or {
+func cOr(rd, rs1, rs2 string) Or {
 	return Or{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

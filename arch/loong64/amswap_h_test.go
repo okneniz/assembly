@@ -27,6 +27,5 @@ func TestAmswapHDecodeEncode(t *testing.T) {
 	amswaph, ok := in.(AmswapH)
 	require.True(t, ok, "type = %T, want AmswapH", in)
 	require.Equal(t, "amswap.h $t0, $t1, $t2", amswaph.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, amswaph.Len())
 	require.Equal(t, uint32(0x385cb5cc), ctorWord(t, amswaph))
 }

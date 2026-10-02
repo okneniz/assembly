@@ -31,6 +31,5 @@ func TestInvtlbDecodeEncode(t *testing.T) {
 	x, ok := in.(Invtlb)
 	require.True(t, ok, "type = %T, want Invtlb", in)
 	require.Equal(t, "invtlb 3, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x0649b9a3), ctorWord(t, x))
 }

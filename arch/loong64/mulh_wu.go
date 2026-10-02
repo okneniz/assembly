@@ -9,8 +9,6 @@ import (
 
 // MulhWu - mulh.wu rd, rj, rk (3R): rd = high half of the unsigned 64-bit product low32(rj) * low32(rk).
 type MulhWu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

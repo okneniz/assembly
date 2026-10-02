@@ -81,5 +81,5 @@ func decodeOne(word uint32) Instr {
 		return ctor(word)
 	}
 
-	return Unknown{base: newBase(word)}
+	return Unknown{raw: word}
 }

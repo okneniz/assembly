@@ -10,8 +10,6 @@ import (
 
 // AmominuW - amominu.w rd, rs2, (rs1).
 type AmominuW struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

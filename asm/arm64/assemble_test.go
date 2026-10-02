@@ -279,7 +279,7 @@ func TestArmRoundTripExample(t *testing.T) {
 	off := uint64(0)
 	for _, in := range insts {
 		addr := ts.Addr + off
-		off += uint64(in.Len())
+		off += uint64(arch.InstrLen(ts.Data[off:]))
 		if _, ok := in.(arch.Generic); ok {
 			continue // decode-only: the generic syntax is not parsed by the assembler
 		}

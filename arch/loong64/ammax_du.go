@@ -9,8 +9,6 @@ import (
 
 // AmmaxDu - ammax.du rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = max(MEM[rj], rk), unsigned.
 type AmmaxDu struct {
-	base
-
 	rd, rk, rj uint8
 }
 

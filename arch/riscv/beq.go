@@ -9,19 +9,16 @@ import (
 
 // Beq - beq rs1, rs2, off; pseudo: beqz.
 type Beq struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }
 
 // cBeq - compressed forms (c.beqz): base - halfword, length 2.
-func cBeq(h uint32, rs1, rs2 string, off int64) Beq {
+func cBeq(rs1, rs2 string, off int64) Beq {
 	return Beq{
-		base: newHalfBase(h),
-		rs1:  rs1,
-		rs2:  rs2,
-		off:  immNum(off),
+		rs1: rs1,
+		rs2: rs2,
+		off: immNum(off),
 	}
 }
 

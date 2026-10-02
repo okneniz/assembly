@@ -9,8 +9,6 @@ import (
 
 // Ori - ori rd, rs1, imm.
 type Ori struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }

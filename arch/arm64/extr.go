@@ -10,8 +10,6 @@ import (
 
 // Extr — extr rd, rn, rm, #lsb; pseudo: ror rd, rn, #imm (rn == rm).
 type Extr struct {
-	base
-
 	rd, rn, rm string
 	lsb        uint32
 	isf        bool
@@ -20,7 +18,7 @@ type Extr struct {
 // newExtr - the Extr constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newExtr(b base, rd Reg, rn Reg, rm Reg, lsb Imm6) (Extr, error) {
+func newExtr(rd Reg, rn Reg, rm Reg, lsb Imm6) (Extr, error) {
 	for _, r := range []struct {
 		reg Reg
 		op  string
@@ -60,12 +58,11 @@ func newExtr(b base, rd Reg, rn Reg, rm Reg, lsb Imm6) (Extr, error) {
 	}
 
 	return Extr{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		lsb:  lsb.v,
-		isf:  isf,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		lsb: lsb.v,
+		isf: isf,
 	}, nil
 }
 

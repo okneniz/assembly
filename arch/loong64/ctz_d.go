@@ -9,8 +9,6 @@ import (
 
 // CtzD - ctz.d rd, rj (2R): rd = the count of trailing zeros of rj.
 type CtzD struct {
-	base
-
 	rd, rj uint8
 }
 

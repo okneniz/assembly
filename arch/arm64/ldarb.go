@@ -8,7 +8,6 @@ import (
 
 // Ldarb — ldarb rt, [rn].
 type Ldarb struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Ldarb struct {
 
 // newLdarbBase - the Ldarb constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newLdarbBase(b base, e atomic, enc uint32) Ldarb {
+func newLdarbBase(e atomic, enc uint32) Ldarb {
 	return Ldarb{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newLdarbBase(b base, e atomic, enc uint32) Ldarb {
 
 // newLdarb - the Ldarb constructor: validates the operands,
 // delegates the assembly to newLdarbBase.
-func newLdarb(b base, rt, rn Reg) (Ldarb, error) {
+func newLdarb(rt, rn Reg) (Ldarb, error) {
 	err := requireClass(
 		rt,
 		"Ldarb",
@@ -53,7 +51,7 @@ func newLdarb(b base, rt, rn Reg) (Ldarb, error) {
 		return Ldarb{}, err
 	}
 
-	return newLdarbBase(b, newAtomic(rt.name(), rn.name()), ldarbEnc), nil
+	return newLdarbBase(newAtomic(rt.name(), rn.name()), ldarbEnc), nil
 }
 
 const ldarbEnc uint32 = 0x08DFFC00 // ldarb wt, [xn]

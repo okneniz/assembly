@@ -10,8 +10,6 @@ import (
 
 // AmoswapD - amoswap.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = rs2.
 type AmoswapD struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

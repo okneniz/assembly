@@ -748,7 +748,7 @@ func TestPropertyDecodeRobustness(t *testing.T) {
 				_ = in.ObjDump(disasm.DefaultViewCtx())
 			}
 
-			ok = len(ins) == 1 && ins[0].Len() == 4
+			ok = len(ins) == 1
 		}()
 		return ok
 	}, checkOpts(0))

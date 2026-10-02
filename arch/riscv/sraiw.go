@@ -9,8 +9,6 @@ import (
 
 // Sraiw - sraiw rd, rs1, shamt (shamt5).
 type Sraiw struct {
-	base
-
 	rd, rs1 string
 	shamt   imm
 }

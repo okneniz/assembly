@@ -10,8 +10,6 @@ import (
 
 // AmoorW - amoor.w rd, rs2, (rs1).
 type AmoorW struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

@@ -9,8 +9,6 @@ import (
 
 // AddD - add.d rd, rj, rk (3R): rd = rj + rk.
 type AddD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

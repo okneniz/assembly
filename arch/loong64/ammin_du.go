@@ -9,8 +9,6 @@ import (
 
 // AmminDu - ammin.du rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = min(MEM[rj], rk), unsigned.
 type AmminDu struct {
-	base
-
 	rd, rk, rj uint8
 }
 

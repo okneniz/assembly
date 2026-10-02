@@ -9,7 +9,6 @@ import (
 // Tlbwr - tlbwr: write the TLB entry registers to the indexed TLB
 // entry without a search (no operands).
 type Tlbwr struct {
-	base
 }
 
 func (i Tlbwr) ObjDump(_ disasm.ViewCtx) string {

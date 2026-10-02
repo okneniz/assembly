@@ -8,8 +8,6 @@ import (
 
 // sysFixed - operandless system instructions with a fixed word (dmb/yield/dc).
 type sysFixed struct {
-	base
-
 	name  string
 	ops   string
 	group string

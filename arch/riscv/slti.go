@@ -9,8 +9,6 @@ import (
 
 // Slti - slti rd, rs1, imm.
 type Slti struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }

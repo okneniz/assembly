@@ -10,8 +10,6 @@ import (
 
 // SubImm — sub rd, rn, #imm12[, lsl #12].
 type SubImm struct {
-	base
-
 	rdNum, rnNum uint32 // 31: sp/wsp
 	imm12        uint32
 	shift        bool // lsl #12
@@ -21,7 +19,7 @@ type SubImm struct {
 // newSubImm - the SubImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSubImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (SubImm, error) {
+func newSubImm(rd Reg, rn Reg, imm Imm12, sh Sh12) (SubImm, error) {
 	err := requireClass(
 		rd,
 		"SubImm",
@@ -63,7 +61,6 @@ func newSubImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (SubImm, error) {
 	}
 
 	return SubImm{
-		base:  b,
 		rdNum: rd.bits(),
 		rnNum: rn.bits(),
 		imm12: imm.v,

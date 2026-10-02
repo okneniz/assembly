@@ -9,23 +9,21 @@ import (
 
 // Stur — stur ... (see lsBase for addressing kinds).
 type Stur struct {
-	base
 	lsBase
 }
 
 // newSturBase - the Stur constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newSturBase(b base, e lsBase) Stur {
+func newSturBase(e lsBase) Stur {
 	return Stur{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newStur - the Stur constructor: validates the operands,
 // delegates the assembly to newSturBase.
-func newStur(b base, rt, rn Reg, off Off) (Stur, error) {
+func newStur(rt, rn Reg, off Off) (Stur, error) {
 	if err := lsOperand(rt, rn, "Stur"); err != nil {
 		return Stur{}, err
 	}
@@ -40,7 +38,6 @@ func newStur(b base, rt, rn Reg, off Off) (Stur, error) {
 	}
 
 	return newSturBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
 	), nil
 }

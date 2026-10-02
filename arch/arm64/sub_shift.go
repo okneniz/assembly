@@ -10,8 +10,6 @@ import (
 
 // SubShift — sub rd, rn, rm[, shift #imm6]; pseudo: neg (Rn = zr).
 type SubShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string // lsl/lsr/asr/ror
@@ -21,7 +19,7 @@ type SubShift struct {
 // newSubShift - the SubShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSubShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubShift, error) {
+func newSubShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubShift, error) {
 	for _, r := range []struct {
 		reg Reg
 		op  string
@@ -67,7 +65,6 @@ func newSubShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubShift, 
 	}
 
 	return SubShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

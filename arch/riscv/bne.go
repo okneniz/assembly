@@ -9,19 +9,16 @@ import (
 
 // Bne - bne rs1, rs2, off; pseudo: bnez.
 type Bne struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }
 
 // cBne - compressed forms (c.bnez): base - halfword, length 2.
-func cBne(h uint32, rs1, rs2 string, off int64) Bne {
+func cBne(rs1, rs2 string, off int64) Bne {
 	return Bne{
-		base: newHalfBase(h),
-		rs1:  rs1,
-		rs2:  rs2,
-		off:  immNum(off),
+		rs1: rs1,
+		rs2: rs2,
+		off: immNum(off),
 	}
 }
 

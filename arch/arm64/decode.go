@@ -4,7 +4,6 @@ import "fmt"
 
 func decodeAbs(w uint32) (Instr, error) {
 	in, err := newAbs(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		decodeArrangement(w>>30&1, w>>22&3),
@@ -18,7 +17,6 @@ func decodeAbs(w uint32) (Instr, error) {
 
 func decodeAdc(w uint32) (Instr, error) {
 	in, err := newAdc(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -32,7 +30,6 @@ func decodeAdc(w uint32) (Instr, error) {
 
 func decodeAdd(w uint32) (Instr, error) {
 	in, err := newAdd(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -47,7 +44,6 @@ func decodeAdd(w uint32) (Instr, error) {
 
 func decodeAddExt(w uint32) (Instr, error) {
 	in, err := newAddExt(
-		newBase(w),
 		numReg(w&0x1f, w>>31&1 == 1),    // rd 31 reads as sp/wsp in the plain add/sub ext words
 		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -62,7 +58,7 @@ func decodeAddExt(w uint32) (Instr, error) {
 }
 
 func decodeAddImm(w uint32) (Instr, error) {
-	in, err := newAddImm(newBase(w),
+	in, err := newAddImm(
 		numReg(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
 	if err != nil {
@@ -74,7 +70,6 @@ func decodeAddImm(w uint32) (Instr, error) {
 
 func decodeAddShift(w uint32) (Instr, error) {
 	in, err := newAddShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -90,7 +85,6 @@ func decodeAddShift(w uint32) (Instr, error) {
 
 func decodeAddp(w uint32) (Instr, error) {
 	in, err := newAddp(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -105,7 +99,6 @@ func decodeAddp(w uint32) (Instr, error) {
 
 func decodeAddsExt(w uint32) (Instr, error) {
 	in, err := newAddsExt(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -120,7 +113,7 @@ func decodeAddsExt(w uint32) (Instr, error) {
 }
 
 func decodeAddsImm(w uint32) (Instr, error) {
-	in, err := newAddsImm(newBase(w),
+	in, err := newAddsImm(
 		gprOf(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
 	if err != nil {
@@ -132,7 +125,6 @@ func decodeAddsImm(w uint32) (Instr, error) {
 
 func decodeAddsShift(w uint32) (Instr, error) {
 	in, err := newAddsShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -149,7 +141,6 @@ func decodeAddsShift(w uint32) (Instr, error) {
 func decodeAdr(w uint32) (Instr, error) {
 	raw := (w>>5&0x7ffff)<<2 | w>>29&3
 	in, err := newAdr(
-		newBase(w),
 		gprOf(w&0x1f, true),
 		signExtendN(raw, 21),
 	)
@@ -164,7 +155,6 @@ func decodeAdrp(w uint32) (Instr, error) {
 	raw := (w>>5&0x7ffff)<<2 | w>>29&3
 	imm21 := signExtendN(raw, 21)
 	in, err := newAdrp(
-		newBase(w),
 		gprOf(w&0x1f, true),
 		imm21,
 	)
@@ -177,7 +167,6 @@ func decodeAdrp(w uint32) (Instr, error) {
 
 func decodeAese(w uint32) (Instr, error) {
 	in, err := newAese(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 	)
@@ -190,7 +179,6 @@ func decodeAese(w uint32) (Instr, error) {
 
 func decodeAesmc(w uint32) (Instr, error) {
 	in, err := newAesmc(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 	)
@@ -203,7 +191,6 @@ func decodeAesmc(w uint32) (Instr, error) {
 
 func decodeAndImm(w uint32) (Instr, error) {
 	in, err := newAndImm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
@@ -217,7 +204,6 @@ func decodeAndImm(w uint32) (Instr, error) {
 
 func decodeAndShift(w uint32) (Instr, error) {
 	in, err := newAndShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -233,7 +219,6 @@ func decodeAndShift(w uint32) (Instr, error) {
 
 func decodeAndsImm(w uint32) (Instr, error) {
 	in, err := newAndsImm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
@@ -247,7 +232,6 @@ func decodeAndsImm(w uint32) (Instr, error) {
 
 func decodeAndsShift(w uint32) (Instr, error) {
 	in, err := newAndsShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -263,7 +247,6 @@ func decodeAndsShift(w uint32) (Instr, error) {
 
 func decodeAsrReg(w uint32) (Instr, error) {
 	in, err := newAsrReg(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -276,7 +259,7 @@ func decodeAsrReg(w uint32) (Instr, error) {
 }
 
 func decodeB(w uint32) (Instr, error) {
-	in, err := newB(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+	in, err := newB(immNum(signExtendN(w&0x3ffffff, 26) * 4))
 	if err != nil {
 		return nil, err
 	}
@@ -293,14 +276,13 @@ func decodeBarrierOf(name string) func(uint32) (Instr, error) {
 			return nil, unknownDomain(name, domain)
 		}
 
-		return newBarrier(newBase(w), name, domain)
+		return newBarrier(name, domain)
 	}
 }
 
 func decodeBcondOf(cond string) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return newBcond(
-			newBase(w),
 			cond,
 			immNum(signExtendN(w>>5&0x7ffff, 19)*4),
 		), nil
@@ -309,7 +291,6 @@ func decodeBcondOf(cond string) func(uint32) (Instr, error) {
 
 func decodeBfmInstr(w uint32) (Instr, error) {
 	in, err := newBfm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		w>>16&0x3f,
@@ -324,7 +305,6 @@ func decodeBfmInstr(w uint32) (Instr, error) {
 
 func decodeBicShift(w uint32) (Instr, error) {
 	in, err := newBicShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -340,7 +320,6 @@ func decodeBicShift(w uint32) (Instr, error) {
 
 func decodeBicsShift(w uint32) (Instr, error) {
 	in, err := newBicsShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -355,7 +334,7 @@ func decodeBicsShift(w uint32) (Instr, error) {
 }
 
 func decodeBl(w uint32) (Instr, error) {
-	in, err := newBl(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
+	in, err := newBl(immNum(signExtendN(w&0x3ffffff, 26) * 4))
 	if err != nil {
 		return nil, err
 	}
@@ -364,7 +343,7 @@ func decodeBl(w uint32) (Instr, error) {
 }
 
 func decodeBlr(w uint32) (Instr, error) {
-	in, err := newBlr(newBase(w), gprOf(w>>5&0x1f, true))
+	in, err := newBlr(gprOf(w>>5&0x1f, true))
 	if err != nil {
 		return nil, err
 	}
@@ -373,7 +352,7 @@ func decodeBlr(w uint32) (Instr, error) {
 }
 
 func decodeBr(w uint32) (Instr, error) {
-	in, err := newBr(newBase(w), gprOf(w>>5&0x1f, true))
+	in, err := newBr(gprOf(w>>5&0x1f, true))
 	if err != nil {
 		return nil, err
 	}
@@ -382,7 +361,7 @@ func decodeBr(w uint32) (Instr, error) {
 }
 
 func decodeCbnz(w uint32) (Instr, error) {
-	in, err := newCbnz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
+	in, err := newCbnz(gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
 	if err != nil {
 		return nil, err
 	}
@@ -391,7 +370,7 @@ func decodeCbnz(w uint32) (Instr, error) {
 }
 
 func decodeCbz(w uint32) (Instr, error) {
-	in, err := newCbz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
+	in, err := newCbz(gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
 	if err != nil {
 		return nil, err
 	}
@@ -401,7 +380,6 @@ func decodeCbz(w uint32) (Instr, error) {
 
 func decodeCcmp(w uint32) (Instr, error) {
 	in, err := newCcmp(
-		newBase(w),
 		gprOf(w>>5&0x1f, true),
 		gprOf(w>>16&0x1f, true),
 		w&0xf,
@@ -415,7 +393,7 @@ func decodeCcmp(w uint32) (Instr, error) {
 }
 
 func decodeCls(w uint32) (Instr, error) {
-	in, err := newCls(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newCls(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -424,7 +402,7 @@ func decodeCls(w uint32) (Instr, error) {
 }
 
 func decodeClz(w uint32) (Instr, error) {
-	in, err := newClz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newClz(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -434,7 +412,6 @@ func decodeClz(w uint32) (Instr, error) {
 
 func decodeCmeq(w uint32) (Instr, error) {
 	in, err := newCmeq(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -449,7 +426,6 @@ func decodeCmeq(w uint32) (Instr, error) {
 
 func decodeCmge(w uint32) (Instr, error) {
 	in, err := newCmge(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -464,7 +440,6 @@ func decodeCmge(w uint32) (Instr, error) {
 
 func decodeCmtst(w uint32) (Instr, error) {
 	in, err := newCmtst(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -479,7 +454,6 @@ func decodeCmtst(w uint32) (Instr, error) {
 
 func decodeCnt(w uint32) (Instr, error) {
 	in, err := newCnt(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		decodeArrangement(w>>30&1, w>>22&3),
@@ -493,7 +467,6 @@ func decodeCnt(w uint32) (Instr, error) {
 
 func decodeCsel(w uint32) (Instr, error) {
 	in, err := newCsel(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -553,7 +526,6 @@ func decodeCsneg(w uint32) (Instr, error) {
 
 func decodeEonShift(w uint32) (Instr, error) {
 	in, err := newEonShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -569,7 +541,6 @@ func decodeEonShift(w uint32) (Instr, error) {
 
 func decodeEorImm(w uint32) (Instr, error) {
 	in, err := newEorImm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
@@ -583,7 +554,6 @@ func decodeEorImm(w uint32) (Instr, error) {
 
 func decodeEorShift(w uint32) (Instr, error) {
 	in, err := newEorShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -603,7 +573,6 @@ func decodeExtr(w uint32) (Instr, error) {
 	}
 
 	in, err := newExtr(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -618,7 +587,6 @@ func decodeExtr(w uint32) (Instr, error) {
 
 func decodeFadd(w uint32) (Instr, error) {
 	in, err := newFadd(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -640,7 +608,6 @@ func decodeFcmlaElem(w uint32) (Instr, error) {
 	}
 
 	in, err := newFcmlaElem(
-		newBase(w),
 		w>>30&1,
 		size,
 		idx,
@@ -658,7 +625,6 @@ func decodeFcmlaElem(w uint32) (Instr, error) {
 
 func decodeFcmpReg(w uint32) (Instr, error) {
 	in, err := newFcmp(
-		newBase(w),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
 		true,
@@ -672,7 +638,6 @@ func decodeFcmpReg(w uint32) (Instr, error) {
 
 func decodeFcmpZero(w uint32) (Instr, error) {
 	in, err := newFcmp(
-		newBase(w),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		FReg{},
 		false,
@@ -686,7 +651,6 @@ func decodeFcmpZero(w uint32) (Instr, error) {
 
 func decodeFcvt(w uint32) (Instr, error) {
 	in, err := newFcvt(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>15&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 	)
@@ -699,7 +663,6 @@ func decodeFcvt(w uint32) (Instr, error) {
 
 func decodeFcvtzs(w uint32) (Instr, error) {
 	in, err := newFcvtzs(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 	)
@@ -712,7 +675,6 @@ func decodeFcvtzs(w uint32) (Instr, error) {
 
 func decodeFcvtzu(w uint32) (Instr, error) {
 	in, err := newFcvtzu(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 	)
@@ -725,7 +687,6 @@ func decodeFcvtzu(w uint32) (Instr, error) {
 
 func decodeFdiv(w uint32) (Instr, error) {
 	in, err := newFdiv(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -740,7 +701,6 @@ func decodeFdiv(w uint32) (Instr, error) {
 func decodeFmadd(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFmadd(
-		newBase(w),
 		newFReg(uint8(w&0x1f), is64),
 		newFReg(uint8(w>>5&0x1f), is64),
 		newFReg(uint8(w>>16&0x1f), is64),
@@ -755,7 +715,6 @@ func decodeFmadd(w uint32) (Instr, error) {
 
 func decodeFmax(w uint32) (Instr, error) {
 	in, err := newFmax(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -769,7 +728,6 @@ func decodeFmax(w uint32) (Instr, error) {
 
 func decodeFmin(w uint32) (Instr, error) {
 	in, err := newFmin(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -783,7 +741,6 @@ func decodeFmin(w uint32) (Instr, error) {
 
 func decodeFmlaElem(w uint32) (Instr, error) {
 	in, err := newFmlaElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -800,7 +757,6 @@ func decodeFmlaElem(w uint32) (Instr, error) {
 
 func decodeFmlsElem(w uint32) (Instr, error) {
 	in, err := newFmlsElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -817,7 +773,6 @@ func decodeFmlsElem(w uint32) (Instr, error) {
 
 func decodeFmov(w uint32) (Instr, error) {
 	in, err := newFmov(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 	)
@@ -831,7 +786,6 @@ func decodeFmov(w uint32) (Instr, error) {
 func decodeFmovFromGpr(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFmovFromGpr(
-		newBase(w),
 		newFReg(uint8(w&0x1f), is64),
 		gprOf(w>>5&0x1f, is64),
 	)
@@ -848,18 +802,17 @@ func decodeFmovImmOf(isS bool) func(uint32) (Instr, error) {
 		rd := newFReg(uint8(w&0x1f), !isS)
 		if isS {
 			v := vfpExpandImm32(imm8)
-			return newFmovImm(newBase(w), rd, float64(v), fmt.Sprintf("%.8f", v))
+			return newFmovImm(rd, float64(v), fmt.Sprintf("%.8f", v))
 		}
 
 		v := vfpExpandImm64(imm8)
-		return newFmovImm(newBase(w), rd, v, fmt.Sprintf("%.8f", v))
+		return newFmovImm(rd, v, fmt.Sprintf("%.8f", v))
 	}
 }
 
 func decodeFmovToGpr(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFmovToGpr(
-		newBase(w),
 		gprOf(w&0x1f, is64),
 		newFReg(uint8(w>>5&0x1f), is64),
 	)
@@ -872,7 +825,6 @@ func decodeFmovToGpr(w uint32) (Instr, error) {
 
 func decodeFmul(w uint32) (Instr, error) {
 	in, err := newFmul(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -886,7 +838,6 @@ func decodeFmul(w uint32) (Instr, error) {
 
 func decodeFmulElem(w uint32) (Instr, error) {
 	in, err := newFmulElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -903,7 +854,6 @@ func decodeFmulElem(w uint32) (Instr, error) {
 
 func decodeFmulxElem(w uint32) (Instr, error) {
 	in, err := newFmulxElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -920,7 +870,6 @@ func decodeFmulxElem(w uint32) (Instr, error) {
 
 func decodeFneg(w uint32) (Instr, error) {
 	in, err := newFneg(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 	)
@@ -934,7 +883,6 @@ func decodeFneg(w uint32) (Instr, error) {
 func decodeFnmsub(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFnmsub(
-		newBase(w),
 		newFReg(uint8(w&0x1f), is64),
 		newFReg(uint8(w>>5&0x1f), is64),
 		newFReg(uint8(w>>16&0x1f), is64),
@@ -949,7 +897,6 @@ func decodeFnmsub(w uint32) (Instr, error) {
 
 func decodeFsub(w uint32) (Instr, error) {
 	in, err := newFsub(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
 		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
@@ -975,7 +922,6 @@ func decodeLd1Of(enc uint32) func(w uint32) (Instr, error) {
 		}
 
 		i := Ld1{
-			base:    newBase(w),
 			regList: list,
 			rn:      regNameXSP(w >> 5 & 0x1f),
 			name:    name,
@@ -1033,7 +979,6 @@ func decodeLd1Of(enc uint32) func(w uint32) (Instr, error) {
 func decodeLdarOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Ldar{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -1043,7 +988,6 @@ func decodeLdarOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeLdarbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Ldarb{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -1053,7 +997,6 @@ func decodeLdarbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeLdaxrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Ldaxr{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -1063,7 +1006,6 @@ func decodeLdaxrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeLdaxrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Ldaxrb{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -1084,13 +1026,11 @@ func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32)
 		rt, rt2, rn, k, off, load := pairDecode(w, scale, kind)
 		if !load {
 			return newStpBase(
-				newBase(w),
 				newPairBase(rt, rt2, rn, k, off, scale, enc&^(1<<22)),
 			), nil
 		}
 
 		return Ldp{
-			base:     newBase(w),
 			pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc|1<<22),
 		}, nil
 	}
@@ -1098,7 +1038,6 @@ func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32)
 
 func decodeLdpsw(w uint32) (Instr, error) {
 	in, err := newLdpsw(
-		newBase(w),
 		gprOf(w&0x1f, true),
 		gprOf(w>>10&0x1f, true),
 		xspOf(w>>5&0x1f),
@@ -1155,7 +1094,6 @@ func decodeLdrOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error
 		}
 
 		return Ldr{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1192,7 +1130,6 @@ func decodeLdrbOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}
 
 		return Ldrb{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1229,7 +1166,6 @@ func decodeLdrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}
 
 		return Ldrh{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1237,7 +1173,6 @@ func decodeLdrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 
 func decodeLdrsb(w uint32) (Instr, error) {
 	in, err := newLdrsb(
-		newBase(w),
 		gprOf(w&0x1f, true),
 		xspOf(w>>5&0x1f),
 		Off(int64(w>>10&0xfff)<<0),
@@ -1251,7 +1186,6 @@ func decodeLdrsb(w uint32) (Instr, error) {
 
 func decodeLdrsh(w uint32) (Instr, error) {
 	in, err := newLdrsh(
-		newBase(w),
 		gprOf(w&0x1f, true),
 		xspOf(w>>5&0x1f),
 		Off(int64(w>>10&0xfff)<<1),
@@ -1294,7 +1228,6 @@ func decodeLdrswOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}
 
 		return Ldrsw{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1344,7 +1277,6 @@ func decodeLdurOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, erro
 		}
 
 		return Ldur{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1394,7 +1326,6 @@ func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}
 
 		return Ldurb{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1444,7 +1375,6 @@ func decodeLdurhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}
 
 		return Ldurh{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -1452,7 +1382,6 @@ func decodeLdurhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 
 func decodeLslReg(w uint32) (Instr, error) {
 	in, err := newLslReg(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1466,7 +1395,6 @@ func decodeLslReg(w uint32) (Instr, error) {
 
 func decodeLsrReg(w uint32) (Instr, error) {
 	in, err := newLsrReg(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1480,7 +1408,6 @@ func decodeLsrReg(w uint32) (Instr, error) {
 
 func decodeMadd(w uint32) (Instr, error) {
 	in, err := newMadd(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1495,7 +1422,6 @@ func decodeMadd(w uint32) (Instr, error) {
 
 func decodeMlaElem(w uint32) (Instr, error) {
 	in, err := newMlaElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -1512,7 +1438,6 @@ func decodeMlaElem(w uint32) (Instr, error) {
 
 func decodeMlsElem(w uint32) (Instr, error) {
 	in, err := newMlsElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -1529,7 +1454,6 @@ func decodeMlsElem(w uint32) (Instr, error) {
 
 func decodeMovk(w uint32) (Instr, error) {
 	in, err := newMovk(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		imm16Of(w>>5&0xffff),
 		hwOf(w>>21&0x3),
@@ -1543,7 +1467,6 @@ func decodeMovk(w uint32) (Instr, error) {
 
 func decodeMovn(w uint32) (Instr, error) {
 	in, err := newMovn(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		imm16Of(w>>5&0xffff),
 		hwOf(w>>21&0x3),
@@ -1557,7 +1480,6 @@ func decodeMovn(w uint32) (Instr, error) {
 
 func decodeMovz(w uint32) (Instr, error) {
 	in, err := newMovz(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		imm16Of(w>>5&0xffff),
 		hwOf(w>>21&0x3),
@@ -1570,7 +1492,7 @@ func decodeMovz(w uint32) (Instr, error) {
 }
 
 func decodeMrs(w uint32) (Instr, error) {
-	in, err := newMrs(newBase(w), gprOf(w&0x1f, true), sysRegName(w>>5&0x7fff))
+	in, err := newMrs(gprOf(w&0x1f, true), sysRegName(w>>5&0x7fff))
 	if err != nil {
 		return nil, err
 	}
@@ -1580,7 +1502,6 @@ func decodeMrs(w uint32) (Instr, error) {
 
 func decodeMsr(w uint32) (Instr, error) {
 	in, err := newMsr(
-		newBase(w),
 		sysRegName(w>>5&0x7fff),
 		gprOf(w&0x1f, true),
 	)
@@ -1608,7 +1529,6 @@ func decodeMsub(w uint32) (Instr, error) {
 
 func decodeMulElem(w uint32) (Instr, error) {
 	in, err := newMulElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -1624,7 +1544,7 @@ func decodeMulElem(w uint32) (Instr, error) {
 }
 
 func decodeNop(w uint32) (Instr, error) {
-	in, err := newNop(newBase(w))
+	in, err := newNop()
 	if err != nil {
 		return nil, err
 	}
@@ -1634,7 +1554,6 @@ func decodeNop(w uint32) (Instr, error) {
 
 func decodeNot(w uint32) (Instr, error) {
 	in, err := newNot(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		decodeArrangement(w>>30&1, w>>22&3),
@@ -1648,7 +1567,6 @@ func decodeNot(w uint32) (Instr, error) {
 
 func decodeOrnShift(w uint32) (Instr, error) {
 	in, err := newOrnShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1664,7 +1582,6 @@ func decodeOrnShift(w uint32) (Instr, error) {
 
 func decodeOrrImm(w uint32) (Instr, error) {
 	in, err := newOrrImm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
@@ -1678,7 +1595,6 @@ func decodeOrrImm(w uint32) (Instr, error) {
 
 func decodeOrrShift(w uint32) (Instr, error) {
 	in, err := newOrrShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1693,7 +1609,7 @@ func decodeOrrShift(w uint32) (Instr, error) {
 }
 
 func decodePrfm(w uint32) (Instr, error) {
-	in, err := newPrfm(newBase(w), xspOf(w>>5&0x1f))
+	in, err := newPrfm(xspOf(w >> 5 & 0x1f))
 	if err != nil {
 		return nil, err
 	}
@@ -1702,7 +1618,7 @@ func decodePrfm(w uint32) (Instr, error) {
 }
 
 func decodeRbit(w uint32) (Instr, error) {
-	in, err := newRbit(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newRbit(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -1717,7 +1633,6 @@ func decodeRbitV(w uint32) (Instr, error) {
 	}
 
 	in, err := newRbitV(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		arr,
@@ -1730,7 +1645,7 @@ func decodeRbitV(w uint32) (Instr, error) {
 }
 
 func decodeRet(w uint32) (Instr, error) {
-	in, err := newRet(newBase(w), gprOf(w>>5&0x1f, true))
+	in, err := newRet(gprOf(w>>5&0x1f, true))
 	if err != nil {
 		return nil, err
 	}
@@ -1739,7 +1654,7 @@ func decodeRet(w uint32) (Instr, error) {
 }
 
 func decodeRev(w uint32) (Instr, error) {
-	in, err := newRev(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newRev(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -1748,7 +1663,7 @@ func decodeRev(w uint32) (Instr, error) {
 }
 
 func decodeRev16(w uint32) (Instr, error) {
-	in, err := newRev16(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newRev16(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -1757,7 +1672,7 @@ func decodeRev16(w uint32) (Instr, error) {
 }
 
 func decodeRev32(w uint32) (Instr, error) {
-	in, err := newRev32(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
+	in, err := newRev32(gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {
 		return nil, err
 	}
@@ -1767,7 +1682,6 @@ func decodeRev32(w uint32) (Instr, error) {
 
 func decodeRev32V(w uint32) (Instr, error) {
 	in, err := newRev32V(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		decodeArrangement(w>>30&1, w>>22&3),
@@ -1781,7 +1695,6 @@ func decodeRev32V(w uint32) (Instr, error) {
 
 func decodeRorReg(w uint32) (Instr, error) {
 	in, err := newRorReg(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1795,7 +1708,6 @@ func decodeRorReg(w uint32) (Instr, error) {
 
 func decodeSaddw(w uint32) (Instr, error) {
 	in, err := newSaddw(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		newVReg(uint8(w&0x1f)),
@@ -1811,7 +1723,6 @@ func decodeSaddw(w uint32) (Instr, error) {
 
 func decodeSbfm(w uint32) (Instr, error) {
 	in, err := newSbfm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		w>>16&0x3f,
@@ -1826,7 +1737,6 @@ func decodeSbfm(w uint32) (Instr, error) {
 
 func decodeScvtf(w uint32) (Instr, error) {
 	in, err := newScvtf(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 	)
@@ -1839,7 +1749,6 @@ func decodeScvtf(w uint32) (Instr, error) {
 
 func decodeSdiv(w uint32) (Instr, error) {
 	in, err := newSdiv(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1853,7 +1762,6 @@ func decodeSdiv(w uint32) (Instr, error) {
 
 func decodeShl(w uint32) (Instr, error) {
 	in, err := newShl(
-		newBase(w),
 		w>>30&1,
 		w>>19&0xf,
 		w>>16&7,
@@ -1878,7 +1786,6 @@ func decodeSimdDupElem(w uint32) (Instr, error) {
 
 	size := uint32(bitsCtz(imm5))
 	in, err := newDupElem(
-		newBase(w),
 		w>>30&1,
 		size,
 		imm5>>(size+1),
@@ -1903,7 +1810,6 @@ func decodeSimdDupScalar(w uint32) (Instr, error) {
 
 	size := uint32(bitsCtz(imm5))
 	in, err := newDupScalar(
-		newBase(w),
 		size,
 		imm5>>(size+1),
 		newVReg(uint8(w&0x1f)),
@@ -1925,7 +1831,6 @@ func decodeSimdInsElem(w uint32) (Instr, error) {
 
 	size := uint32(bitsCtz(imm5))
 	in, err := newInsElem(
-		newBase(w),
 		size,
 		imm5>>(size+1),
 		w>>11&0xf>>size,
@@ -1941,7 +1846,6 @@ func decodeSimdInsElem(w uint32) (Instr, error) {
 
 func decodeSmlalElem(w uint32) (Instr, error) {
 	in, err := newSmlalElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -1958,7 +1862,6 @@ func decodeSmlalElem(w uint32) (Instr, error) {
 
 func decodeSmlslElem(w uint32) (Instr, error) {
 	in, err := newSmlslElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -1975,7 +1878,6 @@ func decodeSmlslElem(w uint32) (Instr, error) {
 
 func decodeSmulh(w uint32) (Instr, error) {
 	in, err := newSmulh(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -1989,7 +1891,6 @@ func decodeSmulh(w uint32) (Instr, error) {
 
 func decodeSmullElem(w uint32) (Instr, error) {
 	in, err := newSmullElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2006,7 +1907,6 @@ func decodeSmullElem(w uint32) (Instr, error) {
 
 func decodeSqdmlalElem(w uint32) (Instr, error) {
 	in, err := newSqdmlalElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2023,7 +1923,6 @@ func decodeSqdmlalElem(w uint32) (Instr, error) {
 
 func decodeSqdmlslElem(w uint32) (Instr, error) {
 	in, err := newSqdmlslElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2040,7 +1939,6 @@ func decodeSqdmlslElem(w uint32) (Instr, error) {
 
 func decodeSqdmulhElem(w uint32) (Instr, error) {
 	in, err := newSqdmulhElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2057,7 +1955,6 @@ func decodeSqdmulhElem(w uint32) (Instr, error) {
 
 func decodeSqdmullElem(w uint32) (Instr, error) {
 	in, err := newSqdmullElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2074,7 +1971,6 @@ func decodeSqdmullElem(w uint32) (Instr, error) {
 
 func decodeSqrdmlahElem(w uint32) (Instr, error) {
 	in, err := newSqrdmlahElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2091,7 +1987,6 @@ func decodeSqrdmlahElem(w uint32) (Instr, error) {
 
 func decodeSqrdmlshElem(w uint32) (Instr, error) {
 	in, err := newSqrdmlshElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2108,7 +2003,6 @@ func decodeSqrdmlshElem(w uint32) (Instr, error) {
 
 func decodeSqrdmulhElem(w uint32) (Instr, error) {
 	in, err := newSqrdmulhElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2125,7 +2019,6 @@ func decodeSqrdmulhElem(w uint32) (Instr, error) {
 
 func decodeSqrshl(w uint32) (Instr, error) {
 	in, err := newSqrshl(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -2140,7 +2033,6 @@ func decodeSqrshl(w uint32) (Instr, error) {
 
 func decodeSri(w uint32) (Instr, error) {
 	in, err := newSri(
-		newBase(w),
 		w>>30&1,
 		w>>19&0xf,
 		w>>16&7,
@@ -2156,7 +2048,6 @@ func decodeSri(w uint32) (Instr, error) {
 
 func decodeSshr(w uint32) (Instr, error) {
 	in, err := newSshr(
-		newBase(w),
 		w>>30&1,
 		w>>19&0xf,
 		w>>16&7,
@@ -2172,7 +2063,6 @@ func decodeSshr(w uint32) (Instr, error) {
 
 func decodeSsubw(w uint32) (Instr, error) {
 	in, err := newSsubw(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		newVReg(uint8(w&0x1f)),
@@ -2189,7 +2079,6 @@ func decodeSsubw(w uint32) (Instr, error) {
 func decodeStlrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Stlr{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -2199,7 +2088,6 @@ func decodeStlrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeStlrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Stlrb{
-			base:   newBase(w),
 			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:    enc,
 		}, nil
@@ -2209,7 +2097,6 @@ func decodeStlrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeStlxrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Stlxr{
-			base: newBase(w),
 			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:  enc,
 		}, nil
@@ -2219,7 +2106,6 @@ func decodeStlxrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 func decodeStlxrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Stlxrb{
-			base: newBase(w),
 			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:  enc,
 		}, nil
@@ -2270,7 +2156,6 @@ func decodeStrOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, error
 		}
 
 		return Str{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2307,7 +2192,6 @@ func decodeStrbOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}
 
 		return Strb{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2344,7 +2228,6 @@ func decodeStrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}
 
 		return Strh{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2394,7 +2277,6 @@ func decodeSturOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, erro
 		}
 
 		return Stur{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2444,7 +2326,6 @@ func decodeSturbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}
 
 		return Sturb{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2494,7 +2375,6 @@ func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}
 
 		return Sturh{
-			base:   newBase(w),
 			lsBase: newLsBase(rt, rn, kind, off, lit, enc, rm, option, shiftAmt),
 		}, nil
 	}
@@ -2503,7 +2383,6 @@ func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 func decodeStxrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return Stxrb{
-			base: newBase(w),
 			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
 			enc:  enc,
 		}, nil
@@ -2512,7 +2391,6 @@ func decodeStxrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
 
 func decodeSubExt(w uint32) (Instr, error) {
 	in, err := newSubExt(
-		newBase(w),
 		numReg(w&0x1f, w>>31&1 == 1),    // rd 31 reads as sp/wsp in the plain add/sub ext words
 		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2527,7 +2405,7 @@ func decodeSubExt(w uint32) (Instr, error) {
 }
 
 func decodeSubImm(w uint32) (Instr, error) {
-	in, err := newSubImm(newBase(w),
+	in, err := newSubImm(
 		numReg(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
 	if err != nil {
@@ -2539,7 +2417,6 @@ func decodeSubImm(w uint32) (Instr, error) {
 
 func decodeSubShift(w uint32) (Instr, error) {
 	in, err := newSubShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2555,7 +2432,6 @@ func decodeSubShift(w uint32) (Instr, error) {
 
 func decodeSubsExt(w uint32) (Instr, error) {
 	in, err := newSubsExt(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2570,7 +2446,7 @@ func decodeSubsExt(w uint32) (Instr, error) {
 }
 
 func decodeSubsImm(w uint32) (Instr, error) {
-	in, err := newSubsImm(newBase(w),
+	in, err := newSubsImm(
 		gprOf(w&0x1f, w>>31&1 == 1),
 		numReg(w>>5&0x1f, w>>31&1 == 1), imm12Of(w>>10&0xfff), sh12Of(w>>22&1 == 1))
 	if err != nil {
@@ -2582,7 +2458,6 @@ func decodeSubsImm(w uint32) (Instr, error) {
 
 func decodeSubsShift(w uint32) (Instr, error) {
 	in, err := newSubsShift(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2599,7 +2474,6 @@ func decodeSubsShift(w uint32) (Instr, error) {
 func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return sysFixed{
-			base:  newBase(w),
 			name:  name,
 			ops:   ops,
 			group: group,
@@ -2611,7 +2485,6 @@ func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) (Instr, 
 func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return sysImm{
-			base:  newBase(w),
 			name:  name,
 			imm16: w >> shift & 0xffff,
 			enc:   enc,
@@ -2622,7 +2495,6 @@ func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) (Instr, er
 
 func decodeTbl(w uint32) (Instr, error) {
 	in, err := newTbl(
-		newBase(w),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
@@ -2638,7 +2510,6 @@ func decodeTbzOf(isTbnz bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		x64 := w>>31&1 == 1
 		return Tbz{
-			base:   newBase(w),
 			rt:     armRegName(w&0x1f, x64),
 			bit:    w>>19&0x1f | w>>26&0x20,
 			off:    immNum(signExtendN(w>>5&0x3fff, 14) * 4),
@@ -2658,7 +2529,6 @@ func decodeUaddlv(w uint32) (Instr, error) {
 	}
 
 	return Uaddlv{
-		base: newBase(w),
 		rd:   rd,
 		rn:   vReg(w >> 5 & 0x1f),
 		q:    w >> 30 & 1,
@@ -2668,7 +2538,6 @@ func decodeUaddlv(w uint32) (Instr, error) {
 
 func decodeUaddw(w uint32) (Instr, error) {
 	in, err := newUaddw(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		newVReg(uint8(w&0x1f)),
@@ -2684,7 +2553,6 @@ func decodeUaddw(w uint32) (Instr, error) {
 
 func decodeUbfm(w uint32) (Instr, error) {
 	in, err := newUbfm(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		w>>16&0x3f,
@@ -2699,7 +2567,6 @@ func decodeUbfm(w uint32) (Instr, error) {
 
 func decodeUcvtf(w uint32) (Instr, error) {
 	in, err := newUcvtf(
-		newBase(w),
 		newFReg(uint8(w&0x1f), w>>22&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 	)
@@ -2712,7 +2579,6 @@ func decodeUcvtf(w uint32) (Instr, error) {
 
 func decodeUdiv(w uint32) (Instr, error) {
 	in, err := newUdiv(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2726,7 +2592,6 @@ func decodeUdiv(w uint32) (Instr, error) {
 
 func decodeUmlalElem(w uint32) (Instr, error) {
 	in, err := newUmlalElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2743,7 +2608,6 @@ func decodeUmlalElem(w uint32) (Instr, error) {
 
 func decodeUmlslElem(w uint32) (Instr, error) {
 	in, err := newUmlslElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2760,7 +2624,6 @@ func decodeUmlslElem(w uint32) (Instr, error) {
 
 func decodeUmulh(w uint32) (Instr, error) {
 	in, err := newUmulh(
-		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
 		gprOf(w>>5&0x1f, w>>31&1 == 1),
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
@@ -2774,7 +2637,6 @@ func decodeUmulh(w uint32) (Instr, error) {
 
 func decodeUmullElem(w uint32) (Instr, error) {
 	in, err := newUmullElem(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		byElemIndex(w, w>>22&3),
@@ -2791,7 +2653,6 @@ func decodeUmullElem(w uint32) (Instr, error) {
 
 func decodeUshr(w uint32) (Instr, error) {
 	in, err := newUshr(
-		newBase(w),
 		w>>30&1,
 		w>>19&0xf,
 		w>>16&7,
@@ -2807,7 +2668,6 @@ func decodeUshr(w uint32) (Instr, error) {
 
 func decodeUsubw(w uint32) (Instr, error) {
 	in, err := newUsubw(
-		newBase(w),
 		w>>30&1,
 		w>>22&3,
 		newVReg(uint8(w&0x1f)),

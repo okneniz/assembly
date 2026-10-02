@@ -9,8 +9,6 @@ import (
 
 // Nor - nor rd, rj, rk (3R): rd = ~(rj | rk).
 type Nor struct {
-	base
-
 	rd, rj, rk uint8
 }
 

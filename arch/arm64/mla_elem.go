@@ -10,8 +10,6 @@ import (
 // MlaElem — mla.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type MlaElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type MlaElem struct {
 // newMlaElem - the MlaElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newMlaElem(b base, q, size, idx uint32, rd, rn, rm VReg) (MlaElem, error) {
+func newMlaElem(q, size, idx uint32, rd, rn, rm VReg) (MlaElem, error) {
 	if size == 0 || size == 3 {
 		return MlaElem{}, fmt.Errorf(
 			"arm64.NewMlaElem: only the .h and .s integer lanes exist",
@@ -32,7 +30,6 @@ func newMlaElem(b base, q, size, idx uint32, rd, rn, rm VReg) (MlaElem, error) {
 	}
 
 	return MlaElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

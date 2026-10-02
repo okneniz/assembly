@@ -9,8 +9,6 @@ import (
 
 // Sh - sh rs2, off(rs1).
 type Sh struct {
-	base
-
 	rs1, rs2 string
 	off      imm
 }

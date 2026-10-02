@@ -9,8 +9,6 @@ import (
 
 // Bfm — bfm rd, rn, #immr, #imms (no aliases).
 type Bfm struct {
-	base
-
 	rd, rn     string
 	immr, imms uint32
 	isf        bool
@@ -19,7 +17,7 @@ type Bfm struct {
 // newBfm - the Bfm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newBfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Bfm, error) {
+func newBfm(rd Reg, rn Reg, immr uint32, imms uint32) (Bfm, error) {
 	err := requireClass(
 		rd,
 		"Bfm",
@@ -77,7 +75,6 @@ func newBfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Bfm, error) {
 	}
 
 	return Bfm{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		immr: immr,

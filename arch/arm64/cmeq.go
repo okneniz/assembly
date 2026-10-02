@@ -10,8 +10,6 @@ import (
 // Cmeq — cmeq.Arr vd, vn, vm (the three-same group: the lane width
 // rides the arrangement).
 type Cmeq struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,18 +17,17 @@ type Cmeq struct {
 // newCmeq - the Cmeq constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newCmeq(b base, rd, rn, rm VReg, arr string) (Cmeq, error) {
+func newCmeq(rd, rn, rm VReg, arr string) (Cmeq, error) {
 	err := requireArr("Cmeq", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Cmeq{}, err
 	}
 
 	return Cmeq{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

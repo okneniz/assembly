@@ -9,8 +9,6 @@ import (
 
 // AmmaxDbD - ammax_db.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = max(MEM[rj], rk), signed. A built-in barrier.
 type AmmaxDbD struct {
-	base
-
 	rd, rk, rj uint8
 }
 

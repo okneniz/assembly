@@ -9,8 +9,6 @@ import (
 
 // Mulhu - mulhu rd, rs1, rs2.
 type Mulhu struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

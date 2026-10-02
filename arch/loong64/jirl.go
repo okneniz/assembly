@@ -11,8 +11,6 @@ import (
 // is word-scaled, relative to the rj VALUE - unknown at decode time, so
 // the raw byte offset is stored, like riscv jalr).
 type Jirl struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

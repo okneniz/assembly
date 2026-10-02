@@ -27,7 +27,6 @@ func TestAddWDecodeEncode(t *testing.T) {
 	addw, ok := in.(AddW)
 	require.True(t, ok, "type = %T, want AddW", in)
 	require.Equal(t, "add.w $t0, $t1, $t2", addw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, addw.Len())
 	require.Equal(t, uint32(0x001039ac), ctorWord(t, addw))
 }
 

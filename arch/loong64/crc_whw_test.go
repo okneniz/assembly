@@ -27,6 +27,5 @@ func TestCrcWHWDecodeEncode(t *testing.T) {
 	x, ok := in.(CrcWHW)
 	require.True(t, ok, "type = %T, want CrcWHW", in)
 	require.Equal(t, "crc.w.h.w $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x0024b9ac), ctorWord(t, x))
 }

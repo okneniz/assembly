@@ -10,24 +10,21 @@ import (
 // Fcvtzs — fcvtzs wd|xd, fn (FP to signed integer; all width
 // combinations are legal).
 type Fcvtzs struct {
-	base
-
 	rd, rn string
 }
 
 // newFcvtzs - the Fcvtzs constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFcvtzs(b base, rd Reg, rn FReg) (Fcvtzs, error) {
+func newFcvtzs(rd Reg, rn FReg) (Fcvtzs, error) {
 	err := requireGprClass(rd, "Fcvtzs", "rd")
 	if err != nil {
 		return Fcvtzs{}, err
 	}
 
 	return Fcvtzs{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 
@@ -54,24 +51,21 @@ func (i Fcvtzs) Encode(w io.Writer) (int64, error) {
 
 // Fcvtzu — fcvtzu wd|xd, fn (FP to unsigned integer).
 type Fcvtzu struct {
-	base
-
 	rd, rn string
 }
 
 // newFcvtzu - the Fcvtzu constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFcvtzu(b base, rd Reg, rn FReg) (Fcvtzu, error) {
+func newFcvtzu(rd Reg, rn FReg) (Fcvtzu, error) {
 	err := requireGprClass(rd, "Fcvtzu", "rd")
 	if err != nil {
 		return Fcvtzu{}, err
 	}
 
 	return Fcvtzu{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

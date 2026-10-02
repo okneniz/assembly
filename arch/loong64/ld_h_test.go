@@ -26,7 +26,6 @@ func TestLdHDecodeEncode(t *testing.T) {
 	x, ok := in.(LdH)
 	require.True(t, ok, "type = %T, want LdH", in)
 	require.Equal(t, "ld.h $t0, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(8), x.imm.val)
 	require.Equal(t, uint32(0x284021ac), ctorWord(t, x))
 

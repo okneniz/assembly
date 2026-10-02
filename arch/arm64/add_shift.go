@@ -10,8 +10,6 @@ import (
 
 // AddShift — add rd, rn, rm[, shift #imm6].
 type AddShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string // lsl/lsr/asr/ror
@@ -21,7 +19,7 @@ type AddShift struct {
 // newAddShift - the AddShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAddShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddShift, error) {
+func newAddShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddShift, error) {
 	for _, r := range []struct {
 		reg Reg
 		op  string
@@ -67,7 +65,6 @@ func newAddShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddShift, 
 	}
 
 	return AddShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

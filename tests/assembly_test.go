@@ -59,8 +59,9 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 		off := uint64(0)
 		for _, inst := range insts {
 			a := sec.Addr + off
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], inst, opts))
-			off += uint64(inst.Len())
+			n := uint64(arm64.InstrLen(sec.Data[off:]))
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:off+n], inst, opts))
+			off += n
 		}
 	case file.ArchRISCV64:
 		archName = riscv.Name
@@ -69,8 +70,9 @@ func diffAgainstObjdump(t *testing.T, path string, threshold float64) {
 		off := uint64(0)
 		for _, inst := range insts {
 			a := sec.Addr + off
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], inst, opts))
-			off += uint64(inst.Len())
+			n := uint64(riscv.InstrLen(sec.Data[off:]))
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:off+n], inst, opts))
+			off += n
 		}
 	default:
 		require.Fail(t, "unsupported architecture", "kind %d", ff.ArchKind())

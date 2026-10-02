@@ -9,8 +9,6 @@ import (
 
 // FnmsubD - fnmsub.d fd, fs1, fs2, fs3.
 type FnmsubD struct {
-	base
-
 	rd, rs1, rs2, rs3 string
 	rm                imm
 }

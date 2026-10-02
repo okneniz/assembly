@@ -10,8 +10,6 @@ import (
 // SqrdmlshElem — sqrdmlsh.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type SqrdmlshElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type SqrdmlshElem struct {
 // newSqrdmlshElem - the SqrdmlshElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSqrdmlshElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqrdmlshElem, error) {
+func newSqrdmlshElem(q, size, idx uint32, rd, rn, rm VReg) (SqrdmlshElem, error) {
 	if size == 0 || size == 3 {
 		return SqrdmlshElem{}, fmt.Errorf(
 			"arm64.NewSqrdmlshElem: only the .h and .s integer lanes exist",
@@ -32,7 +30,6 @@ func newSqrdmlshElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqrdmlshElem
 	}
 
 	return SqrdmlshElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

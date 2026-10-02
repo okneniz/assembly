@@ -9,8 +9,6 @@ import (
 
 // SubW - sub.w rd, rj, rk (3R): rd = sign32(rj - rk).
 type SubW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

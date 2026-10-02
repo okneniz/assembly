@@ -9,8 +9,6 @@ import (
 
 // Blt - blt rs1, rs2, off; pseudo: bgtz (rs1=zero), bltz (rs2=zero).
 type Blt struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }

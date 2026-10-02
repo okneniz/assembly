@@ -9,8 +9,6 @@ import (
 
 // ScrelD - screl.d rd, rj (DJ): store-release MEM[rj] = rd (64 bits).
 type ScrelD struct {
-	base
-
 	rd, rj uint8
 }
 

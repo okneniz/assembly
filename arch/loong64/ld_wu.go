@@ -10,8 +10,6 @@ import (
 // LdWu - ld.wu rd, rj, si12 (2RI12): rd = zero32(MEM[rj + si12]) (the
 // offset is an unscaled byte offset).
 type LdWu struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

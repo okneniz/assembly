@@ -9,15 +9,13 @@ import (
 
 // Rbit — rbit rd, rn.
 type Rbit struct {
-	base
-
 	rd, rn string
 }
 
 // newRbit - the Rbit constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newRbit(b base, rd Reg, rn Reg) (Rbit, error) {
+func newRbit(rd Reg, rn Reg) (Rbit, error) {
 	err := requireClass(
 		rd,
 		"Rbit",
@@ -59,9 +57,8 @@ func newRbit(b base, rd Reg, rn Reg) (Rbit, error) {
 	}
 
 	return Rbit{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

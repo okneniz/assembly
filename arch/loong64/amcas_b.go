@@ -9,8 +9,6 @@ import (
 
 // AmcasB - amcas.b rd, rk, rj (3R): if MEM[rj] == rd then MEM[rj] = rk; rd = old MEM[rj].
 type AmcasB struct {
-	base
-
 	rd, rk, rj uint8
 }
 

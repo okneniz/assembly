@@ -10,8 +10,6 @@ import (
 // ScD - sc.d rd, rj, offs (DJSk14): MEM[rj + offs] = rd conditionally,
 // rd = success (store-conditional 64 bits; offs - a byte offset like ll.d).
 type ScD struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

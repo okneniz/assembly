@@ -9,8 +9,6 @@ import (
 
 // Sltu - sltu rd, rj, rk (3R): rd = (rj < rk) ? 1 : 0 (unsigned).
 type Sltu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

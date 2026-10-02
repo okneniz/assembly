@@ -9,8 +9,6 @@ import (
 
 // AmandDbW - amand_db.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] &= rk. A built-in barrier.
 type AmandDbW struct {
-	base
-
 	rd, rk, rj uint8
 }
 

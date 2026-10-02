@@ -10,8 +10,6 @@ import (
 // MulElem — mul.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type MulElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type MulElem struct {
 // newMulElem - the MulElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newMulElem(b base, q, size, idx uint32, rd, rn, rm VReg) (MulElem, error) {
+func newMulElem(q, size, idx uint32, rd, rn, rm VReg) (MulElem, error) {
 	if size == 0 || size == 3 {
 		return MulElem{}, fmt.Errorf(
 			"arm64.NewMulElem: only the .h and .s integer lanes exist",
@@ -32,7 +30,6 @@ func newMulElem(b base, q, size, idx uint32, rd, rn, rm VReg) (MulElem, error) {
 	}
 
 	return MulElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

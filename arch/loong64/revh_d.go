@@ -9,8 +9,6 @@ import (
 
 // RevhD - revh.d rd, rj (2R): rd = rj with all four halfwords reversed.
 type RevhD struct {
-	base
-
 	rd, rj uint8
 }
 

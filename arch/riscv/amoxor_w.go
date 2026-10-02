@@ -10,8 +10,6 @@ import (
 
 // AmoxorW - amoxor.w rd, rs2, (rs1).
 type AmoxorW struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

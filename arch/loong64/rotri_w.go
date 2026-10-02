@@ -9,8 +9,6 @@ import (
 
 // RotriW - rotri.w rd, rj, ui5 (2RI5): rd = sign32(rotate_right32(rj, ui5)).
 type RotriW struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

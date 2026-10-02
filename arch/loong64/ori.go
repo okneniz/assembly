@@ -9,8 +9,6 @@ import (
 
 // Ori - ori rd, rj, ui12 (2RI12): rd = rj | ui12.
 type Ori struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

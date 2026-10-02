@@ -9,8 +9,6 @@ import (
 
 // RevbitD - bitrev.d rd, rj (2R): rd = rj with all 64 bits reversed.
 type RevbitD struct {
-	base
-
 	rd, rj uint8
 }
 

@@ -9,8 +9,6 @@ import (
 
 // FsubS - fsub.s fd, fs1, fs2.
 type FsubS struct {
-	base
-
 	rd, rs1, rs2 string
 	rm           imm // rounding mode (not shown in text)
 }

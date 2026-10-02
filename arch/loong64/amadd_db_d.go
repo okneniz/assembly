@@ -9,8 +9,6 @@ import (
 
 // AmaddDbD - amadd_db.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] += rk. A built-in barrier.
 type AmaddDbD struct {
-	base
-
 	rd, rk, rj uint8
 }
 

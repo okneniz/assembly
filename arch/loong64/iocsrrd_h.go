@@ -9,8 +9,6 @@ import (
 
 // IocsrrdH - iocsrrd.h rd, rj (2R): rd = the IOCSR halfword at rj.
 type IocsrrdH struct {
-	base
-
 	rd, rj uint8
 }
 

@@ -9,19 +9,16 @@ import (
 
 // Aesmc — aesmc.16b vd, vn (the AES round helper; .16b implicit).
 type Aesmc struct {
-	base
-
 	rd, rn string
 }
 
 // newAesmc - the Aesmc constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newAesmc(b base, rd, rn VReg) (Aesmc, error) {
+func newAesmc(rd, rn VReg) (Aesmc, error) {
 	return Aesmc{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

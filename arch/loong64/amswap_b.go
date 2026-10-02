@@ -9,8 +9,6 @@ import (
 
 // AmswapB - amswap.b rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = rk.
 type AmswapB struct {
-	base
-
 	rd, rk, rj uint8
 }
 

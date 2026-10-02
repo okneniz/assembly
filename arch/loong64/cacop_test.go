@@ -34,6 +34,5 @@ func TestCacopDecodeEncode(t *testing.T) {
 	x, ok := in.(Cacop)
 	require.True(t, ok, "type = %T, want Cacop", in)
 	require.Equal(t, "cacop 5, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x060021a5), ctorWord(t, x))
 }

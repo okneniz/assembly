@@ -9,8 +9,6 @@ import (
 
 // BstrinsW - bstrins.w rd, rj, msb, lsb (DJUk5Um5): insert the rj[msb:lsb] field into rd[msb:lsb].
 type BstrinsW struct {
-	base
-
 	rd, rj uint8
 	msb    imm
 	lsb    imm

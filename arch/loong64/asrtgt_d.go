@@ -9,8 +9,6 @@ import (
 
 // AsrtgtD - asrtgt.d rj, rk (JK): raise a bounds trap unless rj > rk.
 type AsrtgtD struct {
-	base
-
 	rj, rk uint8
 }
 

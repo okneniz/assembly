@@ -9,16 +9,13 @@ import (
 
 // Srai - srai rd, rs1, shamt; compression: c.srai (shamt >= 32).
 type Srai struct {
-	base
-
 	rd, rs1 string
 	shamt   imm
 }
 
 // cSrai - compressed forms (c.srai): base - halfword, length 2.
-func cSrai(h uint32, rd, rs1 string, shamt int64) Srai {
+func cSrai(rd, rs1 string, shamt int64) Srai {
 	return Srai{
-		base:  newHalfBase(h),
 		rd:    rd,
 		rs1:   rs1,
 		shamt: immNum(shamt),

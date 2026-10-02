@@ -9,8 +9,6 @@ import (
 
 // Revb2H - revb.2h rd, rj (2R): rd = rj with the bytes reversed in each halfword of the low 32 bits.
 type Revb2H struct {
-	base
-
 	rd, rj uint8
 }
 

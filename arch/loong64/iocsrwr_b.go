@@ -9,8 +9,6 @@ import (
 
 // IocsrwrB - iocsrwr.b rd, rj (2R): the IOCSR byte at rj = rd.
 type IocsrwrB struct {
-	base
-
 	rd, rj uint8
 }
 

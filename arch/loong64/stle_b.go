@@ -10,8 +10,6 @@ import (
 // StleB - stle.b rd, rj, rk (DJK): store the low byte of rd with a bounds
 // check against rk, trapping outside.
 type StleB struct {
-	base
-
 	rd, rj, rk uint8
 }
 

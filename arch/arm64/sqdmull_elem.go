@@ -10,8 +10,6 @@ import (
 // SqdmullElem — sqdmull{,2}.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another; the result lanes are one width wider).
 type SqdmullElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type SqdmullElem struct {
 // newSqdmullElem - the SqdmullElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSqdmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqdmullElem, error) {
+func newSqdmullElem(q, size, idx uint32, rd, rn, rm VReg) (SqdmullElem, error) {
 	if size == 0 || size > 2 {
 		return SqdmullElem{}, fmt.Errorf(
 			"arm64.NewSqdmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
@@ -32,7 +30,6 @@ func newSqdmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqdmullElem, 
 	}
 
 	return SqdmullElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

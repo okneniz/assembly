@@ -239,6 +239,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			data,
 			instrs,
 			disasm.NewOptions(text.CodeBytes),
+			arm64.InstrLen,
 		)
 	case "riscv64", "riscv":
 		instrs, err := riscv.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data))
@@ -252,6 +253,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			data,
 			instrs,
 			disasm.NewOptions(text.CodeWord),
+			riscv.InstrLen,
 		)
 	case "loong64", "loongarch64":
 		instrs, err := loong64.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data))
@@ -265,6 +267,7 @@ func runDisasm(data []byte, arch string, base uint64) error {
 			data,
 			instrs,
 			disasm.NewOptions(text.CodeWord),
+			loong64.InstrLen,
 		)
 	}
 

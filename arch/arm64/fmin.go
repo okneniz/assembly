@@ -9,25 +9,22 @@ import (
 
 // Fmin — fmin fd, fn, fm (double/single by the operand kind).
 type Fmin struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFmin - the Fmin constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmin(b base, rd, rn, rm FReg) (Fmin, error) {
+func newFmin(rd, rn, rm FReg) (Fmin, error) {
 	err := requireFpKind("Fmin", rd, rn, rm)
 	if err != nil {
 		return Fmin{}, err
 	}
 
 	return Fmin{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

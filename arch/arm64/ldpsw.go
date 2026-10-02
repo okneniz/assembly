@@ -9,8 +9,6 @@ import (
 
 // Ldpsw — ldpsw rt, rt2, [rn, #imm7<<2] (offset form only).
 type Ldpsw struct {
-	base
-
 	rt, rt2, rn string
 	off         int64
 }
@@ -18,7 +16,7 @@ type Ldpsw struct {
 // newLdpsw - the Ldpsw constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newLdpsw(b base, rt Reg, rt2 Reg, rn Reg, off Off) (Ldpsw, error) {
+func newLdpsw(rt Reg, rt2 Reg, rn Reg, off Off) (Ldpsw, error) {
 	err := requireClass(
 		rt,
 		"Ldpsw",
@@ -63,11 +61,10 @@ func newLdpsw(b base, rt Reg, rt2 Reg, rn Reg, off Off) (Ldpsw, error) {
 	}
 
 	return Ldpsw{
-		base: b,
-		rt:   rt.name(),
-		rt2:  rt2.name(),
-		rn:   rn.name(),
-		off:  int64(off),
+		rt:  rt.name(),
+		rt2: rt2.name(),
+		rn:  rn.name(),
+		off: int64(off),
 	}, nil
 }
 

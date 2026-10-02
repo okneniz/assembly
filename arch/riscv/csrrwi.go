@@ -9,7 +9,6 @@ import (
 
 // Csrrwi - csrrwi rd, csr, zimm; pseudo: csrwi, fscsri/fsrmi/fsflagsi.
 type Csrrwi struct {
-	base
 	csrOp
 
 	zimm imm

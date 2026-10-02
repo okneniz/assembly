@@ -10,8 +10,6 @@ import (
 // Dup — dup.Arr vd, wn (DUP general: every lane = the integer
 // register's value; .2d takes an x register, the rest a w one).
 type Dup struct {
-	base
-
 	vd, gpr string
 	arr     string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,7 +17,7 @@ type Dup struct {
 // newDup - the Dup constructor: validates the operands and assembles
 // the struct (the Builder method delegates here; the decoder calls it
 // with values read from the word).
-func newDup(b base, vd VReg, gpr Reg, arr string) (Dup, error) {
+func newDup(vd VReg, gpr Reg, arr string) (Dup, error) {
 	err := requireArr("Dup", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Dup{}, err
@@ -43,10 +41,9 @@ func newDup(b base, vd VReg, gpr Reg, arr string) (Dup, error) {
 	}
 
 	return Dup{
-		base: b,
-		vd:   vd.name(),
-		gpr:  gpr.name(),
-		arr:  arr,
+		vd:  vd.name(),
+		gpr: gpr.name(),
+		arr: arr,
 	}, nil
 }
 

@@ -8,7 +8,6 @@ import (
 
 // Ertn - ertn: return from exception (no operands).
 type Ertn struct {
-	base
 }
 
 func (i Ertn) ObjDump(_ disasm.ViewCtx) string {

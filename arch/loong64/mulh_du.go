@@ -9,8 +9,6 @@ import (
 
 // MulhDu - mulh.du rd, rj, rk (3R): rd = high half of the unsigned 128-bit product rj * rk.
 type MulhDu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

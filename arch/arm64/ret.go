@@ -9,15 +9,13 @@ import (
 
 // Ret — ret [xn] (defaults to x30).
 type Ret struct {
-	base
-
 	rn string
 }
 
 // newRet - the Ret constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newRet(b base, rn Reg) (Ret, error) {
+func newRet(rn Reg) (Ret, error) {
 	err := requireClass(
 		rn,
 		"Ret",
@@ -32,8 +30,7 @@ func newRet(b base, rn Reg) (Ret, error) {
 	}
 
 	return Ret{
-		base: b,
-		rn:   rn.name(),
+		rn: rn.name(),
 	}, nil
 }
 

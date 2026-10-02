@@ -9,8 +9,6 @@ import (
 
 // SrlD - srl.d rd, rj, rk (3R): rd = rj >>l (rk & 63).
 type SrlD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

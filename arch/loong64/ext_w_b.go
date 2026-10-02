@@ -9,8 +9,6 @@ import (
 
 // ExtWB - ext.w.b rd, rj (2R): rd = sign-extend of the low byte of rj to the native width.
 type ExtWB struct {
-	base
-
 	rd, rj uint8
 }
 

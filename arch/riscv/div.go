@@ -9,8 +9,6 @@ import (
 
 // Div - div rd, rs1, rs2.
 type Div struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

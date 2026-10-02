@@ -13,17 +13,14 @@ import (
 
 // ObjDump is the instruction interface for disassembly: an instruction turns
 // itself into text (just as, for the assembler, it turns itself into bytes).
+// The instruction carries no length: that is a property of the byte stream
+// (the per-arch InstrLen), not of the semantics.
 type ObjDump interface {
 	// ObjDump returns the instruction's representation in objdump style:
 	// mnemonic and operands ("ldr x28, [x29, #24]"), without the address and
 	// machine-code columns - those are added by this package. ctx is the
 	// representation context (ViewCtx).
 	ObjDump(ctx ViewCtx) string
-
-	// Len returns the length of the instruction in bytes (2/4): the
-	// machine-code column is sliced and the addresses of subsequent
-	// instructions are computed from it.
-	Len() int
 }
 
 // ViewCtx is the instruction representation context (view layer): text
@@ -86,9 +83,10 @@ func (o Options) ctx(addr uint64) ViewCtx {
 }
 
 // Line returns a single instruction's line: "<addr>:\t<code>\t<text>".
-// code is the buffer starting at this instruction (the first in.Len() bytes are used).
+// code is exactly this instruction's bytes (the caller walks the stream
+// with the per-arch InstrLen and slices them out).
 func Line(addr uint64, code []byte, in ObjDump, opts Options) string {
-	raw, n := instrBytes(code, in.Len())
+	raw, n := instrBytes(code)
 	return fmt.Sprintf(
 		"%x:\t%s\t%s",
 		addr,
@@ -98,35 +96,33 @@ func Line(addr uint64, code []byte, in ObjDump, opts Options) string {
 }
 
 // Write disassembles the buffer code (located at address base) into the
-// instructions instrs - one line per instruction (the Line format). It is
-// generic so that it can accept slices of concrete instructions
-// ([ ]arm64.Instr, [ ]riscv.Instr) without manually converting them to an
-// interface slice.
-func Write[T ObjDump](w io.Writer, base uint64, code []byte, instrs []T, opts Options) error {
+// instructions instrs - one line per instruction (the Line format).
+// size is the arch's stream rule (InstrLen): the byte length of the
+// instruction at the head of the remaining code. Write is generic so that
+// it can accept slices of concrete instructions ([ ]arm64.Instr,
+// [ ]riscv.Instr) without manually converting them to an interface slice.
+func Write[T ObjDump](w io.Writer, base uint64, code []byte, instrs []T, opts Options, size func(code []byte) int) error {
 	off := 0
 	for _, in := range instrs {
 		if off < len(code) {
-			if _, err := fmt.Fprintln(w, Line(base+uint64(off), code[off:], in, opts)); err != nil {
+			n := size(code[off:])
+			if _, err := fmt.Fprintln(w, Line(base+uint64(off), code[off:off+n], in, opts)); err != nil {
 				return err
 			}
-		}
 
-		off += in.Len()
+			off += n
+		}
 	}
 
 	return nil
 }
 
-// instrBytes is the first n bytes of the buffer as a little-endian word
-// (n=2 -> a uint32 of two bytes). A truncated buffer tail is returned as is
-// (shorter than n).
-func instrBytes(code []byte, n int) (uint32, int) {
-	if n != 2 {
+// instrBytes is the buffer as a little-endian word (the 2 or 4 bytes of an
+// instruction encoding). A truncated buffer tail is returned as is.
+func instrBytes(code []byte) (uint32, int) {
+	n := len(code)
+	if n > 4 {
 		n = 4
-	}
-
-	if len(code) < n {
-		n = len(code)
 	}
 
 	var raw uint32

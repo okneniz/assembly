@@ -10,8 +10,6 @@ import (
 // SqdmulhElem — sqdmulh.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type SqdmulhElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type SqdmulhElem struct {
 // newSqdmulhElem - the SqdmulhElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSqdmulhElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqdmulhElem, error) {
+func newSqdmulhElem(q, size, idx uint32, rd, rn, rm VReg) (SqdmulhElem, error) {
 	if size == 0 || size == 3 {
 		return SqdmulhElem{}, fmt.Errorf(
 			"arm64.NewSqdmulhElem: only the .h and .s integer lanes exist",
@@ -32,7 +30,6 @@ func newSqdmulhElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqdmulhElem, 
 	}
 
 	return SqdmulhElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

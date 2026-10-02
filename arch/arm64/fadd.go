@@ -9,25 +9,22 @@ import (
 
 // Fadd — fadd fd, fn, fm (double/single by the operand kind).
 type Fadd struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFadd - the Fadd constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFadd(b base, rd, rn, rm FReg) (Fadd, error) {
+func newFadd(rd, rn, rm FReg) (Fadd, error) {
 	err := requireFpKind("Fadd", rd, rn, rm)
 	if err != nil {
 		return Fadd{}, err
 	}
 
 	return Fadd{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

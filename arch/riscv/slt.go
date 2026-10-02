@@ -9,8 +9,6 @@ import (
 
 // Slt - slt rd, rs1, rs2; pseudo: sltz (rs2 = x0), sgtz (rs1 = x0).
 type Slt struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

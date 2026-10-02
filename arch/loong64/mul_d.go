@@ -9,8 +9,6 @@ import (
 
 // MulD - mul.d rd, rj, rk (3R): rd = the low 64 bits of the product rj * rk.
 type MulD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

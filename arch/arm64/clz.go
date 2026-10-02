@@ -9,15 +9,13 @@ import (
 
 // Clz — clz rd, rn.
 type Clz struct {
-	base
-
 	rd, rn string
 }
 
 // newClz - the Clz constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newClz(b base, rd Reg, rn Reg) (Clz, error) {
+func newClz(rd Reg, rn Reg) (Clz, error) {
 	err := requireClass(
 		rd,
 		"Clz",
@@ -59,9 +57,8 @@ func newClz(b base, rd Reg, rn Reg) (Clz, error) {
 	}
 
 	return Clz{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

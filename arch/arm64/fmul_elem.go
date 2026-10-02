@@ -10,8 +10,6 @@ import (
 // FmulElem — fmul.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type FmulElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type FmulElem struct {
 // newFmulElem - the FmulElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newFmulElem(b base, q, size, idx uint32, rd, rn, rm VReg) (FmulElem, error) {
+func newFmulElem(q, size, idx uint32, rd, rn, rm VReg) (FmulElem, error) {
 	if size != 2 && size != 3 {
 		return FmulElem{}, fmt.Errorf(
 			"arm64.NewFmulElem: only the fp32 (.2s/.4s) and fp64 (.2d) lanes exist",
@@ -32,7 +30,6 @@ func newFmulElem(b base, q, size, idx uint32, rd, rn, rm VReg) (FmulElem, error)
 	}
 
 	return FmulElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

@@ -27,6 +27,5 @@ func TestLlacqDDecodeEncode(t *testing.T) {
 	llacqd, ok := in.(LlacqD)
 	require.True(t, ok, "type = %T, want LlacqD", in)
 	require.Equal(t, "llacq.d $t0, $t1", llacqd.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, llacqd.Len())
 	require.Equal(t, uint32(0x385789ac), ctorWord(t, llacqd))
 }

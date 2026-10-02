@@ -8,7 +8,6 @@ import (
 
 // Stlxrb — stlxrb rs, rt, [rn].
 type Stlxrb struct {
-	base
 	excl
 
 	enc uint32
@@ -16,9 +15,8 @@ type Stlxrb struct {
 
 // newStlxrbBase - the Stlxrb constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newStlxrbBase(b base, e excl, enc uint32) Stlxrb {
+func newStlxrbBase(e excl, enc uint32) Stlxrb {
 	return Stlxrb{
-		base: b,
 		excl: e,
 		enc:  enc,
 	}
@@ -26,7 +24,7 @@ func newStlxrbBase(b base, e excl, enc uint32) Stlxrb {
 
 // newStlxrb - the Stlxrb constructor: validates the operands,
 // delegates the assembly to newStlxrbBase.
-func newStlxrb(b base, rs, rt, rn Reg) (Stlxrb, error) {
+func newStlxrb(rs, rt, rn Reg) (Stlxrb, error) {
 	err := requireClass(
 		rs,
 		"Stlxrb",
@@ -66,7 +64,7 @@ func newStlxrb(b base, rs, rt, rn Reg) (Stlxrb, error) {
 		return Stlxrb{}, err
 	}
 
-	return newStlxrbBase(b, newExcl(rs.name(), rt.name(), rn.name()), stlxrbEnc), nil
+	return newStlxrbBase(newExcl(rs.name(), rt.name(), rn.name()), stlxrbEnc), nil
 }
 
 const stlxrbEnc uint32 = 0x0800FC00 // stlxrb ws, wt, [xn]

@@ -9,8 +9,6 @@ import (
 
 // AmxorW - amxor.w rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] ^= rk.
 type AmxorW struct {
-	base
-
 	rd, rk, rj uint8
 }
 

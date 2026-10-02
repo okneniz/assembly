@@ -10,8 +10,6 @@ import (
 // Lddir - lddir rd, rj, ui8: read a page-walk directory entry;
 // rd = the descriptor at level ui8 for address rj.
 type Lddir struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

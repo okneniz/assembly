@@ -803,7 +803,7 @@ func (Builder) Mv(rd, rs2 Reg) Instr {
 	h := uint32(0x8002) | uint32(rd.Num())<<7 | uint32(rs2.Num())<<2
 
 	return Mv{
-		base: newHalfBase(h),
+		half: h,
 		rd:   rd.name(),
 		rs2:  rs2.name(),
 	}

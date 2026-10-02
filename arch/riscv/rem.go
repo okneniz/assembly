@@ -9,8 +9,6 @@ import (
 
 // Rem - rem rd, rs1, rs2.
 type Rem struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

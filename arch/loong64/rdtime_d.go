@@ -9,8 +9,6 @@ import (
 
 // RdtimeD - rdtime.d rd, rj (2R): rd = the 64-bit stable counter + rj.
 type RdtimeD struct {
-	base
-
 	rd, rj uint8
 }
 

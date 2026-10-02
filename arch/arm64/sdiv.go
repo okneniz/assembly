@@ -9,15 +9,13 @@ import (
 
 // Sdiv — sdiv rd, rn, rm.
 type Sdiv struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newSdiv - the Sdiv constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSdiv(b base, rd Reg, rn Reg, rm Reg) (Sdiv, error) {
+func newSdiv(rd Reg, rn Reg, rm Reg) (Sdiv, error) {
 	err := requireClass(
 		rd,
 		"Sdiv",
@@ -75,10 +73,9 @@ func newSdiv(b base, rd Reg, rn Reg, rm Reg) (Sdiv, error) {
 	}
 
 	return Sdiv{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

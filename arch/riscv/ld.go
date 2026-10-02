@@ -9,19 +9,16 @@ import (
 
 // Ld - ld rd, off(rs1).
 type Ld struct {
-	base
-
 	rd, rs1 string
 	off     imm
 }
 
 // cLd - compressed forms (c.ld/c.ldsp): base - halfword, length 2.
-func cLd(h uint32, rd, rs1 string, off int64) Ld {
+func cLd(rd, rs1 string, off int64) Ld {
 	return Ld{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		off:  immNum(off),
+		rd:  rd,
+		rs1: rs1,
+		off: immNum(off),
 	}
 }
 

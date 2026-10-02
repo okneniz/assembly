@@ -10,8 +10,6 @@ import (
 
 // EorShift — eor rd, rn, rm[, shift #imm6].
 type EorShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string
@@ -21,7 +19,7 @@ type EorShift struct {
 // newEorShift - the EorShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newEorShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EorShift, error) {
+func newEorShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EorShift, error) {
 	err := requireClass(
 		rd,
 		"EorShift",
@@ -79,7 +77,6 @@ func newEorShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EorShift, 
 	}
 
 	return EorShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

@@ -9,8 +9,6 @@ import (
 
 // CtzW - ctz.w rd, rj (2R): rd = the count of trailing zeros of low32(rj).
 type CtzW struct {
-	base
-
 	rd, rj uint8
 }
 

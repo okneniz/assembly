@@ -26,25 +26,6 @@ type Instr interface {
 	Encode(w io.Writer, o EncOpts) (int64, error)
 }
 
-// base - the bookkeeping fields of every instruction: raw word and
-// length. This is not instruction semantics but a bookkeeping record
-// for Len.
-type base struct {
-	raw    uint32
-	length int
-}
-
-func newBase(raw uint32) base {
-	return base{
-		raw:    raw,
-		length: 4,
-	}
-}
-
-func (b base) Len() int {
-	return b.length
-}
-
 // imm - the value of an immediate operand: a concrete number. Symbolic
 // slots are evaluated by the syntax layer (asm/riscv) BEFORE the structure
 // is built - a computed instruction contains no holes.
@@ -98,11 +79,11 @@ func writeHalf(w io.Writer, half uint16) (int64, error) {
 // displayed as <unknown> (in angle brackets - objdiff comparison
 // treats it as an annotation), Encode re-emits the raw word.
 type Unknown struct {
-	base
+	raw uint32
 }
 
-func newUnknown(base_ base) Unknown {
-	return Unknown{base: base_}
+func newUnknown(raw uint32) Unknown {
+	return Unknown{raw: raw}
 }
 
 func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
@@ -110,7 +91,7 @@ func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
 }
 
 func (i Unknown) Encode(w io.Writer, _ EncOpts) (int64, error) {
-	if i.length == 2 {
+	if i.raw&0x3 != 0x3 {
 		return writeHalf(w, uint16(i.raw))
 	}
 

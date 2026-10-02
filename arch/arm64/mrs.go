@@ -9,15 +9,13 @@ import (
 
 // Mrs — mrs rd, sysreg.
 type Mrs struct {
-	base
-
 	rd, sysreg string
 }
 
 // newMrs - the Mrs constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newMrs(b base, rd Reg, sysreg string) (Mrs, error) {
+func newMrs(rd Reg, sysreg string) (Mrs, error) {
 	err := requireClass(
 		rd,
 		"Mrs",
@@ -37,7 +35,6 @@ func newMrs(b base, rd Reg, sysreg string) (Mrs, error) {
 	}
 
 	return Mrs{
-		base:   b,
 		rd:     rd.name(),
 		sysreg: sysRegName(key),
 	}, nil

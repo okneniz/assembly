@@ -10,8 +10,6 @@ import (
 // RbitV — rbit.8b/16b vd, vn (bit reversal per byte lane; the family's
 // size bits are part of the opcode - the arrangement rides Q only).
 type RbitV struct {
-	base
-
 	rd, rn string
 	arr    string // 8b/16b
 }
@@ -19,17 +17,16 @@ type RbitV struct {
 // newRbitV - the RbitV constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newRbitV(b base, rd, rn VReg, arr string) (RbitV, error) {
+func newRbitV(rd, rn VReg, arr string) (RbitV, error) {
 	err := requireArr("RbitV", arr, "8b", "16b")
 	if err != nil {
 		return RbitV{}, err
 	}
 
 	return RbitV{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		arr: arr,
 	}, nil
 }
 

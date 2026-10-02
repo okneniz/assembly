@@ -9,18 +9,15 @@ import (
 
 // Addw - addw rd, rs1, rs2.
 type Addw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cAddw - compressed forms (c.addw): base - halfword, length 2.
-func cAddw(h uint32, rd, rs1, rs2 string) Addw {
+func cAddw(rd, rs1, rs2 string) Addw {
 	return Addw{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

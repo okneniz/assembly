@@ -8,7 +8,6 @@ import (
 
 // Tlbflush - tlbflush: invalidate all TLB entries (no operands).
 type Tlbflush struct {
-	base
 }
 
 func (i Tlbflush) ObjDump(_ disasm.ViewCtx) string {

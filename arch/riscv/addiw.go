@@ -9,19 +9,16 @@ import (
 
 // Addiw - addiw rd, rs1, imm; pseudo: sext.w (imm=0); compression: c.addiw.
 type Addiw struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }
 
 // cAddiw - compressed forms (c.addiw): base - halfword, length 2.
-func cAddiw(h uint32, rd, rs1 string, imm int64) Addiw {
+func cAddiw(rd, rs1 string, imm int64) Addiw {
 	return Addiw{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		imm:  immNum(imm),
+		rd:  rd,
+		rs1: rs1,
+		imm: immNum(imm),
 	}
 }
 

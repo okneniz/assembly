@@ -9,8 +9,6 @@ import (
 
 // Xori - xori rd, rs1, imm; pseudo: not (imm=-1).
 type Xori struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }

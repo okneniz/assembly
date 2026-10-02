@@ -15,8 +15,6 @@ import (
 // Assembly is impossible: the instruction is decode-only (Encode returns
 // an error), the assembler does not parse such text.
 type Generic struct {
-	base
-
 	name   string
 	fields []Field
 	word   uint32
@@ -24,7 +22,6 @@ type Generic struct {
 
 func decodeGeneric(e *armISAEntry, w uint32) (Instr, error) {
 	return Generic{
-		base:   newBase(w),
 		name:   e.Name,
 		fields: e.Fields,
 		word:   w,

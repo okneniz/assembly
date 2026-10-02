@@ -9,8 +9,6 @@ import (
 // Idle - idle code: wait for an interrupt; the ui15 code selects the
 // idle level (0 in the base ISA).
 type Idle struct {
-	base
-
 	code imm
 }
 

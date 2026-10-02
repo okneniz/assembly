@@ -30,6 +30,5 @@ func TestBstrpickWDecodeEncode(t *testing.T) {
 	require.Equal(t, int64(5), x.msb.val)
 	require.Equal(t, int64(3), x.lsb.val)
 	require.Equal(t, "bstrpick.w $t0, $t1, 5, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x00658dac), ctorWord(t, x))
 }

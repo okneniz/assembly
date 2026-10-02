@@ -8,7 +8,6 @@ import (
 
 // Ldaxr — ldaxr rt, [rn].
 type Ldaxr struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Ldaxr struct {
 
 // newLdaxrBase - the Ldaxr constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newLdaxrBase(b base, e atomic, enc uint32) Ldaxr {
+func newLdaxrBase(e atomic, enc uint32) Ldaxr {
 	return Ldaxr{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newLdaxrBase(b base, e atomic, enc uint32) Ldaxr {
 
 // newLdaxr - the Ldaxr constructor: validates the operands,
 // delegates the assembly to newLdaxrBase.
-func newLdaxr(b base, rt, rn Reg) (Ldaxr, error) {
+func newLdaxr(rt, rn Reg) (Ldaxr, error) {
 	if err := lsOperand(rt, rn, "Ldaxr"); err != nil {
 		return Ldaxr{}, err
 	}
@@ -36,7 +34,7 @@ func newLdaxr(b base, rt, rn Reg) (Ldaxr, error) {
 		enc = ldaxrXEnc
 	}
 
-	return newLdaxrBase(b, newAtomic(rt.name(), rn.name()), enc), nil
+	return newLdaxrBase(newAtomic(rt.name(), rn.name()), enc), nil
 }
 
 // Encodings of the 64/32-bit forms: the access size is set by rt.

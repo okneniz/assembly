@@ -9,7 +9,6 @@ import (
 // Tlbrd - tlbrd: read the indexed TLB entry into the TLB entry
 // registers (no operands).
 type Tlbrd struct {
-	base
 }
 
 func (i Tlbrd) ObjDump(_ disasm.ViewCtx) string {

@@ -9,8 +9,6 @@ import (
 
 // MulwDW - mulw.d.w rd, rj, rk (3R): rd = sign64(low32(rj) * low32(rk)).
 type MulwDW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

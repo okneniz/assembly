@@ -9,24 +9,21 @@ import (
 
 // Fneg — fneg fd, fn (double/single by the operand kind).
 type Fneg struct {
-	base
-
 	rd, rn string
 }
 
 // newFneg - the Fneg constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFneg(b base, rd, rn FReg) (Fneg, error) {
+func newFneg(rd, rn FReg) (Fneg, error) {
 	err := requireFpKind("Fneg", rd, rn)
 	if err != nil {
 		return Fneg{}, err
 	}
 
 	return Fneg{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

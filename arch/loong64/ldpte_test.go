@@ -31,6 +31,5 @@ func TestLdpteDecodeEncode(t *testing.T) {
 	x, ok := in.(Ldpte)
 	require.True(t, ok, "type = %T, want Ldpte", in)
 	require.Equal(t, "ldpte $t1, 1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x064405a0), ctorWord(t, x))
 }

@@ -8,7 +8,6 @@ import (
 
 // Stlrb — stlrb rt, [rn].
 type Stlrb struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Stlrb struct {
 
 // newStlrbBase - the Stlrb constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newStlrbBase(b base, e atomic, enc uint32) Stlrb {
+func newStlrbBase(e atomic, enc uint32) Stlrb {
 	return Stlrb{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newStlrbBase(b base, e atomic, enc uint32) Stlrb {
 
 // newStlrb - the Stlrb constructor: validates the operands,
 // delegates the assembly to newStlrbBase.
-func newStlrb(b base, rt, rn Reg) (Stlrb, error) {
+func newStlrb(rt, rn Reg) (Stlrb, error) {
 	err := requireClass(
 		rt,
 		"Stlrb",
@@ -53,7 +51,7 @@ func newStlrb(b base, rt, rn Reg) (Stlrb, error) {
 		return Stlrb{}, err
 	}
 
-	return newStlrbBase(b, newAtomic(rt.name(), rn.name()), stlrbEnc), nil
+	return newStlrbBase(newAtomic(rt.name(), rn.name()), stlrbEnc), nil
 }
 
 const stlrbEnc uint32 = 0x089FFC00 // stlrb wt, [xn]

@@ -10,8 +10,6 @@ import (
 // LdH - ld.h rd, rj, si12 (2RI12): rd = sign16(MEM[rj + si12]) (the
 // offset is an unscaled byte offset).
 type LdH struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

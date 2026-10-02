@@ -9,17 +9,14 @@ import (
 
 // B — b off (unconditional branch, imm26, ±128MB).
 type B struct {
-	base
-
 	off imm // pc-relative byte offset
 }
 
 // newB - the B constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newB(b base, off imm) (B, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
+func newB(off imm) (B, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return B{
-		base: b,
-		off:  off,
+		off: off,
 	}, nil
 }
 

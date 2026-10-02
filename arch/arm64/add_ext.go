@@ -9,15 +9,13 @@ import (
 
 // AddExt — add rd, rn, rm{, ext #imm3}.
 type AddExt struct {
-	base
 	extBase
 }
 
 // newAddExtBase - the AddExt constructor for a ready embedded base (the
 // string-operand layer): the struct is assembled only here.
-func newAddExtBase(b base, eb extBase) AddExt {
+func newAddExtBase(eb extBase) AddExt {
 	return AddExt{
-		base:    b,
 		extBase: eb,
 	}
 }
@@ -25,7 +23,7 @@ func newAddExtBase(b base, eb extBase) AddExt {
 // newAddExt - the AddExt constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAddExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddExt, error) {
+func newAddExt(rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddExt, error) {
 	err := requireClass(
 		rd,
 		"AddExt",
@@ -82,7 +80,7 @@ func newAddExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddExt,
 		return AddExt{}, err
 	}
 
-if _, err := extNum(ext); err != nil {
+	if _, err := extNum(ext); err != nil {
 		return AddExt{}, fmt.Errorf("arm64.NewAddExt: operand ext: %w", err)
 	}
 
@@ -95,7 +93,6 @@ if _, err := extNum(ext); err != nil {
 	}
 
 	return AddExt{
-		base:    b,
 		extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64()),
 	}, nil
 }

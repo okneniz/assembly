@@ -10,15 +10,13 @@ import (
 // FmovFromGpr — fmov fd, xn | fmov sn, wn (register bits moved from
 // the integer file; xzr/wzr zeroes the FP register).
 type FmovFromGpr struct {
-	base
-
 	rd, rn string
 }
 
 // newFmovFromGpr - the FmovFromGpr constructor: validates the
 // operands and assembles the struct (the Builder method delegates
 // here; the decoder calls it with values read from the word).
-func newFmovFromGpr(b base, rd FReg, rn Reg) (FmovFromGpr, error) {
+func newFmovFromGpr(rd FReg, rn Reg) (FmovFromGpr, error) {
 	err := requireGprClass(rn, "FmovFromGpr", "rn")
 	if err != nil {
 		return FmovFromGpr{}, err
@@ -30,9 +28,8 @@ func newFmovFromGpr(b base, rd FReg, rn Reg) (FmovFromGpr, error) {
 	}
 
 	return FmovFromGpr{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 
@@ -62,15 +59,13 @@ func (i FmovFromGpr) Encode(w io.Writer) (int64, error) {
 // FmovToGpr — fmov xn, fd | fmov wn, sn (register bits moved to the
 // integer file).
 type FmovToGpr struct {
-	base
-
 	rd, rn string
 }
 
 // newFmovToGpr - the FmovToGpr constructor: validates the operands
 // and assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmovToGpr(b base, rd Reg, rn FReg) (FmovToGpr, error) {
+func newFmovToGpr(rd Reg, rn FReg) (FmovToGpr, error) {
 	err := requireGprClass(rd, "FmovToGpr", "rd")
 	if err != nil {
 		return FmovToGpr{}, err
@@ -82,9 +77,8 @@ func newFmovToGpr(b base, rd Reg, rn FReg) (FmovToGpr, error) {
 	}
 
 	return FmovToGpr{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

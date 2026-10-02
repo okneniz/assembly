@@ -9,15 +9,13 @@ import (
 
 // Smulh — smulh rd, rn, rm.
 type Smulh struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newSmulh - the Smulh constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSmulh(b base, rd Reg, rn Reg, rm Reg) (Smulh, error) {
+func newSmulh(rd Reg, rn Reg, rm Reg) (Smulh, error) {
 	err := requireClass(
 		rd,
 		"Smulh",
@@ -58,10 +56,9 @@ func newSmulh(b base, rd Reg, rn Reg, rm Reg) (Smulh, error) {
 	}
 
 	return Smulh{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

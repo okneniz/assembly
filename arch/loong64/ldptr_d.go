@@ -10,8 +10,6 @@ import (
 // LdptrD - ldptr.d rd, rj, offs (DJSk14): rd = MEM[rj + offs] (offs is
 // a word-scaled byte offset, stored raw).
 type LdptrD struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

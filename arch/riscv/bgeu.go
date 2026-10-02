@@ -9,8 +9,6 @@ import (
 
 // Bgeu - bgeu rs1, rs2, off.
 type Bgeu struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }

@@ -9,8 +9,6 @@ import (
 
 // BstrinsD - bstrins.d rd, rj, msb, lsb (DJUk6Um6): insert the rj[msb:lsb] field into rd[msb:lsb].
 type BstrinsD struct {
-	base
-
 	rd, rj uint8
 	msb    imm
 	lsb    imm

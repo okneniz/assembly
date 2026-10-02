@@ -10,8 +10,6 @@ import (
 // Ldpte - ldpte rj, ui8: load the page table entry for address rj,
 // level ui8.
 type Ldpte struct {
-	base
-
 	rj  uint8
 	imm imm
 }

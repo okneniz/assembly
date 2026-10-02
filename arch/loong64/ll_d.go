@@ -10,8 +10,6 @@ import (
 // LlD - ll.d rd, rj, offs (DJSk14): rd = MEM[rj + offs] with a reservation
 // (load-linked 64 bits; offs - a byte offset, a multiple of 4, in +-16380).
 type LlD struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

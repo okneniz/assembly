@@ -9,8 +9,6 @@ import (
 
 // And - and rd, rj, rk (3R): rd = rj & rk.
 type And struct {
-	base
-
 	rd, rj, rk uint8
 }
 

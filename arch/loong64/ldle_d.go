@@ -10,8 +10,6 @@ import (
 // LdleD - ldle.d rd, rj, rk (DJK): load a double word with a bounds check
 // against rk, trapping outside.
 type LdleD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

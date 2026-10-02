@@ -10,8 +10,6 @@ import (
 // Adrp — adrp rd, #imm21 (the absolute-page annotation is computed at
 // print time from the view-context address).
 type Adrp struct {
-	base
-
 	rd  string
 	off int64
 }
@@ -19,7 +17,7 @@ type Adrp struct {
 // newAdrp - the Adrp constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAdrp(b base, rd Reg, off int64) (Adrp, error) {
+func newAdrp(rd Reg, off int64) (Adrp, error) {
 	err := requireClass(
 		rd,
 		"Adrp",
@@ -41,9 +39,8 @@ func newAdrp(b base, rd Reg, off int64) (Adrp, error) {
 	}
 
 	return Adrp{
-		base: b,
-		rd:   rd.name(),
-		off:  off,
+		rd:  rd.name(),
+		off: off,
 	}, nil
 }
 

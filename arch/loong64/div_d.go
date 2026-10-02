@@ -9,8 +9,6 @@ import (
 
 // DivD - div.d rd, rj, rk (3R): rd = rj / rk (signed).
 type DivD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -9,8 +9,6 @@ import (
 
 // BstrpickW - bstrpick.w rd, rj, msb, lsb (DJUk5Um5): extract the rj[msb:lsb] field into rd, zero-extended.
 type BstrpickW struct {
-	base
-
 	rd, rj uint8
 	msb    imm
 	lsb    imm

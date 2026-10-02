@@ -10,8 +10,6 @@ import (
 // Cmge — cmge.Arr vd, vn, vm (the three-same group: the lane width
 // rides the arrangement).
 type Cmge struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,18 +17,17 @@ type Cmge struct {
 // newCmge - the Cmge constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newCmge(b base, rd, rn, rm VReg, arr string) (Cmge, error) {
+func newCmge(rd, rn, rm VReg, arr string) (Cmge, error) {
 	err := requireArr("Cmge", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Cmge{}, err
 	}
 
 	return Cmge{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

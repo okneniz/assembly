@@ -9,8 +9,6 @@ import (
 
 // SrlW - srl.w rd, rj, rk (3R): rd = sign32(rj >>l (rk & 31)).
 type SrlW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -12,15 +12,13 @@ import (
 
 // Adc — adc rd, rn, rm (only the 64-bit form is decoded).
 type Adc struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newAdc - the Adc constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAdc(b base, rd Reg, rn Reg, rm Reg) (Adc, error) {
+func newAdc(rd Reg, rn Reg, rm Reg) (Adc, error) {
 	err := requireClass(
 		rd,
 		"Adc",
@@ -61,10 +59,9 @@ func newAdc(b base, rd Reg, rn Reg, rm Reg) (Adc, error) {
 	}
 
 	return Adc{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

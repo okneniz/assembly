@@ -9,18 +9,15 @@ import (
 
 // Xor - xor rd, rs1, rs2.
 type Xor struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cXor - compressed forms (c.xor): base - halfword, length 2.
-func cXor(h uint32, rd, rs1, rs2 string) Xor {
+func cXor(rd, rs1, rs2 string) Xor {
 	return Xor{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

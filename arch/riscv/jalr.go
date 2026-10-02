@@ -11,19 +11,16 @@ import (
 // Jalr - jalr rd, off(rs1); pseudo: ret (zero,ra,0), jr (zero, imm=0 or
 // offset), "jalr rs" (ra, imm=0). Compression: c.jr/c.jalr (imm=0).
 type Jalr struct {
-	base
-
 	rd, rs1 string
 	off     imm
 }
 
 // cJalr - compressed forms (c.jr/c.jalr): base - halfword, length 2.
-func cJalr(h uint32, rd, rs1 string, off int64) Jalr {
+func cJalr(rd, rs1 string, off int64) Jalr {
 	return Jalr{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		off:  immNum(off),
+		rd:  rd,
+		rs1: rs1,
+		off: immNum(off),
 	}
 }
 

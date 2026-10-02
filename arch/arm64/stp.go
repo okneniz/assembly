@@ -8,23 +8,21 @@ import (
 
 // Stp — stp rt, rt2, [rn{, #imm7<<scale}{!}] (the same encoding, L=0).
 type Stp struct {
-	base
 	pairBase
 }
 
 // newStpBase - the Stp constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newStpBase(b base, e pairBase) Stp {
+func newStpBase(e pairBase) Stp {
 	return Stp{
-		base:     b,
 		pairBase: e,
 	}
 }
 
 // newStp - the Stp constructor: validates the operands,
 // delegates the assembly to newStpBase.
-func newStp(b base, rt, rt2, rn Reg, off Off) (Stp, error) {
+func newStp(rt, rt2, rn Reg, off Off) (Stp, error) {
 	err := requireClass(
 		rt,
 		"Stp",
@@ -88,7 +86,6 @@ func newStp(b base, rt, rt2, rn Reg, off Off) (Stp, error) {
 	}
 
 	return newStpBase(
-		b,
 		newPairBase(rt.name(), rt2.name(), rn.name(), memImm, int64(off), scale, enc),
 	), nil
 }

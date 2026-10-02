@@ -9,16 +9,13 @@ import (
 
 // Slli - slli rd, rs1, shamt; compression: c.slli.
 type Slli struct {
-	base
-
 	rd, rs1 string
 	shamt   imm
 }
 
 // cSlli - compressed forms (c.slli): base - halfword, length 2.
-func cSlli(h uint32, rd, rs1 string, shamt int64) Slli {
+func cSlli(rd, rs1 string, shamt int64) Slli {
 	return Slli{
-		base:  newHalfBase(h),
 		rd:    rd,
 		rs1:   rs1,
 		shamt: immNum(shamt),

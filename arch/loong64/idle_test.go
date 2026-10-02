@@ -31,6 +31,5 @@ func TestIdleDecodeEncode(t *testing.T) {
 	x, ok := in.(Idle)
 	require.True(t, ok, "type = %T, want Idle", in)
 	require.Equal(t, "idle 1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x06488001), ctorWord(t, x))
 }

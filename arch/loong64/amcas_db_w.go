@@ -9,8 +9,6 @@ import (
 
 // AmcasDbW - amcas_db.w rd, rk, rj (3R): if MEM[rj] == rd then MEM[rj] = rk; rd = old MEM[rj]. A built-in barrier.
 type AmcasDbW struct {
-	base
-
 	rd, rk, rj uint8
 }
 

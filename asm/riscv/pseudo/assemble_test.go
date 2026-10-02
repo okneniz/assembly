@@ -328,7 +328,7 @@ target:
 			insts[0].ObjDump(disasm.ViewCtxAt(0x1000)),
 			"jal +4100 (relaxed)",
 		)
-		require.Equal(t, 4, insts[0].Len(), "32-bit form")
+		require.Equal(t, 4, arch.InstrLen(d), "32-bit form")
 	})
 
 	t.Run("boundary", func(t *testing.T) {
@@ -366,7 +366,7 @@ back:
 		require.NoError(t, err)
 		last := insts[len(insts)-1] // the .space bytes decode as junk before it
 		require.Equal(t, "j 0x1000", last.ObjDump(disasm.ViewCtxAt(0x2000)), "jal -4096")
-		require.Equal(t, 4, last.Len(), "32-bit form")
+		require.Equal(t, 4, arch.InstrLen(d[len(d)-4:]), "32-bit form")
 	})
 }
 
@@ -429,13 +429,14 @@ func TestRoundTripExample(t *testing.T) {
 	off := uint64(0)
 	for _, in := range insts {
 		addr := ts.Addr + off
-		off += uint64(in.Len())
+		n := uint64(arch.InstrLen(ts.Data[off:]))
+		off += n
 		src := instrTextSource(in, addr)
 		if src == "" || src == "<unknown>" {
 			continue
 		}
 
-		want := ts.Data[addr-ts.Addr : addr-ts.Addr+uint64(in.Len())]
+		want := ts.Data[addr-ts.Addr : addr-ts.Addr+n]
 		res, errs := asm.Assemble(src, addr, NewASMBackend())
 		if len(errs) != 0 {
 			mismatched++
@@ -622,7 +623,8 @@ func TestRoundTripSynthetic(t *testing.T) {
 		off := uint64(0)
 		for _, in := range insts {
 			inAddr := addr + off
-			off += uint64(in.Len())
+			n := uint64(arch.InstrLen(want[off:]))
+			off += n
 			src2 := instrTextSource(in, inAddr)
 			if src2 == "" || src2 == "<unknown>" {
 				mismatched++
@@ -638,7 +640,7 @@ func TestRoundTripSynthetic(t *testing.T) {
 			}
 
 			got := res2.Sections[0].Data
-			want2 := want[inAddr-addr : inAddr-addr+uint64(in.Len())]
+			want2 := want[inAddr-addr : inAddr-addr+n]
 			if bytes.Equal(got, want2) {
 				matched++
 			} else {

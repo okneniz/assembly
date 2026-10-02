@@ -9,8 +9,6 @@ import (
 
 // Sltu - sltu rd, rs1, rs2; pseudo: snez (rs1=zero).
 type Sltu struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

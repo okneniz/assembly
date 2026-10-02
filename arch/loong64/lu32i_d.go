@@ -10,8 +10,6 @@ import (
 // Lu32iD - lu32i.d rd, si20 (1RI20): rd = si20 << 32 concatenated into
 // bits 51:32.
 type Lu32iD struct {
-	base
-
 	rd  uint8
 	imm imm
 }

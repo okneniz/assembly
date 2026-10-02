@@ -27,6 +27,5 @@ func TestAmaddDbWDecodeEncode(t *testing.T) {
 	amadddbw, ok := in.(AmaddDbW)
 	require.True(t, ok, "type = %T, want AmaddDbW", in)
 	require.Equal(t, "amadd_db.w $t0, $t1, $t2", amadddbw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, amadddbw.Len())
 	require.Equal(t, uint32(0x386a35cc), ctorWord(t, amadddbw))
 }

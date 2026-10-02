@@ -10,8 +10,6 @@ import (
 // Addu16iD - addu16i.d rd, rj, si16 (2RI16): rd = rj + sext(si16 << 16).
 // The assembly writes the plain si16 (the << 16 is part of the semantics).
 type Addu16iD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

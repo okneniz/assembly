@@ -9,8 +9,6 @@ import (
 
 // Cnt — cnt.8b/16b vd, vn (population count per byte lane).
 type Cnt struct {
-	base
-
 	rd, rn string
 	arr    string // 8b/16b
 }
@@ -18,17 +16,16 @@ type Cnt struct {
 // newCnt - the Cnt constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newCnt(b base, rd, rn VReg, arr string) (Cnt, error) {
+func newCnt(rd, rn VReg, arr string) (Cnt, error) {
 	err := requireArr("Cnt", arr, "8b", "16b")
 	if err != nil {
 		return Cnt{}, err
 	}
 
 	return Cnt{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		arr: arr,
 	}, nil
 }
 

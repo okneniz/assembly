@@ -9,8 +9,6 @@ import (
 
 // AddiD - addi.d rd, rj, si12 (2RI12): rd = rj + si12.
 type AddiD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

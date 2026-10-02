@@ -9,8 +9,6 @@ import (
 
 // Abs — abs.Arr vd, vn (absolute value per lane).
 type Abs struct {
-	base
-
 	rd, rn string
 	arr    string // 8b/16b
 }
@@ -18,17 +16,16 @@ type Abs struct {
 // newAbs - the Abs constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newAbs(b base, rd, rn VReg, arr string) (Abs, error) {
+func newAbs(rd, rn VReg, arr string) (Abs, error) {
 	err := requireArr("Abs", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Abs{}, err
 	}
 
 	return Abs{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		arr: arr,
 	}, nil
 }
 

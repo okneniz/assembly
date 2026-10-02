@@ -10,8 +10,6 @@ import (
 // StH - st.h rd, rj, si12 (2RI12): MEM[rj + si12] = low16(rd) (the
 // offset is an unscaled byte offset).
 type StH struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

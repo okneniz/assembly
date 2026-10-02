@@ -9,8 +9,6 @@ import (
 
 // Divw - divw rd, rs1, rs2.
 type Divw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

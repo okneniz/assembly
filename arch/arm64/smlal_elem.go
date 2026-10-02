@@ -10,8 +10,6 @@ import (
 // SmlalElem — smlal{,2}.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another; the result lanes are one width wider).
 type SmlalElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type SmlalElem struct {
 // newSmlalElem - the SmlalElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSmlalElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SmlalElem, error) {
+func newSmlalElem(q, size, idx uint32, rd, rn, rm VReg) (SmlalElem, error) {
 	if size == 0 || size > 2 {
 		return SmlalElem{}, fmt.Errorf(
 			"arm64.NewSmlalElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
@@ -32,7 +30,6 @@ func newSmlalElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SmlalElem, erro
 	}
 
 	return SmlalElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

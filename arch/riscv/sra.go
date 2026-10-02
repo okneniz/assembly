@@ -9,8 +9,6 @@ import (
 
 // Sra - sra rd, rs1, rs2.
 type Sra struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

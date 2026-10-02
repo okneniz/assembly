@@ -11,8 +11,6 @@ import (
 // if the signed rj < rd, jump to pc + offs (offs is word-scaled). The
 // decoded form stores the absolute target.
 type Blt struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

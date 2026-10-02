@@ -10,8 +10,6 @@ import (
 // StleD - stle.d rd, rj, rk (DJK): store the double word of rd with a
 // bounds check against rk, trapping outside.
 type StleD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

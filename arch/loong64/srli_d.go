@@ -9,8 +9,6 @@ import (
 
 // SrliD - srli.d rd, rj, ui6 (2RI6): rd = rj >> (ui6 & 63) logical.
 type SrliD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

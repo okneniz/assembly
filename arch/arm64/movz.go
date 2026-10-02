@@ -10,8 +10,6 @@ import (
 
 // Movz — movz rd, #(imm16 << hw*16); displayed as mov.
 type Movz struct {
-	base
-
 	rd        string
 	imm16, hw uint32
 }
@@ -19,7 +17,7 @@ type Movz struct {
 // newMovz - the Movz constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newMovz(b base, rd Reg, imm Imm16, hw Hw) (Movz, error) {
+func newMovz(rd Reg, imm Imm16, hw Hw) (Movz, error) {
 	err := requireClass(
 		rd,
 		"Movz",
@@ -40,7 +38,6 @@ func newMovz(b base, rd Reg, imm Imm16, hw Hw) (Movz, error) {
 	}
 
 	return Movz{
-		base:  b,
 		rd:    rd.name(),
 		imm16: imm.v,
 		hw:    uint32(hw),

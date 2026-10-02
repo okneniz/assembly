@@ -11,15 +11,13 @@ import (
 // (not a register/immediate), so self-verify against renderInstr (which
 // resolves Sym into numbers) is impossible - skipVerify.
 type Prfm struct {
-	base
-
 	rn string
 }
 
 // newPrfm - the Prfm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newPrfm(b base, rn Reg) (Prfm, error) {
+func newPrfm(rn Reg) (Prfm, error) {
 	err := requireClass(
 		rn,
 		"Prfm",
@@ -34,8 +32,7 @@ func newPrfm(b base, rn Reg) (Prfm, error) {
 	}
 
 	return Prfm{
-		base: b,
-		rn:   rn.name(),
+		rn: rn.name(),
 	}, nil
 }
 

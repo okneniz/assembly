@@ -28,6 +28,5 @@ func TestAsrtleDDecodeEncode(t *testing.T) {
 	x, ok := in.(AsrtleD)
 	require.True(t, ok, "type = %T, want AsrtleD", in)
 	require.Equal(t, "asrtle.d $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x000139a0), ctorWord(t, x))
 }

@@ -8,8 +8,6 @@ import (
 
 // Dbcl - dbcl code (I15): the debug-call breakpoint trap.
 type Dbcl struct {
-	base
-
 	code imm
 }
 

@@ -86,8 +86,9 @@ func main() {
 		off := uint64(0)
 		for _, in := range insts {
 			a := sec.Addr + off
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
-			off += uint64(in.Len())
+			n := uint64(arm64.InstrLen(sec.Data[off:]))
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:off+n], in, opts))
+			off += n
 		}
 	case file.ArchRISCV64:
 		insts, err := riscv.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(sec.Data))
@@ -99,8 +100,9 @@ func main() {
 		off := uint64(0)
 		for _, in := range insts {
 			a := sec.Addr + off
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
-			off += uint64(in.Len())
+			n := uint64(riscv.InstrLen(sec.Data[off:]))
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:off+n], in, opts))
+			off += n
 		}
 	case file.ArchLOONGARCH64:
 		insts, err := loong64.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(sec.Data))
@@ -112,8 +114,9 @@ func main() {
 		off := uint64(0)
 		for _, in := range insts {
 			a := sec.Addr + off
-			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:], in, opts))
-			off += uint64(in.Len())
+			n := uint64(loong64.InstrLen(sec.Data[off:]))
+			ours[a] = objdump.Normalize(disasm.Line(a, sec.Data[off:off+n], in, opts))
+			off += n
 		}
 	default:
 		fmt.Fprintf(os.Stderr, "unsupported architecture (kind %d)\n", kind)

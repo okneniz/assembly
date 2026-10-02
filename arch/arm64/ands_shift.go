@@ -10,8 +10,6 @@ import (
 
 // AndsShift — ands rd, rn, rm[, shift #imm6]; pseudo: tst (Rd = zr, imm6 = 0).
 type AndsShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string
@@ -21,7 +19,7 @@ type AndsShift struct {
 // newAndsShift - the AndsShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAndsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AndsShift, error) {
+func newAndsShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AndsShift, error) {
 	err := requireClass(
 		rd,
 		"AndsShift",
@@ -79,7 +77,6 @@ func newAndsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AndsShift
 	}
 
 	return AndsShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

@@ -9,23 +9,21 @@ import (
 
 // Strb — strb ... (see lsBase for addressing kinds).
 type Strb struct {
-	base
 	lsBase
 }
 
 // newStrbBase - the Strb constructor for a ready embedded base (the
 // decoder and the string-operand layer): the struct is assembled only
 // here.
-func newStrbBase(b base, e lsBase) Strb {
+func newStrbBase(e lsBase) Strb {
 	return Strb{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newStrb - the Strb constructor: validates the operands,
 // delegates the assembly to newStrbBase.
-func newStrb(b base, rt, rn Reg, off Off) (Strb, error) {
+func newStrb(rt, rn Reg, off Off) (Strb, error) {
 	err := requireClass(
 		rt,
 		"Strb",
@@ -57,7 +55,6 @@ func newStrb(b base, rt, rn Reg, off Off) (Strb, error) {
 	}
 
 	return newStrbBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strbEnc, "", "", 0),
 	), nil
 }

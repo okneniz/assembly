@@ -10,8 +10,6 @@ import (
 // AlslW - alsl.w rd, rj, rk, shift (DJKUa2): rd = rj + (rk << shift); the
 // 1..4 shift is encoded as ui2 = shift - 1 (decode adds 1 back).
 type AlslW struct {
-	base
-
 	rd, rj, rk uint8
 	shift      imm
 }

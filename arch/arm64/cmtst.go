@@ -10,8 +10,6 @@ import (
 // Cmtst — cmtst.Arr vd, vn, vm (the three-same group: the lane width
 // rides the arrangement).
 type Cmtst struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,18 +17,17 @@ type Cmtst struct {
 // newCmtst - the Cmtst constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newCmtst(b base, rd, rn, rm VReg, arr string) (Cmtst, error) {
+func newCmtst(rd, rn, rm VReg, arr string) (Cmtst, error) {
 	err := requireArr("Cmtst", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Cmtst{}, err
 	}
 
 	return Cmtst{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

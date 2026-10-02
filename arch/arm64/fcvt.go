@@ -11,15 +11,13 @@ import (
 // must differ — the source type rides bits [22:21], the destination
 // type the opcode bits [15:14]).
 type Fcvt struct {
-	base
-
 	rd, rn string
 }
 
 // newFcvt - the Fcvt constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFcvt(b base, rd, rn FReg) (Fcvt, error) {
+func newFcvt(rd, rn FReg) (Fcvt, error) {
 	if rd.Is64() == rn.Is64() {
 		return Fcvt{}, fmt.Errorf(
 			"arm64.NewFcvt: converts between s and d - kinds must differ: %s vs %s",
@@ -28,9 +26,8 @@ func newFcvt(b base, rd, rn FReg) (Fcvt, error) {
 	}
 
 	return Fcvt{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

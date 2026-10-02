@@ -10,8 +10,6 @@ import (
 
 // OrnShift — orn rd, rn, rm[, shift #imm6]; pseudo: mvn (Rn = zr).
 type OrnShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string
@@ -21,7 +19,7 @@ type OrnShift struct {
 // newOrnShift - the OrnShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newOrnShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (OrnShift, error) {
+func newOrnShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (OrnShift, error) {
 	err := requireClass(
 		rd,
 		"OrnShift",
@@ -79,7 +77,6 @@ func newOrnShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (OrnShift, 
 	}
 
 	return OrnShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

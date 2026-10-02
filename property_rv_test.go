@@ -653,12 +653,16 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 		// the text renders at the instruction's own address in the list
 		// (pc-relative targets print absolute, the lengths vary with
 		// RVC) - the joined text assembles at propAddr, the same base
-		// the render used
+		// the render used; the addresses step by the stream rule over
+		// the encoded bytes
 		texts := make([]string, len(back))
 		addr := uint64(propAddr)
+		off := 0
 		for i := range back {
 			texts[i] = rvTextAt(back[i], addr)
-			addr += uint64(back[i].Len())
+			n := riscv.InstrLen(raw[off:])
+			addr += uint64(n)
+			off += n
 		}
 
 		data, ok := rvAssemblesTo(t, strings.Join(texts, "\n"))
@@ -678,13 +682,16 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 		}
 
 		addr = uint64(propAddr)
+		off = 0
 		for i := range back2 {
 			if rvTextAt(back2[i], addr) != texts[i] {
 				t.Logf("[%d] text %q ≠ %q", i, rvTextAt(back2[i], addr), texts[i])
 				return false
 			}
 
-			addr += uint64(back2[i].Len())
+			n := riscv.InstrLen(data[off:])
+			addr += uint64(n)
+			off += n
 		}
 
 		return true
@@ -711,13 +718,17 @@ func TestPropertyRiscvDecodeRobustness(t *testing.T) {
 				return
 			}
 
+			// the stream rule must walk the decoded instructions inside
+			// the 4 input bytes, never past the buffer (render errors are
+			// acceptable - garbage words - only the panic check matters)
+			off := 0
 			for _, in := range ins {
-				// render errors are acceptable (garbage words) - we only
-				// check that no panic occurs
 				_ = in.ObjDump(disasm.DefaultViewCtx())
-				if n := in.Len(); n != 2 && n != 4 {
-					t.Logf("word %#08x: Len = %d", w, n)
+				off += riscv.InstrLen(data[off:])
+				if off > len(data) {
+					t.Logf("word %#08x: stream overruns at %d", w, off)
 					ok = false
+					break
 				}
 			}
 
@@ -779,7 +790,7 @@ func TestPropertyRiscvVsObjdump(t *testing.T) {
 		}
 
 		ourLine := objdump.StripComments(objdump.Normalize(
-			disasm.Line(addr, code[off:off+ins[0].Len()], ins[0], opts)))
+			disasm.Line(addr, code[off:off+riscv.InstrLen(code[off:])], ins[0], opts)))
 		if ourLine == objdump.StripComments(objLine) {
 			matched++
 		} else {

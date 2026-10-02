@@ -11,8 +11,6 @@ import (
 // the arrangement is the RESULT's - one lane wider than the Rm source;
 // Q=1 prints the "2" form).
 type Uaddw struct {
-	base
-
 	q, size    uint32
 	rd, rn, rm string
 }
@@ -20,7 +18,7 @@ type Uaddw struct {
 // newUaddw - the Uaddw constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newUaddw(b base, q, size uint32, rd, rn, rm VReg) (Uaddw, error) {
+func newUaddw(q, size uint32, rd, rn, rm VReg) (Uaddw, error) {
 	if size > 2 {
 		return Uaddw{}, fmt.Errorf(
 			"arm64.NewUaddw: the source arrangement is too narrow for .2d results",
@@ -28,7 +26,6 @@ func newUaddw(b base, q, size uint32, rd, rn, rm VReg) (Uaddw, error) {
 	}
 
 	return Uaddw{
-		base: b,
 		q:    q,
 		size: size,
 		rd:   rd.name(),

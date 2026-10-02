@@ -9,8 +9,6 @@ import (
 
 // ClzD - clz.d rd, rj (2R): rd = the count of leading zeros of rj.
 type ClzD struct {
-	base
-
 	rd, rj uint8
 }
 

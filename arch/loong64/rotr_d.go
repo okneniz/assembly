@@ -9,8 +9,6 @@ import (
 
 // RotrD - rotr.d rd, rj, rk (3R): rd = rotate_right64(rj, rk & 63).
 type RotrD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

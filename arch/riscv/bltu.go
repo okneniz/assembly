@@ -9,8 +9,6 @@ import (
 
 // Bltu - bltu rs1, rs2, off.
 type Bltu struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }

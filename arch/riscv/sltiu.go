@@ -9,8 +9,6 @@ import (
 
 // Sltiu - sltiu rd, rs1, imm; pseudo: seqz (imm=1).
 type Sltiu struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }

@@ -9,18 +9,15 @@ import (
 
 // Subw - subw rd, rs1, rs2; pseudo: negw (rs1=zero).
 type Subw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cSubw - compressed forms (c.subw): base - halfword, length 2.
-func cSubw(h uint32, rd, rs1, rs2 string) Subw {
+func cSubw(rd, rs1, rs2 string) Subw {
 	return Subw{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

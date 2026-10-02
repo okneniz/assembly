@@ -10,7 +10,6 @@ import (
 // Csrrw - csrrw rd, csr, rs1; pseudo: csrw (rd=zero), fs*/fscsr/fsrm/
 // fsflags (rd=zero + status CSR).
 type Csrrw struct {
-	base
 	csrOp
 
 	rs1 string

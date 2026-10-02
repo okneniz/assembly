@@ -13,8 +13,6 @@ import (
 
 // AddW - add.w rd, rj, rk (3R): rd = sign32(rj + rk).
 type AddW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

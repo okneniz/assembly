@@ -10,8 +10,6 @@ import (
 
 // AmomaxuD - amomaxu.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = max(MEM[rs1], rs2), unsigned.
 type AmomaxuD struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

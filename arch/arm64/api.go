@@ -110,7 +110,7 @@ func SubShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, 
 		return nil, err
 	}
 
-	return newSubShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	return newSubShift(r1, r2, r3, imm6Of(imm6), sh)
 }
 
 func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
@@ -134,7 +134,7 @@ func SubsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr,
 		return nil, err
 	}
 
-	return newSubsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	return newSubsShift(r1, r2, r3, imm6Of(imm6), sh)
 }
 
 func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
@@ -148,7 +148,7 @@ func AndsImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
 		return nil, err
 	}
 
-	return newAndsImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
+	return newAndsImm(r1, r2, decodeBitMasks(n, immr, imms, is64))
 }
 
 func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
@@ -172,7 +172,7 @@ func AndsShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr,
 		return nil, err
 	}
 
-	return newAndsShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	return newAndsShift(r1, r2, r3, imm6Of(imm6), sh)
 }
 
 func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
@@ -196,7 +196,7 @@ func OrnShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, 
 		return nil, err
 	}
 
-	return newOrnShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	return newOrnShift(r1, r2, r3, imm6Of(imm6), sh)
 }
 
 func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, error) {
@@ -220,7 +220,7 @@ func OrrShiftOf(rd, rn, rm string, imm6 uint32, shift string, isf bool) (Instr, 
 		return nil, err
 	}
 
-	return newOrrShift(base{}, r1, r2, r3, imm6Of(imm6), sh)
+	return newOrrShift(r1, r2, r3, imm6Of(imm6), sh)
 }
 
 func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
@@ -234,7 +234,7 @@ func OrrImmOf(rd, rn string, immr, imms uint32, n, is64 bool) (Instr, error) {
 		return nil, err
 	}
 
-	return newOrrImm(base{}, r1, r2, decodeBitMasks(n, immr, imms, is64))
+	return newOrrImm(r1, r2, decodeBitMasks(n, immr, imms, is64))
 }
 
 func MovzOf(rd string, imm16, hw uint32) (Instr, error) {
@@ -243,7 +243,7 @@ func MovzOf(rd string, imm16, hw uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newMovz(base{}, r, imm16Of(imm16), Hw(hw))
+	return newMovz(r, imm16Of(imm16), Hw(hw))
 }
 
 func MovnOf(rd string, imm16, hw uint32) (Instr, error) {
@@ -252,7 +252,7 @@ func MovnOf(rd string, imm16, hw uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newMovn(base{}, r, imm16Of(imm16), Hw(hw))
+	return newMovn(r, imm16Of(imm16), Hw(hw))
 }
 
 func SbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
@@ -266,7 +266,7 @@ func SbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
 		return nil, err
 	}
 
-	return newSbfm(base{}, r1, r2, immr, imms)
+	return newSbfm(r1, r2, immr, imms)
 }
 
 func UbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
@@ -280,7 +280,7 @@ func UbfmOf(rd, rn string, immr, imms uint32, isf bool) (Instr, error) {
 		return nil, err
 	}
 
-	return newUbfm(base{}, r1, r2, immr, imms)
+	return newUbfm(r1, r2, immr, imms)
 }
 
 // VerifyBitMasks — a self-test of logical immediate encoding
@@ -319,7 +319,7 @@ func NewCsel(rd, rn, rm, cond string) (Csel, error) {
 		return Csel{}, err
 	}
 
-	return newCsel(base{}, r1, r2, r3, cond)
+	return newCsel(r1, r2, r3, cond)
 }
 
 // CondNum — a condition name to its 4-bit index.

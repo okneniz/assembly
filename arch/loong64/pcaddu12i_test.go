@@ -26,7 +26,6 @@ func TestPcaddu12iDecodeEncode(t *testing.T) {
 	x, ok := in.(Pcaddu12i)
 	require.True(t, ok, "type = %T, want Pcaddu12i", in)
 	require.Equal(t, "pcaddu12i $t0, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.imm.val)
 	require.Equal(t, uint32(0x1c0000ac), ctorWord(t, x))
 }

@@ -8,8 +8,6 @@ import (
 
 // Break - break code (Ud15): the debugger breakpoint trap.
 type Break struct {
-	base
-
 	code imm
 }
 

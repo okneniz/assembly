@@ -10,8 +10,6 @@ import (
 // Sri — sri.Arr vd, vn, #shift (the shift lives in immh:immb,
 // the stored value is esize-shift (printed shifted right)).
 type Sri struct {
-	base
-
 	rd, rn     string
 	immh, immb uint32
 	q          uint32
@@ -20,13 +18,12 @@ type Sri struct {
 // newSri - the Sri constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSri(b base, q, immh, immb uint32, rd, rn VReg) (Sri, error) {
+func newSri(q, immh, immb uint32, rd, rn VReg) (Sri, error) {
 	if immh > 0xf || immb > 7 {
 		return Sri{}, fmt.Errorf("arm64.NewSri: imm out of range")
 	}
 
 	return Sri{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		immh: immh,

@@ -10,8 +10,6 @@ import (
 // StD - st.d rd, rj, si12 (2RI12): MEM[rj + si12] = rd (the offset is
 // an unscaled byte offset).
 type StD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

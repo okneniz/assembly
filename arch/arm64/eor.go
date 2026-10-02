@@ -10,8 +10,6 @@ import (
 // Eor — eor.8b/16b vd, vn, vm (the logical three-same group:
 // bits 23:22 are the opcode, the arrangement is 8b/16b by Q).
 type Eor struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b
 }
@@ -19,18 +17,17 @@ type Eor struct {
 // newEor - the Eor constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newEor(b base, rd, rn, rm VReg, arr string) (Eor, error) {
+func newEor(rd, rn, rm VReg, arr string) (Eor, error) {
 	err := requireArr("Eor", arr, "8b", "16b")
 	if err != nil {
 		return Eor{}, err
 	}
 
 	return Eor{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

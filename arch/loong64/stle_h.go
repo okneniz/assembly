@@ -10,8 +10,6 @@ import (
 // StleH - stle.h rd, rj, rk (DJK): store the low half of rd with a bounds
 // check against rk, trapping outside.
 type StleH struct {
-	base
-
 	rd, rj, rk uint8
 }
 

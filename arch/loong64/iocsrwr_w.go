@@ -9,8 +9,6 @@ import (
 
 // IocsrwrW - iocsrwr.w rd, rj (2R): the IOCSR word at rj = rd.
 type IocsrwrW struct {
-	base
-
 	rd, rj uint8
 }
 

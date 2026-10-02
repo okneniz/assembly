@@ -9,8 +9,6 @@ import (
 
 // Slti - slti rd, rj, si12 (2RI12): rd = (rj <s si12) ? 1 : 0.
 type Slti struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

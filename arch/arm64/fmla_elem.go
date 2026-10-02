@@ -10,8 +10,6 @@ import (
 // FmlaElem — fmla.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another).
 type FmlaElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type FmlaElem struct {
 // newFmlaElem - the FmlaElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newFmlaElem(b base, q, size, idx uint32, rd, rn, rm VReg) (FmlaElem, error) {
+func newFmlaElem(q, size, idx uint32, rd, rn, rm VReg) (FmlaElem, error) {
 	if size != 2 && size != 3 {
 		return FmlaElem{}, fmt.Errorf(
 			"arm64.NewFmlaElem: only the fp32 (.2s/.4s) and fp64 (.2d) lanes exist",
@@ -32,7 +30,6 @@ func newFmlaElem(b base, q, size, idx uint32, rd, rn, rm VReg) (FmlaElem, error)
 	}
 
 	return FmlaElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

@@ -9,8 +9,6 @@ import (
 
 // AmorD - amor.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] |= rk.
 type AmorD struct {
-	base
-
 	rd, rk, rj uint8
 }
 

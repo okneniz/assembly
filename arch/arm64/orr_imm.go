@@ -9,14 +9,13 @@ import (
 
 // OrrImm — orr rd, rn, #bitmask.
 type OrrImm struct {
-	base
 	logImm
 }
 
 // newOrrImm - the OrrImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newOrrImm(b base, rd Reg, rn Reg, imm uint64) (OrrImm, error) {
+func newOrrImm(rd Reg, rn Reg, imm uint64) (OrrImm, error) {
 	err := requireClass(
 		rd,
 		"OrrImm",
@@ -66,7 +65,6 @@ func newOrrImm(b base, rd Reg, rn Reg, imm uint64) (OrrImm, error) {
 	}
 
 	return OrrImm{
-		base:   b,
 		logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64()),
 	}, nil
 }

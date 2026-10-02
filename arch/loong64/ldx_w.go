@@ -9,8 +9,6 @@ import (
 
 // LdxW - ldx.w rd, rj, rk (3R): rd = sign32(MEM[rj + rk]).
 type LdxW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

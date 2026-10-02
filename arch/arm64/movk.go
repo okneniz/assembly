@@ -15,8 +15,6 @@ const (
 
 // Movk — movk rd, #imm16[, lsl #hw*16].
 type Movk struct {
-	base
-
 	rd        string
 	imm16, hw uint32
 }
@@ -24,7 +22,7 @@ type Movk struct {
 // newMovk - the Movk constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newMovk(b base, rd Reg, imm Imm16, hw Hw) (Movk, error) {
+func newMovk(rd Reg, imm Imm16, hw Hw) (Movk, error) {
 	err := requireClass(
 		rd,
 		"Movk",
@@ -45,7 +43,6 @@ func newMovk(b base, rd Reg, imm Imm16, hw Hw) (Movk, error) {
 	}
 
 	return Movk{
-		base:  b,
 		rd:    rd.name(),
 		imm16: imm.v,
 		hw:    uint32(hw),

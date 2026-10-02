@@ -11,8 +11,6 @@ import (
 // the arrangement is the RESULT's - one lane wider than the Rm source;
 // Q=1 prints the "2" form).
 type Ssubw struct {
-	base
-
 	q, size    uint32
 	rd, rn, rm string
 }
@@ -20,7 +18,7 @@ type Ssubw struct {
 // newSsubw - the Ssubw constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSsubw(b base, q, size uint32, rd, rn, rm VReg) (Ssubw, error) {
+func newSsubw(q, size uint32, rd, rn, rm VReg) (Ssubw, error) {
 	if size > 2 {
 		return Ssubw{}, fmt.Errorf(
 			"arm64.NewSsubw: the source arrangement is too narrow for .2d results",
@@ -28,7 +26,6 @@ func newSsubw(b base, q, size uint32, rd, rn, rm VReg) (Ssubw, error) {
 	}
 
 	return Ssubw{
-		base: b,
 		q:    q,
 		size: size,
 		rd:   rd.name(),

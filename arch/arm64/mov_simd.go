@@ -12,8 +12,6 @@ import (
 )
 
 type MovSimd struct {
-	base
-
 	rd, rm string
 	arr    string
 	enc    uint32

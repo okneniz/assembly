@@ -9,8 +9,6 @@ import (
 
 // Ld1 — ld1.Arr { vN, ... }{[idx]}, [rn]{, #imm | rm} (structural loads).
 type Ld1 struct {
-	base
-
 	regList string // "{ v0, v1 }" | "{ v0 }[2]"
 	rn      string
 	name    string

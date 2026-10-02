@@ -10,8 +10,6 @@ import (
 // LdleB - ldle.b rd, rj, rk (DJK): load a byte with a bounds check against
 // rk, trapping outside.
 type LdleB struct {
-	base
-
 	rd, rj, rk uint8
 }
 

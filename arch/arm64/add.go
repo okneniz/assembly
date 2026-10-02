@@ -10,8 +10,6 @@ import (
 // Add — add.Arr vd, vn, vm (the three-same group: the lane width
 // rides the arrangement).
 type Add struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,18 +17,17 @@ type Add struct {
 // newAdd - the Add constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newAdd(b base, rd, rn, rm VReg, arr string) (Add, error) {
+func newAdd(rd, rn, rm VReg, arr string) (Add, error) {
 	err := requireArr("Add", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Add{}, err
 	}
 
 	return Add{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

@@ -9,8 +9,6 @@ import (
 
 // SraiD - srai.d rd, rj, ui6 (2RI6): rd = rj >> (ui6 & 63) arithmetic.
 type SraiD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

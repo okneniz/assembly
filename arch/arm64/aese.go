@@ -9,19 +9,16 @@ import (
 
 // Aese — aese.16b vd, vn (the AES round helper; .16b implicit).
 type Aese struct {
-	base
-
 	rd, rn string
 }
 
 // newAese - the Aese constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newAese(b base, rd, rn VReg) (Aese, error) {
+func newAese(rd, rn VReg) (Aese, error) {
 	return Aese{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

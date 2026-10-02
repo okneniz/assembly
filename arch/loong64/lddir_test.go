@@ -31,6 +31,5 @@ func TestLddirDecodeEncode(t *testing.T) {
 	x, ok := in.(Lddir)
 	require.True(t, ok, "type = %T, want Lddir", in)
 	require.Equal(t, "lddir $t0, $t1, 1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x064005ac), ctorWord(t, x))
 }

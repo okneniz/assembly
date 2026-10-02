@@ -9,25 +9,22 @@ import (
 
 // Fsub — fsub fd, fn, fm (double/single by the operand kind).
 type Fsub struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newFsub - the Fsub constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFsub(b base, rd, rn, rm FReg) (Fsub, error) {
+func newFsub(rd, rn, rm FReg) (Fsub, error) {
 	err := requireFpKind("Fsub", rd, rn, rm)
 	if err != nil {
 		return Fsub{}, err
 	}
 
 	return Fsub{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

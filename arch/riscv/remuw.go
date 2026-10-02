@@ -9,8 +9,6 @@ import (
 
 // Remuw - remuw rd, rs1, rs2.
 type Remuw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

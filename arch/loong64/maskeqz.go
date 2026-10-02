@@ -9,8 +9,6 @@ import (
 
 // Maskeqz - maskeqz rd, rj, rk (3R): rd = (rk == 0) ? rj : 0.
 type Maskeqz struct {
-	base
-
 	rd, rj, rk uint8
 }
 

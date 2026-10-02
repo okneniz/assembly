@@ -27,6 +27,5 @@ func TestAmminWDecodeEncode(t *testing.T) {
 	amminw, ok := in.(AmminW)
 	require.True(t, ok, "type = %T, want AmminW", in)
 	require.Equal(t, "ammin.w $t0, $t1, $t2", amminw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, amminw.Len())
 	require.Equal(t, uint32(0x386635cc), ctorWord(t, amminw))
 }

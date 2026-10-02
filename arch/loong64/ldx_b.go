@@ -9,8 +9,6 @@ import (
 
 // LdxB - ldx.b rd, rj, rk (3R): rd = sign8(MEM[rj + rk]).
 type LdxB struct {
-	base
-
 	rd, rj, rk uint8
 }
 

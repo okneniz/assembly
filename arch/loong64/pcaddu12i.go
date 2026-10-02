@@ -10,8 +10,6 @@ import (
 // Pcaddu12i - pcaddu12i rd, si20 (1RI20): rd = pc + (si20 << 12). This
 // is an address computation, not a jump: the raw si20 is stored.
 type Pcaddu12i struct {
-	base
-
 	rd  uint8
 	imm imm
 }

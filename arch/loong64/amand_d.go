@@ -9,8 +9,6 @@ import (
 
 // AmandD - amand.d rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] &= rk.
 type AmandD struct {
-	base
-
 	rd, rk, rj uint8
 }
 

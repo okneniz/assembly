@@ -29,7 +29,6 @@ func TestBytepickDDecodeEncode(t *testing.T) {
 	require.True(t, ok, "type = %T, want BytepickD", in)
 	require.Equal(t, int64(3), x.sel.val)
 	require.Equal(t, "bytepick.d $t0, $t1, $t2, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x000db9ac), ctorWord(t, x))
 
 	// llvm-mc-verified: bytepick.d $t0, $t1, $t2, 7 - the full a3 field.

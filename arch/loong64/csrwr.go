@@ -10,8 +10,6 @@ import (
 // Csrwr - csrwr rd, csr (rd + a ui14 csr number): CSR[csr] = rd, the
 // old value to rd.
 type Csrwr struct {
-	base
-
 	rd  uint8
 	csr imm
 }

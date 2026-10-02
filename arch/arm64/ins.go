@@ -11,8 +11,6 @@ import (
 // as the mov alias - mov.sz vd[idx], wn - and that spelling is the
 // only accepted input form (see the asm ctors).
 type Ins struct {
-	base
-
 	size, idx uint32 // 0=b 1=h 2=s 3=d
 	vd, gpr   string
 }
@@ -20,7 +18,7 @@ type Ins struct {
 // newIns - the Ins constructor: validates the operands and assembles
 // the struct (the Builder method delegates here; the decoder calls it
 // with values read from the word).
-func newIns(b base, size, idx uint32, vd VReg, gpr Reg) (Ins, error) {
+func newIns(size, idx uint32, vd VReg, gpr Reg) (Ins, error) {
 	if err := requireElemSize("Ins", size); err != nil {
 		return Ins{}, err
 	}
@@ -41,7 +39,6 @@ func newIns(b base, size, idx uint32, vd VReg, gpr Reg) (Ins, error) {
 	}
 
 	return Ins{
-		base: b,
 		size: size,
 		idx:  idx,
 		vd:   vd.name(),

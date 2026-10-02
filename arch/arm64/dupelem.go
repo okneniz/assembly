@@ -11,8 +11,6 @@ import (
 // DupElem — dup.Arr vd, vn[idx] (DUP element: every lane = the source
 // lane).
 type DupElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn       string
 }
@@ -20,7 +18,7 @@ type DupElem struct {
 // newDupElem - the DupElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newDupElem(b base, q, size, idx uint32, rd, rn VReg) (DupElem, error) {
+func newDupElem(q, size, idx uint32, rd, rn VReg) (DupElem, error) {
 	if err := requireElemSize("DupElem", size); err != nil {
 		return DupElem{}, err
 	}
@@ -30,7 +28,6 @@ func newDupElem(b base, q, size, idx uint32, rd, rn VReg) (DupElem, error) {
 	}
 
 	return DupElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,
@@ -59,8 +56,6 @@ func (i DupElem) Encode(w io.Writer) (int64, error) {
 // InsElem — ins.sz vd[idx], vn[idx] (INS element: copy one lane into
 // another; the source lane rides imm4, bits [14:11]).
 type InsElem struct {
-	base
-
 	size, idx, srcIdx uint32
 	rd, rn            string
 }
@@ -68,7 +63,7 @@ type InsElem struct {
 // newInsElem - the InsElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newInsElem(b base, size, idx, srcIdx uint32, rd, rn VReg) (InsElem, error) {
+func newInsElem(size, idx, srcIdx uint32, rd, rn VReg) (InsElem, error) {
 	if err := requireElemSize("InsElem", size); err != nil {
 		return InsElem{}, err
 	}
@@ -82,7 +77,6 @@ func newInsElem(b base, size, idx, srcIdx uint32, rd, rn VReg) (InsElem, error) 
 	}
 
 	return InsElem{
-		base:   b,
 		size:   size,
 		idx:    idx,
 		srcIdx: srcIdx,
@@ -113,8 +107,6 @@ func (i InsElem) Encode(w io.Writer) (int64, error) {
 // (the 0x5E000400 class); the lane index rides imm5 above the size
 // one-hot, the same layout as the element DUP.
 type DupScalar struct {
-	base
-
 	size, idx uint32 // 0=b 1=h 2=s 3=d
 	rd, rn    string
 }
@@ -122,7 +114,7 @@ type DupScalar struct {
 // newDupScalar - the DupScalar constructor: validates the operands
 // and assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newDupScalar(b base, size, idx uint32, rd, rn VReg) (DupScalar, error) {
+func newDupScalar(size, idx uint32, rd, rn VReg) (DupScalar, error) {
 	if err := requireElemSize("DupScalar", size); err != nil {
 		return DupScalar{}, err
 	}
@@ -135,7 +127,6 @@ func newDupScalar(b base, size, idx uint32, rd, rn VReg) (DupScalar, error) {
 	}
 
 	return DupScalar{
-		base: b,
 		size: size,
 		idx:  idx,
 		rd:   rd.name(),

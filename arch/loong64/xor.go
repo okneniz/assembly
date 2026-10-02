@@ -9,8 +9,6 @@ import (
 
 // Xor - xor rd, rj, rk (3R): rd = rj ^ rk.
 type Xor struct {
-	base
-
 	rd, rj, rk uint8
 }
 

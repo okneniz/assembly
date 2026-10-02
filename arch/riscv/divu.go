@@ -9,8 +9,6 @@ import (
 
 // Divu - divu rd, rs1, rs2.
 type Divu struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

@@ -8,7 +8,6 @@ import (
 
 // Ldaxrb — ldaxrb rt, [rn].
 type Ldaxrb struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Ldaxrb struct {
 
 // newLdaxrbBase - the Ldaxrb constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newLdaxrbBase(b base, e atomic, enc uint32) Ldaxrb {
+func newLdaxrbBase(e atomic, enc uint32) Ldaxrb {
 	return Ldaxrb{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newLdaxrbBase(b base, e atomic, enc uint32) Ldaxrb {
 
 // newLdaxrb - the Ldaxrb constructor: validates the operands,
 // delegates the assembly to newLdaxrbBase.
-func newLdaxrb(b base, rt, rn Reg) (Ldaxrb, error) {
+func newLdaxrb(rt, rn Reg) (Ldaxrb, error) {
 	err := requireClass(
 		rt,
 		"Ldaxrb",
@@ -53,7 +51,7 @@ func newLdaxrb(b base, rt, rn Reg) (Ldaxrb, error) {
 		return Ldaxrb{}, err
 	}
 
-	return newLdaxrbBase(b, newAtomic(rt.name(), rn.name()), ldaxrbEnc), nil
+	return newLdaxrbBase(newAtomic(rt.name(), rn.name()), ldaxrbEnc), nil
 }
 
 const ldaxrbEnc uint32 = 0x085FFC00 // ldaxrb wt, [xn]

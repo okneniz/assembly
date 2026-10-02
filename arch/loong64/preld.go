@@ -11,8 +11,6 @@ import (
 // the cache (hint selects the operation; the manual prints the hint
 // first). The offset is an unscaled byte offset.
 type Preld struct {
-	base
-
 	rj   uint8
 	hint imm
 	off  imm

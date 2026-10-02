@@ -10,8 +10,6 @@ import (
 
 // BicShift — bic rd, rn, rm[, shift #imm6].
 type BicShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string
@@ -21,7 +19,7 @@ type BicShift struct {
 // newBicShift - the BicShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newBicShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (BicShift, error) {
+func newBicShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (BicShift, error) {
 	err := requireClass(
 		rd,
 		"BicShift",
@@ -79,7 +77,6 @@ func newBicShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (BicShift, 
 	}
 
 	return BicShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

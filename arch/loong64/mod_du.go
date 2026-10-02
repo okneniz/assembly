@@ -9,8 +9,6 @@ import (
 
 // ModDu - mod.du rd, rj, rk (3R): rd = rj % rk (unsigned).
 type ModDu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

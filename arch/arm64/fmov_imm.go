@@ -10,8 +10,6 @@ import (
 
 // FmovImm — fmov d/s rd, #imm8 (vfpExpandImm64/32, #%.8f format).
 type FmovImm struct {
-	base
-
 	rd   string
 	val  float64
 	text string
@@ -24,9 +22,8 @@ type FmovImm struct {
 // Builder method delegates here; the decoder calls it with values read
 // from the word). The imm8 search stays in Encode: it is shared with
 // the decode path, which stores the expanded value's text.
-func newFmovImm(b base, rd FReg, val float64, text string) (FmovImm, error) {
+func newFmovImm(rd FReg, val float64, text string) (FmovImm, error) {
 	return FmovImm{
-		base: b,
 		rd:   rd.name(),
 		val:  val,
 		text: text,

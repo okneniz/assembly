@@ -10,8 +10,6 @@ import (
 // Sqrshl — sqrshl.Arr vd, vn, vm (the three-same group: the lane width
 // rides the arrangement).
 type Sqrshl struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b/4h/8h/2s/4s/2d
 }
@@ -19,18 +17,17 @@ type Sqrshl struct {
 // newSqrshl - the Sqrshl constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSqrshl(b base, rd, rn, rm VReg, arr string) (Sqrshl, error) {
+func newSqrshl(rd, rn, rm VReg, arr string) (Sqrshl, error) {
 	err := requireArr("Sqrshl", arr, "8b", "16b", "4h", "8h", "2s", "4s", "2d")
 	if err != nil {
 		return Sqrshl{}, err
 	}
 
 	return Sqrshl{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

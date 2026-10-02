@@ -10,8 +10,6 @@ import (
 // AlslD - alsl.d rd, rj, rk, shift (DJKUa2): rd = rj + (rk << shift), the
 // 64-bit sum; the 1..4 shift is encoded as ui2 = shift - 1.
 type AlslD struct {
-	base
-
 	rd, rj, rk uint8
 	shift      imm
 }

@@ -9,8 +9,6 @@ import (
 
 // LdxD - ldx.d rd, rj, rk (3R): rd = MEM[rj + rk].
 type LdxD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

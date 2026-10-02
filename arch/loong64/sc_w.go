@@ -11,8 +11,6 @@ import (
 // conditionally, rd = success (store-conditional 32 bits; offs - a byte
 // offset like ll.w).
 type ScW struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

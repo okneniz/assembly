@@ -10,8 +10,6 @@ import (
 // LdgtH - ldgt.h rd, rj, rk (DJK): load a half with a bounds check against
 // rk, trapping outside.
 type LdgtH struct {
-	base
-
 	rd, rj, rk uint8
 }
 

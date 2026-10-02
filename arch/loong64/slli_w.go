@@ -9,8 +9,6 @@ import (
 
 // SlliW - slli.w rd, rj, ui5 (2RI5): rd = sign32(rj << ui5).
 type SlliW struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

@@ -8,23 +8,21 @@ import (
 
 // Ldp — ldp rt, rt2, [rn{, #imm7<<scale}{!}].
 type Ldp struct {
-	base
 	pairBase
 }
 
 // newLdpBase - the Ldp constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdpBase(b base, e pairBase) Ldp {
+func newLdpBase(e pairBase) Ldp {
 	return Ldp{
-		base:     b,
 		pairBase: e,
 	}
 }
 
 // newLdp - the Ldp constructor: validates the operands,
 // delegates the assembly to newLdpBase.
-func newLdp(b base, rt, rt2, rn Reg, off Off) (Ldp, error) {
+func newLdp(rt, rt2, rn Reg, off Off) (Ldp, error) {
 	err := requireClass(
 		rt,
 		"Ldp",
@@ -88,7 +86,6 @@ func newLdp(b base, rt, rt2, rn Reg, off Off) (Ldp, error) {
 	}
 
 	return newLdpBase(
-		b,
 		newPairBase(rt.name(), rt2.name(), rn.name(), memImm, int64(off), scale, enc),
 	), nil
 }

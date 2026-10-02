@@ -8,8 +8,6 @@ import (
 
 // Dbar - dbar hint (Ud15): the data barrier hint (serializes data accesses).
 type Dbar struct {
-	base
-
 	code imm
 }
 

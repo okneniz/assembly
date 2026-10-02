@@ -9,8 +9,6 @@ import (
 
 // CtoW - cto.w rd, rj (2R): rd = the count of trailing ones of low32(rj).
 type CtoW struct {
-	base
-
 	rd, rj uint8
 }
 

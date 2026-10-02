@@ -10,24 +10,21 @@ import (
 // Scvtf — scvtf fd, wn|xn (signed integer to FP; all width
 // combinations are legal).
 type Scvtf struct {
-	base
-
 	rd, rn string
 }
 
 // newScvtf - the Scvtf constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newScvtf(b base, rd FReg, rn Reg) (Scvtf, error) {
+func newScvtf(rd FReg, rn Reg) (Scvtf, error) {
 	err := requireGprClass(rn, "Scvtf", "rn")
 	if err != nil {
 		return Scvtf{}, err
 	}
 
 	return Scvtf{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 
@@ -54,24 +51,21 @@ func (i Scvtf) Encode(w io.Writer) (int64, error) {
 
 // Ucvtf — ucvtf fd, wn|xn (unsigned integer to FP).
 type Ucvtf struct {
-	base
-
 	rd, rn string
 }
 
 // newUcvtf - the Ucvtf constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newUcvtf(b base, rd FReg, rn Reg) (Ucvtf, error) {
+func newUcvtf(rd FReg, rn Reg) (Ucvtf, error) {
 	err := requireGprClass(rn, "Ucvtf", "rn")
 	if err != nil {
 		return Ucvtf{}, err
 	}
 
 	return Ucvtf{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

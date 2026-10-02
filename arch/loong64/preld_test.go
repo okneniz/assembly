@@ -29,7 +29,6 @@ func TestPreldDecodeEncode(t *testing.T) {
 	x, ok := in.(Preld)
 	require.True(t, ok, "type = %T, want Preld", in)
 	require.Equal(t, "preld 5, $t1, 8", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.hint.val)
 	require.Equal(t, int64(8), x.off.val)
 	require.Equal(t, uint32(0x2ac021a5), ctorWord(t, x))

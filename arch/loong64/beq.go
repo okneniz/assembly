@@ -11,8 +11,6 @@ import (
 // if rj == rd, jump to pc + offs (offs is word-scaled). The decoded form
 // stores the absolute target.
 type Beq struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

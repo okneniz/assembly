@@ -27,6 +27,5 @@ func TestStgtDDecodeEncode(t *testing.T) {
 	x, ok := in.(StgtD)
 	require.True(t, ok, "type = %T, want StgtD", in)
 	require.Equal(t, "stgt.d $t0, $t1, $t2", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x387db9ac), ctorWord(t, x))
 }

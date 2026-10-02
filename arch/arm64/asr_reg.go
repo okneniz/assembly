@@ -9,15 +9,13 @@ import (
 
 // AsrReg — asr rd, rn, rm.
 type AsrReg struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newAsrReg - the AsrReg constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAsrReg(b base, rd Reg, rn Reg, rm Reg) (AsrReg, error) {
+func newAsrReg(rd Reg, rn Reg, rm Reg) (AsrReg, error) {
 	err := requireClass(
 		rd,
 		"AsrReg",
@@ -75,10 +73,9 @@ func newAsrReg(b base, rd Reg, rn Reg, rm Reg) (AsrReg, error) {
 	}
 
 	return AsrReg{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

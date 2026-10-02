@@ -9,8 +9,6 @@ import (
 
 // CtoD - cto.d rd, rj (2R): rd = the count of trailing ones of rj.
 type CtoD struct {
-	base
-
 	rd, rj uint8
 }
 

@@ -10,26 +10,23 @@ import (
 // Fmadd — fmadd fd, fn, fm, fa (fd = fa + fn*fm; double/single by the
 // operand kind, the type rides bit 22).
 type Fmadd struct {
-	base
-
 	rd, rn, rm, ra string
 }
 
 // newFmadd - the Fmadd constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmadd(b base, rd, rn, rm, ra FReg) (Fmadd, error) {
+func newFmadd(rd, rn, rm, ra FReg) (Fmadd, error) {
 	err := requireFpKind("Fmadd", rd, rn, rm, ra)
 	if err != nil {
 		return Fmadd{}, err
 	}
 
 	return Fmadd{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		ra:   ra.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+		ra: ra.name(),
 	}, nil
 }
 
@@ -64,26 +61,23 @@ func (i Fmadd) Encode(w io.Writer) (int64, error) {
 // Fnmsub — fnmsub fd, fn, fm, fa (fd = -(fn*fm - fa); double/single
 // by the operand kind, the type rides bit 22).
 type Fnmsub struct {
-	base
-
 	rd, rn, rm, ra string
 }
 
 // newFnmsub - the Fnmsub constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFnmsub(b base, rd, rn, rm, ra FReg) (Fnmsub, error) {
+func newFnmsub(rd, rn, rm, ra FReg) (Fnmsub, error) {
 	err := requireFpKind("Fnmsub", rd, rn, rm, ra)
 	if err != nil {
 		return Fnmsub{}, err
 	}
 
 	return Fnmsub{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		ra:   ra.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
+		ra: ra.name(),
 	}, nil
 }
 

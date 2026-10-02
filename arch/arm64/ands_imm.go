@@ -9,14 +9,13 @@ import (
 
 // AndsImm — ands rd, rn, #bitmask; pseudo tst (Rd = zr).
 type AndsImm struct {
-	base
 	logImm
 }
 
 // newAndsImm - the AndsImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAndsImm(b base, rd Reg, rn Reg, imm uint64) (AndsImm, error) {
+func newAndsImm(rd Reg, rn Reg, imm uint64) (AndsImm, error) {
 	err := requireClass(
 		rd,
 		"AndsImm",
@@ -66,7 +65,6 @@ func newAndsImm(b base, rd Reg, rn Reg, imm uint64) (AndsImm, error) {
 	}
 
 	return AndsImm{
-		base:   b,
 		logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64()),
 	}, nil
 }

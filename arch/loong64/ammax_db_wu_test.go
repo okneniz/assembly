@@ -27,6 +27,5 @@ func TestAmmaxDbWuDecodeEncode(t *testing.T) {
 	ammaxdbwu, ok := in.(AmmaxDbWu)
 	require.True(t, ok, "type = %T, want AmmaxDbWu", in)
 	require.Equal(t, "ammax_db.wu $t0, $t1, $t2", ammaxdbwu.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, ammaxdbwu.Len())
 	require.Equal(t, uint32(0x387035cc), ctorWord(t, ammaxdbwu))
 }

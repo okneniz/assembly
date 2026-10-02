@@ -8,8 +8,6 @@ import (
 
 // Syscall - syscall code (Ud15): the system-call trap.
 type Syscall struct {
-	base
-
 	code imm
 }
 

@@ -11,8 +11,6 @@ import (
 // multiply-add of complex lanes; the rotation is 0/90/180/270 and
 // rides the opcode bits: 0001→#0, 0011→#90, 0101→#180, 0111→#270).
 type FcmlaElem struct {
-	base
-
 	q, size, idx uint32
 	rot          uint32 // 0/90/180/270
 	rd, rn, rm   string
@@ -23,7 +21,7 @@ type FcmlaElem struct {
 // decoder calls it with values read from the word). Unlike the rest of
 // the by-element group the Vm field is always 5 bits wide and the lane
 // index lives in {L (b21), H (b11)}: .4h/.4s carry one bit, .8h two.
-func newFcmlaElem(b base, q, size, idx, rot uint32, rd, rn, rm VReg) (FcmlaElem, error) {
+func newFcmlaElem(q, size, idx, rot uint32, rd, rn, rm VReg) (FcmlaElem, error) {
 	var maxIdx uint32
 	switch {
 	case size == 1 && q == 0: // .4h
@@ -52,7 +50,6 @@ func newFcmlaElem(b base, q, size, idx, rot uint32, rd, rn, rm VReg) (FcmlaElem,
 	}
 
 	return FcmlaElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

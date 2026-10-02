@@ -9,8 +9,6 @@ import (
 
 // ScQ - sc.q rd, rk, rj (3R): store the {rd, rd+1} pair (16 bytes) to [rk]; rj - a hint (0 = none).
 type ScQ struct {
-	base
-
 	rd, rk, rj uint8
 }
 

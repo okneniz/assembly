@@ -10,8 +10,6 @@ import (
 
 // AddImm — add rd, rn, #imm12[, lsl #12]; pseudo: mov (imm=0, Rd≠Rn).
 type AddImm struct {
-	base
-
 	rdNum, rnNum uint32 // 31: sp/wsp
 	imm12        uint32
 	shift        bool // lsl #12
@@ -21,7 +19,7 @@ type AddImm struct {
 // newAddImm - the AddImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAddImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (AddImm, error) {
+func newAddImm(rd Reg, rn Reg, imm Imm12, sh Sh12) (AddImm, error) {
 	err := requireClass(
 		rd,
 		"AddImm",
@@ -63,7 +61,6 @@ func newAddImm(b base, rd Reg, rn Reg, imm Imm12, sh Sh12) (AddImm, error) {
 	}
 
 	return AddImm{
-		base:  b,
 		rdNum: rd.bits(),
 		rnNum: rn.bits(),
 		imm12: imm.v,

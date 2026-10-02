@@ -9,16 +9,13 @@ import (
 
 // Bcond — b.cond off (imm19; cond — in the base word).
 type Bcond struct {
-	base
-
 	cond string
 	off  imm // pc-relative byte offset
 }
 
 // newBcond - the Bcond constructor: the struct is assembled only here.
-func newBcond(b base, cond string, off imm) Bcond {
+func newBcond(cond string, off imm) Bcond {
 	return Bcond{
-		base: b,
 		cond: cond,
 		off:  off,
 	}

@@ -9,8 +9,6 @@ import (
 
 // RevbD - revb.d rd, rj (2R): rd = rj with all eight bytes reversed.
 type RevbD struct {
-	base
-
 	rd, rj uint8
 }
 

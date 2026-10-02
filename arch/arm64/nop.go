@@ -8,15 +8,12 @@ import (
 
 // Nop — nop (no operands).
 type Nop struct {
-	base
 }
 
 // newNop - the Nop constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newNop(b base) (Nop, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
-	return Nop{
-		base: b,
-	}, nil
+func newNop() (Nop, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
+	return Nop{}, nil
 }
 
 const nopMatch = 0xD503201F

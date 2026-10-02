@@ -9,23 +9,21 @@ import (
 
 // Ldrh — ldrh ... (see lsBase for the addressing kinds).
 type Ldrh struct {
-	base
 	lsBase
 }
 
 // newLdrhBase - the Ldrh constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdrhBase(b base, e lsBase) Ldrh {
+func newLdrhBase(e lsBase) Ldrh {
 	return Ldrh{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newLdrh - the Ldrh constructor: validates the operands,
 // delegates the assembly to newLdrhBase.
-func newLdrh(b base, rt, rn Reg, off Off) (Ldrh, error) {
+func newLdrh(rt, rn Reg, off Off) (Ldrh, error) {
 	err := requireClass(
 		rt,
 		"Ldrh",
@@ -57,7 +55,6 @@ func newLdrh(b base, rt, rn Reg, off Off) (Ldrh, error) {
 	}
 
 	return newLdrhBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrhEnc, "", "", 0),
 	), nil
 }

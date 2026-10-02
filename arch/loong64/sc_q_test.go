@@ -27,6 +27,5 @@ func TestScQDecodeEncode(t *testing.T) {
 	scq, ok := in.(ScQ)
 	require.True(t, ok, "type = %T, want ScQ", in)
 	require.Equal(t, "sc.q $t0, $t1, $t2", scq.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, scq.Len())
 	require.Equal(t, uint32(0x385735cc), ctorWord(t, scq))
 }

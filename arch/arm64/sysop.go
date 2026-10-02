@@ -127,8 +127,6 @@ func sysOpOfWord(w uint32) (sysOpRec, uint32, bool) {
 // SysOp - one IC/DC/TLBI operation: the keyword alone (ic iallu,
 // tlbi alle1) or with the Xt operand (dc zva, x0, tlbi vae1, x3).
 type SysOp struct {
-	base
-
 	mnem  string
 	op    string
 	rt    uint32
@@ -139,7 +137,7 @@ type SysOp struct {
 // newSysOp - the SysOp constructor: the spelling must belong to the
 // mnemonic's class and the register must come exactly when the
 // operation takes one (an X-register: 31 reads as xzr).
-func newSysOp(b base, mnem, op string, rt Reg) (SysOp, error) {
+func newSysOp(mnem, op string, rt Reg) (SysOp, error) {
 	rec, ok := sysOpLookup(op)
 	if !ok || rec.mnem != mnem {
 		return SysOp{}, fmt.Errorf("%s: unknown operation %q", mnem, op)
@@ -162,7 +160,6 @@ func newSysOp(b base, mnem, op string, rt Reg) (SysOp, error) {
 	}
 
 	return SysOp{
-		base:  b,
 		mnem:  mnem,
 		op:    strings.ToLower(op),
 		rt:    rt.bits(),
@@ -195,7 +192,7 @@ func SysOpOf(mnem, op, rt string) (SysOp, error) {
 		}
 	}
 
-	return newSysOp(base{}, mnem, op, r)
+	return newSysOp(mnem, op, r)
 }
 
 func (i SysOp) ObjDump(_ disasm.ViewCtx) string {
@@ -226,7 +223,6 @@ func decodeSysClass(mnem string) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		if rec, rt, ok := sysOpOfWord(w); ok {
 			return SysOp{
-				base:  newBase(w),
 				mnem:  rec.mnem,
 				op:    sysOpName(rec),
 				rt:    rt,
@@ -236,7 +232,6 @@ func decodeSysClass(mnem string) func(uint32) (Instr, error) {
 		}
 
 		return Generic{
-			base:   newBase(w),
 			name:   mnem,
 			fields: sysClassFields,
 			word:   w,

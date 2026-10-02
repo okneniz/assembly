@@ -10,8 +10,6 @@ import (
 // Cacop - cacop op, rj, si12: the cache operation op on the block at
 // rj + si12 (an unscaled byte offset).
 type Cacop struct {
-	base
-
 	op  imm
 	rj  uint8
 	off imm

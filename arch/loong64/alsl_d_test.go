@@ -30,7 +30,6 @@ func TestAlslDDecodeEncode(t *testing.T) {
 	// The raw ui2 field is 2; the decoded shift displays field + 1 = 3.
 	require.Equal(t, int64(3), x.shift.val)
 	require.Equal(t, "alsl.d $t0, $t1, $t2, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x002d39ac), ctorWord(t, x))
 
 	// llvm-mc-verified: alsl.d $t0, $t1, $t2, 4 (ui2 = 3) - the upper

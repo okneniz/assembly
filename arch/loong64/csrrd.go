@@ -9,8 +9,6 @@ import (
 
 // Csrrd - csrrd rd, csr (rd + a ui14 csr number): rd = CSR[csr].
 type Csrrd struct {
-	base
-
 	rd  uint8
 	csr imm
 }

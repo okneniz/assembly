@@ -9,8 +9,6 @@ import (
 
 // Adr — adr rd, #off (imm21: immhi:immlo, byte offset).
 type Adr struct {
-	base
-
 	rd  string
 	off int64
 }
@@ -18,7 +16,7 @@ type Adr struct {
 // newAdr - the Adr constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAdr(b base, rd Reg, off int64) (Adr, error) {
+func newAdr(rd Reg, off int64) (Adr, error) {
 	err := requireClass(
 		rd,
 		"Adr",
@@ -40,9 +38,8 @@ func newAdr(b base, rd Reg, off int64) (Adr, error) {
 	}
 
 	return Adr{
-		base: b,
-		rd:   rd.name(),
-		off:  off,
+		rd:  rd.name(),
+		off: off,
 	}, nil
 }
 

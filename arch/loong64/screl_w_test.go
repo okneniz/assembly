@@ -27,6 +27,5 @@ func TestScrelWDecodeEncode(t *testing.T) {
 	screlw, ok := in.(ScrelW)
 	require.True(t, ok, "type = %T, want ScrelW", in)
 	require.Equal(t, "screl.w $t0, $t1", screlw.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, screlw.Len())
 	require.Equal(t, uint32(0x385785ac), ctorWord(t, screlw))
 }

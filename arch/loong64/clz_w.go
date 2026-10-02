@@ -9,8 +9,6 @@ import (
 
 // ClzW - clz.w rd, rj (2R): rd = the count of leading zeros of low32(rj).
 type ClzW struct {
-	base
-
 	rd, rj uint8
 }
 

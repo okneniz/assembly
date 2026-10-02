@@ -9,8 +9,6 @@ import (
 // B - b offs (1RI26, the immediate split d10k16): unconditional jump to
 // pc + offs (word-scaled). The off field holds the byte offset itself.
 type B struct {
-	base
-
 	off imm
 }
 

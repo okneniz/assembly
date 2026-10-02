@@ -10,8 +10,6 @@ import (
 // Csrxchg - csrxchg rd, rj, csr: the CSR[csr] bits selected by the rj
 // write mask get rd's bits; the old value to rd.
 type Csrxchg struct {
-	base
-
 	rd, rj uint8
 	csr    imm
 }

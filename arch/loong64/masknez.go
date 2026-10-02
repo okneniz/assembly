@@ -9,8 +9,6 @@ import (
 
 // Masknez - masknez rd, rj, rk (3R): rd = (rk != 0) ? rj : 0.
 type Masknez struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -10,8 +10,6 @@ import (
 // LdD - ld.d rd, rj, si12 (2RI12): rd = MEM[rj + si12] (the offset is
 // an unscaled byte offset).
 type LdD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

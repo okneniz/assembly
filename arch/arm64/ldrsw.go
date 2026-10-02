@@ -9,23 +9,21 @@ import (
 
 // Ldrsw — ldrsw ... (see lsBase for the addressing kinds).
 type Ldrsw struct {
-	base
 	lsBase
 }
 
 // newLdrswBase - the Ldrsw constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdrswBase(b base, e lsBase) Ldrsw {
+func newLdrswBase(e lsBase) Ldrsw {
 	return Ldrsw{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newLdrsw - the Ldrsw constructor: validates the operands,
 // delegates the assembly to newLdrswBase.
-func newLdrsw(b base, rt, rn Reg, off Off) (Ldrsw, error) {
+func newLdrsw(rt, rn Reg, off Off) (Ldrsw, error) {
 	err := requireClass(
 		rt,
 		"Ldrsw",
@@ -57,7 +55,6 @@ func newLdrsw(b base, rt, rn Reg, off Off) (Ldrsw, error) {
 	}
 
 	return newLdrswBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, ldrswEnc, "", "", 0),
 	), nil
 }

@@ -9,23 +9,21 @@ import (
 
 // Ldur — ldur ... (see lsBase for the addressing kinds).
 type Ldur struct {
-	base
 	lsBase
 }
 
 // newLdurBase - the Ldur constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newLdurBase(b base, e lsBase) Ldur {
+func newLdurBase(e lsBase) Ldur {
 	return Ldur{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newLdur - the Ldur constructor: validates the operands,
 // delegates the assembly to newLdurBase.
-func newLdur(b base, rt, rn Reg, off Off) (Ldur, error) {
+func newLdur(rt, rn Reg, off Off) (Ldur, error) {
 	if err := lsOperand(rt, rn, "Ldur"); err != nil {
 		return Ldur{}, err
 	}
@@ -40,7 +38,6 @@ func newLdur(b base, rt, rn Reg, off Off) (Ldur, error) {
 	}
 
 	return newLdurBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memUnscaled, int64(off), 0, enc, "", "", 0),
 	), nil
 }

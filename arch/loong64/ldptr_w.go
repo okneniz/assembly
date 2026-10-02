@@ -10,8 +10,6 @@ import (
 // LdptrW - ldptr.w rd, rj, offs (DJSk14): rd = sign32(MEM[rj + offs])
 // (offs is a word-scaled byte offset, stored raw).
 type LdptrW struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

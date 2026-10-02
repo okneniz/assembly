@@ -9,14 +9,13 @@ import (
 
 // AndImm — and rd, rn, #bitmask.
 type AndImm struct {
-	base
 	logImm
 }
 
 // newAndImm - the AndImm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAndImm(b base, rd Reg, rn Reg, imm uint64) (AndImm, error) {
+func newAndImm(rd Reg, rn Reg, imm uint64) (AndImm, error) {
 	err := requireClass(
 		rd,
 		"AndImm",
@@ -66,7 +65,6 @@ func newAndImm(b base, rd Reg, rn Reg, imm uint64) (AndImm, error) {
 	}
 
 	return AndImm{
-		base:   b,
 		logImm: newLogImm(rd.name(), rn.name(), immr, imms, n == 1, rd.Is64()),
 	}, nil
 }

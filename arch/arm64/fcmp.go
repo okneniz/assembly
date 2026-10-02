@@ -10,8 +10,6 @@ import (
 // Fcmp — fcmp fn, fm | fcmp fn, #0.0 (Rm=0 encodes #0.0; sets the FP
 // condition flags, no destination register).
 type Fcmp struct {
-	base
-
 	rn, rm string
 	withRM bool
 }
@@ -19,7 +17,7 @@ type Fcmp struct {
 // newFcmp - the Fcmp constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFcmp(b base, rn, rm FReg, withRM bool) (Fcmp, error) {
+func newFcmp(rn, rm FReg, withRM bool) (Fcmp, error) {
 	if withRM {
 		err := requireFpKind("Fcmp", rn, rm)
 		if err != nil {
@@ -28,7 +26,6 @@ func newFcmp(b base, rn, rm FReg, withRM bool) (Fcmp, error) {
 	}
 
 	return Fcmp{
-		base:   b,
 		rn:     rn.name(),
 		rm:     rm.name(),
 		withRM: withRM,

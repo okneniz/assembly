@@ -10,8 +10,6 @@ import (
 // LdW - ld.w rd, rj, si12 (2RI12): rd = sign32(MEM[rj + si12]) (the
 // offset is an unscaled byte offset).
 type LdW struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

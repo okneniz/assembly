@@ -9,8 +9,6 @@ import (
 
 // Cbz — cbz rt, target (imm19; Rt determines 32/64-bit width: w/x).
 type Cbz struct {
-	base
-
 	rt  string
 	off imm // pc-relative byte offset
 }
@@ -18,7 +16,7 @@ type Cbz struct {
 // newCbz - the Cbz constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newCbz(b base, rt Reg, off int64) (Cbz, error) {
+func newCbz(rt Reg, off int64) (Cbz, error) {
 	err := requireClass(
 		rt,
 		"Cbz",
@@ -35,9 +33,8 @@ func newCbz(b base, rt Reg, off int64) (Cbz, error) {
 	}
 
 	return Cbz{
-		base: b,
-		rt:   rt.name(),
-		off:  immNum(off),
+		rt:  rt.name(),
+		off: immNum(off),
 	}, nil
 }
 

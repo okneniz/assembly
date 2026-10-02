@@ -9,15 +9,13 @@ import (
 
 // Br — br xn (indirect branch).
 type Br struct {
-	base
-
 	rn string
 }
 
 // newBr - the Br constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newBr(b base, rn Reg) (Br, error) {
+func newBr(rn Reg) (Br, error) {
 	err := requireClass(
 		rn,
 		"Br",
@@ -32,8 +30,7 @@ func newBr(b base, rn Reg) (Br, error) {
 	}
 
 	return Br{
-		base: b,
-		rn:   rn.name(),
+		rn: rn.name(),
 	}, nil
 }
 

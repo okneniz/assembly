@@ -18,14 +18,12 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 	switch w >> 12 & 3 {
 	case 0: // DUP general: vd in Rd, wn in Rn
 		return newDup(
-			newBase(w),
 			newVReg(uint8(w&0x1f)),
 			gprOf(w>>5&0x1f, size == 3),
 			decodeArrangement(q, size),
 		)
 	case 1: // INS general: vd in Rd, wn in Rn
 		return newIns(
-			newBase(w),
 			size,
 			idx,
 			newVReg(uint8(w&0x1f)),
@@ -33,7 +31,6 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 		)
 	case 2: // SMOV: the GPR destination in Rd, the vector source in Rn
 		in, err := newSmov(
-			newBase(w),
 			q,
 			size,
 			idx,
@@ -48,7 +45,6 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 		return in, nil
 	default: // UMOV: the GPR destination in Rd, the vector source in Rn
 		in, err := newUmov(
-			newBase(w),
 			q,
 			size,
 			idx,

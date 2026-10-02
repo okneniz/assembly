@@ -9,23 +9,21 @@ import (
 
 // Strh — strh ... (see lsBase for addressing kinds).
 type Strh struct {
-	base
 	lsBase
 }
 
 // newStrhBase - the Strh constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newStrhBase(b base, e lsBase) Strh {
+func newStrhBase(e lsBase) Strh {
 	return Strh{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newStrh - the Strh constructor: validates the operands,
 // delegates the assembly to newStrhBase.
-func newStrh(b base, rt, rn Reg, off Off) (Strh, error) {
+func newStrh(rt, rn Reg, off Off) (Strh, error) {
 	err := requireClass(
 		rt,
 		"Strh",
@@ -57,7 +55,6 @@ func newStrh(b base, rt, rn Reg, off Off) (Strh, error) {
 	}
 
 	return newStrhBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, strhEnc, "", "", 0),
 	), nil
 }

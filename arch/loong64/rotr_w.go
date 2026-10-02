@@ -9,8 +9,6 @@ import (
 
 // RotrW - rotr.w rd, rj, rk (3R): rd = sign32(rotate_right32(rj, rk & 31)).
 type RotrW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

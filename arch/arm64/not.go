@@ -9,8 +9,6 @@ import (
 
 // Not — not.8b/16b vd, vn (bitwise NOT per byte lane).
 type Not struct {
-	base
-
 	rd, rn string
 	arr    string // 8b/16b
 }
@@ -18,17 +16,16 @@ type Not struct {
 // newNot - the Not constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newNot(b base, rd, rn VReg, arr string) (Not, error) {
+func newNot(rd, rn VReg, arr string) (Not, error) {
 	err := requireArr("Not", arr, "8b", "16b")
 	if err != nil {
 		return Not{}, err
 	}
 
 	return Not{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		arr: arr,
 	}, nil
 }
 

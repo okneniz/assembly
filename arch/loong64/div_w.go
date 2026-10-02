@@ -9,8 +9,6 @@ import (
 
 // DivW - div.w rd, rj, rk (3R): rd = rj / rk (signed).
 type DivW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -10,8 +10,6 @@ import (
 // Shl — shl.Arr vd, vn, #shift (the shift lives in immh:immb,
 // the plain amount).
 type Shl struct {
-	base
-
 	rd, rn     string
 	immh, immb uint32
 	q          uint32
@@ -20,13 +18,12 @@ type Shl struct {
 // newShl - the Shl constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newShl(b base, q, immh, immb uint32, rd, rn VReg) (Shl, error) {
+func newShl(q, immh, immb uint32, rd, rn VReg) (Shl, error) {
 	if immh > 0xf || immb > 7 {
 		return Shl{}, fmt.Errorf("arm64.NewShl: imm out of range")
 	}
 
 	return Shl{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		immh: immh,

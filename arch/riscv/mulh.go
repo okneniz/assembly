@@ -9,8 +9,6 @@ import (
 
 // Mulh - mulh rd, rs1, rs2.
 type Mulh struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

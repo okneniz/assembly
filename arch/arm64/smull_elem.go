@@ -10,8 +10,6 @@ import (
 // SmullElem — smull{,2}.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another; the result lanes are one width wider).
 type SmullElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type SmullElem struct {
 // newSmullElem - the SmullElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newSmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SmullElem, error) {
+func newSmullElem(q, size, idx uint32, rd, rn, rm VReg) (SmullElem, error) {
 	if size == 0 || size > 2 {
 		return SmullElem{}, fmt.Errorf(
 			"arm64.NewSmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
@@ -32,7 +30,6 @@ func newSmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SmullElem, erro
 	}
 
 	return SmullElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

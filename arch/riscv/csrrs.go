@@ -10,7 +10,6 @@ import (
 // Csrrs - csrrs rd, csr, rs1; pseudo: csrr (rs1=zero), frflags/frrm/frcsr/
 // rdcycle/rdtime/rdinstret (rs1=zero + status CSR).
 type Csrrs struct {
-	base
 	csrOp
 
 	rs1 string

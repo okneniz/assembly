@@ -11,15 +11,15 @@ import (
 // would print "add rd, zero, rs", while c.mv prints exactly "mv"). Decode side:
 // mv expansion during assembly is in asm/riscv/pseudo.
 type Mv struct {
-	base
+	half uint32
 
 	rd, rs2 string
 }
 
-// cMv - compressed forms (c.mv): base - halfword, length 2.
+// cMv - compressed forms (c.mv): the halfword is the encoding source.
 func cMv(h uint32, rd, rs2 string) Mv {
 	return Mv{
-		base: newHalfBase(h),
+		half: h,
 		rd:   rd,
 		rs2:  rs2,
 	}
@@ -30,5 +30,5 @@ func (i Mv) ObjDump(_ disasm.ViewCtx) string {
 }
 
 func (i Mv) Encode(w io.Writer, o EncOpts) (int64, error) {
-	return writeHalf(w, uint16(i.raw))
+	return writeHalf(w, uint16(i.half))
 }

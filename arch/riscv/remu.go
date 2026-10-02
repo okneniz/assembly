@@ -9,8 +9,6 @@ import (
 
 // Remu - remu rd, rs1, rs2.
 type Remu struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

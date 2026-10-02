@@ -9,8 +9,6 @@ import (
 
 // Lhu - lhu rd, off(rs1).
 type Lhu struct {
-	base
-
 	rd, rs1 string
 	off     imm
 }

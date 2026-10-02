@@ -10,8 +10,6 @@ import (
 // Ushr — ushr.Arr vd, vn, #shift (the shift lives in immh:immb,
 // the stored value is esize-shift (printed shifted right)).
 type Ushr struct {
-	base
-
 	rd, rn     string
 	immh, immb uint32
 	q          uint32
@@ -20,13 +18,12 @@ type Ushr struct {
 // newUshr - the Ushr constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newUshr(b base, q, immh, immb uint32, rd, rn VReg) (Ushr, error) {
+func newUshr(q, immh, immb uint32, rd, rn VReg) (Ushr, error) {
 	if immh > 0xf || immb > 7 {
 		return Ushr{}, fmt.Errorf("arm64.NewUshr: imm out of range")
 	}
 
 	return Ushr{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		immh: immh,

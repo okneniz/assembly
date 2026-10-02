@@ -15,8 +15,6 @@ const (
 
 // Movn — movn rd, #(~(imm16 << hw*16)); displayed as mov.
 type Movn struct {
-	base
-
 	rd        string
 	imm16, hw uint32
 }
@@ -24,7 +22,7 @@ type Movn struct {
 // newMovn - the Movn constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newMovn(b base, rd Reg, imm Imm16, hw Hw) (Movn, error) {
+func newMovn(rd Reg, imm Imm16, hw Hw) (Movn, error) {
 	err := requireClass(
 		rd,
 		"Movn",
@@ -45,7 +43,6 @@ func newMovn(b base, rd Reg, imm Imm16, hw Hw) (Movn, error) {
 	}
 
 	return Movn{
-		base:  b,
 		rd:    rd.name(),
 		imm16: imm.v,
 		hw:    uint32(hw),

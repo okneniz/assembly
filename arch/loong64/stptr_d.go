@@ -10,8 +10,6 @@ import (
 // StptrD - stptr.d rd, rj, offs (DJSk14): MEM[rj + offs] = rd (offs is
 // a word-scaled byte offset, stored raw).
 type StptrD struct {
-	base
-
 	rd, rj uint8
 	off    imm
 }

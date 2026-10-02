@@ -9,8 +9,6 @@ import (
 
 // Uaddlv — uaddlv.Arr hN/sN/dN, vn (scalar dest by size).
 type Uaddlv struct {
-	base
-
 	rd, rn  string // rd - the scalar print name (hN/sN/dN)
 	q, size uint32
 }
@@ -18,7 +16,7 @@ type Uaddlv struct {
 // newUaddlv - the Uaddlv constructor: the struct is assembled only
 // here (the Builder method and the decoder call it); the destination
 // print name is the scalar view of the register number by size.
-func newUaddlv(b base, q, size uint32, rd, rn VReg) (Uaddlv, error) {
+func newUaddlv(q, size uint32, rd, rn VReg) (Uaddlv, error) {
 	scalar := fmt.Sprintf("d%d", rd.Num())
 	if size == 0 {
 		scalar = fmt.Sprintf("h%d", rd.Num())
@@ -27,7 +25,6 @@ func newUaddlv(b base, q, size uint32, rd, rn VReg) (Uaddlv, error) {
 	}
 
 	return Uaddlv{
-		base: b,
 		rd:   scalar,
 		rn:   rn.name(),
 		q:    q,

@@ -10,8 +10,6 @@ import (
 // LdgtD - ldgt.d rd, rj, rk (DJK): load a double word with a bounds check
 // against rk, trapping outside.
 type LdgtD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

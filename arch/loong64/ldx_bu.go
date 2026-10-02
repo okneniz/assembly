@@ -9,8 +9,6 @@ import (
 
 // LdxBu - ldx.bu rd, rj, rk (3R): rd = the byte at rj + rk, zero-extended.
 type LdxBu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

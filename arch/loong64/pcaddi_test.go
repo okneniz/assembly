@@ -26,7 +26,6 @@ func TestPcaddiDecodeEncode(t *testing.T) {
 	x, ok := in.(Pcaddi)
 	require.True(t, ok, "type = %T, want Pcaddi", in)
 	require.Equal(t, "pcaddi $t0, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, int64(5), x.imm.val)
 	require.Equal(t, uint32(0x180000ac), ctorWord(t, x))
 

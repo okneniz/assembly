@@ -10,8 +10,6 @@ import (
 // UmullElem — umull{,2}.Arr vd, vn, vm[idx] (the by-element group: a
 // vector times one lane of another; the result lanes are one width wider).
 type UmullElem struct {
-	base
-
 	q, size, idx uint32
 	rd, rn, rm   string
 }
@@ -19,7 +17,7 @@ type UmullElem struct {
 // newUmullElem - the UmullElem constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newUmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (UmullElem, error) {
+func newUmullElem(q, size, idx uint32, rd, rn, rm VReg) (UmullElem, error) {
 	if size == 0 || size > 2 {
 		return UmullElem{}, fmt.Errorf(
 			"arm64.NewUmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
@@ -32,7 +30,6 @@ func newUmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (UmullElem, erro
 	}
 
 	return UmullElem{
-		base: b,
 		q:    q,
 		size: size,
 		idx:  idx,

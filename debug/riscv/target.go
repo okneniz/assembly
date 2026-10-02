@@ -95,27 +95,18 @@ func (Target) Disasm(code []byte, addr uint64) []string {
 	off := 0
 	for _, in := range instrs {
 		if off < len(code) {
-			out = append(out, disasm.Line(addr+uint64(off), code[off:], in, opts))
+			n := arch.InstrLen(code[off:])
+			out = append(out, disasm.Line(addr+uint64(off), code[off:off+n], in, opts))
+			off += n
 		}
-
-		off += in.Len()
 	}
 
 	return out
 }
 
-// InstrLen - 2 for a compressed (RVC) instruction, 4 otherwise: the
-// low two bits 00-10 mark the compressed space, 11 the 32-bit one. A
-// nil or short buffer yields the arch constant 4 (the breakpoint
-// kind).
+// InstrLen - the arch stream rule: 2 for a compressed (RVC) instruction,
+// 4 otherwise (a nil or short buffer yields the arch constant 4 - the
+// breakpoint kind).
 func (Target) InstrLen(code []byte) int {
-	if len(code) < 2 {
-		return 4
-	}
-
-	if code[0]&0x3 != 0x3 {
-		return 2
-	}
-
-	return 4
+	return arch.InstrLen(code)
 }

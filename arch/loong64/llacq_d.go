@@ -9,8 +9,6 @@ import (
 
 // LlacqD - llacq.d rd, rj (DJ): load-acquire rd = MEM[rj] (64 bits).
 type LlacqD struct {
-	base
-
 	rd, rj uint8
 }
 

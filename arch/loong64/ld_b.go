@@ -10,8 +10,6 @@ import (
 // LdB - ld.b rd, rj, si12 (2RI12): rd = sign8(MEM[rj + si12]) (the
 // offset is an unscaled byte offset).
 type LdB struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

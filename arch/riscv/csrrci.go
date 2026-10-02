@@ -9,7 +9,6 @@ import (
 
 // Csrrci - csrrci rd, csr, zimm.
 type Csrrci struct {
-	base
 	csrOp
 
 	zimm imm

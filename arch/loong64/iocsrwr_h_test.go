@@ -28,6 +28,5 @@ func TestIocsrwrHDecodeEncode(t *testing.T) {
 	x, ok := in.(IocsrwrH)
 	require.True(t, ok, "type = %T, want IocsrwrH", in)
 	require.Equal(t, "iocsrwr.h $t0, $t1", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x064815ac), ctorWord(t, x))
 }

@@ -9,15 +9,13 @@ import (
 
 // Madd — madd rd, rn, rm, ra; pseudo: mul (ra = xzr).
 type Madd struct {
-	base
-
 	rd, rn, rm, ra string
 }
 
 // newMadd - the Madd constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newMadd(b base, rd Reg, rn Reg, rm Reg, ra Reg) (Madd, error) {
+func newMadd(rd Reg, rn Reg, rm Reg, ra Reg) (Madd, error) {
 	err := requireClass(
 		rd,
 		"Madd",
@@ -91,11 +89,10 @@ func newMadd(b base, rd Reg, rn Reg, rm Reg, ra Reg) (Madd, error) {
 	}
 
 	return Madd{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		ra:   ra.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		ra: ra.name(),
+		rm: rm.name(),
 	}, nil
 }
 

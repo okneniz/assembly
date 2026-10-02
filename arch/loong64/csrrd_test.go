@@ -31,6 +31,5 @@ func TestCsrrdDecodeEncode(t *testing.T) {
 	x, ok := in.(Csrrd)
 	require.True(t, ok, "type = %T, want Csrrd", in)
 	require.Equal(t, "csrrd $t0, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x0400140c), ctorWord(t, x))
 }

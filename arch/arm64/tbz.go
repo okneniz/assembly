@@ -10,8 +10,6 @@ import (
 
 // Tbz — tbz rt, #bit, off (b5 selects the x/w width of Rt).
 type Tbz struct {
-	base
-
 	rt     string
 	bit    uint32
 	off    imm // pc-relative byte offset

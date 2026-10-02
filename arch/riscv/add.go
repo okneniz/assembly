@@ -9,18 +9,15 @@ import (
 
 // Add - add rd, rs1, rs2.
 type Add struct {
-	base
-
 	rd, rs1, rs2 string
 }
 
 // cAdd - compressed forms (c.add): base - halfword, length 2.
-func cAdd(h uint32, rd, rs1, rs2 string) Add {
+func cAdd(rd, rs1, rs2 string) Add {
 	return Add{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		rs2:  rs2,
+		rd:  rd,
+		rs1: rs1,
+		rs2: rs2,
 	}
 }
 

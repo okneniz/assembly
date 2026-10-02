@@ -9,7 +9,6 @@ import (
 // Tlbclr - tlbclr: invalidate the TLB entry selected by the TLB index
 // (no operands).
 type Tlbclr struct {
-	base
 }
 
 func (i Tlbclr) ObjDump(_ disasm.ViewCtx) string {

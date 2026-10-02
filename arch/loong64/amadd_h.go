@@ -9,8 +9,6 @@ import (
 
 // AmaddH - amadd.h rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] += rk.
 type AmaddH struct {
-	base
-
 	rd, rk, rj uint8
 }
 

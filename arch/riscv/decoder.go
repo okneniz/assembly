@@ -39,6 +39,23 @@ func MakeDecoder() parsec.Combinator[byte, int, []Instr, parsec.Stateless] {
 	return parsec.Many(0, bytes.Try(instr))
 }
 
+// InstrLen - the byte length of the instruction at the head of code:
+// 2 for a compressed (RVC) halfword, 4 for the 32-bit word - the same
+// stream rule the decoder walks by (the low two bits 00-10 open the
+// compressed space, 11 the 32-bit one). A nil or short buffer yields
+// the arch constant 4.
+func InstrLen(code []byte) int {
+	if len(code) < 2 {
+		return 4
+	}
+
+	if code[0]&0x3 != 0x3 {
+		return 2
+	}
+
+	return 4
+}
+
 // decodeHalfLE reads a 2-byte little-endian halfword; a truncated tail is
 // an error (the caller's Try rolls the position back).
 func decodeHalfLE(buf parsec.Buffer[byte, int]) (uint16, parsec.Error[int]) {
@@ -89,5 +106,5 @@ func decodeOne(word uint32) Instr {
 		return ctor(word)
 	}
 
-	return Unknown{base: newBase(word)}
+	return Unknown{raw: word}
 }

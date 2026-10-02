@@ -9,8 +9,6 @@ import (
 
 // Rev32V — rev32.8b/16b/4h/8h vd, vn (byte order reversed within 32-bit containers).
 type Rev32V struct {
-	base
-
 	rd, rn string
 	arr    string // 8b/16b/4h/8h
 }
@@ -18,17 +16,16 @@ type Rev32V struct {
 // newRev32V - the Rev32V constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newRev32V(b base, rd, rn VReg, arr string) (Rev32V, error) {
+func newRev32V(rd, rn VReg, arr string) (Rev32V, error) {
 	err := requireArr("Rev32V", arr, "8b", "16b", "4h", "8h")
 	if err != nil {
 		return Rev32V{}, err
 	}
 
 	return Rev32V{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		arr: arr,
 	}, nil
 }
 

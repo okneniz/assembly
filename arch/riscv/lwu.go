@@ -9,8 +9,6 @@ import (
 
 // Lwu - lwu rd, off(rs1).
 type Lwu struct {
-	base
-
 	rd, rs1 string
 	off     imm
 }

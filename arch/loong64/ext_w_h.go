@@ -9,8 +9,6 @@ import (
 
 // ExtWH - ext.w.h rd, rj (2R): rd = sign-extend of the low half of rj to the native width.
 type ExtWH struct {
-	base
-
 	rd, rj uint8
 }
 

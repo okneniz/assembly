@@ -24,6 +24,5 @@ func TestTlbclrDecodeEncode(t *testing.T) {
 	x, ok := in.(Tlbclr)
 	require.True(t, ok, "type = %T, want Tlbclr", in)
 	require.Equal(t, "tlbclr", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x06482000), ctorWord(t, x))
 }

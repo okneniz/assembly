@@ -9,8 +9,6 @@ import (
 
 // LdxHu - ldx.hu rd, rj, rk (3R): rd = the halfword at rj + rk, zero-extended.
 type LdxHu struct {
-	base
-
 	rd, rj, rk uint8
 }
 

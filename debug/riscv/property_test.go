@@ -52,7 +52,7 @@ func TestInstrLenMatchesDecoder(t *testing.T) {
 				compressed++
 			}
 
-			return tgt.InstrLen(b) == instrs[0].Len() && instrs[0].Len() == len(b)
+			return tgt.InstrLen(b) == len(b)
 		})
 	}
 

@@ -10,8 +10,6 @@ import (
 // StgtW - stgt.w rd, rj, rk (DJK): store the low word of rd with a bounds
 // check against rk, trapping outside.
 type StgtW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

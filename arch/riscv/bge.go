@@ -9,8 +9,6 @@ import (
 
 // Bge - bge rs1, rs2, off; pseudo: blez (rs1=zero), bgez (rs2=zero).
 type Bge struct {
-	base
-
 	rs1, rs2 string
 	off      imm // pc-relative byte offset
 }

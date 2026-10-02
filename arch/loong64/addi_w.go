@@ -9,8 +9,6 @@ import (
 
 // AddiW - addi.w rd, rj, si12 (2RI12): rd = sign32(rj + si12).
 type AddiW struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

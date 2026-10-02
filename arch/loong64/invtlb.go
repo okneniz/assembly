@@ -10,8 +10,6 @@ import (
 // Invtlb - invtlb op, rj, rk: invalidate the TLB entries selected by
 // op using rj and rk.
 type Invtlb struct {
-	base
-
 	rj, rk uint8
 	op     imm
 }

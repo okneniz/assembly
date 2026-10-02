@@ -9,8 +9,6 @@ import (
 
 // Or - or rd, rj, rk (3R): rd = rj | rk.
 type Or struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -9,8 +9,6 @@ import (
 
 // Revb2W - revb.2w rd, rj (2R): rd = rj with the bytes reversed in each word.
 type Revb2W struct {
-	base
-
 	rd, rj uint8
 }
 

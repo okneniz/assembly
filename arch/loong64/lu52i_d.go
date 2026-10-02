@@ -9,8 +9,6 @@ import (
 
 // Lu52iD - lu52i.d rd, rj, si12 (2RI12): rd = (rj & low52) | (si12 << 52).
 type Lu52iD struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

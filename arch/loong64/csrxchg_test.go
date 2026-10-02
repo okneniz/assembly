@@ -31,6 +31,5 @@ func TestCsrxchgDecodeEncode(t *testing.T) {
 	x, ok := in.(Csrxchg)
 	require.True(t, ok, "type = %T, want Csrxchg", in)
 	require.Equal(t, "csrxchg $t0, $t1, 5", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x040015ac), ctorWord(t, x))
 }

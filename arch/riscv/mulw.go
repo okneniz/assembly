@@ -9,8 +9,6 @@ import (
 
 // Mulw - mulw rd, rs1, rs2.
 type Mulw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

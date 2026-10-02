@@ -9,17 +9,14 @@ import (
 
 // Bl — bl off (call, imm26).
 type Bl struct {
-	base
-
 	off imm // pc-relative byte offset
 }
 
 // newBl - the Bl constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newBl(b base, off imm) (Bl, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
+func newBl(off imm) (Bl, error) { //nolint:unparam // uniform (Instr, error) decodeCtor type
 	return Bl{
-		base: b,
-		off:  off,
+		off: off,
 	}, nil
 }
 

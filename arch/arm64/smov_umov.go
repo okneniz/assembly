@@ -43,8 +43,6 @@ func requireElemSize(instr string, size uint32) error {
 // Smov — smov wd|xd, vn.sz[idx] (sign-extend one lane into the
 // integer register; .d elements do not exist).
 type Smov struct {
-	base
-
 	size, idx uint32
 	q         uint32 // an x destination
 	vd, gpr   string
@@ -53,7 +51,7 @@ type Smov struct {
 // newSmov - the Smov constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSmov(b base, q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
+func newSmov(q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 	if err := requireElemSize("Smov", size); err != nil {
 		return Smov{}, err
 	}
@@ -83,7 +81,6 @@ func newSmov(b base, q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 	}
 
 	return Smov{
-		base: b,
 		size: size,
 		idx:  idx,
 		q:    qv,
@@ -117,8 +114,6 @@ func (i Smov) Encode(w io.Writer) (int64, error) {
 // register). llvm prints the form that fills the whole register
 // (.s into w, .d into x) as the mov alias.
 type Umov struct {
-	base
-
 	size, idx uint32
 	q         uint32 // .d into x
 	vd, gpr   string
@@ -127,7 +122,7 @@ type Umov struct {
 // newUmov - the Umov constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newUmov(b base, q, size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
+func newUmov(q, size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
 	if err := requireElemSize("Umov", size); err != nil {
 		return Umov{}, err
 	}
@@ -155,7 +150,6 @@ func newUmov(b base, q, size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
 	}
 
 	return Umov{
-		base: b,
 		size: size,
 		idx:  idx,
 		q:    qv,

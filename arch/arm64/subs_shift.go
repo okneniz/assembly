@@ -10,8 +10,6 @@ import (
 
 // SubsShift — subs rd, rn, rm[, shift #imm6]; pseudo: cmp (Rd = zr), negs (Rn = zr).
 type SubsShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string // lsl/lsr/asr/ror
@@ -21,7 +19,7 @@ type SubsShift struct {
 // newSubsShift - the SubsShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSubsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubsShift, error) {
+func newSubsShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubsShift, error) {
 	err := requireClass(
 		rd,
 		"SubsShift",
@@ -83,7 +81,6 @@ func newSubsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (SubsShift
 	}
 
 	return SubsShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

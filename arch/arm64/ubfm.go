@@ -9,8 +9,6 @@ import (
 
 // Ubfm — ubfm rd, rn, #immr, #imms; aliases lsl/lsr/ubfiz/ubfx.
 type Ubfm struct {
-	base
-
 	rd, rn     string
 	immr, imms uint32
 	isf        bool
@@ -19,7 +17,7 @@ type Ubfm struct {
 // newUbfm - the Ubfm constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newUbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Ubfm, error) {
+func newUbfm(rd Reg, rn Reg, immr uint32, imms uint32) (Ubfm, error) {
 	err := requireClass(
 		rd,
 		"Ubfm",
@@ -77,7 +75,6 @@ func newUbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Ubfm, error) {
 	}
 
 	return Ubfm{
-		base: b,
 		rd:   rd.name(),
 		rn:   rn.name(),
 		immr: immr,

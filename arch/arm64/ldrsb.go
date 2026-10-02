@@ -9,8 +9,6 @@ import (
 
 // Ldrsb — ldrsb rt, [rn, #imm12] (Rt — X; the W form is not decoded).
 type Ldrsb struct {
-	base
-
 	rt, rn string
 	off    int64
 }
@@ -18,7 +16,7 @@ type Ldrsb struct {
 // newLdrsb - the Ldrsb constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newLdrsb(b base, rt Reg, rn Reg, off Off) (Ldrsb, error) {
+func newLdrsb(rt Reg, rn Reg, off Off) (Ldrsb, error) {
 	err := requireClass(
 		rt,
 		"Ldrsb",
@@ -50,10 +48,9 @@ func newLdrsb(b base, rt Reg, rn Reg, off Off) (Ldrsb, error) {
 	}
 
 	return Ldrsb{
-		base: b,
-		rt:   rt.name(),
-		rn:   rn.name(),
-		off:  int64(off),
+		rt:  rt.name(),
+		rn:  rn.name(),
+		off: int64(off),
 	}, nil
 }
 

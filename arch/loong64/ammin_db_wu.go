@@ -9,8 +9,6 @@ import (
 
 // AmminDbWu - ammin_db.wu rd, rk, rj (3R): rd = old MEM[rj]; MEM[rj] = min(MEM[rj], rk), unsigned. A built-in barrier.
 type AmminDbWu struct {
-	base
-
 	rd, rk, rj uint8
 }
 

@@ -10,8 +10,6 @@ import (
 // CrcWWW - crc.w.w.w rd, rj, rk (DJK): CRC32 of rj (word) into rk's
 // accumulator.
 type CrcWWW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

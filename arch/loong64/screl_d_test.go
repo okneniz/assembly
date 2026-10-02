@@ -27,6 +27,5 @@ func TestScrelDDecodeEncode(t *testing.T) {
 	screld, ok := in.(ScrelD)
 	require.True(t, ok, "type = %T, want ScrelD", in)
 	require.Equal(t, "screl.d $t0, $t1", screld.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, screld.Len())
 	require.Equal(t, uint32(0x38578dac), ctorWord(t, screld))
 }

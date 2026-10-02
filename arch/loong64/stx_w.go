@@ -9,8 +9,6 @@ import (
 
 // StxW - stx.w rd, rj, rk (3R): MEM[rj + rk] = low32(rd).
 type StxW struct {
-	base
-
 	rd, rj, rk uint8
 }
 

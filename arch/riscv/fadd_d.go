@@ -9,8 +9,6 @@ import (
 
 // FaddD - fadd.d fd, fs1, fs2.
 type FaddD struct {
-	base
-
 	rd, rs1, rs2 string
 	rm           imm // rounding mode (not shown in text)
 }

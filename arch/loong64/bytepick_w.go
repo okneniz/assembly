@@ -10,8 +10,6 @@ import (
 // BytepickW - bytepick.w rd, rj, rk, sel (DJKUa2): pick 4 bytes out of the
 // {rj, rk} concatenation, byte-indexed by sel.
 type BytepickW struct {
-	base
-
 	rd, rj, rk uint8
 	sel        imm
 }

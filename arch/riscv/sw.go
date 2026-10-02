@@ -9,19 +9,16 @@ import (
 
 // Sw - sw rs2, off(rs1).
 type Sw struct {
-	base
-
 	rs1, rs2 string
 	off      imm
 }
 
 // cSw - compressed forms (c.sw/c.swsp): base - halfword, length 2.
-func cSw(h uint32, rs1, rs2 string, off int64) Sw {
+func cSw(rs1, rs2 string, off int64) Sw {
 	return Sw{
-		base: newHalfBase(h),
-		rs1:  rs1,
-		rs2:  rs2,
-		off:  immNum(off),
+		rs1: rs1,
+		rs2: rs2,
+		off: immNum(off),
 	}
 }
 

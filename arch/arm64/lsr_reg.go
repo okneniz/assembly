@@ -9,15 +9,13 @@ import (
 
 // LsrReg — lsr rd, rn, rm.
 type LsrReg struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newLsrReg - the LsrReg constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newLsrReg(b base, rd Reg, rn Reg, rm Reg) (LsrReg, error) {
+func newLsrReg(rd Reg, rn Reg, rm Reg) (LsrReg, error) {
 	err := requireClass(
 		rd,
 		"LsrReg",
@@ -75,10 +73,9 @@ func newLsrReg(b base, rd Reg, rn Reg, rm Reg) (LsrReg, error) {
 	}
 
 	return LsrReg{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

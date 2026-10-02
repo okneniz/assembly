@@ -9,15 +9,13 @@ import (
 
 // Blr — blr xn (indirect call).
 type Blr struct {
-	base
-
 	rn string
 }
 
 // newBlr - the Blr constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newBlr(b base, rn Reg) (Blr, error) {
+func newBlr(rn Reg) (Blr, error) {
 	err := requireClass(
 		rn,
 		"Blr",
@@ -32,8 +30,7 @@ func newBlr(b base, rn Reg) (Blr, error) {
 	}
 
 	return Blr{
-		base: b,
-		rn:   rn.name(),
+		rn: rn.name(),
 	}, nil
 }
 

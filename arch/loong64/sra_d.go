@@ -9,8 +9,6 @@ import (
 
 // SraD - sra.d rd, rj, rk (3R): rd = rj >>a (rk & 63).
 type SraD struct {
-	base
-
 	rd, rj, rk uint8
 }
 

@@ -8,8 +8,6 @@ import (
 
 // Ibar - ibar hint (Ud15): the instruction barrier hint (serializes the instruction stream).
 type Ibar struct {
-	base
-
 	code imm
 }
 

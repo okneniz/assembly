@@ -9,19 +9,16 @@ import (
 
 // Tbl — tbl.16b vd, { vn }, vm.
 type Tbl struct {
-	base
-
 	rd, rn, rm string
 }
 
 // newTbl - the Tbl constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newTbl(b base, rd, rn, rm VReg) (Tbl, error) {
+func newTbl(rd, rn, rm VReg) (Tbl, error) {
 	return Tbl{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
+		rd: rd.name(),
+		rn: rn.name(),
+		rm: rm.name(),
 	}, nil
 }
 

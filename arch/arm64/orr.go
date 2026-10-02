@@ -10,8 +10,6 @@ import (
 // Orr — orr.8b/16b vd, vn, vm (the logical three-same group:
 // bits 23:22 are the opcode, the arrangement is 8b/16b by Q; Rn == Rm prints as the mov alias).
 type Orr struct {
-	base
-
 	rd, rn, rm string
 	arr        string // 8b/16b
 }
@@ -19,18 +17,17 @@ type Orr struct {
 // newOrr - the Orr constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newOrr(b base, rd, rn, rm VReg, arr string) (Orr, error) {
+func newOrr(rd, rn, rm VReg, arr string) (Orr, error) {
 	err := requireArr("Orr", arr, "8b", "16b")
 	if err != nil {
 		return Orr{}, err
 	}
 
 	return Orr{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
-		rm:   rm.name(),
-		arr:  arr,
+		rd:  rd.name(),
+		rn:  rn.name(),
+		rm:  rm.name(),
+		arr: arr,
 	}, nil
 }
 

@@ -9,8 +9,6 @@ import (
 
 // Xori - xori rd, rj, ui12 (2RI12): rd = rj ^ ui12.
 type Xori struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

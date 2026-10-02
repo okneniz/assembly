@@ -10,8 +10,6 @@ import (
 
 // EonShift — eon rd, rn, rm[, shift #imm6].
 type EonShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string
@@ -21,7 +19,7 @@ type EonShift struct {
 // newEonShift - the EonShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newEonShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EonShift, error) {
+func newEonShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EonShift, error) {
 	err := requireClass(
 		rd,
 		"EonShift",
@@ -79,7 +77,6 @@ func newEonShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (EonShift, 
 	}
 
 	return EonShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

@@ -138,6 +138,7 @@ func TestHelloAsmExample(t *testing.T) {
 				require.NoError(t, err)
 				off := uint64(0)
 				for _, in := range insts {
+					n := uint64(loong64.InstrLen(bin[off:]))
 					line := objdump.StripComments(
 						objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(c.base + off))),
 					)
@@ -145,17 +146,18 @@ func TestHelloAsmExample(t *testing.T) {
 						instrs = append(instrs, slot{
 							c.base + off,
 							line,
-							in.Len(),
+							int(n),
 						})
 					}
 
-					off += uint64(in.Len())
+					off += n
 				}
 			case riscvCase:
 				insts, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(bin))
 				require.NoError(t, err)
 				off := uint64(0)
 				for _, in := range insts {
+					n := uint64(riscv.InstrLen(bin[off:]))
 					line := objdump.StripComments(
 						objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(c.base + off))),
 					)
@@ -163,11 +165,11 @@ func TestHelloAsmExample(t *testing.T) {
 						instrs = append(instrs, slot{
 							c.base + off,
 							line,
-							in.Len(),
+							int(n),
 						})
 					}
 
-					off += uint64(in.Len())
+					off += n
 				}
 			default:
 				insts, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(bin))

@@ -9,8 +9,6 @@ import (
 
 // ScrelW - screl.w rd, rj (DJ): store-release MEM[rj] = rd (32 bits).
 type ScrelW struct {
-	base
-
 	rd, rj uint8
 }
 

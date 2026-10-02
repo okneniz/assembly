@@ -9,8 +9,6 @@ import (
 
 // Sraw - sraw rd, rs1, rs2.
 type Sraw struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

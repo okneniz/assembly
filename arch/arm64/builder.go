@@ -13,50 +13,50 @@ func New() Builder {
 }
 
 func (Builder) Abs(rd, rn VReg, arr string) (Instr, error) {
-	return newAbs(base{}, rd, rn, arr)
+	return newAbs(rd, rn, arr)
 }
 
 func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
-	return newAdc(base{}, rd, rn, rm)
+	return newAdc(rd, rn, rm)
 }
 
 func (Builder) Add(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newAdd(base{}, rd, rn, rm, arr)
+	return newAdd(rd, rn, rm, arr)
 }
 
 func (Builder) AddExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newAddExt(base{}, rd, rn, rm, ext, imm3)
+	return newAddExt(rd, rn, rm, ext, imm3)
 }
 
 func (Builder) AddImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	return newAddImm(base{}, rd, rn, imm, sh)
+	return newAddImm(rd, rn, imm, sh)
 }
 
 func (Builder) AddShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAddShift(base{}, rd, rn, rm, imm, sh)
+	return newAddShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Addp(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newAddp(base{}, rd, rn, rm, arr)
+	return newAddp(rd, rn, rm, arr)
 }
 
 func (Builder) AddsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newAddsExt(base{}, rd, rn, rm, ext, imm3)
+	return newAddsExt(rd, rn, rm, ext, imm3)
 }
 
 func (Builder) AddsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	return newAddsImm(base{}, rd, rn, imm, sh)
+	return newAddsImm(rd, rn, imm, sh)
 }
 
 func (Builder) AddsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAddsShift(base{}, rd, rn, rm, imm, sh)
+	return newAddsShift(rd, rn, rm, imm, sh)
 }
 
 // Adr — adr rd, #off: off — the signed byte offset from the address
 // of the instruction (the imm21 form, -0x100000..0xfffff). rd — only x
 // registers (register 31 reads as zr).
 func (Builder) Adr(rd Reg, off int64) (Instr, error) {
-	return newAdr(base{}, rd, off)
+	return newAdr(rd, off)
 }
 
 // Adrp — adrp rd, #off: off — the signed imm21 count of 4KB pages
@@ -65,45 +65,45 @@ func (Builder) Adr(rd Reg, off int64) (Instr, error) {
 // address and stays zero here. rd — only x registers (register 31 reads
 // as zr).
 func (Builder) Adrp(rd Reg, off int64) (Instr, error) {
-	return newAdrp(base{}, rd, off)
+	return newAdrp(rd, off)
 }
 
 func (Builder) Aese(rd, rn VReg) (Instr, error) {
-	return newAese(base{}, rd, rn)
+	return newAese(rd, rn)
 }
 
 func (Builder) Aesmc(rd, rn VReg) (Instr, error) {
-	return newAesmc(base{}, rd, rn)
+	return newAesmc(rd, rn)
 }
 
 func (Builder) And(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newAnd(base{}, rd, rn, rm, arr)
+	return newAnd(rd, rn, rm, arr)
 }
 
 func (Builder) AndImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newAndImm(base{}, rd, rn, imm)
+	return newAndImm(rd, rn, imm)
 }
 
 func (Builder) AndShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAndShift(base{}, rd, rn, rm, imm, sh)
+	return newAndShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) AndsImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newAndsImm(base{}, rd, rn, imm)
+	return newAndsImm(rd, rn, imm)
 }
 
 func (Builder) AndsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAndsShift(base{}, rd, rn, rm, imm, sh)
+	return newAndsShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) AsrReg(rd, rn, rm Reg) (Instr, error) {
-	return newAsrReg(base{}, rd, rn, rm)
+	return newAsrReg(rd, rn, rm)
 }
 
 // B — b off (the pc-relative byte offset; the absolute target is off +
 // the instruction address).
 func (Builder) B(off int64) Instr {
-	in, err := newB(base{}, immNum(off))
+	in, err := newB(immNum(off))
 	if err != nil {
 		panic(err) // a plain offset cannot fail
 	}
@@ -124,34 +124,34 @@ func (Builder) Bcond(cond string, off int64) (Instr, error) {
 }
 
 func (Builder) Bfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newBfm(base{}, rd, rn, immr, imms)
+	return newBfm(rd, rn, immr, imms)
 }
 
 func (Builder) Bic(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBic(base{}, rd, rn, rm, arr)
+	return newBic(rd, rn, rm, arr)
 }
 
 func (Builder) BicShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newBicShift(base{}, rd, rn, rm, imm, sh)
+	return newBicShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) BicsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newBicsShift(base{}, rd, rn, rm, imm, sh)
+	return newBicsShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Bif(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBif(base{}, rd, rn, rm, arr)
+	return newBif(rd, rn, rm, arr)
 }
 
 func (Builder) Bit(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBit(base{}, rd, rn, rm, arr)
+	return newBit(rd, rn, rm, arr)
 }
 
 // Bl — bl off: off — the pc-relative byte offset of the call
 // destination (the ±128MB imm26 range is checked at encode time; the
 // absolute target is off + the instruction address).
 func (Builder) Bl(off int64) Instr {
-	in, err := newBl(base{}, immNum(off))
+	in, err := newBl(immNum(off))
 	if err != nil {
 		panic(err) // a plain offset cannot fail
 	}
@@ -160,11 +160,11 @@ func (Builder) Bl(off int64) Instr {
 }
 
 func (Builder) Blr(rn Reg) (Instr, error) {
-	return newBlr(base{}, rn)
+	return newBlr(rn)
 }
 
 func (Builder) Br(rn Reg) (Instr, error) {
-	return newBr(base{}, rn)
+	return newBr(rn)
 }
 
 // Brk — brk #imm16.
@@ -178,47 +178,47 @@ func (Builder) Brk(imm Imm16) Instr {
 }
 
 func (Builder) Bsl(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBsl(base{}, rd, rn, rm, arr)
+	return newBsl(rd, rn, rm, arr)
 }
 
 func (Builder) Cbnz(rt Reg, off int64) (Instr, error) {
-	return newCbnz(base{}, rt, off)
+	return newCbnz(rt, off)
 }
 
 func (Builder) Cbz(rt Reg, off int64) (Instr, error) {
-	return newCbz(base{}, rt, off)
+	return newCbz(rt, off)
 }
 
 func (Builder) Ccmp(rn, rm Reg, nzcv uint32, cond string) (Instr, error) {
-	return newCcmp(base{}, rn, rm, nzcv, cond)
+	return newCcmp(rn, rm, nzcv, cond)
 }
 
 func (Builder) Cls(rd, rn Reg) (Instr, error) {
-	return newCls(base{}, rd, rn)
+	return newCls(rd, rn)
 }
 
 func (Builder) Clz(rd, rn Reg) (Instr, error) {
-	return newClz(base{}, rd, rn)
+	return newClz(rd, rn)
 }
 
 func (Builder) Cmeq(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmeq(base{}, rd, rn, rm, arr)
+	return newCmeq(rd, rn, rm, arr)
 }
 
 func (Builder) Cmge(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmge(base{}, rd, rn, rm, arr)
+	return newCmge(rd, rn, rm, arr)
 }
 
 func (Builder) Cmtst(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmtst(base{}, rd, rn, rm, arr)
+	return newCmtst(rd, rn, rm, arr)
 }
 
 func (Builder) Cnt(rd, rn VReg, arr string) (Instr, error) {
-	return newCnt(base{}, rd, rn, arr)
+	return newCnt(rd, rn, arr)
 }
 
 func (Builder) Csel(rd, rn, rm Reg, cond string) (Instr, error) {
-	return newCsel(base{}, rd, rn, rm, cond)
+	return newCsel(rd, rn, rm, cond)
 }
 
 // Csinc — csinc rd, rn, rm, cond (cset/cinc pseudos); the operand
@@ -271,16 +271,16 @@ func (Builder) Csneg(rd, rn, rm Reg, cond string) (Instr, error) {
 
 // Dmb - dmb domain (the memory barrier of the domain).
 func (Builder) Dmb(domain BarrierDomain) (Instr, error) {
-	return newBarrier(base{}, "dmb", domain)
+	return newBarrier("dmb", domain)
 }
 
 // Dsb - dsb domain (the barrier completes before anything continues).
 func (Builder) Dsb(domain BarrierDomain) (Instr, error) {
-	return newBarrier(base{}, "dsb", domain)
+	return newBarrier("dsb", domain)
 }
 
 func (Builder) Dup(vd VReg, wn Reg, arr string) (Instr, error) {
-	return newDup(base{}, vd, wn, arr)
+	return newDup(vd, wn, arr)
 }
 
 func (Builder) DupElem(rd, rn VReg, arr string, idx uint32) (Instr, error) {
@@ -289,7 +289,7 @@ func (Builder) DupElem(rd, rn VReg, arr string, idx uint32) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewDupElem: %w", err)
 	}
 
-	return newDupElem(base{}, q, size, idx, rd, rn)
+	return newDupElem(q, size, idx, rd, rn)
 }
 
 func (Builder) DupScalar(rd, rn VReg, elem string, idx uint32) (Instr, error) {
@@ -298,31 +298,31 @@ func (Builder) DupScalar(rd, rn VReg, elem string, idx uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newDupScalar(base{}, size, idx, rd, rn)
+	return newDupScalar(size, idx, rd, rn)
 }
 
 func (Builder) EonShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newEonShift(base{}, rd, rn, rm, imm, sh)
+	return newEonShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Eor(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newEor(base{}, rd, rn, rm, arr)
+	return newEor(rd, rn, rm, arr)
 }
 
 func (Builder) EorImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newEorImm(base{}, rd, rn, imm)
+	return newEorImm(rd, rn, imm)
 }
 
 func (Builder) EorShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newEorShift(base{}, rd, rn, rm, imm, sh)
+	return newEorShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Extr(rd, rn, rm Reg, lsb Imm6) (Instr, error) {
-	return newExtr(base{}, rd, rn, rm, lsb)
+	return newExtr(rd, rn, rm, lsb)
 }
 
 func (Builder) Fadd(rd, rn, rm FReg) (Instr, error) {
-	return newFadd(base{}, rd, rn, rm)
+	return newFadd(rd, rn, rm)
 }
 
 // FcmlaElem - the Builder entry: .4h/.8h/.2s/.4s/.2d lanes.
@@ -342,55 +342,55 @@ func (Builder) FcmlaElem(rd, rn, rm VReg, arr string, idx, rot uint32) (Instr, e
 		return nil, fmt.Errorf("arm64.NewFcmlaElem: %w", err)
 	}
 
-	return newFcmlaElem(base{}, q, size, idx, rot, rd, rn, rm)
+	return newFcmlaElem(q, size, idx, rot, rd, rn, rm)
 }
 
 func (Builder) Fcmp(rn, rm FReg) (Instr, error) {
-	return newFcmp(base{}, rn, rm, true)
+	return newFcmp(rn, rm, true)
 }
 
 // FcmpZero — fcmp fn, #0.0 (the immediate form: Rm=0).
 func (Builder) FcmpZero(rn FReg) (Instr, error) {
-	return newFcmp(base{}, rn, FReg{}, false)
+	return newFcmp(rn, FReg{}, false)
 }
 
 func (Builder) Fcvt(rd, rn FReg) (Instr, error) {
-	return newFcvt(base{}, rd, rn)
+	return newFcvt(rd, rn)
 }
 
 func (Builder) Fcvtzs(rd Reg, rn FReg) (Instr, error) {
-	return newFcvtzs(base{}, rd, rn)
+	return newFcvtzs(rd, rn)
 }
 
 func (Builder) Fcvtzu(rd Reg, rn FReg) (Instr, error) {
-	return newFcvtzu(base{}, rd, rn)
+	return newFcvtzu(rd, rn)
 }
 
 func (Builder) Fdiv(rd, rn, rm FReg) (Instr, error) {
-	return newFdiv(base{}, rd, rn, rm)
+	return newFdiv(rd, rn, rm)
 }
 
 func (Builder) Fmadd(rd, rn, rm, ra FReg) (Instr, error) {
-	return newFmadd(base{}, rd, rn, rm, ra)
+	return newFmadd(rd, rn, rm, ra)
 }
 
 func (Builder) Fmax(rd, rn, rm FReg) (Instr, error) {
-	return newFmax(base{}, rd, rn, rm)
+	return newFmax(rd, rn, rm)
 }
 
 func (Builder) Fmin(rd, rn, rm FReg) (Instr, error) {
-	return newFmin(base{}, rd, rn, rm)
+	return newFmin(rd, rn, rm)
 }
 
 // FmlaElem - the Builder entry: .2s/.4s (fp32) or .2d (fp64).
 func (Builder) FmlaElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 	switch arr {
 	case "2s":
-		return newFmlaElem(base{}, 0, 2, idx, rd, rn, rm)
+		return newFmlaElem(0, 2, idx, rd, rn, rm)
 	case "4s":
-		return newFmlaElem(base{}, 1, 2, idx, rd, rn, rm)
+		return newFmlaElem(1, 2, idx, rd, rn, rm)
 	case "2d":
-		return newFmlaElem(base{}, 1, 3, idx, rd, rn, rm)
+		return newFmlaElem(1, 3, idx, rd, rn, rm)
 	}
 
 	return nil, fmt.Errorf("arm64.NewFmlaElem: arrangement %q is not one of [2s 4s 2d]", arr)
@@ -400,45 +400,45 @@ func (Builder) FmlaElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) 
 func (Builder) FmlsElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 	switch arr {
 	case "2s":
-		return newFmlsElem(base{}, 0, 2, idx, rd, rn, rm)
+		return newFmlsElem(0, 2, idx, rd, rn, rm)
 	case "4s":
-		return newFmlsElem(base{}, 1, 2, idx, rd, rn, rm)
+		return newFmlsElem(1, 2, idx, rd, rn, rm)
 	case "2d":
-		return newFmlsElem(base{}, 1, 3, idx, rd, rn, rm)
+		return newFmlsElem(1, 3, idx, rd, rn, rm)
 	}
 
 	return nil, fmt.Errorf("arm64.NewFmlsElem: arrangement %q is not one of [2s 4s 2d]", arr)
 }
 
 func (Builder) Fmov(rd, rn FReg) (Instr, error) {
-	return newFmov(base{}, rd, rn)
+	return newFmov(rd, rn)
 }
 
 func (Builder) FmovFromGpr(rd FReg, rn Reg) (Instr, error) {
-	return newFmovFromGpr(base{}, rd, rn)
+	return newFmovFromGpr(rd, rn)
 }
 
 func (Builder) FmovImm(rd FReg, val float64) (Instr, error) {
-	return newFmovImm(base{}, rd, val, fmt.Sprintf("%.8f", val))
+	return newFmovImm(rd, val, fmt.Sprintf("%.8f", val))
 }
 
 func (Builder) FmovToGpr(rd Reg, rn FReg) (Instr, error) {
-	return newFmovToGpr(base{}, rd, rn)
+	return newFmovToGpr(rd, rn)
 }
 
 func (Builder) Fmul(rd, rn, rm FReg) (Instr, error) {
-	return newFmul(base{}, rd, rn, rm)
+	return newFmul(rd, rn, rm)
 }
 
 // FmulElem - the Builder entry: .2s/.4s (fp32) or .2d (fp64).
 func (Builder) FmulElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 	switch arr {
 	case "2s":
-		return newFmulElem(base{}, 0, 2, idx, rd, rn, rm)
+		return newFmulElem(0, 2, idx, rd, rn, rm)
 	case "4s":
-		return newFmulElem(base{}, 1, 2, idx, rd, rn, rm)
+		return newFmulElem(1, 2, idx, rd, rn, rm)
 	case "2d":
-		return newFmulElem(base{}, 1, 3, idx, rd, rn, rm)
+		return newFmulElem(1, 3, idx, rd, rn, rm)
 	}
 
 	return nil, fmt.Errorf("arm64.NewFmulElem: arrangement %q is not one of [2s 4s 2d]", arr)
@@ -448,26 +448,26 @@ func (Builder) FmulElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) 
 func (Builder) FmulxElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 	switch arr {
 	case "2s":
-		return newFmulxElem(base{}, 0, 2, idx, rd, rn, rm)
+		return newFmulxElem(0, 2, idx, rd, rn, rm)
 	case "4s":
-		return newFmulxElem(base{}, 1, 2, idx, rd, rn, rm)
+		return newFmulxElem(1, 2, idx, rd, rn, rm)
 	case "2d":
-		return newFmulxElem(base{}, 1, 3, idx, rd, rn, rm)
+		return newFmulxElem(1, 3, idx, rd, rn, rm)
 	}
 
 	return nil, fmt.Errorf("arm64.NewFmulxElem: arrangement %q is not one of [2s 4s 2d]", arr)
 }
 
 func (Builder) Fneg(rd, rn FReg) (Instr, error) {
-	return newFneg(base{}, rd, rn)
+	return newFneg(rd, rn)
 }
 
 func (Builder) Fnmsub(rd, rn, rm, ra FReg) (Instr, error) {
-	return newFnmsub(base{}, rd, rn, rm, ra)
+	return newFnmsub(rd, rn, rm, ra)
 }
 
 func (Builder) Fsub(rd, rn, rm FReg) (Instr, error) {
-	return newFsub(base{}, rd, rn, rm)
+	return newFsub(rd, rn, rm)
 }
 
 // Imm12 — validated value; error when out of range.
@@ -491,7 +491,7 @@ func (Builder) Ins(vd VReg, idx uint32, wn Reg, elem string) (Instr, error) {
 		return nil, err
 	}
 
-	return newIns(base{}, size, idx, vd, wn)
+	return newIns(size, idx, vd, wn)
 }
 
 func (Builder) InsElem(rd, rn VReg, elem string, idx, srcIdx uint32) (Instr, error) {
@@ -500,46 +500,46 @@ func (Builder) InsElem(rd, rn VReg, elem string, idx, srcIdx uint32) (Instr, err
 		return nil, err
 	}
 
-	return newInsElem(base{}, size, idx, srcIdx, rd, rn)
+	return newInsElem(size, idx, srcIdx, rd, rn)
 }
 
 // Isb - isb (the instruction barrier; the full-system domain is its
 // only form, so there is nothing to choose).
 func (Builder) Isb() (Instr, error) {
-	return newBarrier(base{}, "isb", Sy)
+	return newBarrier("isb", Sy)
 }
 
 func (Builder) Ldar(rt, rn Reg) (Instr, error) {
-	return newLdar(base{}, rt, rn)
+	return newLdar(rt, rn)
 }
 
 func (Builder) Ldarb(rt, rn Reg) (Instr, error) {
-	return newLdarb(base{}, rt, rn)
+	return newLdarb(rt, rn)
 }
 
 // Ldaxr — ldaxr rt, [rn]: rt — x/w register (register 31 reads as
 // zr), rn — x register or SP (register 31 in the base reads as sp).
 func (Builder) Ldaxr(rt, rn Reg) (Instr, error) {
-	return newLdaxr(base{}, rt, rn)
+	return newLdaxr(rt, rn)
 }
 
 // Ldaxrb — ldaxrb rt, [rn]: byte access, rt — w register only
 // (register 31 reads as wzr), rn — x register or SP (register 31 in the
 // base reads as sp).
 func (Builder) Ldaxrb(rt, rn Reg) (Instr, error) {
-	return newLdaxrb(base{}, rt, rn)
+	return newLdaxrb(rt, rn)
 }
 
 func (Builder) Ldp(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newLdp(base{}, rt, rt2, rn, off)
+	return newLdp(rt, rt2, rn, off)
 }
 
 func (Builder) Ldpsw(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newLdpsw(base{}, rt, rt2, rn, off)
+	return newLdpsw(rt, rt2, rn, off)
 }
 
 func (Builder) Ldr(rt, rn Reg, off Off) (Instr, error) {
-	return newLdr(base{}, rt, rn, off)
+	return newLdr(rt, rn, off)
 }
 
 // LdrF — ldr st|dt, [xn, #off] (the FP/SIMD register form).
@@ -565,53 +565,52 @@ func (Builder) LdrF(rt FReg, rn Reg, off Off) (Instr, error) {
 	}
 
 	return newLdrBase(
-		base{},
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
 	), nil
 }
 
 func (Builder) Ldrb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrb(base{}, rt, rn, off)
+	return newLdrb(rt, rn, off)
 }
 
 func (Builder) Ldrh(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrh(base{}, rt, rn, off)
+	return newLdrh(rt, rn, off)
 }
 
 func (Builder) Ldrsb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrsb(base{}, rt, rn, off)
+	return newLdrsb(rt, rn, off)
 }
 
 func (Builder) Ldrsh(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrsh(base{}, rt, rn, off)
+	return newLdrsh(rt, rn, off)
 }
 
 func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrsw(base{}, rt, rn, off)
+	return newLdrsw(rt, rn, off)
 }
 
 func (Builder) Ldur(rt, rn Reg, off Off) (Instr, error) {
-	return newLdur(base{}, rt, rn, off)
+	return newLdur(rt, rn, off)
 }
 
 func (Builder) Ldurb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdurb(base{}, rt, rn, off)
+	return newLdurb(rt, rn, off)
 }
 
 func (Builder) Ldurh(rt, rn Reg, off Off) (Instr, error) {
-	return newLdurh(base{}, rt, rn, off)
+	return newLdurh(rt, rn, off)
 }
 
 func (Builder) LslReg(rd, rn, rm Reg) (Instr, error) {
-	return newLslReg(base{}, rd, rn, rm)
+	return newLslReg(rd, rn, rm)
 }
 
 func (Builder) LsrReg(rd, rn, rm Reg) (Instr, error) {
-	return newLsrReg(base{}, rd, rn, rm)
+	return newLsrReg(rd, rn, rm)
 }
 
 func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
-	return newMadd(base{}, rd, rn, rm, ra)
+	return newMadd(rd, rn, rm, ra)
 }
 
 // MlaElem - the Builder entry: the arrangement is the printed one
@@ -629,7 +628,7 @@ func (Builder) MlaElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 		)
 	}
 
-	return newMlaElem(base{}, q, size, idx, rd, rn, rm)
+	return newMlaElem(q, size, idx, rd, rn, rm)
 }
 
 // MlsElem - the Builder entry: the arrangement is the printed one
@@ -647,7 +646,7 @@ func (Builder) MlsElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 		)
 	}
 
-	return newMlsElem(base{}, q, size, idx, rd, rn, rm)
+	return newMlsElem(q, size, idx, rd, rn, rm)
 }
 
 // MovSimdBuilder entry: mov.8b/16b vd, vm (ORR-vector, Rn=31).
@@ -671,23 +670,23 @@ func (Builder) MovSimd(rd, rm VReg, arr string) (Instr, error) {
 }
 
 func (Builder) Movk(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	return newMovk(base{}, rd, imm, hw)
+	return newMovk(rd, imm, hw)
 }
 
 func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	return newMovn(base{}, rd, imm, hw)
+	return newMovn(rd, imm, hw)
 }
 
 func (Builder) Movz(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	return newMovz(base{}, rd, imm, hw)
+	return newMovz(rd, imm, hw)
 }
 
 func (Builder) Mrs(rd Reg, sysreg string) (Instr, error) {
-	return newMrs(base{}, rd, sysreg)
+	return newMrs(rd, sysreg)
 }
 
 func (Builder) Msr(sysreg string, rt Reg) (Instr, error) {
-	return newMsr(base{}, sysreg, rt)
+	return newMsr(sysreg, rt)
 }
 
 // Msub — msub rd, rn, rm, ra (mneg when Ra = zr); the operand
@@ -721,12 +720,12 @@ func (Builder) MulElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
 		)
 	}
 
-	return newMulElem(base{}, q, size, idx, rd, rn, rm)
+	return newMulElem(q, size, idx, rd, rn, rm)
 }
 
 // Nop — nop (no operands, fixed encoding).
 func (Builder) Nop() Instr {
-	in, err := newNop(base{})
+	in, err := newNop()
 	if err != nil {
 		panic(err) // no operands - cannot fail
 	}
@@ -735,63 +734,63 @@ func (Builder) Nop() Instr {
 }
 
 func (Builder) Not(rd, rn VReg, arr string) (Instr, error) {
-	return newNot(base{}, rd, rn, arr)
+	return newNot(rd, rn, arr)
 }
 
 func (Builder) Orn(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newOrn(base{}, rd, rn, rm, arr)
+	return newOrn(rd, rn, rm, arr)
 }
 
 func (Builder) OrnShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newOrnShift(base{}, rd, rn, rm, imm, sh)
+	return newOrnShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Orr(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newOrr(base{}, rd, rn, rm, arr)
+	return newOrr(rd, rn, rm, arr)
 }
 
 func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newOrrImm(base{}, rd, rn, imm)
+	return newOrrImm(rd, rn, imm)
 }
 
 func (Builder) OrrShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newOrrShift(base{}, rd, rn, rm, imm, sh)
+	return newOrrShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) Prfm(rn Reg) (Instr, error) {
-	return newPrfm(base{}, rn)
+	return newPrfm(rn)
 }
 
 func (Builder) Rbit(rd, rn Reg) (Instr, error) {
-	return newRbit(base{}, rd, rn)
+	return newRbit(rd, rn)
 }
 
 func (Builder) RbitV(rd, rn VReg, arr string) (Instr, error) {
-	return newRbitV(base{}, rd, rn, arr)
+	return newRbitV(rd, rn, arr)
 }
 
 func (Builder) Ret(rn Reg) (Instr, error) {
-	return newRet(base{}, rn)
+	return newRet(rn)
 }
 
 func (Builder) Rev(rd, rn Reg) (Instr, error) {
-	return newRev(base{}, rd, rn)
+	return newRev(rd, rn)
 }
 
 func (Builder) Rev16(rd, rn Reg) (Instr, error) {
-	return newRev16(base{}, rd, rn)
+	return newRev16(rd, rn)
 }
 
 func (Builder) Rev32(rd, rn Reg) (Instr, error) {
-	return newRev32(base{}, rd, rn)
+	return newRev32(rd, rn)
 }
 
 func (Builder) Rev32V(rd, rn VReg, arr string) (Instr, error) {
-	return newRev32V(base{}, rd, rn, arr)
+	return newRev32V(rd, rn, arr)
 }
 
 func (Builder) RorReg(rd, rn, rm Reg) (Instr, error) {
-	return newRorReg(base{}, rd, rn, rm)
+	return newRorReg(rd, rn, rm)
 }
 
 func (Builder) Saddw(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -806,19 +805,19 @@ func (Builder) Saddw(rd, rn, rm VReg, arr string) (Instr, error) {
 		)
 	}
 
-	return newSaddw(base{}, q, size-1, rd, rn, rm)
+	return newSaddw(q, size-1, rd, rn, rm)
 }
 
 func (Builder) Sbfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newSbfm(base{}, rd, rn, immr, imms)
+	return newSbfm(rd, rn, immr, imms)
 }
 
 func (Builder) Scvtf(rd FReg, rn Reg) (Instr, error) {
-	return newScvtf(base{}, rd, rn)
+	return newScvtf(rd, rn)
 }
 
 func (Builder) Sdiv(rd, rn, rm Reg) (Instr, error) {
-	return newSdiv(base{}, rd, rn, rm)
+	return newSdiv(rd, rn, rm)
 }
 
 // Shl - the Builder entry: the shift as the written amount on the
@@ -838,7 +837,7 @@ func (Builder) Shl(rd, rn VReg, arr string, shift uint32) (Instr, error) {
 	imm := 1<<(3+size) | shift
 	immh, immb := imm>>3, imm&7
 
-	return newShl(base{}, q, immh, immb, rd, rn)
+	return newShl(q, immh, immb, rd, rn)
 }
 
 // Smc — smc #imm16 (the secure-monitor call; PSCI rides it at #0).
@@ -870,7 +869,7 @@ func (Builder) SmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewSmlalElem: %w", err)
 	}
 
-	return newSmlalElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSmlalElem(q, size-1, idx, rd, rn, rm)
 }
 
 // SmlslElem - the Builder entry: the arrangement is the RESULT's
@@ -892,7 +891,7 @@ func (Builder) SmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewSmlslElem: %w", err)
 	}
 
-	return newSmlslElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSmlslElem(q, size-1, idx, rd, rn, rm)
 }
 
 func (Builder) Smov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
@@ -901,11 +900,11 @@ func (Builder) Smov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newSmov(base{}, 0, size, idx, vn, wd)
+	return newSmov(0, size, idx, vn, wd)
 }
 
 func (Builder) Smulh(rd, rn, rm Reg) (Instr, error) {
-	return newSmulh(base{}, rd, rn, rm)
+	return newSmulh(rd, rn, rm)
 }
 
 // SmullElem - the Builder entry: the arrangement is the RESULT's
@@ -927,7 +926,7 @@ func (Builder) SmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewSmullElem: %w", err)
 	}
 
-	return newSmullElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSmullElem(q, size-1, idx, rd, rn, rm)
 }
 
 // SqdmlalElem - the Builder entry: the arrangement is the RESULT's
@@ -949,7 +948,7 @@ func (Builder) SqdmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 		return nil, fmt.Errorf("arm64.NewSqdmlalElem: %w", err)
 	}
 
-	return newSqdmlalElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSqdmlalElem(q, size-1, idx, rd, rn, rm)
 }
 
 // SqdmlslElem - the Builder entry: the arrangement is the RESULT's
@@ -971,7 +970,7 @@ func (Builder) SqdmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 		return nil, fmt.Errorf("arm64.NewSqdmlslElem: %w", err)
 	}
 
-	return newSqdmlslElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSqdmlslElem(q, size-1, idx, rd, rn, rm)
 }
 
 // SqdmulhElem - the Builder entry: the arrangement is the printed one
@@ -989,7 +988,7 @@ func (Builder) SqdmulhElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, erro
 		)
 	}
 
-	return newSqdmulhElem(base{}, q, size, idx, rd, rn, rm)
+	return newSqdmulhElem(q, size, idx, rd, rn, rm)
 }
 
 // SqdmullElem - the Builder entry: the arrangement is the RESULT's
@@ -1011,7 +1010,7 @@ func (Builder) SqdmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 		return nil, fmt.Errorf("arm64.NewSqdmullElem: %w", err)
 	}
 
-	return newSqdmullElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newSqdmullElem(q, size-1, idx, rd, rn, rm)
 }
 
 // SqrdmlahElem - the Builder entry: the arrangement is the printed one
@@ -1029,7 +1028,7 @@ func (Builder) SqrdmlahElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, err
 		)
 	}
 
-	return newSqrdmlahElem(base{}, q, size, idx, rd, rn, rm)
+	return newSqrdmlahElem(q, size, idx, rd, rn, rm)
 }
 
 // SqrdmlshElem - the Builder entry: the arrangement is the printed one
@@ -1047,7 +1046,7 @@ func (Builder) SqrdmlshElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, err
 		)
 	}
 
-	return newSqrdmlshElem(base{}, q, size, idx, rd, rn, rm)
+	return newSqrdmlshElem(q, size, idx, rd, rn, rm)
 }
 
 // SqrdmulhElem - the Builder entry: the arrangement is the printed one
@@ -1065,11 +1064,11 @@ func (Builder) SqrdmulhElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, err
 		)
 	}
 
-	return newSqrdmulhElem(base{}, q, size, idx, rd, rn, rm)
+	return newSqrdmulhElem(q, size, idx, rd, rn, rm)
 }
 
 func (Builder) Sqrshl(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newSqrshl(base{}, rd, rn, rm, arr)
+	return newSqrshl(rd, rn, rm, arr)
 }
 
 // Sri - the Builder entry: the shift as the written amount on the
@@ -1089,7 +1088,7 @@ func (Builder) Sri(rd, rn VReg, arr string, shift uint32) (Instr, error) {
 	imm := 1<<(3+size) | (8<<size - shift)
 	immh, immb := imm>>3, imm&7
 
-	return newSri(base{}, q, immh, immb, rd, rn)
+	return newSri(q, immh, immb, rd, rn)
 }
 
 // Sshr - the Builder entry: the shift as the written amount on the
@@ -1109,7 +1108,7 @@ func (Builder) Sshr(rd, rn VReg, arr string, shift uint32) (Instr, error) {
 	imm := 1<<(3+size) | (8<<size - shift)
 	immh, immb := imm>>3, imm&7
 
-	return newSshr(base{}, q, immh, immb, rd, rn)
+	return newSshr(q, immh, immb, rd, rn)
 }
 
 func (Builder) Ssubw(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -1124,31 +1123,31 @@ func (Builder) Ssubw(rd, rn, rm VReg, arr string) (Instr, error) {
 		)
 	}
 
-	return newSsubw(base{}, q, size-1, rd, rn, rm)
+	return newSsubw(q, size-1, rd, rn, rm)
 }
 
 func (Builder) Stlr(rt, rn Reg) (Instr, error) {
-	return newStlr(base{}, rt, rn)
+	return newStlr(rt, rn)
 }
 
 func (Builder) Stlrb(rt, rn Reg) (Instr, error) {
-	return newStlrb(base{}, rt, rn)
+	return newStlrb(rt, rn)
 }
 
 func (Builder) Stlxr(rs, rt, rn Reg) (Instr, error) {
-	return newStlxr(base{}, rs, rt, rn)
+	return newStlxr(rs, rt, rn)
 }
 
 func (Builder) Stlxrb(rs, rt, rn Reg) (Instr, error) {
-	return newStlxrb(base{}, rs, rt, rn)
+	return newStlxrb(rs, rt, rn)
 }
 
 func (Builder) Stp(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newStp(base{}, rt, rt2, rn, off)
+	return newStp(rt, rt2, rn, off)
 }
 
 func (Builder) Str(rt, rn Reg, off Off) (Instr, error) {
-	return newStr(base{}, rt, rn, off)
+	return newStr(rt, rn, off)
 }
 
 // StrF — str st|dt, [xn, #off] (the FP/SIMD register form).
@@ -1174,7 +1173,6 @@ func (Builder) StrF(rt FReg, rn Reg, off Off) (Instr, error) {
 	}
 
 	return newStrBase(
-		base{},
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
 	), nil
 }
@@ -1183,51 +1181,51 @@ func (Builder) StrF(rt FReg, rn Reg, off Off) (Instr, error) {
 // (register 31 reads as wzr), rn — x register or SP (register 31 in the
 // base reads as sp); the offset is an unscaled imm12 (0..0xfff).
 func (Builder) Strb(rt, rn Reg, off Off) (Instr, error) {
-	return newStrb(base{}, rt, rn, off)
+	return newStrb(rt, rn, off)
 }
 
 func (Builder) Strh(rt, rn Reg, off Off) (Instr, error) {
-	return newStrh(base{}, rt, rn, off)
+	return newStrh(rt, rn, off)
 }
 
 func (Builder) Stur(rt, rn Reg, off Off) (Instr, error) {
-	return newStur(base{}, rt, rn, off)
+	return newStur(rt, rn, off)
 }
 
 func (Builder) Sturb(rt, rn Reg, off Off) (Instr, error) {
-	return newSturb(base{}, rt, rn, off)
+	return newSturb(rt, rn, off)
 }
 
 func (Builder) Sturh(rt, rn Reg, off Off) (Instr, error) {
-	return newSturh(base{}, rt, rn, off)
+	return newSturh(rt, rn, off)
 }
 
 func (Builder) Stxrb(rs, rt, rn Reg) (Instr, error) {
-	return newStxrb(base{}, rs, rt, rn)
+	return newStxrb(rs, rt, rn)
 }
 
 func (Builder) SubExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newSubExt(base{}, rd, rn, rm, ext, imm3)
+	return newSubExt(rd, rn, rm, ext, imm3)
 }
 
 func (Builder) SubImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	return newSubImm(base{}, rd, rn, imm, sh)
+	return newSubImm(rd, rn, imm, sh)
 }
 
 func (Builder) SubShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newSubShift(base{}, rd, rn, rm, imm, sh)
+	return newSubShift(rd, rn, rm, imm, sh)
 }
 
 func (Builder) SubsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newSubsExt(base{}, rd, rn, rm, ext, imm3)
+	return newSubsExt(rd, rn, rm, ext, imm3)
 }
 
 func (Builder) SubsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	return newSubsImm(base{}, rd, rn, imm, sh)
+	return newSubsImm(rd, rn, imm, sh)
 }
 
 func (Builder) SubsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newSubsShift(base{}, rd, rn, rm, imm, sh)
+	return newSubsShift(rd, rn, rm, imm, sh)
 }
 
 // Svc — svc #imm16.
@@ -1241,7 +1239,7 @@ func (Builder) Svc(imm Imm16) Instr {
 }
 
 func (Builder) Tbl(rd, rn, rm VReg) (Instr, error) {
-	return newTbl(base{}, rd, rn, rm)
+	return newTbl(rd, rn, rm)
 }
 
 // Tbz — tbz rt, #bit, off: off — the pc-relative byte offset of the
@@ -1303,7 +1301,7 @@ func (Builder) Uaddlv(rd, rn VReg, arr string) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewUaddlv: arrangement %q is not one of [8b 16b 4h 8h]", arr)
 	}
 
-	return newUaddlv(base{}, q, size, rd, rn)
+	return newUaddlv(q, size, rd, rn)
 }
 
 func (Builder) Uaddw(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -1318,19 +1316,19 @@ func (Builder) Uaddw(rd, rn, rm VReg, arr string) (Instr, error) {
 		)
 	}
 
-	return newUaddw(base{}, q, size-1, rd, rn, rm)
+	return newUaddw(q, size-1, rd, rn, rm)
 }
 
 func (Builder) Ubfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newUbfm(base{}, rd, rn, immr, imms)
+	return newUbfm(rd, rn, immr, imms)
 }
 
 func (Builder) Ucvtf(rd FReg, rn Reg) (Instr, error) {
-	return newUcvtf(base{}, rd, rn)
+	return newUcvtf(rd, rn)
 }
 
 func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
-	return newUdiv(base{}, rd, rn, rm)
+	return newUdiv(rd, rn, rm)
 }
 
 // UmlalElem - the Builder entry: the arrangement is the RESULT's
@@ -1352,7 +1350,7 @@ func (Builder) UmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewUmlalElem: %w", err)
 	}
 
-	return newUmlalElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newUmlalElem(q, size-1, idx, rd, rn, rm)
 }
 
 // UmlslElem - the Builder entry: the arrangement is the RESULT's
@@ -1374,7 +1372,7 @@ func (Builder) UmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewUmlslElem: %w", err)
 	}
 
-	return newUmlslElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newUmlslElem(q, size-1, idx, rd, rn, rm)
 }
 
 func (Builder) Umov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
@@ -1383,11 +1381,11 @@ func (Builder) Umov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newUmov(base{}, 0, size, idx, vn, wd)
+	return newUmov(0, size, idx, vn, wd)
 }
 
 func (Builder) Umulh(rd, rn, rm Reg) (Instr, error) {
-	return newUmulh(base{}, rd, rn, rm)
+	return newUmulh(rd, rn, rm)
 }
 
 // UmullElem - the Builder entry: the arrangement is the RESULT's
@@ -1409,7 +1407,7 @@ func (Builder) UmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 		return nil, fmt.Errorf("arm64.NewUmullElem: %w", err)
 	}
 
-	return newUmullElem(base{}, q, size-1, idx, rd, rn, rm)
+	return newUmullElem(q, size-1, idx, rd, rn, rm)
 }
 
 // Ushr - the Builder entry: the shift as the written amount on the
@@ -1429,7 +1427,7 @@ func (Builder) Ushr(rd, rn VReg, arr string, shift uint32) (Instr, error) {
 	imm := 1<<(3+size) | (8<<size - shift)
 	immh, immb := imm>>3, imm&7
 
-	return newUshr(base{}, q, immh, immb, rd, rn)
+	return newUshr(q, immh, immb, rd, rn)
 }
 
 func (Builder) Usubw(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -1444,5 +1442,5 @@ func (Builder) Usubw(rd, rn, rm VReg, arr string) (Instr, error) {
 		)
 	}
 
-	return newUsubw(base{}, q, size-1, rd, rn, rm)
+	return newUsubw(q, size-1, rd, rn, rm)
 }

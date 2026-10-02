@@ -11,8 +11,6 @@ import (
 // jump to pc + offs (word-scaled). The decoded form stores the absolute
 // target.
 type Bnez struct {
-	base
-
 	rj  uint8
 	off imm
 }

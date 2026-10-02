@@ -8,7 +8,6 @@ import (
 
 // Ldar — ldar rt, [rn].
 type Ldar struct {
-	base
 	atomic
 
 	enc uint32
@@ -16,9 +15,8 @@ type Ldar struct {
 
 // newLdarBase - the Ldar constructor for a ready embedded base
 // (the decoder): the struct is assembled only here.
-func newLdarBase(b base, e atomic, enc uint32) Ldar {
+func newLdarBase(e atomic, enc uint32) Ldar {
 	return Ldar{
-		base:   b,
 		atomic: e,
 		enc:    enc,
 	}
@@ -26,7 +24,7 @@ func newLdarBase(b base, e atomic, enc uint32) Ldar {
 
 // newLdar - the Ldar constructor: validates the operands,
 // delegates the assembly to newLdarBase.
-func newLdar(b base, rt, rn Reg) (Ldar, error) {
+func newLdar(rt, rn Reg) (Ldar, error) {
 	if err := lsOperand(rt, rn, "Ldar"); err != nil {
 		return Ldar{}, err
 	}
@@ -36,7 +34,7 @@ func newLdar(b base, rt, rn Reg) (Ldar, error) {
 		enc = ldarXEnc
 	}
 
-	return newLdarBase(b, newAtomic(rt.name(), rn.name()), enc), nil
+	return newLdarBase(newAtomic(rt.name(), rn.name()), enc), nil
 }
 
 // Encodings of the 64/32-bit forms: the access size is set by rt.

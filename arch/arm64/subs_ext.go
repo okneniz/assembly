@@ -9,15 +9,13 @@ import (
 
 // SubsExt — subs rd, rn, rm{, ext #imm3}; pseudo: cmp (Rd=31).
 type SubsExt struct {
-	base
 	extBase
 }
 
 // newSubsExtBase - the SubsExt constructor for a ready embedded base (the
 // string-operand layer): the struct is assembled only here.
-func newSubsExtBase(b base, eb extBase) SubsExt {
+func newSubsExtBase(eb extBase) SubsExt {
 	return SubsExt{
-		base:    b,
 		extBase: eb,
 	}
 }
@@ -25,7 +23,7 @@ func newSubsExtBase(b base, eb extBase) SubsExt {
 // newSubsExt - the SubsExt constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSubsExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (SubsExt, error) {
+func newSubsExt(rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (SubsExt, error) {
 	err := requireClass(
 		rd,
 		"SubsExt",
@@ -82,7 +80,7 @@ func newSubsExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (SubsEx
 		return SubsExt{}, err
 	}
 
-if _, err := extNum(ext); err != nil {
+	if _, err := extNum(ext); err != nil {
 		return SubsExt{}, fmt.Errorf("arm64.NewSubsExt: operand ext: %w", err)
 	}
 
@@ -95,7 +93,6 @@ if _, err := extNum(ext); err != nil {
 	}
 
 	return SubsExt{
-		base:    b,
 		extBase: newExtBase(rd.bits(), rn.bits(), rm.bits(), ext, imm3, rd.Is64()),
 	}, nil
 }

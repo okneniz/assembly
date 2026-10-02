@@ -18,8 +18,6 @@ func TestParseInstrs(t *testing.T) {
 	require.Len(t, instrs, 2)
 
 	// Both kinds of lines carry their length.
-	require.Equal(t, 4, instrs[0].Len())
-	require.Equal(t, 4, instrs[1].Len())
 }
 
 func TestParseTruncatedTail(t *testing.T) {

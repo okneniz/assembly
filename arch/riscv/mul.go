@@ -9,8 +9,6 @@ import (
 
 // Mul - mul rd, rs1, rs2.
 type Mul struct {
-	base
-
 	rd, rs1, rs2 string
 }
 

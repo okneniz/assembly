@@ -10,18 +10,15 @@ import (
 
 // Lui - lui rd, imm.
 type Lui struct {
-	base
-
 	rd  string
 	imm imm
 }
 
 // cLui - compressed forms (c.lui): base - halfword, length 2.
-func cLui(h uint32, rd string, imm int64) Lui {
+func cLui(rd string, imm int64) Lui {
 	return Lui{
-		base: newHalfBase(h),
-		rd:   rd,
-		imm:  immNum(imm),
+		rd:  rd,
+		imm: immNum(imm),
 	}
 }
 

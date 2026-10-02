@@ -10,8 +10,6 @@ import (
 
 // Auipc - auipc rd, imm.
 type Auipc struct {
-	base
-
 	rd  string
 	imm imm
 }

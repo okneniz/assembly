@@ -10,8 +10,6 @@ import (
 // Preldx - preldx hint, rj, rk (Ud5JK): preload MEM[rj + rk] into the
 // cache (hint selects the operation; the manual prints the hint first).
 type Preldx struct {
-	base
-
 	rj, rk uint8
 	hint   imm
 }

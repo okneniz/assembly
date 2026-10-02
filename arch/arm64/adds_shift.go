@@ -10,8 +10,6 @@ import (
 
 // AddsShift — adds rd, rn, rm[, shift #imm6]; pseudo: cmn (Rd = zr).
 type AddsShift struct {
-	base
-
 	rd, rn, rm string
 	imm6       uint32
 	shift      string // lsl/lsr/asr/ror
@@ -21,7 +19,7 @@ type AddsShift struct {
 // newAddsShift - the AddsShift constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newAddsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddsShift, error) {
+func newAddsShift(rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddsShift, error) {
 	err := requireClass(
 		rd,
 		"AddsShift",
@@ -83,7 +81,6 @@ func newAddsShift(b base, rd Reg, rn Reg, rm Reg, imm Imm6, sh Shift) (AddsShift
 	}
 
 	return AddsShift{
-		base:  b,
 		rd:    rd.name(),
 		rn:    rn.name(),
 		rm:    rm.name(),

@@ -9,7 +9,6 @@ import (
 // Tlbfill - tlbfill: fill the TLB from the TLB entry registers (no
 // operands).
 type Tlbfill struct {
-	base
 }
 
 func (i Tlbfill) ObjDump(_ disasm.ViewCtx) string {

@@ -9,8 +9,6 @@ import (
 
 // Sltui - sltui rd, rj, si12 (2RI12): rd = (rj <u sext32(si12)) ? 1 : 0.
 type Sltui struct {
-	base
-
 	rd, rj uint8
 	imm    imm
 }

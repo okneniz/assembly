@@ -11,24 +11,21 @@ import (
 // one kind; the GPR and immediate forms are FmovFromGpr/FmovToGpr/
 // FmovImm).
 type Fmov struct {
-	base
-
 	rd, rn string
 }
 
 // newFmov - the Fmov constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newFmov(b base, rd, rn FReg) (Fmov, error) {
+func newFmov(rd, rn FReg) (Fmov, error) {
 	err := requireFpKind("Fmov", rd, rn)
 	if err != nil {
 		return Fmov{}, err
 	}
 
 	return Fmov{
-		base: b,
-		rd:   rd.name(),
-		rn:   rn.name(),
+		rd: rd.name(),
+		rn: rn.name(),
 	}, nil
 }
 

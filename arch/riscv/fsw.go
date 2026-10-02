@@ -9,8 +9,6 @@ import (
 
 // Fsw - fsw rs2, off(rs1) (rs2 - floating).
 type Fsw struct {
-	base
-
 	rs1, rs2 string
 	off      imm
 }

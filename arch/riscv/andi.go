@@ -9,19 +9,16 @@ import (
 
 // Andi - andi rd, rs1, imm; pseudo: zext.b (imm=0xff); compression: c.andi.
 type Andi struct {
-	base
-
 	rd, rs1 string
 	imm     imm
 }
 
 // cAndi - compressed forms (c.andi): base - halfword, length 2.
-func cAndi(h uint32, rd, rs1 string, imm int64) Andi {
+func cAndi(rd, rs1 string, imm int64) Andi {
 	return Andi{
-		base: newHalfBase(h),
-		rd:   rd,
-		rs1:  rs1,
-		imm:  immNum(imm),
+		rd:  rd,
+		rs1: rs1,
+		imm: immNum(imm),
 	}
 }
 

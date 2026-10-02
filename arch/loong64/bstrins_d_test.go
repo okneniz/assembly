@@ -30,7 +30,6 @@ func TestBstrinsDDecodeEncode(t *testing.T) {
 	require.Equal(t, int64(5), x.msb.val)
 	require.Equal(t, int64(3), x.lsb.val)
 	require.Equal(t, "bstrins.d $t0, $t1, 5, 3", x.ObjDump(disasm.DefaultViewCtx()))
-	require.Equal(t, 4, x.Len())
 	require.Equal(t, uint32(0x00850dac), ctorWord(t, x))
 
 	// llvm-mc-verified: bstrins.d $t0, $t1, 63, 0 - the full 6-bit fields.

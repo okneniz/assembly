@@ -9,23 +9,21 @@ import (
 
 // Str — str ... (see lsBase for addressing kinds).
 type Str struct {
-	base
 	lsBase
 }
 
 // newStrBase - the Str constructor for a ready embedded base
 // (the decoder and the string-operand layer): the struct is
 // assembled only here.
-func newStrBase(b base, e lsBase) Str {
+func newStrBase(e lsBase) Str {
 	return Str{
-		base:   b,
 		lsBase: e,
 	}
 }
 
 // newStr - the Str constructor: validates the operands,
 // delegates the assembly to newStrBase.
-func newStr(b base, rt, rn Reg, off Off) (Str, error) {
+func newStr(rt, rn Reg, off Off) (Str, error) {
 	if err := lsOperand(rt, rn, "Str"); err != nil {
 		return Str{}, err
 	}
@@ -40,7 +38,6 @@ func newStr(b base, rt, rn Reg, off Off) (Str, error) {
 	}
 
 	return newStrBase(
-		b,
 		newLsBase(rt.name(), rn.name(), memImm, int64(off), 0, enc, "", "", 0),
 	), nil
 }
