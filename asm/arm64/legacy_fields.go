@@ -9,6 +9,7 @@ import (
 	"errors"
 	"fmt"
 	"math"
+	"strconv"
 	"strings"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
@@ -1556,6 +1557,50 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 		}
 
 		return map[string]any{"Rd": rd, "imm8": imm8}, nil
+
+	case "uaddlvFmt":
+		// uaddlv.Arr rd, vn — the accumulator spells as the FP scalar of
+		// the doubled lane (h for the b sources, s for the h ones); the
+		// encoding numbers it like a v register.
+		rd, err := opRegOf(in, 0)
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := opRegOf(in, 1)
+		if err != nil {
+			return nil, err
+		}
+
+		q, size, err := arrangementOf(arrOf(in))
+		if err != nil {
+			return nil, err
+		}
+
+		if len(rd) < 2 || (rd[0] != 'h' && rd[0] != 's') {
+			return nil, fmt.Errorf("uaddlv: h/s accumulator expected, got %q", rd)
+		}
+
+		want := "h"
+		if size > 0 {
+			want = "s"
+		}
+
+		if rd[0] != want[0] {
+			return nil, fmt.Errorf("uaddlv: %s accumulator does not fit .%s", rd, arrOf(in))
+		}
+
+		n, err := strconv.Atoi(rd[1:])
+		if err != nil || n < 0 || n > 31 {
+			return nil, fmt.Errorf("uaddlv: bad accumulator %q", rd)
+		}
+
+		return map[string]any{
+			"Rd":   fmt.Sprintf("v%d", n),
+			"Rn":   rn,
+			"Q":    q,
+			"size": size,
+		}, nil
 
 	case "simdShiftImm":
 		rd, err := opRegOf(in, 0)

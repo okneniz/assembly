@@ -1291,20 +1291,20 @@ var arm64Schemas = []Schema{
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
 	}, NewMeta("abs", "SIMD"), "simd2", true, decodeAbs),
-	NewSchema(0xBFB0FC00, 0x2E605800, []Field{
+	NewSchema(0xBFF0FC00, 0x2E605800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
 	}, NewMeta("rbit", "SIMD"), "simd2", true, decodeRbitV),
-	NewSchema(0x3F80C000, 0x0F004000, []Field{
+	NewSchema(0x3F80FC00, 0x0F005400, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("immh", 19, 4),
 		NewField("immb", 16, 3),
 	}, NewMeta("shl", "SIMD shift"), "simdShiftImm", true, decodeShl),
-	NewSchema(0x3F80C000, 0x2F004000, []Field{
+	NewSchema(0x3F80FC00, 0x2F004400, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
@@ -1316,14 +1316,14 @@ var arm64Schemas = []Schema{
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Rm", 16, 5, "regV"),
 	}, NewMeta("mla", "SIMD by-element"), "byElem", true, decodeByElem),
-	NewSchema(0x3F80C000, 0x2F000000, []Field{
+	NewSchema(0x3F80FC00, 0x2F000400, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
 		NewField("immh", 19, 4),
 		NewField("immb", 16, 3),
 	}, NewMeta("ushr", "SIMD shift"), "simdShiftImm", true, decodeUshr),
-	NewSchema(0x3F80C000, 0x0F000000, []Field{
+	NewSchema(0x3F80FC00, 0x0F000400, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),

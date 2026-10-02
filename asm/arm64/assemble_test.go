@@ -659,3 +659,19 @@ func TestMovUmovAlias(t *testing.T) {
 		require.NotEmpty(t, errs, "case %q must not assemble", src)
 	}
 }
+
+// TestUaddlvWords — the uaddlv accumulator text (the h/s FP scalar of the
+// doubled lane) assembles into the clang words and renders back.
+func TestUaddlvWords(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"uaddlv.8b h30, v24", 0x2e303b1e},
+		{"uaddlv.4h s0, v0", 0x2e703800},
+		{"uaddlv.16b h1, v2", 0x6e303841},
+	} {
+		got := armAssembleOne(t, c.src, 0)
+		require.Equal(t, c.word, got, "case %q", c.src)
+	}
+}

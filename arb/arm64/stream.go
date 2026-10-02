@@ -5,6 +5,7 @@ package arm64
 
 import (
 	"iter"
+	"math/rand/v2"
 
 	ohsnap "github.com/okneniz/oh-snap"
 
@@ -19,4 +20,9 @@ func arbStream[T any](f func() T) iter.Seq[T] {
 // ohsnapEmpty — the empty candidate sequence.
 func ohsnapEmpty[T any]() iter.Seq[T] {
 	return ohsnap.Empty[T]()
+}
+
+// arbEnum — the Enum adapter of this package.
+func arbEnum[T comparable](rnd *rand.Rand, vals []T) ohsnap.Arbitrary[T] {
+	return arb.Enum(rnd, vals...)
 }
