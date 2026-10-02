@@ -545,7 +545,7 @@ func decodeFdivS(w uint32) Instr {
 func decodeFence(w uint32) Instr {
 	return Fence{
 		base: newBase(w),
-		fm:   immNum(int64(w >> 20 & 0xf)),
+		fm:   immNum(int64(w >> 28 & 0xf)),
 	}
 }
 

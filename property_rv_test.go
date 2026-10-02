@@ -34,6 +34,11 @@ func rvText(in riscv.Instr) string {
 	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
 }
 
+// rvTextAt - rvText in the context of an explicit address.
+func rvTextAt(in riscv.Instr, addr uint64) string {
+	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(addr))))
+}
+
 // rvAssemblesTo - bytes from assembling the text (false on assembly error).
 func rvAssemblesTo(t *testing.T, src string) ([]byte, bool) {
 	t.Helper()
@@ -135,10 +140,14 @@ func rvTextRoundTrip(t *testing.T, in riscv.Instr) bool {
 		return false
 	}
 
+	// the text renders and assembles at the SAME base (propAddr): the
+	// pc-relative texts carry absolute targets, the two sides of the
+	// law must not shift them apart
 	return RoundTrip[disasm.ViewCtx, riscv.Instr, string](
-		disasm.DefaultViewCtx(),
+		disasm.ViewCtxAt(propAddr),
 		func(_ disasm.ViewCtx, y riscv.Instr) (string, bool) {
-			return rvText(y), true
+			return objdump.StripComments(objdump.Normalize(
+				y.ObjDump(disasm.ViewCtxAt(propAddr)))), true
 		},
 		func(_ disasm.ViewCtx, src string) (riscv.Instr, bool) {
 			data, ok := rvAssemblesTo(t, src)
@@ -213,6 +222,106 @@ func TestPropertyRiscvSingleInstrRoundTrip(t *testing.T) {
 		newRvFamily("Ld", rv.Ld),
 		newRvFamily("Sw", rv.Sw),
 		newRvFamily("Sd", rv.Sd),
+		newRvFamily("And", rv.And),
+		newRvFamily("Or", rv.Or),
+		newRvFamily("Xor", rv.Xor),
+		newRvFamily("Sll", rv.Sll),
+		newRvFamily("Srl", rv.Srl),
+		newRvFamily("Sra", rv.Sra),
+		newRvFamily("Slt", rv.Slt),
+		newRvFamily("Sltu", rv.Sltu),
+		newRvFamily("Addw", rv.Addw),
+		newRvFamily("Subw", rv.Subw),
+		newRvFamily("Sllw", rv.Sllw),
+		newRvFamily("Srlw", rv.Srlw),
+		newRvFamily("Sraw", rv.Sraw),
+		newRvFamily("Mul", rv.Mul),
+		newRvFamily("Mulh", rv.Mulh),
+		newRvFamily("Mulhsu", rv.Mulhsu),
+		newRvFamily("Mulhu", rv.Mulhu),
+		newRvFamily("Mulw", rv.Mulw),
+		newRvFamily("Div", rv.Div),
+		newRvFamily("Divu", rv.Divu),
+		newRvFamily("Divw", rv.Divw),
+		newRvFamily("Divuw", rv.Divuw),
+		newRvFamily("Rem", rv.Rem),
+		newRvFamily("Remu", rv.Remu),
+		newRvFamily("Remw", rv.Remw),
+		newRvFamily("Remuw", rv.Remuw),
+		newRvFamily("AmoaddW", rv.AmoaddW),
+		newRvFamily("AmoaddD", rv.AmoaddD),
+		newRvFamily("AmoandW", rv.AmoandW),
+		newRvFamily("AmoandD", rv.AmoandD),
+		newRvFamily("AmomaxW", rv.AmomaxW),
+		newRvFamily("AmomaxD", rv.AmomaxD),
+		newRvFamily("AmomaxuW", rv.AmomaxuW),
+		newRvFamily("AmomaxuD", rv.AmomaxuD),
+		newRvFamily("AmominW", rv.AmominW),
+		newRvFamily("AmominD", rv.AmominD),
+		newRvFamily("AmominuW", rv.AmominuW),
+		newRvFamily("AmominuD", rv.AmominuD),
+		newRvFamily("AmoorW", rv.AmoorW),
+		newRvFamily("AmoorD", rv.AmoorD),
+		newRvFamily("AmoswapW", rv.AmoswapW),
+		newRvFamily("AmoswapD", rv.AmoswapD),
+		newRvFamily("AmoxorW", rv.AmoxorW),
+		newRvFamily("AmoxorD", rv.AmoxorD),
+		newRvFamily("Andi", rv.Andi),
+		newRvFamily("Ori", rv.Ori),
+		newRvFamily("Xori", rv.Xori),
+		newRvFamily("Slti", rv.Slti),
+		newRvFamily("Sltiu", rv.Sltiu),
+		newRvFamily("Slli", rv.Slli),
+		newRvFamily("Srli", rv.Srli),
+		newRvFamily("Srai", rv.Srai),
+		newRvFamily("Slliw", rv.Slliw),
+		newRvFamily("Srliw", rv.Srliw),
+		newRvFamily("Sraiw", rv.Sraiw),
+		newRvFamily("Lb", rv.Lb),
+		newRvFamily("Lbu", rv.Lbu),
+		newRvFamily("Lh", rv.Lh),
+		newRvFamily("Lhu", rv.Lhu),
+		newRvFamily("Lwu", rv.Lwu),
+		newRvFamily("Flw", rv.Flw),
+		newRvFamily("Fld", rv.Fld),
+		newRvFamily("Sb", rv.Sb),
+		newRvFamily("Sh", rv.Sh),
+		newRvFamily("Fsw", rv.Fsw),
+		newRvFamily("Fsd", rv.Fsd),
+		newRvFamily("Beq", rv.Beq),
+		newRvFamily("Bne", rv.Bne),
+		newRvFamily("Blt", rv.Blt),
+		newRvFamily("Bge", rv.Bge),
+		newRvFamily("Bltu", rv.Bltu),
+		newRvFamily("Bgeu", rv.Bgeu),
+		newRvFamily("Jal", rv.Jal),
+		newRvFamily("Jalr", rv.Jalr),
+		newRvFamily("JalrReg", rv.JalrReg),
+		newRvFamily("Mv", rv.Mv),
+		newRvFamily("Auipc", rv.Auipc),
+		newRvFamily("Csrrw", rv.Csrrw),
+		newRvFamily("Csrrs", rv.Csrrs),
+		newRvFamily("Csrrc", rv.Csrrc),
+		newRvFamily("Csrrwi", rv.Csrrwi),
+		newRvFamily("Csrrsi", rv.Csrrsi),
+		newRvFamily("Csrrci", rv.Csrrci),
+		newRvFamily("Fence", rv.Fence),
+		newRvFamily("FaddS", rv.FaddS),
+		newRvFamily("FaddD", rv.FaddD),
+		newRvFamily("FsubS", rv.FsubS),
+		newRvFamily("FsubD", rv.FsubD),
+		newRvFamily("FmulS", rv.FmulS),
+		newRvFamily("FmulD", rv.FmulD),
+		newRvFamily("FdivS", rv.FdivS),
+		newRvFamily("FdivD", rv.FdivD),
+		newRvFamily("FmaddS", rv.FmaddS),
+		newRvFamily("FmaddD", rv.FmaddD),
+		newRvFamily("FmsubS", rv.FmsubS),
+		newRvFamily("FmsubD", rv.FmsubD),
+		newRvFamily("FnmaddS", rv.FnmaddS),
+		newRvFamily("FnmaddD", rv.FnmaddD),
+		newRvFamily("FnmsubS", rv.FnmsubS),
+		newRvFamily("FnmsubD", rv.FnmsubD),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
@@ -309,6 +418,31 @@ func rvPropFamilies(rnd *mrnd.Rand) []func() riscv.Instr {
 		rvInstrOf(rv.Ld(rnd)),
 		rvInstrOf(rv.Sw(rnd)),
 		rvInstrOf(rv.Sd(rnd)),
+		rvInstrOf(rv.And(rnd)),
+		rvInstrOf(rv.Or(rnd)),
+		rvInstrOf(rv.Xor(rnd)),
+		rvInstrOf(rv.Mul(rnd)),
+		rvInstrOf(rv.Div(rnd)),
+		rvInstrOf(rv.Rem(rnd)),
+		rvInstrOf(rv.Andi(rnd)),
+		rvInstrOf(rv.Slli(rnd)),
+		rvInstrOf(rv.Lb(rnd)),
+		rvInstrOf(rv.Lbu(rnd)),
+		rvInstrOf(rv.Sb(rnd)),
+		rvInstrOf(rv.Sh(rnd)),
+		rvInstrOf(rv.Beq(rnd)),
+		rvInstrOf(rv.Bne(rnd)),
+		rvInstrOf(rv.Jal(rnd)),
+		rvInstrOf(rv.Jalr(rnd)),
+		rvInstrOf(rv.Mv(rnd)),
+		rvInstrOf(rv.Auipc(rnd)),
+		rvInstrOf(rv.Csrrw(rnd)),
+		rvInstrOf(rv.Fence(rnd)),
+		rvInstrOf(rv.FaddS(rnd)),
+		rvInstrOf(rv.FmulD(rnd)),
+		rvInstrOf(rv.Fld(rnd)),
+		rvInstrOf(rv.Fsw(rnd)),
+		rvInstrOf(rv.AmoaddW(rnd)),
 	}
 }
 
@@ -378,9 +512,15 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 			return false
 		}
 
+		// the text renders at the instruction's own address in the list
+		// (pc-relative targets print absolute, the lengths vary with
+		// RVC) - the joined text assembles at propAddr, the same base
+		// the render used
 		texts := make([]string, len(back))
+		addr := uint64(propAddr)
 		for i := range back {
-			texts[i] = rvText(back[i])
+			texts[i] = rvTextAt(back[i], addr)
+			addr += uint64(back[i].Len())
 		}
 
 		data, ok := rvAssemblesTo(t, strings.Join(texts, "\n"))
@@ -399,11 +539,14 @@ func TestPropertyRiscvTextRoundTripList(t *testing.T) {
 			return false
 		}
 
+		addr = uint64(propAddr)
 		for i := range back2 {
-			if rvText(back2[i]) != texts[i] {
-				t.Logf("[%d] text %q ≠ %q", i, rvText(back2[i]), texts[i])
+			if rvTextAt(back2[i], addr) != texts[i] {
+				t.Logf("[%d] text %q ≠ %q", i, rvTextAt(back2[i], addr), texts[i])
 				return false
 			}
+
+			addr += uint64(back2[i].Len())
 		}
 
 		return true

@@ -789,6 +789,17 @@ func (Builder) Mulw(rd, rs1, rs2 Reg) Instr {
 
 // Mv - mv rd, rs2 (the c.mv halfword).
 func (Builder) Mv(rd, rs2 Reg) Instr {
+	// c.mv is reserved for rd != x0 and rs2 != x0 (llvm-mc parity: it
+	// keeps "mv zero, rs" as the 4-byte addi); the Builder encodes the
+	// pseudo-form through the base addi when the halfword is invalid
+	if rd.Num() == 0 || rs2.Num() == 0 {
+		return Addi{
+			rd:  rd.name(),
+			rs1: rs2.name(),
+			imm: immNum(0),
+		}
+	}
+
 	h := uint32(0x8002) | uint32(rd.Num())<<7 | uint32(rs2.Num())<<2
 
 	return Mv{

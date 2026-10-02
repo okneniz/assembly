@@ -69,7 +69,8 @@ func (i Fence) Encode(w io.Writer, o EncOpts) (int64, error) {
 		return 0, fmt.Errorf("fence fm %#x out of range", fm)
 	}
 
-	return writeWord(w, riscvEncodings["fence"][0]|uint32(fm)<<20)
+	// llvm-mc parity: the bare fence is iorw|iorw (pred = succ = 0xf)
+	return writeWord(w, riscvEncodings["fence"][0]|uint32(fm)<<28|0xff<<20)
 }
 
 func newFence(ops []Op) (Instr, error) {

@@ -134,7 +134,10 @@ func wantRM(ops []Op, idx int) imm {
 		return immNum(ops[idx].num)
 	}
 
-	return immNum(0)
+	// the canon of the bare (no rounding-mode operand) spelling is dyn:
+	// llvm-mc emits rm=7 for "fadd.s fd, fs1, fs2" and prints rm=7 back
+	// as the no-rm form (rm=0 prints as ", rne")
+	return immNum(7)
 }
 
 // wantCSR - a numeric CSR operand (the name is already converted by the
