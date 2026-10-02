@@ -104,10 +104,6 @@ func (i Ubfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
 
-func (Builder) Ubfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newUbfm(base{}, rd, rn, immr, imms)
-}
-
 func decodeUbfm(w uint32) (Instr, error) {
 	in, err := newUbfm(
 		newBase(w),

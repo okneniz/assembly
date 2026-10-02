@@ -16,15 +16,6 @@ type Preldx struct {
 	hint   imm
 }
 
-// Preldx - preldx hint, rj, rk.
-func (Builder) Preldx(hint UImm5, rj, rk Reg) Instr {
-	return Preldx{
-		rj:   rj.Num(),
-		rk:   rk.Num(),
-		hint: immNum(hint.Val()),
-	}
-}
-
 func decodePreldx(w uint32) Instr {
 	return Preldx{
 		base: newBase(w),

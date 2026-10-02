@@ -14,15 +14,6 @@ type AmcasDbH struct {
 	rd, rk, rj uint8
 }
 
-// AmcasDbH - amcas_db.h rd, rk, rj.
-func (Builder) AmcasDbH(rd, rk, rj Reg) Instr {
-	return AmcasDbH{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmcasDbH(w uint32) Instr {
 	return AmcasDbH{
 		base: newBase(w),

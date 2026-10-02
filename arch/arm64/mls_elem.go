@@ -62,21 +62,6 @@ func (i MlsElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, mlsElemU, i.size, rm, mlsElemOpc, i.idx, rn, rd))
 }
 
-// MlsElem - the Builder entry: the arrangement is the printed one
-// (.4h/.8h/.2s/.4s).
-func (Builder) MlsElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewMlsElem: %w", err)
-	}
-
-	if size == 0 || size == 3 {
-		return nil, fmt.Errorf("arm64.NewMlsElem: arrangement %q is not one of the integer lane widths", arr)
-	}
-
-	return newMlsElem(base{}, q, size, idx, rd, rn, rm)
-}
-
 func decodeMlsElem(w uint32) (Instr, error) {
 	in, err := newMlsElem(
 		newBase(w),

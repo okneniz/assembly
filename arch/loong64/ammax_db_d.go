@@ -14,15 +14,6 @@ type AmmaxDbD struct {
 	rd, rk, rj uint8
 }
 
-// AmmaxDbD - ammax_db.d rd, rk, rj.
-func (Builder) AmmaxDbD(rd, rk, rj Reg) Instr {
-	return AmmaxDbD{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmmaxDbD(w uint32) Instr {
 	return AmmaxDbD{
 		base: newBase(w),

@@ -14,14 +14,6 @@ type CloW struct {
 	rd, rj uint8
 }
 
-// CloW - clo.w rd, rj.
-func (Builder) CloW(rd, rj Reg) Instr {
-	return CloW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeCloW(w uint32) Instr {
 	return CloW{
 		base: newBase(w),

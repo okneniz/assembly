@@ -75,7 +75,3 @@ func (i Stlxr) ObjDump(_ disasm.ViewCtx) string {
 func (i Stlxr) Encode(w io.Writer) (int64, error) {
 	return i.exWrite(w, i.enc, "stlxr")
 }
-
-func (Builder) Stlxr(rs, rt, rn Reg) (Instr, error) {
-	return newStlxr(base{}, rs, rt, rn)
-}

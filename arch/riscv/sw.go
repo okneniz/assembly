@@ -15,15 +15,6 @@ type Sw struct {
 	off      imm
 }
 
-// Sw - sw rs2, off(rs1).
-func (Builder) Sw(rs2, rs1 Reg, off Off) Instr {
-	return Sw{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off.v),
-	}
-}
-
 func decodeSw(w uint32) Instr {
 	return Sw{
 		base: newBase(w),

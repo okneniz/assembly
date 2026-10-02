@@ -62,21 +62,6 @@ func (i MlaElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, mlaElemU, i.size, rm, mlaElemOpc, i.idx, rn, rd))
 }
 
-// MlaElem - the Builder entry: the arrangement is the printed one
-// (.4h/.8h/.2s/.4s).
-func (Builder) MlaElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewMlaElem: %w", err)
-	}
-
-	if size == 0 || size == 3 {
-		return nil, fmt.Errorf("arm64.NewMlaElem: arrangement %q is not one of the integer lane widths", arr)
-	}
-
-	return newMlaElem(base{}, q, size, idx, rd, rn, rm)
-}
-
 func decodeMlaElem(w uint32) (Instr, error) {
 	in, err := newMlaElem(
 		newBase(w),

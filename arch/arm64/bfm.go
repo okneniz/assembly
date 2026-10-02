@@ -91,10 +91,6 @@ func (i Bfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, bfmX, bfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
 
-func (Builder) Bfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newBfm(base{}, rd, rn, immr, imms)
-}
-
 func decodeBfmInstr(w uint32) (Instr, error) {
 	in, err := newBfm(
 		newBase(w),

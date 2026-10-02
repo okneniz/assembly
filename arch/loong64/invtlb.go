@@ -16,15 +16,6 @@ type Invtlb struct {
 	op     imm
 }
 
-// Invtlb - invtlb op, rj, rk (the assembly operand order).
-func (Builder) Invtlb(op UImm5, rj, rk Reg) Instr {
-	return Invtlb{
-		rj: rj.Num(),
-		rk: rk.Num(),
-		op: immNum(op.Val()),
-	}
-}
-
 func decodeInvtlb(w uint32) Instr {
 	return Invtlb{
 		base: newBase(w),

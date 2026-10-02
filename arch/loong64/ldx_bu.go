@@ -14,15 +14,6 @@ type LdxBu struct {
 	rd, rj, rk uint8
 }
 
-// LdxBu - ldx.bu rd, rj, rk.
-func (Builder) LdxBu(rd, rj, rk Reg) Instr {
-	return LdxBu{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeLdxBu(w uint32) Instr {
 	return LdxBu{
 		base: newBase(w),

@@ -40,10 +40,6 @@ func (i Aesmc) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, aesmcEnc|rd|rn<<5)
 }
 
-func (Builder) Aesmc(rd, rn VReg) (Instr, error) {
-	return newAesmc(base{}, rd, rn)
-}
-
 func decodeAesmc(w uint32) (Instr, error) {
 	in, err := newAesmc(
 		newBase(w),

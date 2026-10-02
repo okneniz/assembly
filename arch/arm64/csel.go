@@ -122,10 +122,6 @@ func cselWrite(w io.Writer, i Csel, matchX, matchW uint32, name string) (int64, 
 	return writeWord(w, match|rd|rn<<5|c<<12|rm<<16)
 }
 
-func (Builder) Csel(rd, rn, rm Reg, cond string) (Instr, error) {
-	return newCsel(base{}, rd, rn, rm, cond)
-}
-
 func decodeCsel(w uint32) (Instr, error) {
 	in, err := newCsel(
 		newBase(w),

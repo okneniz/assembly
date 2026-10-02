@@ -15,15 +15,6 @@ type AmoswapW struct {
 	rd, rs1, rs2 string
 }
 
-// AmoswapW - amoswap.w rd, rs2, (rs1).
-func (Builder) AmoswapW(rd, rs1, rs2 Reg) Instr {
-	return AmoswapW{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmoswapW(w uint32) Instr {
 	return AmoswapW{
 		base: newBase(w),

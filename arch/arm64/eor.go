@@ -53,7 +53,3 @@ func (i Eor) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, eorEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Eor(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newEor(base{}, rd, rn, rm, arr)
-}

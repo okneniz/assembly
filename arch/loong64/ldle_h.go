@@ -15,15 +15,6 @@ type LdleH struct {
 	rd, rj, rk uint8
 }
 
-// LdleH - ldle.h rd, rj, rk.
-func (Builder) LdleH(rd, rj, rk Reg) Instr {
-	return LdleH{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeLdleH(w uint32) Instr {
 	return LdleH{
 		base: newBase(w),

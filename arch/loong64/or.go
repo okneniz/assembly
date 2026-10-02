@@ -14,15 +14,6 @@ type Or struct {
 	rd, rj, rk uint8
 }
 
-// Or - or rd, rj, rk.
-func (Builder) Or(rd, rj, rk Reg) Instr {
-	return Or{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeOr(w uint32) Instr {
 	return Or{
 		base: newBase(w),

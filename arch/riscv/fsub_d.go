@@ -15,18 +15,6 @@ type FsubD struct {
 	rm           imm // rounding mode (not shown in text)
 }
 
-// FsubD - fsub.d fd, fs1, fs2; the registers are FP registers taken by
-// number (Reg 0..31 is printed ft0/fa0/...); rm is the rounding mode 0..7
-// (0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM, 7 DYN).
-func (Builder) FsubD(rd, rs1, rs2 Reg, rm uint8) Instr {
-	return FsubD{
-		rd:  fpName(rd),
-		rs1: fpName(rs1),
-		rs2: fpName(rs2),
-		rm:  immNum(int64(rm)),
-	}
-}
-
 func decodeFsubD(w uint32) Instr {
 	return FsubD{
 		base: newBase(w),

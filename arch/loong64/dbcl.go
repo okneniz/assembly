@@ -13,13 +13,6 @@ type Dbcl struct {
 	code imm
 }
 
-// Dbcl - dbcl code.
-func (Builder) Dbcl(code Code15) Instr {
-	return Dbcl{
-		code: immNum(code.Val()),
-	}
-}
-
 func decodeDbcl(w uint32) Instr {
 	return Dbcl{
 		base: newBase(w),

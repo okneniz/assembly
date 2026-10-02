@@ -75,7 +75,3 @@ func (i Ldarb) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldarb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldarb")
 }
-
-func (Builder) Ldarb(rt, rn Reg) (Instr, error) {
-	return newLdarb(base{}, rt, rn)
-}

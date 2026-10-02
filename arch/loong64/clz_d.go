@@ -14,14 +14,6 @@ type ClzD struct {
 	rd, rj uint8
 }
 
-// ClzD - clz.d rd, rj.
-func (Builder) ClzD(rd, rj Reg) Instr {
-	return ClzD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeClzD(w uint32) Instr {
 	return ClzD{
 		base: newBase(w),

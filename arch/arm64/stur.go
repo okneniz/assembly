@@ -108,7 +108,3 @@ func decodeSturOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, erro
 		}, nil
 	}
 }
-
-func (Builder) Stur(rt, rn Reg, off Off) (Instr, error) {
-	return newStur(base{}, rt, rn, off)
-}

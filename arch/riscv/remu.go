@@ -14,15 +14,6 @@ type Remu struct {
 	rd, rs1, rs2 string
 }
 
-// Remu - remu rd, rs1, rs2.
-func (Builder) Remu(rd, rs1, rs2 Reg) Instr {
-	return Remu{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeRemu(w uint32) Instr {
 	return Remu{
 		base: newBase(w),

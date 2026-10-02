@@ -15,15 +15,6 @@ type AmomaxuW struct {
 	rd, rs1, rs2 string
 }
 
-// AmomaxuW - amomaxu.w rd, rs2, (rs1).
-func (Builder) AmomaxuW(rd, rs1, rs2 Reg) Instr {
-	return AmomaxuW{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmomaxuW(w uint32) Instr {
 	return AmomaxuW{
 		base: newBase(w),

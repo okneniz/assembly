@@ -14,14 +14,6 @@ type LlacqD struct {
 	rd, rj uint8
 }
 
-// LlacqD - llacq.d rd, rj.
-func (Builder) LlacqD(rd, rj Reg) Instr {
-	return LlacqD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeLlacqD(w uint32) Instr {
 	return LlacqD{
 		base: newBase(w),

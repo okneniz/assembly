@@ -15,15 +15,6 @@ type Srliw struct {
 	shamt   imm
 }
 
-// Srliw - srliw rd, rs1, shamt (shamt5).
-func (Builder) Srliw(rd, rs1 Reg, shamt Imm12) Instr {
-	return Srliw{
-		rd:    rd.name(),
-		rs1:   rs1.name(),
-		shamt: immNum(shamt.v),
-	}
-}
-
 func decodeSrliw(w uint32) Instr {
 	return Srliw{
 		base:  newBase(w),

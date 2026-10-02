@@ -14,15 +14,6 @@ type SubD struct {
 	rd, rj, rk uint8
 }
 
-// SubD - sub.d rd, rj, rk.
-func (Builder) SubD(rd, rj, rk Reg) Instr {
-	return SubD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSubD(w uint32) Instr {
 	return SubD{
 		base: newBase(w),

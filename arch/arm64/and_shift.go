@@ -125,10 +125,6 @@ func (i AndShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func (Builder) AndShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAndShift(base{}, rd, rn, rm, imm, sh)
-}
-
 func decodeAndShift(w uint32) (Instr, error) {
 	in, err := newAndShift(
 		newBase(w),

@@ -16,16 +16,6 @@ type AlslW struct {
 	shift      imm
 }
 
-// AlslW - alsl.w rd, rj, rk, shift.
-func (Builder) AlslW(rd, rj, rk Reg, shift Shift3) Instr {
-	return AlslW{
-		rd:    rd.Num(),
-		rj:    rj.Num(),
-		rk:    rk.Num(),
-		shift: immNum(shift.Val()),
-	}
-}
-
 func decodeAlslW(w uint32) Instr {
 	return AlslW{
 		base:  newBase(w),

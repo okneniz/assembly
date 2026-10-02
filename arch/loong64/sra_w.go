@@ -14,15 +14,6 @@ type SraW struct {
 	rd, rj, rk uint8
 }
 
-// SraW - sra.w rd, rj, rk.
-func (Builder) SraW(rd, rj, rk Reg) Instr {
-	return SraW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSraW(w uint32) Instr {
 	return SraW{
 		base: newBase(w),

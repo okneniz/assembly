@@ -16,15 +16,6 @@ type Addi struct {
 	imm     imm
 }
 
-// Addi - addi rd, rs1, imm (rs1 = zero is printed as li, imm = 0 - mv).
-func (Builder) Addi(rd, rs1 Reg, imm Imm12) Instr {
-	return Addi{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		imm: immNum(imm.v),
-	}
-}
-
 func decodeAddi(w uint32) Instr {
 	return Addi{
 		base: newBase(w),

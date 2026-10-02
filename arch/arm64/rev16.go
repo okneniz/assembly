@@ -85,10 +85,6 @@ func (i Rev16) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Rev16(rd, rn Reg) (Instr, error) {
-	return newRev16(base{}, rd, rn)
-}
-
 func decodeRev16(w uint32) (Instr, error) {
 	in, err := newRev16(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {

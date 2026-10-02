@@ -14,15 +14,6 @@ type Add struct {
 	rd, rs1, rs2 string
 }
 
-// Add - add rd, rs1, rs2.
-func (Builder) Add(rd, rs1, rs2 Reg) Instr {
-	return Add{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAdd(w uint32) Instr {
 	return Add{
 		base: newBase(w),

@@ -14,15 +14,6 @@ type Masknez struct {
 	rd, rj, rk uint8
 }
 
-// Masknez - masknez rd, rj, rk.
-func (Builder) Masknez(rd, rj, rk Reg) Instr {
-	return Masknez{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeMasknez(w uint32) Instr {
 	return Masknez{
 		base: newBase(w),

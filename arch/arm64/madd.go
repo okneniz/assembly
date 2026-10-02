@@ -141,10 +141,6 @@ func msubWrite(w io.Writer, match uint32, i Madd) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
 }
 
-func (Builder) Madd(rd, rn, rm, ra Reg) (Instr, error) {
-	return newMadd(base{}, rd, rn, rm, ra)
-}
-
 func decodeMadd(w uint32) (Instr, error) {
 	in, err := newMadd(
 		newBase(w),

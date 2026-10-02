@@ -106,7 +106,3 @@ func (i Stp) ObjDump(_ disasm.ViewCtx) string {
 func (i Stp) Encode(w io.Writer) (int64, error) {
 	return i.pairWrite(w, "stp")
 }
-
-func (Builder) Stp(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newStp(base{}, rt, rt2, rn, off)
-}

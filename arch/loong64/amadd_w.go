@@ -14,15 +14,6 @@ type AmaddW struct {
 	rd, rk, rj uint8
 }
 
-// AmaddW - amadd.w rd, rk, rj.
-func (Builder) AmaddW(rd, rk, rj Reg) Instr {
-	return AmaddW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmaddW(w uint32) Instr {
 	return AmaddW{
 		base: newBase(w),

@@ -14,14 +14,6 @@ type CloD struct {
 	rd, rj uint8
 }
 
-// CloD - clo.d rd, rj.
-func (Builder) CloD(rd, rj Reg) Instr {
-	return CloD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeCloD(w uint32) Instr {
 	return CloD{
 		base: newBase(w),

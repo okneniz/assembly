@@ -14,15 +14,6 @@ type Mul struct {
 	rd, rs1, rs2 string
 }
 
-// Mul - mul rd, rs1, rs2.
-func (Builder) Mul(rd, rs1, rs2 Reg) Instr {
-	return Mul{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeMul(w uint32) Instr {
 	return Mul{
 		base: newBase(w),

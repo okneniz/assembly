@@ -108,7 +108,3 @@ func decodeLdrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}, nil
 	}
 }
-
-func (Builder) Ldrh(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrh(base{}, rt, rn, off)
-}

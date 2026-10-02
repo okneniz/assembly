@@ -110,14 +110,10 @@ func (i AddExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, AddExtX, AddExtW, "add")
 }
 
-func (Builder) AddExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newAddExt(base{}, rd, rn, rm, ext, imm3)
-}
-
 func decodeAddExt(w uint32) (Instr, error) {
 	in, err := newAddExt(
 		newBase(w),
-		numReg(w&0x1f, w>>31&1 == 1), // rd 31 reads as sp/wsp in the plain add/sub ext words
+		numReg(w&0x1f, w>>31&1 == 1),    // rd 31 reads as sp/wsp in the plain add/sub ext words
 		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
 		extName(w>>13&7),

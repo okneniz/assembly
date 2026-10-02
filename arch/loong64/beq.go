@@ -17,15 +17,6 @@ type Beq struct {
 	off    imm
 }
 
-// Beq - beq rj, rd, offs (the pc-relative byte offset).
-func (Builder) Beq(rj, rd Reg, off int64) Instr {
-	return Beq{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off),
-	}
-}
-
 func decodeBeq(w uint32) Instr {
 	return Beq{
 		base: newBase(w),

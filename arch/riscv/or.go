@@ -14,15 +14,6 @@ type Or struct {
 	rd, rs1, rs2 string
 }
 
-// Or - or rd, rs1, rs2.
-func (Builder) Or(rd, rs1, rs2 Reg) Instr {
-	return Or{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeOr(w uint32) Instr {
 	return Or{
 		base: newBase(w),

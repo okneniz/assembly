@@ -15,15 +15,6 @@ type Bge struct {
 	off      imm // pc-relative byte offset
 }
 
-// Bge - bge rs1, rs2, off (the pc-relative byte offset; the absolute target is off + the instruction address).
-func (Builder) Bge(rs1, rs2 Reg, off int64) Instr {
-	return Bge{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off),
-	}
-}
-
 func decodeBge(w uint32) Instr {
 	return Bge{
 		base: newBase(w),

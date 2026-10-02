@@ -54,10 +54,6 @@ func (i Add) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, addEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Add(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newAdd(base{}, rd, rn, rm, arr)
-}
-
 func decodeAdd(w uint32) (Instr, error) {
 	in, err := newAdd(
 		newBase(w),

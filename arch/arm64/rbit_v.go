@@ -53,10 +53,6 @@ func (i RbitV) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, rbitVEnc|q<<30|size<<22|rd|rn<<5)
 }
 
-func (Builder) RbitV(rd, rn VReg, arr string) (Instr, error) {
-	return newRbitV(base{}, rd, rn, arr)
-}
-
 func decodeRbitV(w uint32) (Instr, error) {
 	arr := "8b"
 	if w>>30&1 == 1 {

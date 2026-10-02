@@ -54,10 +54,6 @@ func (i Fadd) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fadd(rd, rn, rm FReg) (Instr, error) {
-	return newFadd(base{}, rd, rn, rm)
-}
-
 func decodeFadd(w uint32) (Instr, error) {
 	in, err := newFadd(
 		newBase(w),

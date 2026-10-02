@@ -15,15 +15,6 @@ type SraiD struct {
 	imm    imm
 }
 
-// SraiD - srai.d rd, rj, ui6.
-func (Builder) SraiD(rd, rj Reg, v UImm6) Instr {
-	return SraiD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSraiD(w uint32) Instr {
 	return SraiD{
 		base: newBase(w),

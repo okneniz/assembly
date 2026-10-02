@@ -14,15 +14,6 @@ type AmminDbDu struct {
 	rd, rk, rj uint8
 }
 
-// AmminDbDu - ammin_db.du rd, rk, rj.
-func (Builder) AmminDbDu(rd, rk, rj Reg) Instr {
-	return AmminDbDu{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmminDbDu(w uint32) Instr {
 	return AmminDbDu{
 		base: newBase(w),

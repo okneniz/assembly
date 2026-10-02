@@ -69,12 +69,3 @@ func (i Ins) Encode(w io.Writer) (int64, error) {
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, insEnc|imm5<<16|gpr<<5|vd)
 }
-
-func (Builder) Ins(vd VReg, idx uint32, wn Reg, elem string) (Instr, error) {
-	size, err := elemSize("Ins", elem)
-	if err != nil {
-		return nil, err
-	}
-
-	return newIns(base{}, size, idx, vd, wn)
-}

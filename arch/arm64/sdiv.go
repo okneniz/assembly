@@ -102,10 +102,6 @@ func (i Sdiv) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Sdiv(rd, rn, rm Reg) (Instr, error) {
-	return newSdiv(base{}, rd, rn, rm)
-}
-
 func decodeSdiv(w uint32) (Instr, error) {
 	in, err := newSdiv(
 		newBase(w),

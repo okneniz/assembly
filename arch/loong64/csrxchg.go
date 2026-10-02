@@ -16,15 +16,6 @@ type Csrxchg struct {
 	csr    imm
 }
 
-// Csrxchg - csrxchg rd, rj, csr.
-func (Builder) Csrxchg(rd, rj Reg, csr UImm14) Instr {
-	return Csrxchg{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		csr: immNum(csr.Val()),
-	}
-}
-
 func decodeCsrxchg(w uint32) Instr {
 	return Csrxchg{
 		base: newBase(w),

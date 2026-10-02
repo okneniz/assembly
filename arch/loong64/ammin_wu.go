@@ -14,15 +14,6 @@ type AmminWu struct {
 	rd, rk, rj uint8
 }
 
-// AmminWu - ammin.wu rd, rk, rj.
-func (Builder) AmminWu(rd, rk, rj Reg) Instr {
-	return AmminWu{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmminWu(w uint32) Instr {
 	return AmminWu{
 		base: newBase(w),

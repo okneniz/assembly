@@ -15,15 +15,6 @@ type SrliW struct {
 	imm    imm
 }
 
-// SrliW - srli.w rd, rj, ui5.
-func (Builder) SrliW(rd, rj Reg, v UImm5) Instr {
-	return SrliW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSrliW(w uint32) Instr {
 	return SrliW{
 		base: newBase(w),

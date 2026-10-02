@@ -15,15 +15,6 @@ type StgtD struct {
 	rd, rj, rk uint8
 }
 
-// StgtD - stgt.d rd, rj, rk.
-func (Builder) StgtD(rd, rj, rk Reg) Instr {
-	return StgtD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStgtD(w uint32) Instr {
 	return StgtD{
 		base: newBase(w),

@@ -50,10 +50,6 @@ func fmovImmEnc(rd FReg) uint32 {
 	return fmovImmSEnc
 }
 
-func (Builder) FmovImm(rd FReg, val float64) (Instr, error) {
-	return newFmovImm(base{}, rd, val, fmt.Sprintf("%.8f", val))
-}
-
 func decodeFmovImmOf(isS bool) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		imm8 := w >> 13 & 0xff

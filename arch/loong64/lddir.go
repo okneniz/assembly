@@ -16,15 +16,6 @@ type Lddir struct {
 	imm    imm
 }
 
-// Lddir - lddir rd, rj, ui8.
-func (Builder) Lddir(rd, rj Reg, v UImm8) Instr {
-	return Lddir{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLddir(w uint32) Instr {
 	return Lddir{
 		base: newBase(w),

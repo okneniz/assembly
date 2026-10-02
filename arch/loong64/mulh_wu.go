@@ -14,15 +14,6 @@ type MulhWu struct {
 	rd, rj, rk uint8
 }
 
-// MulhWu - mulh.wu rd, rj, rk.
-func (Builder) MulhWu(rd, rj, rk Reg) Instr {
-	return MulhWu{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeMulhWu(w uint32) Instr {
 	return MulhWu{
 		base: newBase(w),

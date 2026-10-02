@@ -102,10 +102,6 @@ func (i LsrReg) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) LsrReg(rd, rn, rm Reg) (Instr, error) {
-	return newLsrReg(base{}, rd, rn, rm)
-}
-
 func decodeLsrReg(w uint32) (Instr, error) {
 	in, err := newLsrReg(
 		newBase(w),

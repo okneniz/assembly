@@ -54,33 +54,3 @@ func SysImmOf(name string, imm16 uint32, enc uint32, shift uint) Instr {
 		shift: shift,
 	}
 }
-
-// Svc — svc #imm16.
-func (Builder) Svc(imm Imm16) Instr {
-	return sysImm{
-		name:  "svc",
-		imm16: imm.v,
-		enc:   0xD4000001,
-		shift: 5,
-	}
-}
-
-// Brk — brk #imm16.
-func (Builder) Brk(imm Imm16) Instr {
-	return sysImm{
-		name:  "brk",
-		imm16: imm.v,
-		enc:   0xD4200000,
-		shift: 5,
-	}
-}
-
-// Smc — smc #imm16 (the secure-monitor call; PSCI rides it at #0).
-func (Builder) Smc(imm Imm16) Instr {
-	return sysImm{
-		name:  "smc",
-		imm16: imm.v,
-		enc:   0xD4000003,
-		shift: 5,
-	}
-}

@@ -14,14 +14,6 @@ type RevbitW struct {
 	rd, rj uint8
 }
 
-// RevbitW - bitrev.w rd, rj.
-func (Builder) RevbitW(rd, rj Reg) Instr {
-	return RevbitW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRevbitW(w uint32) Instr {
 	return RevbitW{
 		base: newBase(w),

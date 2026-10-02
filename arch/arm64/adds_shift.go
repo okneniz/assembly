@@ -138,10 +138,6 @@ func (i AddsShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func (Builder) AddsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newAddsShift(base{}, rd, rn, rm, imm, sh)
-}
-
 func decodeAddsShift(w uint32) (Instr, error) {
 	in, err := newAddsShift(
 		newBase(w),

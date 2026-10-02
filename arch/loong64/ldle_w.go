@@ -15,15 +15,6 @@ type LdleW struct {
 	rd, rj, rk uint8
 }
 
-// LdleW - ldle.w rd, rj, rk.
-func (Builder) LdleW(rd, rj, rk Reg) Instr {
-	return LdleW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeLdleW(w uint32) Instr {
 	return LdleW{
 		base: newBase(w),

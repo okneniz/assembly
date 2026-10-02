@@ -98,10 +98,6 @@ func (i EorImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
 }
 
-func (Builder) EorImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newEorImm(base{}, rd, rn, imm)
-}
-
 func decodeEorImm(w uint32) (Instr, error) {
 	in, err := newEorImm(
 		newBase(w),

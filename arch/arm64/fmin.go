@@ -54,10 +54,6 @@ func (i Fmin) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fmin(rd, rn, rm FReg) (Instr, error) {
-	return newFmin(base{}, rd, rn, rm)
-}
-
 func decodeFmin(w uint32) (Instr, error) {
 	in, err := newFmin(
 		newBase(w),

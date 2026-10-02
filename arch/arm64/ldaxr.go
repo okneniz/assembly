@@ -62,9 +62,3 @@ func (i Ldaxr) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldaxr) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldaxr")
 }
-
-// Ldaxr — ldaxr rt, [rn]: rt — x/w register (register 31 reads as
-// zr), rn — x register or SP (register 31 in the base reads as sp).
-func (Builder) Ldaxr(rt, rn Reg) (Instr, error) {
-	return newLdaxr(base{}, rt, rn)
-}

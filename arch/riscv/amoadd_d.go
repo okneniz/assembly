@@ -15,15 +15,6 @@ type AmoaddD struct {
 	rd, rs1, rs2 string
 }
 
-// AmoaddD - amoadd.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] += rs2.
-func (Builder) AmoaddD(rd, rs1, rs2 Reg) Instr {
-	return AmoaddD{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmoaddD(w uint32) Instr {
 	return AmoaddD{
 		base: newBase(w),

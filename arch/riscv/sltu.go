@@ -14,15 +14,6 @@ type Sltu struct {
 	rd, rs1, rs2 string
 }
 
-// Sltu - sltu rd, rs1, rs2 (rs1 = zero is printed as snez).
-func (Builder) Sltu(rd, rs1, rs2 Reg) Instr {
-	return Sltu{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeSltu(w uint32) Instr {
 	return Sltu{
 		base: newBase(w),

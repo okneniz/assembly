@@ -65,10 +65,6 @@ func (i Cbz) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|bits<<5|num)
 }
 
-func (Builder) Cbz(rt Reg, off int64) (Instr, error) {
-	return newCbz(base{}, rt, off)
-}
-
 func decodeCbz(w uint32) (Instr, error) {
 	in, err := newCbz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
 	if err != nil {

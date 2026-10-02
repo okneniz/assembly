@@ -15,15 +15,6 @@ type LdBu struct {
 	off    imm
 }
 
-// LdBu - ld.bu rd, rj, si12.
-func (Builder) LdBu(rd, rj Reg, v Imm12) Instr {
-	return LdBu{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(v.Val()),
-	}
-}
-
 func decodeLdBu(w uint32) Instr {
 	return LdBu{
 		base: newBase(w),

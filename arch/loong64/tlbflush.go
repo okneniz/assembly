@@ -11,11 +11,6 @@ type Tlbflush struct {
 	base
 }
 
-// Tlbflush - tlbflush (no operands).
-func (Builder) Tlbflush() Instr {
-	return Tlbflush{}
-}
-
 func decodeTlbflush(w uint32) Instr {
 	return Tlbflush{
 		base: newBase(w),

@@ -161,18 +161,3 @@ func (s Sh12) String() string {
 func (o Off) String() string {
 	return fmt.Sprintf("#%#x", int64(o))
 }
-
-// Imm12 — validated value; error when out of range.
-func (Builder) Imm12(v int64) (Imm12, error) {
-	return newImm12(v)
-}
-
-// Imm16 — validated value; error when out of range.
-func (Builder) Imm16(v int64) (Imm16, error) {
-	return newImm16(v)
-}
-
-// Imm6 — validated value; error when out of range.
-func (Builder) Imm6(v int64) (Imm6, error) {
-	return newImm6(v)
-}

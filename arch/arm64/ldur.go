@@ -108,7 +108,3 @@ func decodeLdurOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, erro
 		}, nil
 	}
 }
-
-func (Builder) Ldur(rt, rn Reg, off Off) (Instr, error) {
-	return newLdur(base{}, rt, rn, off)
-}

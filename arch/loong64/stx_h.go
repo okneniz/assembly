@@ -14,15 +14,6 @@ type StxH struct {
 	rd, rj, rk uint8
 }
 
-// StxH - stx.h rd, rj, rk.
-func (Builder) StxH(rd, rj, rk Reg) Instr {
-	return StxH{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStxH(w uint32) Instr {
 	return StxH{
 		base: newBase(w),

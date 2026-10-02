@@ -14,14 +14,6 @@ type IocsrrdH struct {
 	rd, rj uint8
 }
 
-// IocsrrdH - iocsrrd.h rd, rj.
-func (Builder) IocsrrdH(rd, rj Reg) Instr {
-	return IocsrrdH{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeIocsrrdH(w uint32) Instr {
 	return IocsrrdH{
 		base: newBase(w),

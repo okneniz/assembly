@@ -16,14 +16,6 @@ type Lui struct {
 	imm imm
 }
 
-// Lui - lui rd, imm20.
-func (Builder) Lui(rd Reg, imm Imm20) Instr {
-	return Lui{
-		rd:  rd.name(),
-		imm: immNum(imm.v),
-	}
-}
-
 func decodeLui(w uint32) Instr {
 	return Lui{
 		base: newBase(w),

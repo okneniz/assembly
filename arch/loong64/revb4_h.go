@@ -14,14 +14,6 @@ type Revb4H struct {
 	rd, rj uint8
 }
 
-// Revb4H - revb.4h rd, rj.
-func (Builder) Revb4H(rd, rj Reg) Instr {
-	return Revb4H{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRevb4H(w uint32) Instr {
 	return Revb4H{
 		base: newBase(w),

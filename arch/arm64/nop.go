@@ -29,16 +29,6 @@ func (i Nop) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, nopMatch)
 }
 
-// Nop — nop (no operands, fixed encoding).
-func (Builder) Nop() Instr {
-	in, err := newNop(base{})
-	if err != nil {
-		panic(err) // no operands - cannot fail
-	}
-
-	return in
-}
-
 func decodeNop(w uint32) (Instr, error) {
 	in, err := newNop(newBase(w))
 	if err != nil {

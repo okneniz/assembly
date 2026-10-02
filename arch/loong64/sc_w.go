@@ -17,15 +17,6 @@ type ScW struct {
 	off    imm
 }
 
-// ScW - sc.w rd, rj, offs (the byte offset from rj).
-func (Builder) ScW(rd, rj Reg, off Imm14) Instr {
-	return ScW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off.Val()),
-	}
-}
-
 func decodeScW(w uint32) Instr {
 	return ScW{
 		base: newBase(w),

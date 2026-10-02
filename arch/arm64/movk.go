@@ -78,10 +78,6 @@ func (i Movk) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-func (Builder) Movk(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	return newMovk(base{}, rd, imm, hw)
-}
-
 func decodeMovk(w uint32) (Instr, error) {
 	in, err := newMovk(
 		newBase(w),

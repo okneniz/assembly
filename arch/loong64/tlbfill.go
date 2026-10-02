@@ -12,11 +12,6 @@ type Tlbfill struct {
 	base
 }
 
-// Tlbfill - tlbfill (no operands).
-func (Builder) Tlbfill() Instr {
-	return Tlbfill{}
-}
-
 func decodeTlbfill(w uint32) Instr {
 	return Tlbfill{
 		base: newBase(w),

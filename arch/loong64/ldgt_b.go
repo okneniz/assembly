@@ -15,15 +15,6 @@ type LdgtB struct {
 	rd, rj, rk uint8
 }
 
-// LdgtB - ldgt.b rd, rj, rk.
-func (Builder) LdgtB(rd, rj, rk Reg) Instr {
-	return LdgtB{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeLdgtB(w uint32) Instr {
 	return LdgtB{
 		base: newBase(w),

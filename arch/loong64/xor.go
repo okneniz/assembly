@@ -14,15 +14,6 @@ type Xor struct {
 	rd, rj, rk uint8
 }
 
-// Xor - xor rd, rj, rk.
-func (Builder) Xor(rd, rj, rk Reg) Instr {
-	return Xor{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeXor(w uint32) Instr {
 	return Xor{
 		base: newBase(w),

@@ -83,10 +83,6 @@ func (i Adc) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, adcX|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Adc(rd, rn, rm Reg) (Instr, error) {
-	return newAdc(base{}, rd, rn, rm)
-}
-
 func decodeAdc(w uint32) (Instr, error) {
 	in, err := newAdc(
 		newBase(w),

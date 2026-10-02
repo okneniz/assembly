@@ -36,22 +36,6 @@ func (i Csinc) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
 }
 
-// Csinc — csinc rd, rn, rm, cond (cset/cinc pseudos); the operand
-// constraints are those of Csel.
-func (Builder) Csinc(rd, rn, rm Reg, cond string) (Instr, error) {
-	base, err := New().Csel(rd, rn, rm, cond)
-	if err != nil {
-		return nil, err
-	}
-
-	c, ok := base.(Csel)
-	if !ok {
-		return nil, fmt.Errorf("csinc: internal: want Csel, got %T", base)
-	}
-
-	return Csinc{Csel: c}, nil
-}
-
 func decodeCsinc(w uint32) (Instr, error) {
 	ci, cerr := decodeCsel(w)
 	if cerr != nil {

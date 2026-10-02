@@ -16,15 +16,6 @@ type ScD struct {
 	off    imm
 }
 
-// ScD - sc.d rd, rj, offs (the byte offset from rj).
-func (Builder) ScD(rd, rj Reg, off Imm14) Instr {
-	return ScD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off.Val()),
-	}
-}
-
 func decodeScD(w uint32) Instr {
 	return ScD{
 		base: newBase(w),

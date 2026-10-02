@@ -15,15 +15,6 @@ type StgtH struct {
 	rd, rj, rk uint8
 }
 
-// StgtH - stgt.h rd, rj, rk.
-func (Builder) StgtH(rd, rj, rk Reg) Instr {
-	return StgtH{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStgtH(w uint32) Instr {
 	return StgtH{
 		base: newBase(w),

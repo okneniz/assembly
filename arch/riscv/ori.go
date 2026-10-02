@@ -15,15 +15,6 @@ type Ori struct {
 	imm     imm
 }
 
-// Ori - ori rd, rs1, imm.
-func (Builder) Ori(rd, rs1 Reg, imm Imm12) Instr {
-	return Ori{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		imm: immNum(imm.v),
-	}
-}
-
 func decodeOri(w uint32) Instr {
 	return Ori{
 		base: newBase(w),

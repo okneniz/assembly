@@ -72,22 +72,6 @@ func (i Barrier) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, barrierBase[i.name]|uint32(i.domain)<<8)
 }
 
-// Dmb - dmb domain (the memory barrier of the domain).
-func (Builder) Dmb(domain BarrierDomain) (Instr, error) {
-	return newBarrier(base{}, "dmb", domain)
-}
-
-// Dsb - dsb domain (the barrier completes before anything continues).
-func (Builder) Dsb(domain BarrierDomain) (Instr, error) {
-	return newBarrier(base{}, "dsb", domain)
-}
-
-// Isb - isb (the instruction barrier; the full-system domain is its
-// only form, so there is nothing to choose).
-func (Builder) Isb() (Instr, error) {
-	return newBarrier(base{}, "isb", Sy)
-}
-
 // domainOf - the BarrierDomain of a text-layer option spelling (the assembler
 // vocabulary; the caller reports the unknown option).
 func domainOf(option string) (BarrierDomain, bool) {

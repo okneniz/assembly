@@ -134,10 +134,6 @@ func (i OrrShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func (Builder) OrrShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newOrrShift(base{}, rd, rn, rm, imm, sh)
-}
-
 func decodeOrrShift(w uint32) (Instr, error) {
 	in, err := newOrrShift(
 		newBase(w),

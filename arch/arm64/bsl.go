@@ -53,7 +53,3 @@ func (i Bsl) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, bslEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Bsl(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBsl(base{}, rd, rn, rm, arr)
-}

@@ -14,14 +14,6 @@ type Revb2W struct {
 	rd, rj uint8
 }
 
-// Revb2W - revb.2w rd, rj.
-func (Builder) Revb2W(rd, rj Reg) Instr {
-	return Revb2W{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRevb2W(w uint32) Instr {
 	return Revb2W{
 		base: newBase(w),

@@ -85,10 +85,6 @@ func (i Cls) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Cls(rd, rn Reg) (Instr, error) {
-	return newCls(base{}, rd, rn)
-}
-
 func decodeCls(w uint32) (Instr, error) {
 	in, err := newCls(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {

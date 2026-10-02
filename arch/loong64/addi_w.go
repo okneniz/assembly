@@ -15,15 +15,6 @@ type AddiW struct {
 	imm    imm
 }
 
-// AddiW - addi.w rd, rj, si12.
-func (Builder) AddiW(rd, rj Reg, v Imm12) Instr {
-	return AddiW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeAddiW(w uint32) Instr {
 	return AddiW{
 		base: newBase(w),

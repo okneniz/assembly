@@ -17,14 +17,6 @@ type Bnez struct {
 	off imm
 }
 
-// Bnez - bnez rj, offs (the pc-relative byte offset).
-func (Builder) Bnez(rj Reg, off int64) Instr {
-	return Bnez{
-		rj:  rj.Num(),
-		off: immNum(off),
-	}
-}
-
 func decodeBnez(w uint32) Instr {
 	return Bnez{
 		base: newBase(w),

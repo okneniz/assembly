@@ -14,15 +14,6 @@ type Maskeqz struct {
 	rd, rj, rk uint8
 }
 
-// Maskeqz - maskeqz rd, rj, rk.
-func (Builder) Maskeqz(rd, rj, rk Reg) Instr {
-	return Maskeqz{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeMaskeqz(w uint32) Instr {
 	return Maskeqz{
 		base: newBase(w),

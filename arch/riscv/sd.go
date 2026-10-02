@@ -15,15 +15,6 @@ type Sd struct {
 	off      imm
 }
 
-// Sd - sd rs2, off(rs1).
-func (Builder) Sd(rs2, rs1 Reg, off Off) Instr {
-	return Sd{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off.v),
-	}
-}
-
 func decodeSd(w uint32) Instr {
 	return Sd{
 		base: newBase(w),

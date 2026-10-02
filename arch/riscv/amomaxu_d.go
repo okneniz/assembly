@@ -15,15 +15,6 @@ type AmomaxuD struct {
 	rd, rs1, rs2 string
 }
 
-// AmomaxuD - amomaxu.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = max(MEM[rs1], rs2), unsigned.
-func (Builder) AmomaxuD(rd, rs1, rs2 Reg) Instr {
-	return AmomaxuD{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmomaxuD(w uint32) Instr {
 	return AmomaxuD{
 		base: newBase(w),

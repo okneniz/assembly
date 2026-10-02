@@ -39,17 +39,6 @@ func (i B) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, bMatch|bits)
 }
 
-// B — b off (the pc-relative byte offset; the absolute target is off +
-// the instruction address).
-func (Builder) B(off int64) Instr {
-	in, err := newB(base{}, immNum(off))
-	if err != nil {
-		panic(err) // a plain offset cannot fail
-	}
-
-	return in
-}
-
 func decodeB(w uint32) (Instr, error) {
 	in, err := newB(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
 	if err != nil {

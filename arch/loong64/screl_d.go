@@ -14,14 +14,6 @@ type ScrelD struct {
 	rd, rj uint8
 }
 
-// ScrelD - screl.d rd, rj.
-func (Builder) ScrelD(rd, rj Reg) Instr {
-	return ScrelD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeScrelD(w uint32) Instr {
 	return ScrelD{
 		base: newBase(w),

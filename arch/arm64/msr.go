@@ -51,10 +51,6 @@ func (i Msr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0xD5100000|regBitsX(i.rt)|invSysRegChecked(i.sysreg)<<5)
 }
 
-func (Builder) Msr(sysreg string, rt Reg) (Instr, error) {
-	return newMsr(base{}, sysreg, rt)
-}
-
 func decodeMsr(w uint32) (Instr, error) {
 	in, err := newMsr(
 		newBase(w),

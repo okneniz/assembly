@@ -62,21 +62,6 @@ func (i MulElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, mulElemU, i.size, rm, mulElemOpc, i.idx, rn, rd))
 }
 
-// MulElem - the Builder entry: the arrangement is the printed one
-// (.4h/.8h/.2s/.4s).
-func (Builder) MulElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewMulElem: %w", err)
-	}
-
-	if size == 0 || size == 3 {
-		return nil, fmt.Errorf("arm64.NewMulElem: arrangement %q is not one of the integer lane widths", arr)
-	}
-
-	return newMulElem(base{}, q, size, idx, rd, rn, rm)
-}
-
 func decodeMulElem(w uint32) (Instr, error) {
 	in, err := newMulElem(
 		newBase(w),

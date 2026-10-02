@@ -39,22 +39,6 @@ func (i Msub) Encode(w io.Writer) (int64, error) {
 	return msubWrite(w, match, i.Madd)
 }
 
-// Msub — msub rd, rn, rm, ra (mneg when Ra = zr); the operand
-// constraints are those of Madd.
-func (Builder) Msub(rd, rn, rm, ra Reg) (Instr, error) {
-	base, err := New().Madd(rd, rn, rm, ra)
-	if err != nil {
-		return nil, err
-	}
-
-	m, ok := base.(Madd)
-	if !ok {
-		return nil, fmt.Errorf("msub: internal: want Madd, got %T", base)
-	}
-
-	return Msub{Madd: m}, nil
-}
-
 func decodeMsub(w uint32) (Instr, error) {
 	mi, merr := decodeMadd(w)
 	if merr != nil {

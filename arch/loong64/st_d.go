@@ -16,15 +16,6 @@ type StD struct {
 	imm    imm
 }
 
-// StD - st.d rd, rj, si12.
-func (Builder) StD(rd, rj Reg, v Imm12) Instr {
-	return StD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeStD(w uint32) Instr {
 	return StD{
 		base: newBase(w),

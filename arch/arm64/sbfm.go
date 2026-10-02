@@ -117,10 +117,6 @@ func (i Sbfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, sbfmX, sbfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
 
-func (Builder) Sbfm(rd, rn Reg, immr, imms uint32) (Instr, error) {
-	return newSbfm(base{}, rd, rn, immr, imms)
-}
-
 func decodeSbfm(w uint32) (Instr, error) {
 	in, err := newSbfm(
 		newBase(w),

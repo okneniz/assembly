@@ -17,15 +17,6 @@ type Bge struct {
 	off    imm
 }
 
-// Bge - bge rj, rd, offs (the pc-relative byte offset).
-func (Builder) Bge(rj, rd Reg, off int64) Instr {
-	return Bge{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off),
-	}
-}
-
 func decodeBge(w uint32) Instr {
 	return Bge{
 		base: newBase(w),

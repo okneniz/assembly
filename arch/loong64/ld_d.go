@@ -16,15 +16,6 @@ type LdD struct {
 	imm    imm
 }
 
-// LdD - ld.d rd, rj, si12.
-func (Builder) LdD(rd, rj Reg, v Imm12) Instr {
-	return LdD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLdD(w uint32) Instr {
 	return LdD{
 		base: newBase(w),

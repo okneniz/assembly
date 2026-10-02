@@ -71,10 +71,6 @@ func (i Rev32) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Rev32(rd, rn Reg) (Instr, error) {
-	return newRev32(base{}, rd, rn)
-}
-
 func decodeRev32(w uint32) (Instr, error) {
 	in, err := newRev32(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {

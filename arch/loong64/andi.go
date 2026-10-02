@@ -15,15 +15,6 @@ type Andi struct {
 	imm    imm
 }
 
-// Andi - andi rd, rj, ui12.
-func (Builder) Andi(rd, rj Reg, v UImm12) Instr {
-	return Andi{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeAndi(w uint32) Instr {
 	return Andi{
 		base: newBase(w),

@@ -120,10 +120,6 @@ func (i AddsExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, AddsExtX, AddsExtW, "adds")
 }
 
-func (Builder) AddsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newAddsExt(base{}, rd, rn, rm, ext, imm3)
-}
-
 func decodeAddsExt(w uint32) (Instr, error) {
 	in, err := newAddsExt(
 		newBase(w),

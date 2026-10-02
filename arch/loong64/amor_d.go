@@ -14,15 +14,6 @@ type AmorD struct {
 	rd, rk, rj uint8
 }
 
-// AmorD - amor.d rd, rk, rj.
-func (Builder) AmorD(rd, rk, rj Reg) Instr {
-	return AmorD{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmorD(w uint32) Instr {
 	return AmorD{
 		base: newBase(w),

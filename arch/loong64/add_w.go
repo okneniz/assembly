@@ -18,15 +18,6 @@ type AddW struct {
 	rd, rj, rk uint8
 }
 
-// AddW - add.w rd, rj, rk.
-func (Builder) AddW(rd, rj, rk Reg) Instr {
-	return AddW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAddW(w uint32) Instr {
 	return AddW{
 		base: newBase(w),

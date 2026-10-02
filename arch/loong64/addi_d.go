@@ -15,15 +15,6 @@ type AddiD struct {
 	imm    imm
 }
 
-// AddiD - addi.d rd, rj, si12.
-func (Builder) AddiD(rd, rj Reg, v Imm12) Instr {
-	return AddiD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeAddiD(w uint32) Instr {
 	return AddiD{
 		base: newBase(w),

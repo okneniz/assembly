@@ -14,15 +14,6 @@ type AmmaxDu struct {
 	rd, rk, rj uint8
 }
 
-// AmmaxDu - ammax.du rd, rk, rj.
-func (Builder) AmmaxDu(rd, rk, rj Reg) Instr {
-	return AmmaxDu{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmmaxDu(w uint32) Instr {
 	return AmmaxDu{
 		base: newBase(w),

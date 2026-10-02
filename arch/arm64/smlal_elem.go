@@ -67,28 +67,6 @@ func (i SmlalElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, smlalElemU, i.size, rm, smlalElemOpc, i.idx, rn, rd))
 }
 
-// SmlalElem - the Builder entry: the arrangement is the RESULT's
-// (.8h/.4s/.2d); two selects the "2" form (the upper halves).
-func (Builder) SmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Instr, error) {
-	q := uint32(0)
-	if two {
-		q = 1
-	}
-
-	switch arr {
-	case "8h", "4s", "2d":
-	default:
-		return nil, fmt.Errorf("arm64.NewSmlalElem: arrangement %q is not one of [8h 4s 2d]", arr)
-	}
-
-	_, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewSmlalElem: %w", err)
-	}
-
-	return newSmlalElem(base{}, q, size-1, idx, rd, rn, rm)
-}
-
 func decodeSmlalElem(w uint32) (Instr, error) {
 	in, err := newSmlalElem(
 		newBase(w),

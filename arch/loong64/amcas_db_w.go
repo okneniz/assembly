@@ -14,15 +14,6 @@ type AmcasDbW struct {
 	rd, rk, rj uint8
 }
 
-// AmcasDbW - amcas_db.w rd, rk, rj.
-func (Builder) AmcasDbW(rd, rk, rj Reg) Instr {
-	return AmcasDbW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmcasDbW(w uint32) Instr {
 	return AmcasDbW{
 		base: newBase(w),

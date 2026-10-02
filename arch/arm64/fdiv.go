@@ -54,10 +54,6 @@ func (i Fdiv) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fdiv(rd, rn, rm FReg) (Instr, error) {
-	return newFdiv(base{}, rd, rn, rm)
-}
-
 func decodeFdiv(w uint32) (Instr, error) {
 	in, err := newFdiv(
 		newBase(w),

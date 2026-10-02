@@ -14,15 +14,6 @@ type AmminDbW struct {
 	rd, rk, rj uint8
 }
 
-// AmminDbW - ammin_db.w rd, rk, rj.
-func (Builder) AmminDbW(rd, rk, rj Reg) Instr {
-	return AmminDbW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmminDbW(w uint32) Instr {
 	return AmminDbW{
 		base: newBase(w),

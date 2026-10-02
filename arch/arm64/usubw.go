@@ -58,19 +58,6 @@ func (i Usubw) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, usubwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Usubw(rd, rn, rm VReg, arr string) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewUsubw: %w", err)
-	}
-
-	if size == 0 {
-		return nil, fmt.Errorf("arm64.NewUsubw: arrangement too narrow (the source is one lane narrower)")
-	}
-
-	return newUsubw(base{}, q, size-1, rd, rn, rm)
-}
-
 func decodeUsubw(w uint32) (Instr, error) {
 	in, err := newUsubw(
 		newBase(w),

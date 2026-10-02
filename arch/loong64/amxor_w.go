@@ -14,15 +14,6 @@ type AmxorW struct {
 	rd, rk, rj uint8
 }
 
-// AmxorW - amxor.w rd, rk, rj.
-func (Builder) AmxorW(rd, rk, rj Reg) Instr {
-	return AmxorW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmxorW(w uint32) Instr {
 	return AmxorW{
 		base: newBase(w),

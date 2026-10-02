@@ -14,14 +14,6 @@ type AsrtleD struct {
 	rj, rk uint8
 }
 
-// AsrtleD - asrtle.d rj, rk.
-func (Builder) AsrtleD(rj, rk Reg) Instr {
-	return AsrtleD{
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAsrtleD(w uint32) Instr {
 	return AsrtleD{
 		base: newBase(w),

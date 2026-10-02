@@ -75,10 +75,3 @@ func (i Ldaxrb) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldaxrb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldaxrb")
 }
-
-// Ldaxrb — ldaxrb rt, [rn]: byte access, rt — w register only
-// (register 31 reads as wzr), rn — x register or SP (register 31 in the
-// base reads as sp).
-func (Builder) Ldaxrb(rt, rn Reg) (Instr, error) {
-	return newLdaxrb(base{}, rt, rn)
-}

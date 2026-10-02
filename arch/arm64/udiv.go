@@ -102,10 +102,6 @@ func (i Udiv) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Udiv(rd, rn, rm Reg) (Instr, error) {
-	return newUdiv(base{}, rd, rn, rm)
-}
-
 func decodeUdiv(w uint32) (Instr, error) {
 	in, err := newUdiv(
 		newBase(w),

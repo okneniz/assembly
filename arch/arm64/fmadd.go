@@ -61,10 +61,6 @@ func (i Fmadd) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
 }
 
-func (Builder) Fmadd(rd, rn, rm, ra FReg) (Instr, error) {
-	return newFmadd(base{}, rd, rn, rm, ra)
-}
-
 func decodeFmadd(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFmadd(
@@ -133,10 +129,6 @@ func (i Fnmsub) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
-}
-
-func (Builder) Fnmsub(rd, rn, rm, ra FReg) (Instr, error) {
-	return newFnmsub(base{}, rd, rn, rm, ra)
 }
 
 func decodeFnmsub(w uint32) (Instr, error) {

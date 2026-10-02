@@ -15,15 +15,6 @@ type SraiW struct {
 	imm    imm
 }
 
-// SraiW - srai.w rd, rj, ui5.
-func (Builder) SraiW(rd, rj Reg, v UImm5) Instr {
-	return SraiW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSraiW(w uint32) Instr {
 	return SraiW{
 		base: newBase(w),

@@ -15,15 +15,6 @@ type AmominD struct {
 	rd, rs1, rs2 string
 }
 
-// AmominD - amomin.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = min(MEM[rs1], rs2), signed.
-func (Builder) AmominD(rd, rs1, rs2 Reg) Instr {
-	return AmominD{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmominD(w uint32) Instr {
 	return AmominD{
 		base: newBase(w),

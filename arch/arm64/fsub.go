@@ -54,10 +54,6 @@ func (i Fsub) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fsub(rd, rn, rm FReg) (Instr, error) {
-	return newFsub(base{}, rd, rn, rm)
-}
-
 func decodeFsub(w uint32) (Instr, error) {
 	in, err := newFsub(
 		newBase(w),

@@ -14,15 +14,6 @@ type AmxorDbD struct {
 	rd, rk, rj uint8
 }
 
-// AmxorDbD - amxor_db.d rd, rk, rj.
-func (Builder) AmxorDbD(rd, rk, rj Reg) Instr {
-	return AmxorDbD{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmxorDbD(w uint32) Instr {
 	return AmxorDbD{
 		base: newBase(w),

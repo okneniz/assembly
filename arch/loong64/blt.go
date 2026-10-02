@@ -17,15 +17,6 @@ type Blt struct {
 	off    imm
 }
 
-// Blt - blt rj, rd, offs (the pc-relative byte offset).
-func (Builder) Blt(rj, rd Reg, off int64) Instr {
-	return Blt{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off),
-	}
-}
-
 func decodeBlt(w uint32) Instr {
 	return Blt{
 		base: newBase(w),

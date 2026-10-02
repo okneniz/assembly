@@ -16,15 +16,6 @@ type LdH struct {
 	imm    imm
 }
 
-// LdH - ld.h rd, rj, si12.
-func (Builder) LdH(rd, rj Reg, v Imm12) Instr {
-	return LdH{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLdH(w uint32) Instr {
 	return LdH{
 		base: newBase(w),

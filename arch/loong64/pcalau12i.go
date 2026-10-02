@@ -17,14 +17,6 @@ type Pcalau12i struct {
 	imm imm
 }
 
-// Pcalau12i - pcalau12i rd, si20.
-func (Builder) Pcalau12i(rd Reg, v Imm20) Instr {
-	return Pcalau12i{
-		rd:  rd.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodePcalau12i(w uint32) Instr {
 	return Pcalau12i{
 		base: newBase(w),

@@ -13,13 +13,6 @@ type Ibar struct {
 	code imm
 }
 
-// Ibar - ibar hint (a 15-bit code).
-func (Builder) Ibar(code Code15) Instr {
-	return Ibar{
-		code: immNum(code.Val()),
-	}
-}
-
 func decodeIbar(w uint32) Instr {
 	return Ibar{
 		base: newBase(w),

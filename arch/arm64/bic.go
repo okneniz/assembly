@@ -53,7 +53,3 @@ func (i Bic) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, bicEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Bic(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBic(base{}, rd, rn, rm, arr)
-}

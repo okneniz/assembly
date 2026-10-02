@@ -16,15 +16,6 @@ type Addu16iD struct {
 	imm    imm
 }
 
-// Addu16iD - addu16i.d rd, rj, si16.
-func (Builder) Addu16iD(rd, rj Reg, v Imm16) Instr {
-	return Addu16iD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeAddu16iD(w uint32) Instr {
 	return Addu16iD{
 		base: newBase(w),

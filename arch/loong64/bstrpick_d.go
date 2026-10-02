@@ -16,16 +16,6 @@ type BstrpickD struct {
 	lsb    imm
 }
 
-// BstrpickD - bstrpick.d rd, rj, msb, lsb.
-func (Builder) BstrpickD(rd, rj Reg, msb, lsb UImm6) Instr {
-	return BstrpickD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		msb: immNum(msb.Val()),
-		lsb: immNum(lsb.Val()),
-	}
-}
-
 func decodeBstrpickD(w uint32) Instr {
 	return BstrpickD{
 		base: newBase(w),

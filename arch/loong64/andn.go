@@ -14,15 +14,6 @@ type Andn struct {
 	rd, rj, rk uint8
 }
 
-// Andn - andn rd, rj, rk.
-func (Builder) Andn(rd, rj, rk Reg) Instr {
-	return Andn{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAndn(w uint32) Instr {
 	return Andn{
 		base: newBase(w),

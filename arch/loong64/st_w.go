@@ -16,15 +16,6 @@ type StW struct {
 	imm    imm
 }
 
-// StW - st.w rd, rj, si12.
-func (Builder) StW(rd, rj Reg, v Imm12) Instr {
-	return StW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeStW(w uint32) Instr {
 	return StW{
 		base: newBase(w),

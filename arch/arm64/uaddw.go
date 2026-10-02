@@ -58,19 +58,6 @@ func (i Uaddw) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, uaddwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Uaddw(rd, rn, rm VReg, arr string) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewUaddw: %w", err)
-	}
-
-	if size == 0 {
-		return nil, fmt.Errorf("arm64.NewUaddw: arrangement too narrow (the source is one lane narrower)")
-	}
-
-	return newUaddw(base{}, q, size-1, rd, rn, rm)
-}
-
 func decodeUaddw(w uint32) (Instr, error) {
 	in, err := newUaddw(
 		newBase(w),

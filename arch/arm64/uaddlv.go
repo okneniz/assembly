@@ -35,20 +35,6 @@ func newUaddlv(b base, q, size uint32, rd, rn VReg) (Uaddlv, error) {
 	}, nil
 }
 
-// Uaddlv - the Builder entry: .8b/.16b/.4h/.8h lanes.
-func (Builder) Uaddlv(rd, rn VReg, arr string) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewUaddlv: %w", err)
-	}
-
-	if size > 1 {
-		return nil, fmt.Errorf("arm64.NewUaddlv: arrangement %q is not one of [8b 16b 4h 8h]", arr)
-	}
-
-	return newUaddlv(base{}, q, size, rd, rn)
-}
-
 const uaddlvEnc uint32 = 0x2E303800
 
 func (i Uaddlv) ObjDump(_ disasm.ViewCtx) string {

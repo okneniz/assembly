@@ -52,10 +52,6 @@ func (i Br) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, brMatch|num<<5)
 }
 
-func (Builder) Br(rn Reg) (Instr, error) {
-	return newBr(base{}, rn)
-}
-
 func decodeBr(w uint32) (Instr, error) {
 	in, err := newBr(newBase(w), gprOf(w>>5&0x1f, true))
 	if err != nil {

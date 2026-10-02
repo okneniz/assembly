@@ -16,14 +16,6 @@ type Auipc struct {
 	imm imm
 }
 
-// Auipc - auipc rd, imm20 (imm20 = the raw U-type field: rd = pc + imm20<<12).
-func (Builder) Auipc(rd Reg, imm Imm20) Instr {
-	return Auipc{
-		rd:  rd.name(),
-		imm: immNum(imm.v),
-	}
-}
-
 func decodeAuipc(w uint32) Instr {
 	return Auipc{
 		base: newBase(w),

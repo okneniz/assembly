@@ -40,10 +40,6 @@ func (i Aese) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, aeseEnc|rd|rn<<5)
 }
 
-func (Builder) Aese(rd, rn VReg) (Instr, error) {
-	return newAese(base{}, rd, rn)
-}
-
 func decodeAese(w uint32) (Instr, error) {
 	in, err := newAese(
 		newBase(w),

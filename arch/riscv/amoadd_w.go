@@ -15,15 +15,6 @@ type AmoaddW struct {
 	rd, rs1, rs2 string
 }
 
-// AmoaddW - amoadd.w rd, rs2, (rs1).
-func (Builder) AmoaddW(rd, rs1, rs2 Reg) Instr {
-	return AmoaddW{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmoaddW(w uint32) Instr {
 	return AmoaddW{
 		base: newBase(w),

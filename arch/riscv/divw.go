@@ -14,15 +14,6 @@ type Divw struct {
 	rd, rs1, rs2 string
 }
 
-// Divw - divw rd, rs1, rs2.
-func (Builder) Divw(rd, rs1, rs2 Reg) Instr {
-	return Divw{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeDivw(w uint32) Instr {
 	return Divw{
 		base: newBase(w),

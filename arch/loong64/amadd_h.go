@@ -14,15 +14,6 @@ type AmaddH struct {
 	rd, rk, rj uint8
 }
 
-// AmaddH - amadd.h rd, rk, rj.
-func (Builder) AmaddH(rd, rk, rj Reg) Instr {
-	return AmaddH{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmaddH(w uint32) Instr {
 	return AmaddH{
 		base: newBase(w),

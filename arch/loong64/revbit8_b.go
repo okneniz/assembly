@@ -14,14 +14,6 @@ type Revbit8B struct {
 	rd, rj uint8
 }
 
-// Revbit8B - bitrev.8b rd, rj.
-func (Builder) Revbit8B(rd, rj Reg) Instr {
-	return Revbit8B{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRevbit8B(w uint32) Instr {
 	return Revbit8B{
 		base: newBase(w),

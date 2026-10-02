@@ -14,15 +14,6 @@ type AmswapD struct {
 	rd, rk, rj uint8
 }
 
-// AmswapD - amswap.d rd, rk, rj.
-func (Builder) AmswapD(rd, rk, rj Reg) Instr {
-	return AmswapD{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmswapD(w uint32) Instr {
 	return AmswapD{
 		base: newBase(w),

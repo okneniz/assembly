@@ -14,15 +14,6 @@ type ModD struct {
 	rd, rj, rk uint8
 }
 
-// ModD - mod.d rd, rj, rk.
-func (Builder) ModD(rd, rj, rk Reg) Instr {
-	return ModD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeModD(w uint32) Instr {
 	return ModD{
 		base: newBase(w),

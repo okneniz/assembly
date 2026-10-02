@@ -53,26 +53,6 @@ func (i Ushr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, ushrEnc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
 }
 
-// Ushr - the Builder entry: the shift as the written amount on the
-// arrangement's lanes (the raw immh:immb stays a decode detail).
-func (Builder) Ushr(rd, rn VReg, arr string, shift uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewUshr: %w", err)
-	}
-
-	if shift == 0 || shift > 8<<size {
-		return nil, fmt.Errorf("arm64.NewUshr: shift %d out of range for .%s",
-			shift, arr)
-	}
-
-	// the stored value is esize-shift, under the size marker bit
-	imm := 1<<(3+size) | (8<<size - shift)
-	immh, immb := imm>>3, imm&7
-
-	return newUshr(base{}, q, immh, immb, rd, rn)
-}
-
 func decodeUshr(w uint32) (Instr, error) {
 	in, err := newUshr(
 		newBase(w),

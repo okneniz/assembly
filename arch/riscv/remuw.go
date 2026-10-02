@@ -14,15 +14,6 @@ type Remuw struct {
 	rd, rs1, rs2 string
 }
 
-// Remuw - remuw rd, rs1, rs2.
-func (Builder) Remuw(rd, rs1, rs2 Reg) Instr {
-	return Remuw{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeRemuw(w uint32) Instr {
 	return Remuw{
 		base: newBase(w),

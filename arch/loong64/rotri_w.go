@@ -15,15 +15,6 @@ type RotriW struct {
 	imm    imm
 }
 
-// RotriW - rotri.w rd, rj, ui5.
-func (Builder) RotriW(rd, rj Reg, v UImm5) Instr {
-	return RotriW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeRotriW(w uint32) Instr {
 	return RotriW{
 		base: newBase(w),

@@ -108,10 +108,3 @@ func decodeStrbOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}, nil
 	}
 }
-
-// Strb — strb rt, [rn, #off]: byte access, rt — w register only
-// (register 31 reads as wzr), rn — x register or SP (register 31 in the
-// base reads as sp); the offset is an unscaled imm12 (0..0xfff).
-func (Builder) Strb(rt, rn Reg, off Off) (Instr, error) {
-	return newStrb(base{}, rt, rn, off)
-}

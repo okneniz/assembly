@@ -14,15 +14,6 @@ type Sub struct {
 	rd, rs1, rs2 string
 }
 
-// Sub - sub rd, rs1, rs2 (rs1 = zero is printed as neg).
-func (Builder) Sub(rd, rs1, rs2 Reg) Instr {
-	return Sub{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeSub(w uint32) Instr {
 	return Sub{
 		base: newBase(w),

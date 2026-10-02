@@ -15,15 +15,6 @@ type Xori struct {
 	imm    imm
 }
 
-// Xori - xori rd, rj, ui12.
-func (Builder) Xori(rd, rj Reg, v UImm12) Instr {
-	return Xori{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeXori(w uint32) Instr {
 	return Xori{
 		base: newBase(w),

@@ -15,15 +15,6 @@ type Csrrsi struct {
 	zimm imm
 }
 
-// Csrrsi - csrrsi rd, csr, zimm; csr is a 12-bit CSR number
-// 0..4095, zimm a 5-bit immediate 0..31.
-func (Builder) Csrrsi(rd Reg, csr uint16, zimm uint8) Instr {
-	return Csrrsi{
-		csrOp: newCsrOp(rd.name(), int64(csr)),
-		zimm:  immNum(int64(zimm)),
-	}
-}
-
 func decodeCsrrsi(w uint32) Instr {
 	return Csrrsi{
 		base:  newBase(w),

@@ -132,7 +132,3 @@ func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldp) Encode(w io.Writer) (int64, error) {
 	return i.pairWrite(w, "ldp")
 }
-
-func (Builder) Ldp(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newLdp(base{}, rt, rt2, rn, off)
-}

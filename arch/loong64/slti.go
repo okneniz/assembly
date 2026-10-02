@@ -15,15 +15,6 @@ type Slti struct {
 	imm    imm
 }
 
-// Slti - slti rd, rj, si12.
-func (Builder) Slti(rd, rj Reg, v Imm12) Instr {
-	return Slti{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSlti(w uint32) Instr {
 	return Slti{
 		base: newBase(w),

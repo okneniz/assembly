@@ -121,7 +121,3 @@ func decodeSturhOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}, nil
 	}
 }
-
-func (Builder) Sturh(rt, rn Reg, off Off) (Instr, error) {
-	return newSturh(base{}, rt, rn, off)
-}

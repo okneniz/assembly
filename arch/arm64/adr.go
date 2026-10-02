@@ -54,13 +54,6 @@ func (i Adr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }
 
-// Adr — adr rd, #off: off — the signed byte offset from the address
-// of the instruction (the imm21 form, -0x100000..0xfffff). rd — only x
-// registers (register 31 reads as zr).
-func (Builder) Adr(rd Reg, off int64) (Instr, error) {
-	return newAdr(base{}, rd, off)
-}
-
 func decodeAdr(w uint32) (Instr, error) {
 	raw := (w>>5&0x7ffff)<<2 | w>>29&3
 	in, err := newAdr(

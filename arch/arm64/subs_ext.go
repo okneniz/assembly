@@ -120,10 +120,6 @@ func (i SubsExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, SubsExtX, SubsExtW, "subs")
 }
 
-func (Builder) SubsExt(rd, rn, rm Reg, ext string, imm3 uint32) (Instr, error) {
-	return newSubsExt(base{}, rd, rn, rm, ext, imm3)
-}
-
 func decodeSubsExt(w uint32) (Instr, error) {
 	in, err := newSubsExt(
 		newBase(w),

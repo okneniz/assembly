@@ -78,15 +78,6 @@ func (i Fcmp) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rn<<5|rm<<16)
 }
 
-func (Builder) Fcmp(rn, rm FReg) (Instr, error) {
-	return newFcmp(base{}, rn, rm, true)
-}
-
-// FcmpZero — fcmp fn, #0.0 (the immediate form: Rm=0).
-func (Builder) FcmpZero(rn FReg) (Instr, error) {
-	return newFcmp(base{}, rn, FReg{}, false)
-}
-
 func decodeFcmpReg(w uint32) (Instr, error) {
 	in, err := newFcmp(
 		newBase(w),

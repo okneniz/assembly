@@ -14,15 +14,6 @@ type DivWu struct {
 	rd, rj, rk uint8
 }
 
-// DivWu - div.wu rd, rj, rk.
-func (Builder) DivWu(rd, rj, rk Reg) Instr {
-	return DivWu{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeDivWu(w uint32) Instr {
 	return DivWu{
 		base: newBase(w),

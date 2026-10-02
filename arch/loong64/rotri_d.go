@@ -15,15 +15,6 @@ type RotriD struct {
 	imm    imm
 }
 
-// RotriD - rotri.d rd, rj, ui6.
-func (Builder) RotriD(rd, rj Reg, v UImm6) Instr {
-	return RotriD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeRotriD(w uint32) Instr {
 	return RotriD{
 		base: newBase(w),

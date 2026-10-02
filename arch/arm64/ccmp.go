@@ -87,10 +87,6 @@ func (i Ccmp) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, ccmpX|i.immVal|rn<<5|c<<12|rm<<16)
 }
 
-func (Builder) Ccmp(rn, rm Reg, nzcv uint32, cond string) (Instr, error) {
-	return newCcmp(base{}, rn, rm, nzcv, cond)
-}
-
 func decodeCcmp(w uint32) (Instr, error) {
 	in, err := newCcmp(
 		newBase(w),

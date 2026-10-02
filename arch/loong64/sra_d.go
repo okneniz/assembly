@@ -14,15 +14,6 @@ type SraD struct {
 	rd, rj, rk uint8
 }
 
-// SraD - sra.d rd, rj, rk.
-func (Builder) SraD(rd, rj, rk Reg) Instr {
-	return SraD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSraD(w uint32) Instr {
 	return SraD{
 		base: newBase(w),

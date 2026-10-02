@@ -54,10 +54,6 @@ func (i Fmax) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fmax(rd, rn, rm FReg) (Instr, error) {
-	return newFmax(base{}, rd, rn, rm)
-}
-
 func decodeFmax(w uint32) (Instr, error) {
 	in, err := newFmax(
 		newBase(w),

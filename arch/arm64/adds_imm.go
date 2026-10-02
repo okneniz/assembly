@@ -115,10 +115,6 @@ func (i AddsImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }
 
-func (Builder) AddsImm(rd, rn Reg, imm Imm12, sh Sh12) (Instr, error) {
-	return newAddsImm(base{}, rd, rn, imm, sh)
-}
-
 func decodeAddsImm(w uint32) (Instr, error) {
 	in, err := newAddsImm(newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),

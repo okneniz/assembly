@@ -16,14 +16,6 @@ type Lu32iD struct {
 	imm imm
 }
 
-// Lu32iD - lu32i.d rd, si20.
-func (Builder) Lu32iD(rd Reg, v Imm20) Instr {
-	return Lu32iD{
-		rd:  rd.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLu32iD(w uint32) Instr {
 	return Lu32iD{
 		base: newBase(w),

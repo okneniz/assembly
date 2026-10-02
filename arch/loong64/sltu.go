@@ -14,15 +14,6 @@ type Sltu struct {
 	rd, rj, rk uint8
 }
 
-// Sltu - sltu rd, rj, rk.
-func (Builder) Sltu(rd, rj, rk Reg) Instr {
-	return Sltu{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSltu(w uint32) Instr {
 	return Sltu{
 		base: newBase(w),

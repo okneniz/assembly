@@ -14,15 +14,6 @@ type Nor struct {
 	rd, rj, rk uint8
 }
 
-// Nor - nor rd, rj, rk.
-func (Builder) Nor(rd, rj, rk Reg) Instr {
-	return Nor{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeNor(w uint32) Instr {
 	return Nor{
 		base: newBase(w),

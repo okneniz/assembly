@@ -55,15 +55,6 @@ func (i DupElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, dupElemEnc|i.q<<30|imm5<<16|rn<<5|rd)
 }
 
-func (Builder) DupElem(rd, rn VReg, arr string, idx uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewDupElem: %w", err)
-	}
-
-	return newDupElem(base{}, q, size, idx, rd, rn)
-}
-
 // decodeSimdDupElem — DUP (element): 0x0E000400/0xBFE0FC00.
 func decodeSimdDupElem(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
@@ -141,15 +132,6 @@ func (i InsElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, insElemEnc|imm5<<16|i.srcIdx<<i.size<<11|rn<<5|rd)
 }
 
-func (Builder) InsElem(rd, rn VReg, elem string, idx, srcIdx uint32) (Instr, error) {
-	size, err := elemSize("InsElem", elem)
-	if err != nil {
-		return nil, err
-	}
-
-	return newInsElem(base{}, size, idx, srcIdx, rd, rn)
-}
-
 // decodeSimdInsElem — INS (element): 0x6E000400/0xFFE08400.
 func decodeSimdInsElem(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
@@ -214,15 +196,6 @@ func (i DupScalar) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, dupScalarEnc|1<<i.size<<16|rn<<5|rd)
-}
-
-func (Builder) DupScalar(rd, rn VReg, elem string) (Instr, error) {
-	size, err := elemSize("DupScalar", elem)
-	if err != nil {
-		return nil, err
-	}
-
-	return newDupScalar(base{}, size, rd, rn)
 }
 
 // decodeSimdDupScalar — the scalar DUP alias: 0x5E000400/0xFFE0FC00;

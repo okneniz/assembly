@@ -14,14 +14,6 @@ type CtoW struct {
 	rd, rj uint8
 }
 
-// CtoW - cto.w rd, rj.
-func (Builder) CtoW(rd, rj Reg) Instr {
-	return CtoW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeCtoW(w uint32) Instr {
 	return CtoW{
 		base: newBase(w),

@@ -14,15 +14,6 @@ type MulD struct {
 	rd, rj, rk uint8
 }
 
-// MulD - mul.d rd, rj, rk.
-func (Builder) MulD(rd, rj, rk Reg) Instr {
-	return MulD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeMulD(w uint32) Instr {
 	return MulD{
 		base: newBase(w),

@@ -54,10 +54,6 @@ func (i Cmtst) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, cmtstEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Cmtst(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmtst(base{}, rd, rn, rm, arr)
-}
-
 func decodeCmtst(w uint32) (Instr, error) {
 	in, err := newCmtst(
 		newBase(w),

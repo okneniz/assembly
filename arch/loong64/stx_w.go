@@ -14,15 +14,6 @@ type StxW struct {
 	rd, rj, rk uint8
 }
 
-// StxW - stx.w rd, rj, rk.
-func (Builder) StxW(rd, rj, rk Reg) Instr {
-	return StxW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStxW(w uint32) Instr {
 	return StxW{
 		base: newBase(w),

@@ -14,14 +14,6 @@ type Cpucfg struct {
 	rd, rj uint8
 }
 
-// Cpucfg - cpucfg rd, rj.
-func (Builder) Cpucfg(rd, rj Reg) Instr {
-	return Cpucfg{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeCpucfg(w uint32) Instr {
 	return Cpucfg{
 		base: newBase(w),

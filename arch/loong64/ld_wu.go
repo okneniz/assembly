@@ -16,15 +16,6 @@ type LdWu struct {
 	imm    imm
 }
 
-// LdWu - ld.wu rd, rj, si12.
-func (Builder) LdWu(rd, rj Reg, v Imm12) Instr {
-	return LdWu{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLdWu(w uint32) Instr {
 	return LdWu{
 		base: newBase(w),

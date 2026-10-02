@@ -105,15 +105,6 @@ func (i Smov) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, smovEnc|i.q<<30|imm5<<16|vd<<5|gpr)
 }
 
-func (Builder) Smov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
-	size, err := elemSize("Smov", elem)
-	if err != nil {
-		return nil, err
-	}
-
-	return newSmov(base{}, 0, size, idx, vn, wd)
-}
-
 // Umov — umov wd|xd, vn.sz[idx] (move one lane into the integer
 // register). llvm prints the form that fills the whole register
 // (.s into w, .d into x) as the mov alias.
@@ -189,13 +180,4 @@ func (i Umov) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, umovEnc|i.q<<30|imm5<<16|vd<<5|gpr)
-}
-
-func (Builder) Umov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
-	size, err := elemSize("Umov", elem)
-	if err != nil {
-		return nil, err
-	}
-
-	return newUmov(base{}, 0, size, idx, vn, wd)
 }

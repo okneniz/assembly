@@ -52,10 +52,6 @@ func (i Abs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, absEnc|q<<30|size<<22|rd|rn<<5)
 }
 
-func (Builder) Abs(rd, rn VReg, arr string) (Instr, error) {
-	return newAbs(base{}, rd, rn, arr)
-}
-
 func decodeAbs(w uint32) (Instr, error) {
 	in, err := newAbs(
 		newBase(w),

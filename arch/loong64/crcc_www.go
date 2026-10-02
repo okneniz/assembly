@@ -15,15 +15,6 @@ type CrccWWW struct {
 	rd, rj, rk uint8
 }
 
-// CrccWWW - crcc.w.w.w rd, rj, rk.
-func (Builder) CrccWWW(rd, rj, rk Reg) Instr {
-	return CrccWWW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeCrccWWW(w uint32) Instr {
 	return CrccWWW{
 		base: newBase(w),

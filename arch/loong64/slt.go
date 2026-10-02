@@ -14,15 +14,6 @@ type Slt struct {
 	rd, rj, rk uint8
 }
 
-// Slt - slt rd, rj, rk.
-func (Builder) Slt(rd, rj, rk Reg) Instr {
-	return Slt{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSlt(w uint32) Instr {
 	return Slt{
 		base: newBase(w),

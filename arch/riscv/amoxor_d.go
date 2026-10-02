@@ -15,15 +15,6 @@ type AmoxorD struct {
 	rd, rs1, rs2 string
 }
 
-// AmoxorD - amoxor.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] ^= rs2.
-func (Builder) AmoxorD(rd, rs1, rs2 Reg) Instr {
-	return AmoxorD{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmoxorD(w uint32) Instr {
 	return AmoxorD{
 		base: newBase(w),

@@ -14,15 +14,6 @@ type ScQ struct {
 	rd, rk, rj uint8
 }
 
-// ScQ - sc.q rd, rk, rj.
-func (Builder) ScQ(rd, rk, rj Reg) Instr {
-	return ScQ{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeScQ(w uint32) Instr {
 	return ScQ{
 		base: newBase(w),

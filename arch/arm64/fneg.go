@@ -53,10 +53,6 @@ func (i Fneg) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Fneg(rd, rn FReg) (Instr, error) {
-	return newFneg(base{}, rd, rn)
-}
-
 func decodeFneg(w uint32) (Instr, error) {
 	in, err := newFneg(
 		newBase(w),

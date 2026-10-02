@@ -54,10 +54,6 @@ func (i Cmeq) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, cmeqEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Cmeq(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmeq(base{}, rd, rn, rm, arr)
-}
-
 func decodeCmeq(w uint32) (Instr, error) {
 	in, err := newCmeq(
 		newBase(w),

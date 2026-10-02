@@ -16,16 +16,6 @@ type BytepickW struct {
 	sel        imm
 }
 
-// BytepickW - bytepick.w rd, rj, rk, sel.
-func (Builder) BytepickW(rd, rj, rk Reg, sel UImm2) Instr {
-	return BytepickW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		rk:  rk.Num(),
-		sel: immNum(sel.Val()),
-	}
-}
-
 func decodeBytepickW(w uint32) Instr {
 	return BytepickW{
 		base: newBase(w),

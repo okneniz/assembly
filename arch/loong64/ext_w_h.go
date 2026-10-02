@@ -14,14 +14,6 @@ type ExtWH struct {
 	rd, rj uint8
 }
 
-// ExtWH - ext.w.h rd, rj.
-func (Builder) ExtWH(rd, rj Reg) Instr {
-	return ExtWH{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeExtWH(w uint32) Instr {
 	return ExtWH{
 		base: newBase(w),

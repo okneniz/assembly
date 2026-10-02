@@ -52,10 +52,6 @@ func (i Rev32V) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, rev32VEnc|q<<30|size<<22|rd|rn<<5)
 }
 
-func (Builder) Rev32V(rd, rn VReg, arr string) (Instr, error) {
-	return newRev32V(base{}, rd, rn, arr)
-}
-
 func decodeRev32V(w uint32) (Instr, error) {
 	in, err := newRev32V(
 		newBase(w),

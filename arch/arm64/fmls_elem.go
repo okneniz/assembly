@@ -66,20 +66,6 @@ func (i FmlsElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, fmlsElemU, i.size, rm, fmlsElemOpc, i.idx, rn, rd))
 }
 
-// FmlsElem - the Builder entry: .2s/.4s (fp32) or .2d (fp64).
-func (Builder) FmlsElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	switch arr {
-	case "2s":
-		return newFmlsElem(base{}, 0, 2, idx, rd, rn, rm)
-	case "4s":
-		return newFmlsElem(base{}, 1, 2, idx, rd, rn, rm)
-	case "2d":
-		return newFmlsElem(base{}, 1, 3, idx, rd, rn, rm)
-	}
-
-	return nil, fmt.Errorf("arm64.NewFmlsElem: arrangement %q is not one of [2s 4s 2d]", arr)
-}
-
 func decodeFmlsElem(w uint32) (Instr, error) {
 	in, err := newFmlsElem(
 		newBase(w),

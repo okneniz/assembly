@@ -55,10 +55,6 @@ func (i Fmov) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Fmov(rd, rn FReg) (Instr, error) {
-	return newFmov(base{}, rd, rn)
-}
-
 func decodeFmov(w uint32) (Instr, error) {
 	in, err := newFmov(
 		newBase(w),

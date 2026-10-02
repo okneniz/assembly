@@ -53,7 +53,3 @@ func (i Bit) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, bitEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Bit(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBit(base{}, rd, rn, rm, arr)
-}

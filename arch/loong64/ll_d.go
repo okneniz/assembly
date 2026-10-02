@@ -16,15 +16,6 @@ type LlD struct {
 	off    imm
 }
 
-// LlD - ll.d rd, rj, offs (the byte offset from rj).
-func (Builder) LlD(rd, rj Reg, off Imm14) Instr {
-	return LlD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off.Val()),
-	}
-}
-
 func decodeLlD(w uint32) Instr {
 	return LlD{
 		base: newBase(w),

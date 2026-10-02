@@ -23,33 +23,6 @@ type Off struct {
 	v int64
 }
 
-// Imm12 - a validated value; an error when out of range.
-func (Builder) Imm12(v int64) (Imm12, error) {
-	if v < -2048 || v > 2047 {
-		return Imm12{}, fmt.Errorf("riscv.New().Imm12: value %d outside -2048..2047", v)
-	}
-
-	return Imm12{v: v}, nil
-}
-
-// Imm20 - a validated value; an error when out of range.
-func (Builder) Imm20(v int64) (Imm20, error) {
-	if v < 0 || v > 0xfffff {
-		return Imm20{}, fmt.Errorf("riscv.New().Imm20: value %d outside 0..%d", v, 0xfffff)
-	}
-
-	return Imm20{v: v}, nil
-}
-
-// Off - a validated value; an error when out of range.
-func (Builder) Off(v int64) (Off, error) {
-	if v < -2048 || v > 2047 {
-		return Off{}, fmt.Errorf("riscv.New().Off: value %d outside -2048..2047", v)
-	}
-
-	return Off{v: v}, nil
-}
-
 func (i Imm12) String() string {
 	return fmt.Sprintf("%#x", i.v)
 }

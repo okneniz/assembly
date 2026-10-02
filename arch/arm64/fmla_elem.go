@@ -66,20 +66,6 @@ func (i FmlaElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, fmlaElemU, i.size, rm, fmlaElemOpc, i.idx, rn, rd))
 }
 
-// FmlaElem - the Builder entry: .2s/.4s (fp32) or .2d (fp64).
-func (Builder) FmlaElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	switch arr {
-	case "2s":
-		return newFmlaElem(base{}, 0, 2, idx, rd, rn, rm)
-	case "4s":
-		return newFmlaElem(base{}, 1, 2, idx, rd, rn, rm)
-	case "2d":
-		return newFmlaElem(base{}, 1, 3, idx, rd, rn, rm)
-	}
-
-	return nil, fmt.Errorf("arm64.NewFmlaElem: arrangement %q is not one of [2s 4s 2d]", arr)
-}
-
 func decodeFmlaElem(w uint32) (Instr, error) {
 	in, err := newFmlaElem(
 		newBase(w),

@@ -52,10 +52,6 @@ func (i Cnt) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, cntEnc|q<<30|size<<22|rd|rn<<5)
 }
 
-func (Builder) Cnt(rd, rn VReg, arr string) (Instr, error) {
-	return newCnt(base{}, rd, rn, arr)
-}
-
 func decodeCnt(w uint32) (Instr, error) {
 	in, err := newCnt(
 		newBase(w),

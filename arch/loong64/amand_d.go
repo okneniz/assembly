@@ -14,15 +14,6 @@ type AmandD struct {
 	rd, rk, rj uint8
 }
 
-// AmandD - amand.d rd, rk, rj.
-func (Builder) AmandD(rd, rk, rj Reg) Instr {
-	return AmandD{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmandD(w uint32) Instr {
 	return AmandD{
 		base: newBase(w),

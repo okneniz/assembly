@@ -85,10 +85,6 @@ func (i Rbit) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Rbit(rd, rn Reg) (Instr, error) {
-	return newRbit(base{}, rd, rn)
-}
-
 func decodeRbit(w uint32) (Instr, error) {
 	in, err := newRbit(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
 	if err != nil {

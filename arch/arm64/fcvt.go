@@ -57,10 +57,6 @@ func (i Fcvt) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Fcvt(rd, rn FReg) (Instr, error) {
-	return newFcvt(base{}, rd, rn)
-}
-
 func decodeFcvt(w uint32) (Instr, error) {
 	in, err := newFcvt(
 		newBase(w),

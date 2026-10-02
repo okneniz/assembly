@@ -85,10 +85,6 @@ func (i Umulh) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Umulh(rd, rn, rm Reg) (Instr, error) {
-	return newUmulh(base{}, rd, rn, rm)
-}
-
 func decodeUmulh(w uint32) (Instr, error) {
 	in, err := newUmulh(
 		newBase(w),

@@ -17,15 +17,6 @@ type Jirl struct {
 	off    imm
 }
 
-// Jirl - jirl rd, rj, offs (the byte offset from rj).
-func (Builder) Jirl(rd, rj Reg, off int64) Instr {
-	return Jirl{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off),
-	}
-}
-
 func decodeJirl(w uint32) Instr {
 	return Jirl{
 		base: newBase(w),

@@ -71,10 +71,6 @@ func (i Ldrsb) Encode(w io.Writer) (int64, error) {
 	return lsSignedWrite(w, ldrsbEnc, i.rt, i.rn, i.off, "ldrsb")
 }
 
-func (Builder) Ldrsb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrsb(base{}, rt, rn, off)
-}
-
 func decodeLdrsb(w uint32) (Instr, error) {
 	in, err := newLdrsb(
 		newBase(w),

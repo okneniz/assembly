@@ -15,15 +15,6 @@ type Sltui struct {
 	imm    imm
 }
 
-// Sltui - sltui rd, rj, si12.
-func (Builder) Sltui(rd, rj Reg, v Imm12) Instr {
-	return Sltui{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSltui(w uint32) Instr {
 	return Sltui{
 		base: newBase(w),

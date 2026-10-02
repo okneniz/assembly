@@ -12,11 +12,6 @@ type Tlbsrch struct {
 	base
 }
 
-// Tlbsrch - tlbsrch (no operands).
-func (Builder) Tlbsrch() Instr {
-	return Tlbsrch{}
-}
-
 func decodeTlbsrch(w uint32) Instr {
 	return Tlbsrch{
 		base: newBase(w),

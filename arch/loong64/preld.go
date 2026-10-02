@@ -18,15 +18,6 @@ type Preld struct {
 	off  imm
 }
 
-// Preld - preld hint, rj, si12.
-func (Builder) Preld(hint UImm5, rj Reg, off Imm12) Instr {
-	return Preld{
-		rj:   rj.Num(),
-		hint: immNum(hint.Val()),
-		off:  immNum(off.Val()),
-	}
-}
-
 func decodePreld(w uint32) Instr {
 	return Preld{
 		base: newBase(w),

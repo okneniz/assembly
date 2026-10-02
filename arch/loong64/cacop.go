@@ -17,15 +17,6 @@ type Cacop struct {
 	off imm
 }
 
-// Cacop - cacop op, rj, si12 (the assembly operand order).
-func (Builder) Cacop(op UImm5, rj Reg, off Imm12) Instr {
-	return Cacop{
-		op:  immNum(op.Val()),
-		rj:  rj.Num(),
-		off: immNum(off.Val()),
-	}
-}
-
 func decodeCacop(w uint32) Instr {
 	return Cacop{
 		base: newBase(w),

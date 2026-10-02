@@ -75,7 +75,3 @@ func (i Stlrb) ObjDump(_ disasm.ViewCtx) string {
 func (i Stlrb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "stlrb")
 }
-
-func (Builder) Stlrb(rt, rn Reg) (Instr, error) {
-	return newStlrb(base{}, rt, rn)
-}

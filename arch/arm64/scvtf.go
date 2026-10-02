@@ -52,10 +52,6 @@ func (i Scvtf) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Scvtf(rd FReg, rn Reg) (Instr, error) {
-	return newScvtf(base{}, rd, rn)
-}
-
 func decodeScvtf(w uint32) (Instr, error) {
 	in, err := newScvtf(
 		newBase(w),
@@ -111,10 +107,6 @@ func (i Ucvtf) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
-}
-
-func (Builder) Ucvtf(rd FReg, rn Reg) (Instr, error) {
-	return newUcvtf(base{}, rd, rn)
 }
 
 func decodeUcvtf(w uint32) (Instr, error) {

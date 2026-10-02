@@ -15,15 +15,6 @@ type AmomaxW struct {
 	rd, rs1, rs2 string
 }
 
-// AmomaxW - amomax.w rd, rs2, (rs1).
-func (Builder) AmomaxW(rd, rs1, rs2 Reg) Instr {
-	return AmomaxW{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmomaxW(w uint32) Instr {
 	return AmomaxW{
 		base: newBase(w),

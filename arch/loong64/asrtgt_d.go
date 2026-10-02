@@ -14,14 +14,6 @@ type AsrtgtD struct {
 	rj, rk uint8
 }
 
-// AsrtgtD - asrtgt.d rj, rk.
-func (Builder) AsrtgtD(rj, rk Reg) Instr {
-	return AsrtgtD{
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAsrtgtD(w uint32) Instr {
 	return AsrtgtD{
 		base: newBase(w),

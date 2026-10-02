@@ -53,7 +53,3 @@ func (i Orn) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, ornEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Orn(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newOrn(base{}, rd, rn, rm, arr)
-}

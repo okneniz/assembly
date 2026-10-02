@@ -13,13 +13,6 @@ type Break struct {
 	code imm
 }
 
-// Break - break code (a 15-bit code).
-func (Builder) Break(code Code15) Instr {
-	return Break{
-		code: immNum(code.Val()),
-	}
-}
-
 func decodeBreak(w uint32) Instr {
 	return Break{
 		base: newBase(w),

@@ -62,21 +62,6 @@ func (i SqrdmulhElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, sqrdmulhElemU, i.size, rm, sqrdmulhElemOpc, i.idx, rn, rd))
 }
 
-// SqrdmulhElem - the Builder entry: the arrangement is the printed one
-// (.4h/.8h/.2s/.4s).
-func (Builder) SqrdmulhElem(rd, rn, rm VReg, arr string, idx uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewSqrdmulhElem: %w", err)
-	}
-
-	if size == 0 || size == 3 {
-		return nil, fmt.Errorf("arm64.NewSqrdmulhElem: arrangement %q is not one of the integer lane widths", arr)
-	}
-
-	return newSqrdmulhElem(base{}, q, size, idx, rd, rn, rm)
-}
-
 func decodeSqrdmulhElem(w uint32) (Instr, error) {
 	in, err := newSqrdmulhElem(
 		newBase(w),

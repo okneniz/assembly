@@ -15,18 +15,6 @@ type FmulD struct {
 	rm           imm // rounding mode (not shown in text)
 }
 
-// FmulD - fmul.d fd, fs1, fs2; the registers are FP registers taken by
-// number (Reg 0..31 is printed ft0/fa0/...); rm is the rounding mode 0..7
-// (0 RNE, 1 RTZ, 2 RDN, 3 RUP, 4 RMM, 7 DYN).
-func (Builder) FmulD(rd, rs1, rs2 Reg, rm uint8) Instr {
-	return FmulD{
-		rd:  fpName(rd),
-		rs1: fpName(rs1),
-		rs2: fpName(rs2),
-		rm:  immNum(int64(rm)),
-	}
-}
-
 func decodeFmulD(w uint32) Instr {
 	return FmulD{
 		base: newBase(w),

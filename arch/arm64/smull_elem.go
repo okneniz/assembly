@@ -67,28 +67,6 @@ func (i SmullElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, smullElemU, i.size, rm, smullElemOpc, i.idx, rn, rd))
 }
 
-// SmullElem - the Builder entry: the arrangement is the RESULT's
-// (.8h/.4s/.2d); two selects the "2" form (the upper halves).
-func (Builder) SmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Instr, error) {
-	q := uint32(0)
-	if two {
-		q = 1
-	}
-
-	switch arr {
-	case "8h", "4s", "2d":
-	default:
-		return nil, fmt.Errorf("arm64.NewSmullElem: arrangement %q is not one of [8h 4s 2d]", arr)
-	}
-
-	_, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewSmullElem: %w", err)
-	}
-
-	return newSmullElem(base{}, q, size-1, idx, rd, rn, rm)
-}
-
 func decodeSmullElem(w uint32) (Instr, error) {
 	in, err := newSmullElem(
 		newBase(w),

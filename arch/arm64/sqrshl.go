@@ -54,10 +54,6 @@ func (i Sqrshl) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, sqrshlEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Sqrshl(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newSqrshl(base{}, rd, rn, rm, arr)
-}
-
 func decodeSqrshl(w uint32) (Instr, error) {
 	in, err := newSqrshl(
 		newBase(w),

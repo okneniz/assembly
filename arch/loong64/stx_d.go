@@ -14,15 +14,6 @@ type StxD struct {
 	rd, rj, rk uint8
 }
 
-// StxD - stx.d rd, rj, rk.
-func (Builder) StxD(rd, rj, rk Reg) Instr {
-	return StxD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStxD(w uint32) Instr {
 	return StxD{
 		base: newBase(w),

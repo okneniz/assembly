@@ -54,10 +54,6 @@ func (i Cmge) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, cmgeEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Cmge(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newCmge(base{}, rd, rn, rm, arr)
-}
-
 func decodeCmge(w uint32) (Instr, error) {
 	in, err := newCmge(
 		newBase(w),

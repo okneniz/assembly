@@ -12,11 +12,6 @@ type Tlbrd struct {
 	base
 }
 
-// Tlbrd - tlbrd (no operands).
-func (Builder) Tlbrd() Instr {
-	return Tlbrd{}
-}
-
 func decodeTlbrd(w uint32) Instr {
 	return Tlbrd{
 		base: newBase(w),

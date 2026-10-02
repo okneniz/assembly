@@ -15,15 +15,6 @@ type SlliD struct {
 	imm    imm
 }
 
-// SlliD - slli.d rd, rj, ui6.
-func (Builder) SlliD(rd, rj Reg, v UImm6) Instr {
-	return SlliD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSlliD(w uint32) Instr {
 	return SlliD{
 		base: newBase(w),

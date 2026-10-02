@@ -53,7 +53,3 @@ func (i Bif) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, bifEnc|q<<30|rd|rn<<5|rm<<16)
 }
-
-func (Builder) Bif(rd, rn, rm VReg, arr string) (Instr, error) {
-	return newBif(base{}, rd, rn, rm, arr)
-}

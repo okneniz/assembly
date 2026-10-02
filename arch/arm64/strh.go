@@ -108,7 +108,3 @@ func decodeStrhOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}, nil
 	}
 }
-
-func (Builder) Strh(rt, rn Reg, off Off) (Instr, error) {
-	return newStrh(base{}, rt, rn, off)
-}

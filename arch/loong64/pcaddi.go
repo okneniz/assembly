@@ -16,14 +16,6 @@ type Pcaddi struct {
 	imm imm
 }
 
-// Pcaddi - pcaddi rd, si20.
-func (Builder) Pcaddi(rd Reg, v Imm20) Instr {
-	return Pcaddi{
-		rd:  rd.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodePcaddi(w uint32) Instr {
 	return Pcaddi{
 		base: newBase(w),

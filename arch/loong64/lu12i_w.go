@@ -16,14 +16,6 @@ type Lu12iW struct {
 	imm imm
 }
 
-// Lu12iW - lu12i.w rd, si20.
-func (Builder) Lu12iW(rd Reg, v Imm20) Instr {
-	return Lu12iW{
-		rd:  rd.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLu12iW(w uint32) Instr {
 	return Lu12iW{
 		base: newBase(w),

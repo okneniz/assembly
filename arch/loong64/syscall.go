@@ -13,13 +13,6 @@ type Syscall struct {
 	code imm
 }
 
-// Syscall - syscall code (a 15-bit code).
-func (Builder) Syscall(code Code15) Instr {
-	return Syscall{
-		code: immNum(code.Val()),
-	}
-}
-
 func decodeSyscall(w uint32) Instr {
 	return Syscall{
 		base: newBase(w),

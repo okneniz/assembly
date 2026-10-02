@@ -14,15 +14,6 @@ type Addw struct {
 	rd, rs1, rs2 string
 }
 
-// Addw - addw rd, rs1, rs2.
-func (Builder) Addw(rd, rs1, rs2 Reg) Instr {
-	return Addw{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAddw(w uint32) Instr {
 	return Addw{
 		base: newBase(w),

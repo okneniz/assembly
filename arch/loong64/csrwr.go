@@ -16,14 +16,6 @@ type Csrwr struct {
 	csr imm
 }
 
-// Csrwr - csrwr rd, csr.
-func (Builder) Csrwr(rd Reg, csr UImm14) Instr {
-	return Csrwr{
-		rd:  rd.Num(),
-		csr: immNum(csr.Val()),
-	}
-}
-
 func decodeCsrwr(w uint32) Instr {
 	return Csrwr{
 		base: newBase(w),

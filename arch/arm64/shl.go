@@ -52,26 +52,6 @@ func (i Shl) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, shlEnc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
 }
 
-// Shl - the Builder entry: the shift as the written amount on the
-// arrangement's lanes (the raw immh:immb stays a decode detail).
-func (Builder) Shl(rd, rn VReg, arr string, shift uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewShl: %w", err)
-	}
-
-	if shift >= 8<<size {
-		return nil, fmt.Errorf("arm64.NewShl: shift %d out of range for .%s",
-			shift, arr)
-	}
-
-	// the immediate field carries the size marker above the shift
-	imm := 1<<(3+size) | shift
-	immh, immb := imm>>3, imm&7
-
-	return newShl(base{}, q, immh, immb, rd, rn)
-}
-
 func decodeShl(w uint32) (Instr, error) {
 	in, err := newShl(
 		newBase(w),

@@ -93,10 +93,6 @@ func (i Movn) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
 
-func (Builder) Movn(rd Reg, imm Imm16, hw Hw) (Instr, error) {
-	return newMovn(base{}, rd, imm, hw)
-}
-
 func decodeMovn(w uint32) (Instr, error) {
 	in, err := newMovn(
 		newBase(w),

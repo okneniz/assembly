@@ -14,14 +14,6 @@ type RdtimehW struct {
 	rd, rj uint8
 }
 
-// RdtimehW - rdtimeh.w rd, rj.
-func (Builder) RdtimehW(rd, rj Reg) Instr {
-	return RdtimehW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRdtimehW(w uint32) Instr {
 	return RdtimehW{
 		base: newBase(w),

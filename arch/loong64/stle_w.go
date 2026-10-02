@@ -15,15 +15,6 @@ type StleW struct {
 	rd, rj, rk uint8
 }
 
-// StleW - stle.w rd, rj, rk.
-func (Builder) StleW(rd, rj, rk Reg) Instr {
-	return StleW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStleW(w uint32) Instr {
 	return StleW{
 		base: newBase(w),

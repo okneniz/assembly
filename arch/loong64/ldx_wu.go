@@ -14,15 +14,6 @@ type LdxWu struct {
 	rd, rj, rk uint8
 }
 
-// LdxWu - ldx.wu rd, rj, rk.
-func (Builder) LdxWu(rd, rj, rk Reg) Instr {
-	return LdxWu{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeLdxWu(w uint32) Instr {
 	return LdxWu{
 		base: newBase(w),

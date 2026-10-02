@@ -14,15 +14,6 @@ type AmorW struct {
 	rd, rk, rj uint8
 }
 
-// AmorW - amor.w rd, rk, rj.
-func (Builder) AmorW(rd, rk, rj Reg) Instr {
-	return AmorW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmorW(w uint32) Instr {
 	return AmorW{
 		base: newBase(w),

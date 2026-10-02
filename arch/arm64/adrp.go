@@ -56,15 +56,6 @@ func (i Adrp) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0x90000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }
 
-// Adrp — adrp rd, #off: off — the signed imm21 count of 4KB pages
-// from the page of the instruction (-0x100000..0xfffff pages). The
-// absolute-page annotation of the decoded form needs the instruction
-// address and stays zero here. rd — only x registers (register 31 reads
-// as zr).
-func (Builder) Adrp(rd Reg, off int64) (Instr, error) {
-	return newAdrp(base{}, rd, off)
-}
-
 func decodeAdrp(w uint32) (Instr, error) {
 	raw := (w>>5&0x7ffff)<<2 | w>>29&3
 	imm21 := signExtendN(raw, 21)

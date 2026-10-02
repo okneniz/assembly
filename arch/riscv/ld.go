@@ -15,15 +15,6 @@ type Ld struct {
 	off     imm
 }
 
-// Ld - ld rd, off(rs1).
-func (Builder) Ld(rd, rs1 Reg, off Off) Instr {
-	return Ld{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		off: immNum(off.v),
-	}
-}
-
 func decodeLd(w uint32) Instr {
 	return Ld{
 		base: newBase(w),

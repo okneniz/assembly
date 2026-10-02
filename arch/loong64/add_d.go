@@ -14,15 +14,6 @@ type AddD struct {
 	rd, rj, rk uint8
 }
 
-// AddD - add.d rd, rj, rk.
-func (Builder) AddD(rd, rj, rk Reg) Instr {
-	return AddD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAddD(w uint32) Instr {
 	return AddD{
 		base: newBase(w),

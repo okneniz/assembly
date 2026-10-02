@@ -108,7 +108,3 @@ func decodeLdrswOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}, nil
 	}
 }
-
-func (Builder) Ldrsw(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrsw(base{}, rt, rn, off)
-}

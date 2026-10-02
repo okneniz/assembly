@@ -52,10 +52,6 @@ func (i Fcvtzs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) Fcvtzs(rd Reg, rn FReg) (Instr, error) {
-	return newFcvtzs(base{}, rd, rn)
-}
-
 func decodeFcvtzs(w uint32) (Instr, error) {
 	in, err := newFcvtzs(
 		newBase(w),
@@ -111,10 +107,6 @@ func (i Fcvtzu) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
-}
-
-func (Builder) Fcvtzu(rd Reg, rn FReg) (Instr, error) {
-	return newFcvtzu(base{}, rd, rn)
 }
 
 func decodeFcvtzu(w uint32) (Instr, error) {

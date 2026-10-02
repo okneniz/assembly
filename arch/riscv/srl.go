@@ -14,15 +14,6 @@ type Srl struct {
 	rd, rs1, rs2 string
 }
 
-// Srl - srl rd, rs1, rs2.
-func (Builder) Srl(rd, rs1, rs2 Reg) Instr {
-	return Srl{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeSrl(w uint32) Instr {
 	return Srl{
 		base: newBase(w),

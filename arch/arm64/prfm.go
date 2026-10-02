@@ -55,10 +55,6 @@ func (i Prfm) Encode(w io.Writer) (int64, error) {
 // SkipVerify — pldl1keep is a keyword, not an address.
 func (i Prfm) SkipVerify() {}
 
-func (Builder) Prfm(rn Reg) (Instr, error) {
-	return newPrfm(base{}, rn)
-}
-
 func decodePrfm(w uint32) (Instr, error) {
 	in, err := newPrfm(newBase(w), xspOf(w>>5&0x1f))
 	if err != nil {

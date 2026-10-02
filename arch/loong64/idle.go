@@ -14,13 +14,6 @@ type Idle struct {
 	code imm
 }
 
-// Idle - idle code.
-func (Builder) Idle(code Code15) Instr {
-	return Idle{
-		code: immNum(code.Val()),
-	}
-}
-
 func decodeIdle(w uint32) Instr {
 	return Idle{
 		base: newBase(w),

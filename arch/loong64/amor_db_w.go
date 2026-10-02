@@ -14,15 +14,6 @@ type AmorDbW struct {
 	rd, rk, rj uint8
 }
 
-// AmorDbW - amor_db.w rd, rk, rj.
-func (Builder) AmorDbW(rd, rk, rj Reg) Instr {
-	return AmorDbW{
-		rd: rd.Num(),
-		rk: rk.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeAmorDbW(w uint32) Instr {
 	return AmorDbW{
 		base: newBase(w),

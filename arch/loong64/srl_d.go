@@ -14,15 +14,6 @@ type SrlD struct {
 	rd, rj, rk uint8
 }
 
-// SrlD - srl.d rd, rj, rk.
-func (Builder) SrlD(rd, rj, rk Reg) Instr {
-	return SrlD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSrlD(w uint32) Instr {
 	return SrlD{
 		base: newBase(w),

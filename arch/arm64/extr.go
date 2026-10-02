@@ -90,10 +90,6 @@ func (i Extr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, extrX|rd|rn<<5|i.lsb<<10|rm<<16)
 }
 
-func (Builder) Extr(rd, rn, rm Reg, lsb Imm6) (Instr, error) {
-	return newExtr(base{}, rd, rn, rm, lsb)
-}
-
 func decodeExtr(w uint32) (Instr, error) {
 	in, err := newExtr(
 		newBase(w),

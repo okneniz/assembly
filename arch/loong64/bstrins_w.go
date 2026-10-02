@@ -16,16 +16,6 @@ type BstrinsW struct {
 	lsb    imm
 }
 
-// BstrinsW - bstrins.w rd, rj, msb, lsb.
-func (Builder) BstrinsW(rd, rj Reg, msb, lsb UImm5) Instr {
-	return BstrinsW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		msb: immNum(msb.Val()),
-		lsb: immNum(lsb.Val()),
-	}
-}
-
 func decodeBstrinsW(w uint32) Instr {
 	return BstrinsW{
 		base: newBase(w),

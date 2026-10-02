@@ -54,10 +54,6 @@ func (i Fmul) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Fmul(rd, rn, rm FReg) (Instr, error) {
-	return newFmul(base{}, rd, rn, rm)
-}
-
 func decodeFmul(w uint32) (Instr, error) {
 	in, err := newFmul(
 		newBase(w),

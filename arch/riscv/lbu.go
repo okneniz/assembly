@@ -15,15 +15,6 @@ type Lbu struct {
 	off     imm
 }
 
-// Lbu - lbu rd, off(rs1).
-func (Builder) Lbu(rd, rs1 Reg, off Off) Instr {
-	return Lbu{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		off: immNum(off.v),
-	}
-}
-
 func decodeLbu(w uint32) Instr {
 	return Lbu{
 		base: newBase(w),

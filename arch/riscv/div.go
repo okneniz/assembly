@@ -14,15 +14,6 @@ type Div struct {
 	rd, rs1, rs2 string
 }
 
-// Div - div rd, rs1, rs2.
-func (Builder) Div(rd, rs1, rs2 Reg) Instr {
-	return Div{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeDiv(w uint32) Instr {
 	return Div{
 		base: newBase(w),

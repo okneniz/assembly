@@ -14,14 +14,6 @@ type ScrelW struct {
 	rd, rj uint8
 }
 
-// ScrelW - screl.w rd, rj.
-func (Builder) ScrelW(rd, rj Reg) Instr {
-	return ScrelW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeScrelW(w uint32) Instr {
 	return ScrelW{
 		base: newBase(w),

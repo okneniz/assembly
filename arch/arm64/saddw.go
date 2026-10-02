@@ -58,19 +58,6 @@ func (i Saddw) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, saddwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }
 
-func (Builder) Saddw(rd, rn, rm VReg, arr string) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewSaddw: %w", err)
-	}
-
-	if size == 0 {
-		return nil, fmt.Errorf("arm64.NewSaddw: arrangement too narrow (the source is one lane narrower)")
-	}
-
-	return newSaddw(base{}, q, size-1, rd, rn, rm)
-}
-
 func decodeSaddw(w uint32) (Instr, error) {
 	in, err := newSaddw(
 		newBase(w),

@@ -16,14 +16,6 @@ type Pcaddu18i struct {
 	imm imm
 }
 
-// Pcaddu18i - pcaddu18i rd, si20.
-func (Builder) Pcaddu18i(rd Reg, v Imm20) Instr {
-	return Pcaddu18i{
-		rd:  rd.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodePcaddu18i(w uint32) Instr {
 	return Pcaddu18i{
 		base: newBase(w),

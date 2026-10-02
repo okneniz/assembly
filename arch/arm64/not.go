@@ -52,10 +52,6 @@ func (i Not) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, notEnc|q<<30|size<<22|rd|rn<<5)
 }
 
-func (Builder) Not(rd, rn VReg, arr string) (Instr, error) {
-	return newNot(base{}, rd, rn, arr)
-}
-
 func decodeNot(w uint32) (Instr, error) {
 	in, err := newNot(
 		newBase(w),

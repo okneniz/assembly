@@ -59,10 +59,6 @@ func (i FmovFromGpr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func (Builder) FmovFromGpr(rd FReg, rn Reg) (Instr, error) {
-	return newFmovFromGpr(base{}, rd, rn)
-}
-
 func decodeFmovFromGpr(w uint32) (Instr, error) {
 	is64 := w>>22&1 == 1
 	in, err := newFmovFromGpr(
@@ -127,10 +123,6 @@ func (i FmovToGpr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
-}
-
-func (Builder) FmovToGpr(rd Reg, rn FReg) (Instr, error) {
-	return newFmovToGpr(base{}, rd, rn)
 }
 
 func decodeFmovToGpr(w uint32) (Instr, error) {

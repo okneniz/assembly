@@ -15,15 +15,6 @@ type Bne struct {
 	off      imm // pc-relative byte offset
 }
 
-// Bne - bne rs1, rs2, off (the pc-relative byte offset; the absolute target is off + the instruction address).
-func (Builder) Bne(rs1, rs2 Reg, off int64) Instr {
-	return Bne{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off),
-	}
-}
-
 func decodeBne(w uint32) Instr {
 	return Bne{
 		base: newBase(w),

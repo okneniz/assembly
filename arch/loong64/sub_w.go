@@ -14,15 +14,6 @@ type SubW struct {
 	rd, rj, rk uint8
 }
 
-// SubW - sub.w rd, rj, rk.
-func (Builder) SubW(rd, rj, rk Reg) Instr {
-	return SubW{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeSubW(w uint32) Instr {
 	return SubW{
 		base: newBase(w),

@@ -108,7 +108,3 @@ func decodeLdrbOf(enc uint32, kind memKind) func(uint32) (Instr, error) {
 		}, nil
 	}
 }
-
-func (Builder) Ldrb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdrb(base{}, rt, rn, off)
-}

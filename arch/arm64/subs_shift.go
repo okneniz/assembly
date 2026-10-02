@@ -146,10 +146,6 @@ func (i SubsShift) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
 
-func (Builder) SubsShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
-	return newSubsShift(base{}, rd, rn, rm, imm, sh)
-}
-
 func decodeSubsShift(w uint32) (Instr, error) {
 	in, err := newSubsShift(
 		newBase(w),

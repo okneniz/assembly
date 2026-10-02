@@ -121,7 +121,3 @@ func decodeLdurbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}, nil
 	}
 }
-
-func (Builder) Ldurb(rt, rn Reg, off Off) (Instr, error) {
-	return newLdurb(base{}, rt, rn, off)
-}

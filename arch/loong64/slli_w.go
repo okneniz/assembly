@@ -15,15 +15,6 @@ type SlliW struct {
 	imm    imm
 }
 
-// SlliW - slli.w rd, rj, ui5.
-func (Builder) SlliW(rd, rj Reg, v UImm5) Instr {
-	return SlliW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeSlliW(w uint32) Instr {
 	return SlliW{
 		base: newBase(w),

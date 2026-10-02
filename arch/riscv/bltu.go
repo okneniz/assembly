@@ -15,15 +15,6 @@ type Bltu struct {
 	off      imm // pc-relative byte offset
 }
 
-// Bltu - bltu rs1, rs2, off (the pc-relative byte offset; the absolute target is off + the instruction address).
-func (Builder) Bltu(rs1, rs2 Reg, off int64) Instr {
-	return Bltu{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off),
-	}
-}
-
 func decodeBltu(w uint32) Instr {
 	return Bltu{
 		base: newBase(w),

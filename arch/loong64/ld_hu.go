@@ -15,15 +15,6 @@ type LdHu struct {
 	off    imm
 }
 
-// LdHu - ld.hu rd, rj, si12.
-func (Builder) LdHu(rd, rj Reg, v Imm12) Instr {
-	return LdHu{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(v.Val()),
-	}
-}
-
 func decodeLdHu(w uint32) Instr {
 	return LdHu{
 		base: newBase(w),

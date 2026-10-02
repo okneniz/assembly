@@ -16,15 +16,6 @@ type LdB struct {
 	imm    imm
 }
 
-// LdB - ld.b rd, rj, si12.
-func (Builder) LdB(rd, rj Reg, v Imm12) Instr {
-	return LdB{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLdB(w uint32) Instr {
 	return LdB{
 		base: newBase(w),

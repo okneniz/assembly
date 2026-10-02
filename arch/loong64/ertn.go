@@ -11,11 +11,6 @@ type Ertn struct {
 	base
 }
 
-// Ertn - ertn (no operands).
-func (Builder) Ertn() Instr {
-	return Ertn{}
-}
-
 func decodeErtn(w uint32) Instr {
 	return Ertn{
 		base: newBase(w),

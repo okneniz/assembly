@@ -14,15 +14,6 @@ type RotrD struct {
 	rd, rj, rk uint8
 }
 
-// RotrD - rotr.d rd, rj, rk.
-func (Builder) RotrD(rd, rj, rk Reg) Instr {
-	return RotrD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeRotrD(w uint32) Instr {
 	return RotrD{
 		base: newBase(w),

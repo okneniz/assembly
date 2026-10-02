@@ -15,15 +15,6 @@ type StleB struct {
 	rd, rj, rk uint8
 }
 
-// StleB - stle.b rd, rj, rk.
-func (Builder) StleB(rd, rj, rk Reg) Instr {
-	return StleB{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeStleB(w uint32) Instr {
 	return StleB{
 		base: newBase(w),

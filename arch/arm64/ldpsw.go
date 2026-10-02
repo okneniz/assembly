@@ -100,10 +100,6 @@ func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, ldpswEnc|rt|rn<<5|rt2<<10|uint32(i.off>>2&0x7f)<<15)
 }
 
-func (Builder) Ldpsw(rt, rt2, rn Reg, off Off) (Instr, error) {
-	return newLdpsw(base{}, rt, rt2, rn, off)
-}
-
 func decodeLdpsw(w uint32) (Instr, error) {
 	in, err := newLdpsw(
 		newBase(w),

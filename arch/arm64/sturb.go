@@ -121,7 +121,3 @@ func decodeSturbOf(enc uint32, kind memKind, fp string) func(uint32) (Instr, err
 		}, nil
 	}
 }
-
-func (Builder) Sturb(rt, rn Reg, off Off) (Instr, error) {
-	return newSturb(base{}, rt, rn, off)
-}

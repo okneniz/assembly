@@ -16,14 +16,6 @@ type Ldpte struct {
 	imm imm
 }
 
-// Ldpte - ldpte rj, ui8.
-func (Builder) Ldpte(rj Reg, v UImm8) Instr {
-	return Ldpte{
-		rj:  rj.Num(),
-		imm: immNum(v.Val()),
-	}
-}
-
 func decodeLdpte(w uint32) Instr {
 	return Ldpte{
 		base: newBase(w),

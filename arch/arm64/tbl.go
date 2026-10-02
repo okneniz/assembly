@@ -25,10 +25,6 @@ func newTbl(b base, rd, rn, rm VReg) (Tbl, error) {
 	}, nil
 }
 
-func (Builder) Tbl(rd, rn, rm VReg) (Instr, error) {
-	return newTbl(base{}, rd, rn, rm)
-}
-
 const tblEnc uint32 = 0x4E000000
 
 func (i Tbl) ObjDump(_ disasm.ViewCtx) string {
@@ -45,7 +41,12 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 }
 
 func decodeTbl(w uint32) (Instr, error) {
-	in, err := newTbl(newBase(w), newVReg(uint8(w&0x1f)), newVReg(uint8(w>>5&0x1f)), newVReg(uint8(w>>16&0x1f)))
+	in, err := newTbl(
+		newBase(w),
+		newVReg(uint8(w&0x1f)),
+		newVReg(uint8(w>>5&0x1f)),
+		newVReg(uint8(w>>16&0x1f)),
+	)
 	if err != nil {
 		return nil, err
 	}

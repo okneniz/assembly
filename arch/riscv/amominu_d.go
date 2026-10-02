@@ -15,15 +15,6 @@ type AmominuD struct {
 	rd, rs1, rs2 string
 }
 
-// AmominuD - amominu.d rd, rs2, (rs1): rd = old MEM[rs1]; MEM[rs1] = min(MEM[rs1], rs2), unsigned.
-func (Builder) AmominuD(rd, rs1, rs2 Reg) Instr {
-	return AmominuD{
-		rd:  rd.name(),
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-	}
-}
-
 func decodeAmominuD(w uint32) Instr {
 	return AmominuD{
 		base: newBase(w),

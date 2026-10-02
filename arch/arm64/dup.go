@@ -74,7 +74,3 @@ func (i Dup) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, dupEnc|q<<30|0xC00|1<<size<<16|gpr<<5|vd)
 }
-
-func (Builder) Dup(vd VReg, wn Reg, arr string) (Instr, error) {
-	return newDup(base{}, vd, wn, arr)
-}

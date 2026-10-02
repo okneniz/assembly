@@ -145,10 +145,6 @@ func (i OrrImm) immText() string {
 	return fmt.Sprintf("#0x%x", m)
 }
 
-func (Builder) OrrImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newOrrImm(base{}, rd, rn, imm)
-}
-
 func decodeOrrImm(w uint32) (Instr, error) {
 	in, err := newOrrImm(
 		newBase(w),

@@ -107,10 +107,6 @@ func (i AndsImm) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
 }
 
-func (Builder) AndsImm(rd, rn Reg, imm uint64) (Instr, error) {
-	return newAndsImm(base{}, rd, rn, imm)
-}
-
 func decodeAndsImm(w uint32) (Instr, error) {
 	in, err := newAndsImm(
 		newBase(w),

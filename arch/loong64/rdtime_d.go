@@ -14,14 +14,6 @@ type RdtimeD struct {
 	rd, rj uint8
 }
 
-// RdtimeD - rdtime.d rd, rj.
-func (Builder) RdtimeD(rd, rj Reg) Instr {
-	return RdtimeD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-	}
-}
-
 func decodeRdtimeD(w uint32) Instr {
 	return RdtimeD{
 		base: newBase(w),

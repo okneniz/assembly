@@ -72,22 +72,6 @@ func (i FcmlaElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, byElemBits(i.q, fcmlaElemU, i.size, rm, opc, i.idx, rn, rd))
 }
 
-// FcmlaElem - the Builder entry: .4h/.8h/.2s/.4s/.2d lanes.
-func (Builder) FcmlaElem(rd, rn, rm VReg, arr string, idx, rot uint32) (Instr, error) {
-	q, size, err := arrBits(arr)
-	if err != nil {
-		return nil, fmt.Errorf("arm64.NewFcmlaElem: %w", err)
-	}
-
-	if size == 0 {
-		return nil, fmt.Errorf(
-			"arm64.NewFcmlaElem: arrangement %q is not one of the complex lane widths", arr,
-		)
-	}
-
-	return newFcmlaElem(base{}, q, size, idx, rot, rd, rn, rm)
-}
-
 func decodeFcmlaElem(w uint32) (Instr, error) {
 	size := w >> 22 & 3
 	in, err := newFcmlaElem(

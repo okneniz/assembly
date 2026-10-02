@@ -15,15 +15,6 @@ type Sb struct {
 	off      imm
 }
 
-// Sb - sb rs2, off(rs1).
-func (Builder) Sb(rs2, rs1 Reg, off Off) Instr {
-	return Sb{
-		rs1: rs1.name(),
-		rs2: rs2.name(),
-		off: immNum(off.v),
-	}
-}
-
 func decodeSb(w uint32) Instr {
 	return Sb{
 		base: newBase(w),

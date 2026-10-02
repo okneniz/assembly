@@ -16,16 +16,6 @@ type BstrpickW struct {
 	lsb    imm
 }
 
-// BstrpickW - bstrpick.w rd, rj, msb, lsb.
-func (Builder) BstrpickW(rd, rj Reg, msb, lsb UImm5) Instr {
-	return BstrpickW{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		msb: immNum(msb.Val()),
-		lsb: immNum(lsb.Val()),
-	}
-}
-
 func decodeBstrpickW(w uint32) Instr {
 	return BstrpickW{
 		base: newBase(w),

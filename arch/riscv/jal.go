@@ -17,14 +17,6 @@ type Jal struct {
 	off imm // pc-relative byte offset
 }
 
-// Jal - jal rd, off (the pc-relative byte offset; the absolute target is off + the instruction address).
-func (Builder) Jal(rd Reg, off int64) Instr {
-	return Jal{
-		rd:  rd.name(),
-		off: immNum(off),
-	}
-}
-
 func decodeJal(w uint32) Instr {
 	return Jal{
 		base: newBase(w),

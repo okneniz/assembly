@@ -14,15 +14,6 @@ type DivD struct {
 	rd, rj, rk uint8
 }
 
-// DivD - div.d rd, rj, rk.
-func (Builder) DivD(rd, rj, rk Reg) Instr {
-	return DivD{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeDivD(w uint32) Instr {
 	return DivD{
 		base: newBase(w),

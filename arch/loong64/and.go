@@ -14,15 +14,6 @@ type And struct {
 	rd, rj, rk uint8
 }
 
-// And - and rd, rj, rk.
-func (Builder) And(rd, rj, rk Reg) Instr {
-	return And{
-		rd: rd.Num(),
-		rj: rj.Num(),
-		rk: rk.Num(),
-	}
-}
-
 func decodeAnd(w uint32) Instr {
 	return And{
 		base: newBase(w),

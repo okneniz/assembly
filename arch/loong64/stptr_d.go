@@ -16,15 +16,6 @@ type StptrD struct {
 	off    imm
 }
 
-// StptrD - stptr.d rd, rj, offs (the byte offset).
-func (Builder) StptrD(rd, rj Reg, off Imm14) Instr {
-	return StptrD{
-		rd:  rd.Num(),
-		rj:  rj.Num(),
-		off: immNum(off.Val()),
-	}
-}
-
 func decodeStptrD(w uint32) Instr {
 	return StptrD{
 		base: newBase(w),
