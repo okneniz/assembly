@@ -236,6 +236,13 @@ func TestArmBranchAndMem(t *testing.T) {
 	// cbz with the same shape
 	got = armAssembleOne(t, "cbz x0, 0xfffffffffff80004", 0)
 	require.Equal(t, uint32(0xb4c00020), got, "cbz negative target")
+	// the S-form ext word with rn 31: the decoder must know it (rn 31
+	// reads as sp/wsp there), or the self-verify fallback emits an
+	// X-form word for a W instruction
+	got = armAssembleOne(t, "add w0, wsp, w0, uxth #0", 0)
+	require.Equal(t, uint32(0x0b2023e0), got, "add w ext with wsp base")
+	got = armAssembleOne(t, "adds x0, sp, x0", 0)
+	require.Equal(t, uint32(0xab2063e0), got, "adds x ext with sp base")
 	// ldr x0, [x1]
 	got = armAssembleOne(t, "ldr x0, [x1]", 0)
 	require.Equal(t, uint32(0xf9400020), got, "ldr x0,[x1]")

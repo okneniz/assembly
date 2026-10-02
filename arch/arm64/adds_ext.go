@@ -60,11 +60,11 @@ func newAddsExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddsEx
 		rm,
 		"AddsExt",
 		"rm",
-		"register 31 reads as sp/wsp — use SP/WSP",
+		"register 31 reads as zr — use XZR/WZR (sp is not an operand here)",
 		classX,
 		classW,
-		classSP,
-		classWSP,
+		classXZR,
+		classWZR,
 	)
 
 	if err != nil {
@@ -128,7 +128,7 @@ func decodeAddsExt(w uint32) (Instr, error) {
 	in, err := newAddsExt(
 		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
+		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
 		gprOf(w>>16&0x1f, w>>31&1 == 1),
 		extName(w>>13&7),
 		w>>10&7,

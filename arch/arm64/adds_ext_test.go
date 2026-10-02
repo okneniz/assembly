@@ -42,7 +42,7 @@ func TestAddsExtBuild(t *testing.T) {
 	}{
 		{"adds ext rd sp", "sp", "x1", "x2", "uxtb", 0},
 		{"adds ext rn xzr", "x0", "xzr", "x2", "uxtb", 0},
-		{"adds ext rm xzr", "x0", "x1", "xzr", "uxtb", 0},
+		{"adds ext rm sp", "x0", "x1", "sp", "uxtb", 0},
 		{"adds ext x+w", "x0", "w1", "x2", "uxtb", 0},
 		{"adds ext bad ext", "x0", "x1", "x2", "sxtb2", 0},
 		{"adds ext imm3=8", "x0", "x1", "x2", "uxtx", 8},

@@ -17,7 +17,7 @@ import (
 // AdrpParams — parameters of adrp (a register and the signed 4KB page
 // count from the instruction's page).
 type AdrpParams struct {
-	Rd   arm64.Reg
+	Rd    arm64.Reg
 	Pages int64
 }
 

@@ -114,7 +114,7 @@ func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32)
 		if !load {
 			return newStpBase(
 				newBase(w),
-				newPairBase(rt, rt2, rn, k, off, scale, enc&^1<<22),
+				newPairBase(rt, rt2, rn, k, off, scale, enc&^(1<<22)),
 			), nil
 		}
 

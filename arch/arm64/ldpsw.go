@@ -107,8 +107,8 @@ func (Builder) Ldpsw(rt, rt2, rn Reg, off Off) (Instr, error) {
 func decodeLdpsw(w uint32) (Instr, error) {
 	in, err := newLdpsw(
 		newBase(w),
-		xOf(w&0x1f),
-		xOf(w>>10&0x1f),
+		gprOf(w&0x1f, true),
+		gprOf(w>>10&0x1f, true),
 		xspOf(w>>5&0x1f),
 		Off(signExtendN(w>>15&0x7f, 7)<<2),
 	)

@@ -925,7 +925,7 @@ var arm64Schemas = []Schema{
 		NewField("idx", 23, 2),
 		NewField("L", 22, 1),
 		NewField("opc", 30, 2),
-	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0xA8000000, 3, true, "")),
+	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0xA9000000, 3, true, "")),
 	NewSchema(0xFC000000, 0x28000000, []Field{
 		NewField("Rt", 0, 5, "regW"),
 		NewField("Rn", 5, 5, "regXSP"),
@@ -934,7 +934,7 @@ var arm64Schemas = []Schema{
 		NewField("idx", 23, 2),
 		NewField("L", 22, 1),
 		NewField("opc", 30, 2),
-	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x28000000, 2, false, "")),
+	}, NewMeta("ldp", "Load/Store pair"), "lsPairPP", true, decodeLdpOf(0x29000000, 2, false, "")),
 	NewSchema(0xFE000000, 0x6C000000, []Field{
 		NewField("Rt", 0, 5, "fpRegD"),
 		NewField("Rn", 5, 5, "regXSP"),

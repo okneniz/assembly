@@ -1,23 +1,23 @@
 package arm64
 
-// Generator for adds (immediate) — a thin signed variant over the AddImm
-// family: one constructor (AddsImm), the generation and the shrink of the
-// base add (immediate).
+// Generator for adds (immediate) — one generator, one type, one
+// constructor (AddsImm). Unlike add, the S form reads rd 31 as zr —
+// sp/wsp is not allowed there.
 
 import (
 	"iter"
 	"math/rand/v2"
 	"slices"
 
-	ohsnap "github.com/okneniz/oh-snap"
-
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 )
 
 // AddsImmParams — parameters of adds rd, rn, #imm12[, lsl #12].
 type AddsImmParams struct {
-	Rd, Rn arm64.Reg
+	Rd, Rn arm64.Reg // 31 reads as zr
 	Imm    arm64.Imm12
 	Sh     arm64.Sh12
 }
@@ -43,26 +43,59 @@ func (p AddsImmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
 
+// addsImmGen — generator for adds: same-width registers (rd carries no
+// 31st), immediate 0..0xfff, shift no/lsl #12.
+type addsImmGen struct {
+	rnd *rand.Rand
+}
+
+func newAddsImmGen(rnd *rand.Rand) addsImmGen {
+	return addsImmGen{rnd: rnd}
+}
+
 // AddsImm — an arbitrary adds (immediate).
 func AddsImm(rnd *rand.Rand) ohsnap.Arbitrary[AddsImmParams] {
-	base := AddImm(rnd)
-	return addsImmArb{base: base}
+	return newAddsImmGen(rnd)
 }
 
-type addsImmArb struct {
-	base ohsnap.Arbitrary[AddImmParams]
-}
-
-func (a addsImmArb) Generate() iter.Seq[AddsImmParams] {
+func (g addsImmGen) Generate() iter.Seq[AddsImmParams] {
 	return arbStream(func() AddsImmParams {
-		return AddsImmParams(ohsnap.First(a.base.Generate()))
+		is64 := g.rnd.IntN(2) == 1
+		return NewAddsImmParams(
+			genReg(g.rnd, is64, false, true), // rd 31 reads as zr (the S form)
+			genReg(g.rnd, is64, true, false), // rn 31 reads as sp
+			imm12(g.rnd.Int64N(0x1000)),
+			arm64.Sh12(g.rnd.IntN(2)),
+		)
 	})
 }
 
-func (a addsImmArb) Shrink(p AddsImmParams) iter.Seq[AddsImmParams] {
+func (g addsImmGen) Shrink(p AddsImmParams) iter.Seq[AddsImmParams] {
+	v, err := immValue(p.Imm)
+	if err != nil {
+		return ohsnapEmpty[AddsImmParams]() // String() of our own type is unparseable — invariant
+	}
+
 	var out []AddsImmParams
-	for _, s := range slices.Collect(a.base.Shrink(AddImmParams(p))) {
-		out = append(out, AddsImmParams(s))
+	for _, r := range regShrunk(p.Rd) {
+		out = append(out, NewAddsImmParams(r, p.Rn, p.Imm, p.Sh))
+	}
+
+	for _, r := range regShrunk(p.Rn) {
+		out = append(out, NewAddsImmParams(p.Rd, r, p.Imm, p.Sh))
+	}
+
+	for d := range shrink.Halving[int64](0)(v) {
+		imm, err := arm64.New().Imm12(d)
+		if err != nil {
+			continue // unreachable: half of a valid imm12 is always in 0..4095
+		}
+
+		out = append(out, NewAddsImmParams(p.Rd, p.Rn, imm, p.Sh))
+	}
+
+	if p.Sh != arm64.NoSh12 {
+		out = append(out, NewAddsImmParams(p.Rd, p.Rn, p.Imm, arm64.NoSh12))
 	}
 
 	return slices.Values(out)

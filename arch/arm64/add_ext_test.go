@@ -17,6 +17,8 @@ func TestAddExtBuild(t *testing.T) {
 		word uint32
 	}{
 		{"add x1,x2,x3,uxtb#0", "x1", "x2", "x3", "uxtb", 0, 0x8b230041},
+		{"add w0,w1,wzr,uxtb", "w0", "w1", "wzr", "uxtb", 0, 0x0b3f0020},
+		{"add x0,x1,xzr,uxtx", "x0", "x1", "xzr", "uxtx", 0, 0x8b3f6020},
 		{"add x0,x1,x2,uxtx#7", "x0", "x1", "x2", "uxtx", 7, 0x8b227c20},
 		{"add w1,w2,w3,uxtw#2", "w1", "w2", "w3", "uxtw", 2, 0x0b234841},
 		{"add sp,sp,x3,sxtx#3", "sp", "sp", "x3", "sxtx", 3, 0x8b23efff},
@@ -43,7 +45,7 @@ func TestAddExtBuild(t *testing.T) {
 	}{
 		{"add ext rd xzr", "xzr", "x1", "x2", "uxtb", 0},
 		{"add ext rn xzr", "x0", "xzr", "x2", "uxtb", 0},
-		{"add ext rm xzr", "x0", "x1", "xzr", "uxtb", 0},
+		{"add ext rm sp", "x0", "x1", "sp", "uxtb", 0},
 		{"add ext x+w", "x0", "w1", "x2", "uxtb", 0},
 		{"add ext bad ext", "x0", "x1", "x2", "uxtx2", 0},
 		{"add ext imm3=8", "x0", "x1", "x2", "uxtx", 8},

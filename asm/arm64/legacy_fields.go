@@ -422,8 +422,11 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 					return nil, err
 				}
 
+				// Rd of the S form is zr of the operands' width (wzr
+				// for the w forms — the hardcoded xzr refused them)
+				zr := zeroReg(rn)
 				return map[string]any{
-					"Rd":    "xzr",
+					"Rd":    zr,
 					"Rn":    rn,
 					"Rm":    rm,
 					"shift": sh,
@@ -442,7 +445,7 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 
 				return map[string]any{
 					"Rd":    rd,
-					"Rn":    "xzr",
+					"Rn":    zeroReg(rd),
 					"Rm":    rm,
 					"shift": sh,
 					"imm6":  imm6,

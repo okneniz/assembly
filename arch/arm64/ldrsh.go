@@ -78,7 +78,7 @@ func (Builder) Ldrsh(rt, rn Reg, off Off) (Instr, error) {
 func decodeLdrsh(w uint32) (Instr, error) {
 	in, err := newLdrsh(
 		newBase(w),
-		xOf(w&0x1f),
+		gprOf(w&0x1f, true),
 		xspOf(w>>5&0x1f),
 		Off(int64(w>>10&0xfff)<<1),
 	)

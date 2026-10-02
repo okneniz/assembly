@@ -42,7 +42,7 @@ func TestSubsExtBuild(t *testing.T) {
 	}{
 		{"subs sp,rd", "sp", "x1", "x2", "sxtx", 2},
 		{"subs xzr,rn", "x0", "xzr", "x2", "sxtx", 2},
-		{"subs xzr,rm", "x0", "x1", "xzr", "sxtx", 2},
+		{"subs sp,rm", "x0", "x1", "sp", "sxtx", 2},
 		{"subs x,w widths", "x0", "w1", "x2", "sxtx", 2},
 		{"subs bad ext", "x0", "x1", "x2", "foo", 2},
 		{"subs imm3 8", "x0", "x1", "x2", "sxtx", 8},

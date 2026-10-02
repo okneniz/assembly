@@ -37,7 +37,7 @@ func (p AddsExtParams) String() string {
 
 // AddsExt — an arbitrary adds (extended register).
 func AddsExt(rnd *rand.Rand) ohsnap.Arbitrary[AddsExtParams] {
-	base := ext(rnd)
+	base := extS(rnd)
 	return addsExtArb{base: base}
 }
 

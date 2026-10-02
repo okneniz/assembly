@@ -37,7 +37,7 @@ func (p SubsExtParams) String() string {
 
 // SubsExt — an arbitrary subs (extended register).
 func SubsExt(rnd *rand.Rand) ohsnap.Arbitrary[SubsExtParams] {
-	base := ext(rnd)
+	base := extS(rnd)
 	return subsExtArb{base: base}
 }
 
