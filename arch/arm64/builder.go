@@ -292,13 +292,13 @@ func (Builder) DupElem(rd, rn VReg, arr string, idx uint32) (Instr, error) {
 	return newDupElem(base{}, q, size, idx, rd, rn)
 }
 
-func (Builder) DupScalar(rd, rn VReg, elem string) (Instr, error) {
+func (Builder) DupScalar(rd, rn VReg, elem string, idx uint32) (Instr, error) {
 	size, err := elemSize("DupScalar", elem)
 	if err != nil {
 		return nil, err
 	}
 
-	return newDupScalar(base{}, size, rd, rn)
+	return newDupScalar(base{}, size, idx, rd, rn)
 }
 
 func (Builder) EonShift(rd, rn, rm Reg, imm Imm6, sh Shift) (Instr, error) {
@@ -327,15 +327,19 @@ func (Builder) Fadd(rd, rn, rm FReg) (Instr, error) {
 
 // FcmlaElem - the Builder entry: .4h/.8h/.2s/.4s/.2d lanes.
 func (Builder) FcmlaElem(rd, rn, rm VReg, arr string, idx, rot uint32) (Instr, error) {
+	// only the three complex arrangements exist: the .2s and .2d words
+	// are unallocated (clang refuses, the word decodes as unknown)
+	switch arr {
+	case "4h", "8h", "4s":
+	default:
+		return nil, fmt.Errorf(
+			"arm64.NewFcmlaElem: arrangement %q is not one of [4h 8h 4s]", arr,
+		)
+	}
+
 	q, size, err := arrBits(arr)
 	if err != nil {
 		return nil, fmt.Errorf("arm64.NewFcmlaElem: %w", err)
-	}
-
-	if size == 0 {
-		return nil, fmt.Errorf(
-			"arm64.NewFcmlaElem: arrangement %q is not one of the complex lane widths", arr,
-		)
 	}
 
 	return newFcmlaElem(base{}, q, size, idx, rot, rd, rn, rm)
@@ -856,9 +860,9 @@ func (Builder) SmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSmlalElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSmlalElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -878,9 +882,9 @@ func (Builder) SmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSmlslElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSmlslElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -913,9 +917,9 @@ func (Builder) SmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSmullElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSmullElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -935,9 +939,9 @@ func (Builder) SqdmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSqdmlalElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSqdmlalElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -957,9 +961,9 @@ func (Builder) SqdmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSqdmlslElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSqdmlslElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -997,9 +1001,9 @@ func (Builder) SqdmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (I
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewSqdmullElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewSqdmullElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -1338,9 +1342,9 @@ func (Builder) UmlalElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewUmlalElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewUmlalElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -1360,9 +1364,9 @@ func (Builder) UmlslElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewUmlslElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewUmlslElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)
@@ -1395,9 +1399,9 @@ func (Builder) UmullElem(rd, rn, rm VReg, arr string, two bool, idx uint32) (Ins
 	}
 
 	switch arr {
-	case "8h", "4s", "2d":
+	case "4s", "2d":
 	default:
-		return nil, fmt.Errorf("arm64.NewUmullElem: arrangement %q is not one of [8h 4s 2d]", arr)
+		return nil, fmt.Errorf("arm64.NewUmullElem: arrangement %q is not one of [4s 2d]", arr)
 	}
 
 	_, size, err := arrBits(arr)

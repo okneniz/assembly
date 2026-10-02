@@ -1196,10 +1196,10 @@ func (p *Program) InsElem(rd, rn arch.VReg, elem string, idx, srcIdx uint32) *Pr
 	return p.instrLine(pos, "ins", i, err)
 }
 
-// DupScalar - mov.s|d vd, vn (the scalar DUP alias).
-func (p *Program) DupScalar(rd, rn arch.VReg, elem string) *Program {
+// DupScalar - mov <s|d>n, vn.s|d[idx] (the scalar DUP alias).
+func (p *Program) DupScalar(rd, rn arch.VReg, elem string, idx uint32) *Program {
 	pos := p.pos()
-	i, err := p.b.DupScalar(rd, rn, elem)
+	i, err := p.b.DupScalar(rd, rn, elem, idx)
 	return p.instrLine(pos, "mov", i, err)
 }
 

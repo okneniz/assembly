@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -67,6 +68,13 @@ func newSmov(b base, q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 
 	if err := requireGprClass(gpr, "Smov", "wd"); err != nil {
 		return Smov{}, err
+	}
+
+	// the .s form exists only with an x destination (the Q=0 words are
+	// unallocated: clang refuses smov .s into w, the word decodes as
+	// unknown)
+	if size == 2 && !gpr.Is64() {
+		return Smov{}, errors.New("arm64.NewSmov: an x destination expected for .s elements")
 	}
 
 	qv := uint32(0)

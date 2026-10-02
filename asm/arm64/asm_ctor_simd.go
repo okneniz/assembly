@@ -426,30 +426,13 @@ func newMovSimd(arr string) func([]vOp) (Instr, error) {
 	}
 }
 
-// newMovInsArm — mov.sz vd[idx], rn (INS general: inserting a GPR into a lane)
-// and the scalar DUP alias mov.sz vd, vn (llvm prints mov.d/mov.s). The size
-// arrives with the registration key (mov.b/h/s/d); the index — in
-// ops[0].Num() (the laneIdx flag).
+// newMovInsArm — mov.sz vd[idx], rn (INS general: inserting a GPR into
+// a lane). The size arrives with the registration key (mov.b/h/s/d);
+// the index — in ops[0].Num() (the laneIdx flag). The scalar DUP alias
+// (mov b/h/s/d<n>, vn.sz[idx]) is the bare-mov shape, handled by the
+// alias layer's mov constructor.
 func newMovInsArm(elem string) func([]vOp) (Instr, error) {
 	return func(ops []vOp) (Instr, error) {
-		// the scalar DUP alias: mov.sz vd, vn (no lane index anywhere;
-		// llvm prints these as mov.d/mov.s)
-		if len(ops) == 2 && ops[0].Kind() == arch.ArmOpReg && !ops[0].LaneIdx() &&
-			ops[1].Kind() == arch.ArmOpReg && ops[1].Reg() != "" &&
-			ops[1].Reg()[0] == 'v' && !ops[1].LaneIdx() {
-			rd, err := wantV(ops[0], "mov")
-			if err != nil {
-				return nil, err
-			}
-
-			rn, err := wantV(ops[1], "mov")
-			if err != nil {
-				return nil, err
-			}
-
-			return (arch.Builder{}).DupScalar(rd, rn, elem)
-		}
-
 		if len(ops) != 2 || ops[0].Kind() != arch.ArmOpReg {
 			return nil, errors.New("mov: want vd[idx], rn")
 		}

@@ -3,6 +3,7 @@ package arm64
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/okneniz/assembly/disasm"
 )
@@ -65,8 +66,8 @@ type InsElem struct {
 }
 
 // newInsElem - the InsElem constructor: validates the operands and
-// assembles the struct (the Builder method delegates here; the
-// decoder calls it with values read from the word).
+// assembles the struct (the Builder method delegates here; the decoder
+// calls it with values read from the word).
 func newInsElem(b base, size, idx, srcIdx uint32, rd, rn VReg) (InsElem, error) {
 	if err := requireElemSize("InsElem", size); err != nil {
 		return InsElem{}, err
@@ -107,38 +108,46 @@ func (i InsElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, insElemEnc|imm5<<16|i.srcIdx<<i.size<<11|rn<<5|rd)
 }
 
-// DupScalar — the scalar DUP alias (llvm prints mov.d/mov.s vd, vn):
-// the bottom fp lane of vn replicated into vd's scalar; imm5 is
-// one-hot (size only - the index is always 0).
+// DupScalar — the scalar DUP alias (llvm prints mov b/h/s/d<n>,
+// vn.sz[idx]): the bottom fp register view of one vn lane. Q is fixed 1
+// (the 0x5E000400 class); the lane index rides imm5 above the size
+// one-hot, the same layout as the element DUP.
 type DupScalar struct {
 	base
 
-	size   uint32 // 2=s 3=d
-	rd, rn string
+	size, idx uint32 // 0=b 1=h 2=s 3=d
+	rd, rn    string
 }
 
 // newDupScalar - the DupScalar constructor: validates the operands
 // and assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newDupScalar(b base, size uint32, rd, rn VReg) (DupScalar, error) {
-	if size < 2 || size > 3 {
+func newDupScalar(b base, size, idx uint32, rd, rn VReg) (DupScalar, error) {
+	if err := requireElemSize("DupScalar", size); err != nil {
+		return DupScalar{}, err
+	}
+
+	if idx >= 16>>size {
 		return DupScalar{}, fmt.Errorf(
-			"arm64.NewDupScalar: only the .s and .d scalar forms exist",
+			"arm64.NewDupScalar: lane index %d out of range (0..%d)",
+			idx, 16>>size-1,
 		)
 	}
 
 	return DupScalar{
 		base: b,
 		size: size,
+		idx:  idx,
 		rd:   rd.name(),
 		rn:   rn.name(),
 	}, nil
 }
 
-const dupScalarEnc uint32 = 0x5E000400 // mov vd, vn (the scalar DUP alias)
+const dupScalarEnc uint32 = 0x5E000400 // mov <b|h|s|d>n, vn.sz[idx]
 
 func (i DupScalar) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mov.%s %s, %s", elemName(i.size), i.rd, i.rn)
+	return fmt.Sprintf("mov %s, %s.%s[%d]",
+		scalarRegName(elemName(i.size), i.rd), i.rn, elemName(i.size), i.idx)
 }
 
 func (i DupScalar) Encode(w io.Writer) (int64, error) {
@@ -147,5 +156,17 @@ func (i DupScalar) Encode(w io.Writer) (int64, error) {
 		return 0, fmt.Errorf("mov: %w", err)
 	}
 
-	return writeWord(w, dupScalarEnc|1<<i.size<<16|rn<<5|rd)
+	imm5 := 1<<i.size | i.idx<<(i.size+1)
+	return writeWord(w, dupScalarEnc|imm5<<16|rn<<5|rd)
+}
+
+// scalarRegName — the scalar view name of a vector register ("v9" and
+// ".s" → "s9"): the scalar views share the vector file.
+func scalarRegName(letter, name string) string {
+	num, err := armRegNum(name)
+	if err != nil {
+		return name
+	}
+
+	return letter + strconv.Itoa(int(num))
 }

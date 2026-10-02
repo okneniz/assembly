@@ -25,9 +25,10 @@ func TestSimdDupElem(t *testing.T) {
 		{0x4E070420, "dup.16b v0, v1[3]"}, // llvm: dup v0.16b, v1.b[3]
 		// DupElem: ins (element)
 		{0x6E180420, "ins.d v0[1], v1[0]"}, // llvm: ins v0.d[1], v1.d[0]
-		// DupElem: the scalar dup alias
-		{0x5E080420, "mov.d v0, v1"}, // llvm: mov.d v0, v1
-		{0x5E040420, "mov.s v0, v1"}, // llvm: mov.s v0, v1
+		// DupElem: the scalar dup alias (llvm prints the scalar view
+		// with the lane index: mov d0, v1.d[0])
+		{0x5E080420, "mov d0, v1.d[0]"},
+		{0x5E040420, "mov s0, v1.s[0]"},
 		// SimdCopy: indexed GPR-side forms (used to be .word)
 		{0x4E0C2C20, "smov x0, v1.s[1]"},
 		{0x0E072C20, "smov w0, v1.b[3]"},

@@ -628,15 +628,22 @@ func decodeFadd(w uint32) (Instr, error) {
 
 func decodeFcmlaElem(w uint32) (Instr, error) {
 	size := w >> 22 & 3
+	// the lane index lives in {L (b21), H (b11)}: .h reads both bits,
+	// .s only H (see fcmla_elem.go)
+	idx := w >> 11 & 1
+	if size == 1 {
+		idx = idx<<1 | w>>21&1
+	}
+
 	in, err := newFcmlaElem(
 		newBase(w),
 		w>>30&1,
 		size,
-		byElemIndex(w, size),
+		idx,
 		w>>12&0xf/2*90%360,
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(byElemVm(w, size))),
+		newVReg(uint8(w>>16&0x1f)),
 	)
 	if err != nil {
 		return decodeUnknown(w) // unencodable operand bits: data
@@ -1882,16 +1889,19 @@ func decodeSimdDupElem(w uint32) (Instr, error) {
 }
 
 // decodeSimdDupScalar — the scalar DUP alias: 0x5E000400/0xFFE0FC00;
-// imm5 is one-hot (size only).
+// imm5 is the size one-hot plus the lane index above it (llvm prints
+// mov b/h/s/d<n>, vn.sz[idx]).
 func decodeSimdDupScalar(w uint32) (Instr, error) {
 	imm5 := w >> 16 & 0x1f
-	if imm5 == 0 || imm5 > 8 || imm5&(imm5-1) != 0 {
+	if imm5 == 0 || bitsCtz(imm5) > 3 {
 		return decodeUnknown(w)
 	}
 
+	size := uint32(bitsCtz(imm5))
 	in, err := newDupScalar(
 		newBase(w),
-		uint32(bitsCtz(imm5)),
+		size,
+		imm5>>(size+1),
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 	)

@@ -20,9 +20,9 @@ type SmullElem struct {
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
 func newSmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SmullElem, error) {
-	if size > 2 {
+	if size == 0 || size > 2 {
 		return SmullElem{}, fmt.Errorf(
-			"arm64.NewSmullElem: the source lanes are at most .s (.2d results take .4s sources)",
+			"arm64.NewSmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
 

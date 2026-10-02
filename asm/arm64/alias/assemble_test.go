@@ -102,7 +102,10 @@ func TestAliasRoundTrip(t *testing.T) {
 	}
 	for _, src := range cases {
 		word := assembleOne(t, src, 0)
-		insts, err := arch.MakeDecoder()(parsec.Stateless{}, bytes.Buffer(binary.LittleEndian.AppendUint32(nil, word)))
+		insts, err := arch.MakeDecoder()(
+			parsec.Stateless{},
+			bytes.Buffer(binary.LittleEndian.AppendUint32(nil, word)),
+		)
 		require.NoError(t, err)
 		require.Len(t, insts, 1, "%q → %#08x: nothing decoded", src, word)
 		text := insts[0].ObjDump(disasm.DefaultViewCtx())
@@ -137,6 +140,35 @@ func TestMovFromVectorAlias(t *testing.T) {
 		"mov x0, v1.s[1]",
 		"umov w0, v1.d[1]",
 		"umov x0, v1.s[1]",
+	} {
+		res, errs := asm.Assemble(src, 0, NewASMBackend())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+		require.Empty(t, res.Sections, "case %q", src)
+	}
+}
+
+// TestDupScalarAlias - the scalar DUP alias mov <b|h|s|d>n, vn.sz[idx]:
+// the destination view class must match the source element letter, the
+// index stays inside the lane count. Words pinned against clang
+// (arm64-none-elf, 2026-10-02).
+func TestDupScalarAlias(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"mov s9, v19.s[0]", 0x5e040669},
+		{"mov b9, v19.b[3]", 0x5e070669},
+		{"mov h9, v19.h[7]", 0x5e1e0669},
+		{"mov d9, v19.d[1]", 0x5e180669},
+	} {
+		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+	}
+
+	for _, src := range []string{
+		"mov s9, v19.h[0]", // the view class must match the element
+		"mov s9, v19.s[4]", // the lane index out of the .s count
+		"mov d9, v19.d[2]",
+		"mov v9.s, v19.s[0]", // the vector dest is not a scalar view
 	} {
 		res, errs := asm.Assemble(src, 0, NewASMBackend())
 		require.NotEmpty(t, errs, "case %q must not assemble", src)

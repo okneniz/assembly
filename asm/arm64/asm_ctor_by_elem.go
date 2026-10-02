@@ -41,9 +41,10 @@ func registerByElem(m map[string]func(ops []vOp) (Instr, error)) {
 	for _, op := range byElemOps {
 		switch {
 		case op.long:
-			// Q=0 and Q=1 forms print the same result arrangement; the
-			// keys differ by the "2" suffix
-			for size := range uint32(3) {
+			// the long by-element families: the .8h-result class is
+			// unallocated; the suffix is the RESULT arrangement (the
+			// h-source forms read it as .4s, the s-source as .2d)
+			for size := uint32(1); size < 3; size++ {
 				arr := decodeArrangement(1, size+1)
 				m[op.name+"."+arr] = newByElemArm(op.name, 0, size, true)
 				m[op.name+"2."+arr] = newByElemArm(op.name, 1, size, true)
@@ -56,11 +57,14 @@ func registerByElem(m map[string]func(ops []vOp) (Instr, error)) {
 			m[op.name+".2d"] = newByElemArm(op.name, 1, 3, false)
 		default:
 			if op.name == "fcmla" {
-				for q := range uint32(2) {
-					for size := uint32(1); size < 3; size++ {
-						m[op.name+"."+decodeArrangement(q, size)] =
-							newByElemArm(op.name, q, size, false)
-					}
+				// only the three complex arrangements exist (.2s/.2d are
+				// unallocated): .4h/.4s take a 1-bit lane index, .8h a
+				// 2-bit one
+				for _, t := range []struct {
+					key     string
+					q, size uint32
+				}{{"4h", 0, 1}, {"8h", 1, 1}, {"4s", 1, 2}} {
+					m[op.name+"."+t.key] = newByElemArm(op.name, t.q, t.size, false)
 				}
 
 				continue

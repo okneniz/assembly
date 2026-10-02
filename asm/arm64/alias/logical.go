@@ -8,10 +8,27 @@ package alias
 import (
 	"errors"
 	"fmt"
+	"strings"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
 	arm64 "github.com/okneniz/assembly/asm/arm64"
 )
+
+// isDigits — s is a non-empty digit run (the register number of a
+// scalar view name like s9/d31).
+func isDigits(s string) bool {
+	if s == "" {
+		return false
+	}
+
+	for _, r := range s {
+		if r < '0' || r > '9' {
+			return false
+		}
+	}
+
+	return true
+}
 
 // newTst is the tst rn, #bitmask | rn, rm{, shift} alias: ands with
 // Rd = zr.
@@ -104,6 +121,35 @@ func newMov(ops []arch.ArmOp) (arch.Instr, error) {
 	rd, err := arch.WantAReg(ops[0], "mov")
 	if err != nil {
 		return nil, err
+	}
+
+	// mov <b|h|s|d><n>, vn.<e>[idx]: the scalar DUP alias (the decoder
+	// prints this form). The destination view class must match the
+	// source element letter.
+	if len(rd) >= 2 && strings.ContainsRune("bhsd", rune(rd[0])) &&
+		isDigits(rd[1:]) && ops[1].IsReg() && ops[1].LaneIdx() &&
+		ops[1].Arr() == string(rd[0]) {
+		idx := ops[1].Num()
+		if idx < 0 {
+			return nil, errors.New("mov: bad lane index")
+		}
+
+		rdV, err := arch.VRegOf("v" + rd[1:])
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		rnV, err := arch.VRegOf(ops[1].Reg())
+		if err != nil {
+			return nil, fmt.Errorf("mov: %w", err)
+		}
+
+		in, ierr := (arch.Builder{}).DupScalar(rdV, rnV, string(rd[0]), uint32(idx))
+		if ierr != nil {
+			return nil, fmt.Errorf("mov: %w", ierr)
+		}
+
+		return in, nil
 	}
 
 	if !arm64.IsGPR(rd) {

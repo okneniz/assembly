@@ -32,7 +32,7 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 			gprOf(w>>5&0x1f, size == 3),
 		)
 	case 2: // SMOV: the GPR destination in Rd, the vector source in Rn
-		return newSmov(
+		in, err := newSmov(
 			newBase(w),
 			q,
 			size,
@@ -40,8 +40,14 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 			newVReg(uint8(w>>5&0x1f)),
 			gprOf(w&0x1f, q == 1),
 		)
+		if err != nil {
+			// the .s-into-w class is unallocated (data, not a bug)
+			return decodeUnknown(w)
+		}
+
+		return in, nil
 	default: // UMOV: the GPR destination in Rd, the vector source in Rn
-		return newUmov(
+		in, err := newUmov(
 			newBase(w),
 			q,
 			size,
@@ -49,5 +55,10 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 			newVReg(uint8(w>>5&0x1f)),
 			gprOf(w&0x1f, size == 3),
 		)
+		if err != nil {
+			return decodeUnknown(w) // width-mismatched operands: data
+		}
+
+		return in, nil
 	}
 }

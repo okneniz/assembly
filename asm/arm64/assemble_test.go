@@ -676,6 +676,58 @@ func TestUaddlvWords(t *testing.T) {
 	}
 }
 
+// TestElemWords — the stage-7 element families (the SIMD copy class and
+// the by-element arithmetic) assemble into the clang words: the fcmla index
+// layouts (.4h — bit 21, .4s — bit 11) and the long families' result
+// arrangements (the .8h-result class is unallocated).
+func TestElemWords(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"smov x5, v19.s[0]", 0x4e042e65},
+		{"smov w5, v19.b[0]", 0x0e012e65},
+		{"mov.b v3[5], w17", 0x4e0b1e23},
+		{"ins.b v9[2], v19[5]", 0x6e052e69},
+		{"dup.8b v9, v19[0]", 0x0e010669},
+		{"dup.2s v9, v19[0]", 0x0e040669},
+		{"fcmla.4s v9, v19, v5[1], #0", 0x6f851a69},
+		{"fcmla.4h v9, v19, v20[0], #90", 0x2f543269},
+		{"fcmla.8h v9, v19, v5[3], #180", 0x6f655a69},
+		{"smull2.4s v9, v19, v5[0]", 0x4f45a269},
+		{"smull.4s v9, v19, v5[7]", 0x0f75aa69},
+		{"smull2.2d v9, v19, v20[1]", 0x4fb4a269},
+		{"sqdmlsl.2d v9, v19, v5[3]", 0x0fa57a69},
+		{"mul.4h v9, v19, v5[3]", 0x0f758269},
+		{"mla.2s v31, v30, v20[3]", 0x2fb40bdf},
+		{"fmla.2d v9, v19, v20[1]", 0x4fd41a69},
+		{"fmulx.4s v0, v1, v15[3]", 0x6faf9820},
+		{"smlal2.4s v0, v1, v2[5]", 0x4f522820},
+		{"umull.2d v3, v4, v25[2]", 0x2f99a883},
+		{"sqdmulh.8h v7, v8, v9[6]", 0x4f69c907},
+	} {
+		got := armAssembleOne(t, c.src, 0)
+		require.Equal(t, c.word, got, "case %q", c.src)
+	}
+}
+
+// TestElemRefusals — the element spellings clang rejects: the smov .s
+// destination width, the unallocated fcmla arrangements and the
+// unallocated .8h-result class of the long families.
+func TestElemRefusals(t *testing.T) {
+	for _, src := range []string{
+		"smov w5, v19.s[0]",
+		"fcmla.2s v0, v1, v2[0], #0",
+		"fcmla.2d v0, v1, v2[0], #0",
+		"smull.8h v0, v1, v2[0]",
+		"smull2.8h v0, v1, v2[0]",
+		"fcmla.4s v0, v1, v2[2], #0",
+	} {
+		_, errs := asm.Assemble(src, 0, New())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+	}
+}
+
 // TestZeroShiftSpellings — the zero-amount shift modifiers are the
 // canonical no-shift spelling (clang accepts them; the decoder prints
 // without), pinned after the loose-compare learned to drop the suffix.

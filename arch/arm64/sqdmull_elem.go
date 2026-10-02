@@ -20,9 +20,9 @@ type SqdmullElem struct {
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
 func newSqdmullElem(b base, q, size, idx uint32, rd, rn, rm VReg) (SqdmullElem, error) {
-	if size > 2 {
+	if size == 0 || size > 2 {
 		return SqdmullElem{}, fmt.Errorf(
-			"arm64.NewSqdmullElem: the source lanes are at most .s (.2d results take .4s sources)",
+			"arm64.NewSqdmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
 

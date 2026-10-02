@@ -20,9 +20,9 @@ type UmlalElem struct {
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
 func newUmlalElem(b base, q, size, idx uint32, rd, rn, rm VReg) (UmlalElem, error) {
-	if size > 2 {
+	if size == 0 || size > 2 {
 		return UmlalElem{}, fmt.Errorf(
-			"arm64.NewUmlalElem: the source lanes are at most .s (.2d results take .4s sources)",
+			"arm64.NewUmlalElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
 
