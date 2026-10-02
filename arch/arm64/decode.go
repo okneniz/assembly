@@ -598,6 +598,10 @@ func decodeEorShift(w uint32) (Instr, error) {
 }
 
 func decodeExtr(w uint32) (Instr, error) {
+	if w>>22&1 != w>>31&1 { // N must equal sf — the fixed 0/1 classes
+		return nil, fmt.Errorf("extr: N != sf")
+	}
+
 	in, err := newExtr(
 		newBase(w),
 		gprOf(w&0x1f, w>>31&1 == 1),

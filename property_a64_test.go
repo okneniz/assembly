@@ -454,10 +454,16 @@ func TestPropertyAliasRoundTrip(t *testing.T) {
 		newPropFamily("Sxtb", acmp.Sxtb),
 		newPropFamily("Sxth", acmp.Sxth),
 		newPropFamily("Sxtw", acmp.Sxtw),
+		newPropFamily("Uxtb", acmp.Uxtb),
+		newPropFamily("Uxth", acmp.Uxth),
 		newPropFamily("Ubfiz", acmp.Ubfiz),
 		newPropFamily("Ubfx", acmp.Ubfx),
 		newPropFamily("Sbfiz", acmp.Sbfiz),
 		newPropFamily("Sbfx", acmp.Sbfx),
+		newPropFamily("LslImm", acmp.LslImm),
+		newPropFamily("LsrImm", acmp.LsrImm),
+		newPropFamily("AsrImm", acmp.AsrImm),
+		newPropFamily("RorImm", acmp.RorImm),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {

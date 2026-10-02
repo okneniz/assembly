@@ -1228,6 +1228,10 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 				return nil, err
 			}
 
+			if sh < 0 || sh >= regsize {
+				return nil, fmt.Errorf("lsl: shift amount out of range 0..%d", regsize-1)
+			}
+
 			return map[string]any{
 				"Rd":   rd,
 				"Rn":   rn,
@@ -1240,6 +1244,10 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 				return nil, err
 			}
 
+			if sh < 0 || sh >= regsize {
+				return nil, fmt.Errorf("lsr: shift amount out of range 0..%d", regsize-1)
+			}
+
 			return map[string]any{"Rd": rd, "Rn": rn, "immr": sh, "imms": regsize - 1}, nil
 		case "asr":
 			sh, err := opImmOf(in, 2)
@@ -1247,17 +1255,33 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 				return nil, err
 			}
 
+			if sh < 0 || sh >= regsize {
+				return nil, fmt.Errorf("asr: shift amount out of range 0..%d", regsize-1)
+			}
+
 			return map[string]any{"Rd": rd, "Rn": rn, "immr": sh, "imms": regsize - 1}, nil
 		case "sxtb", "sxth", "sxtw", "uxtb", "uxth":
 			widths := map[string]int64{"sxtb": 8, "sxth": 16, "sxtw": 32, "uxtb": 8, "uxth": 16}
+			rdNum, rerr := armRegNum(rd)
+			if rerr != nil {
+				return nil, rerr
+			}
+
 			rnNum, nerr := armRegNum(rn)
 			if nerr != nil {
 				return nil, nerr
 			}
 
 			// sbfmAlias prints the W name from the immRn field; Rn — the x name of the same number
+			rdName, rnName := rd, "x"+strconvFormat(rnNum)
+			if in.mnem == "uxtb" || in.mnem == "uxth" {
+				// uxtb/uxth are 32-bit forms: clang canonicalizes even the
+				// x spelling to the W word
+				rdName, rnName = "w"+strconvFormat(rdNum), "w"+strconvFormat(rnNum)
+			}
+
 			return map[string]any{
-				"Rd": rd, "Rn": "x" + strconvFormat(rnNum), "immRn": rnNum,
+				"Rd": rdName, "Rn": rnName, "immRn": rnNum,
 				"immr": 0, "imms": widths[in.mnem] - 1,
 			}, nil
 		case "ubfiz", "sbfiz":
@@ -1426,6 +1450,10 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 		imms, err := opImmOf(in, immIdx)
 		if err != nil {
 			return nil, err
+		}
+
+		if regIsW(rd) && imms > 31 {
+			return nil, fmt.Errorf("%s: lsb out of range for the 32-bit form", in.mnem)
 		}
 
 		return map[string]any{"Rd": rd, "Rn": rn, "Rm": rm, "imms": imms}, nil

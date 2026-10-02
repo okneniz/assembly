@@ -1,7 +1,7 @@
 package alias
 
 // Generator for the sxth alias — one generator, one type, one text form
-// family: sxth xd, wn.
+// family: sxth xd|wd, wn (both destination widths).
 
 import (
 	"iter"
@@ -16,7 +16,7 @@ import (
 
 // SxthParams — parameters of the sxth alias.
 type SxthParams struct {
-	Rd arm64.Reg // x-register
+	Rd arm64.Reg // x- or w-register
 	Rn arm64.Reg // w-register
 }
 
@@ -40,7 +40,7 @@ func (p SxthParams) Instr() arm64.Instr {
 	return in
 }
 
-// sxthGen — generator for sxth: the destination is an x-register, the
+// sxthGen — generator for sxth: the destination of either width, the
 // source a w-register.
 type sxthGen struct {
 	rnd *rand.Rand
@@ -57,7 +57,7 @@ func Sxth(rnd *rand.Rand) ohsnap.Arbitrary[SxthParams] {
 
 func (g sxthGen) Generate() iter.Seq[SxthParams] {
 	return stream(func() SxthParams {
-		return NewSxthParams(a64.GenReg(g.rnd, true, false, true), a64.GenReg(g.rnd, false, false, true))
+		return NewSxthParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), a64.GenReg(g.rnd, false, false, true))
 	})
 }
 

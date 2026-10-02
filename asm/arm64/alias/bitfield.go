@@ -10,8 +10,9 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
-// newSxt is the sxtb/sxth/sxtw alias: SBFM immr=0, imms=7/15/31; Rn
-// is a W-register.
+// newSxt is the sxtb/sxth/sxtw alias: SBFM immr=0, imms=7/15/31; the
+// source is a W-register (sxtb/sxth take both destination widths, sxtw
+// only the 64-bit one).
 func newSxt(name string, imms uint32) arch.ArmCtor {
 	return func(ops []arch.ArmOp) (arch.Instr, error) {
 		if len(ops) != 2 {
@@ -32,13 +33,48 @@ func newSxt(name string, imms uint32) arch.ArmCtor {
 			return nil, fmt.Errorf("%s: W-register expected", name)
 		}
 
+		isf := rd[0] == 'x'
+		if !isf && name == "sxtw" {
+			return nil, fmt.Errorf("%s: 64-bit register expected", name)
+		}
+
 		num, err := arch.ArmRegNum(rnW)
 		if err != nil {
 			return nil, err
 		}
 
-		rn := arch.RegNameXOf(num) // the encoding uses the same number
-		return arch.SbfmOf(rd, rn, 0, imms, true)
+		rn := rnW
+		if isf {
+			rn = arch.RegNameXOf(num) // the encoding uses the same number
+		}
+
+		return arch.SbfmOf(rd, rn, 0, imms, isf)
+	}
+}
+
+// newUxt is the uxtb/uxth alias: UBFM immr=0, imms=7/15 — a 32-bit
+// form only (both registers are W).
+func newUxt(name string, imms uint32) arch.ArmCtor {
+	return func(ops []arch.ArmOp) (arch.Instr, error) {
+		if len(ops) != 2 {
+			return nil, fmt.Errorf("%s: want rd, rn", name)
+		}
+
+		rd, err := arch.WantAReg(ops[0], name)
+		if err != nil {
+			return nil, err
+		}
+
+		rn, err := arch.WantAReg(ops[1], name)
+		if err != nil {
+			return nil, err
+		}
+
+		if rd[0] != 'w' || rn[0] != 'w' {
+			return nil, fmt.Errorf("%s: W-register expected", name)
+		}
+
+		return arch.UbfmOf(rd, rn, 0, imms, false)
 	}
 }
 

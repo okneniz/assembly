@@ -1,7 +1,7 @@
 package riscv
 
-// The I-type ALU core (rd, rs1, imm12): andi/ori/xori/slti/sltiu — one
-// parameter type, the Op field names the family. The per-family
+// The I-type ALU core (rd, rs1, imm12): andi/ori/xori/slti/sltiu/addiw
+// — one parameter type, the Op field names the family. The per-family
 // generators live in their own files (andi.go, ...).
 
 import (
@@ -25,6 +25,7 @@ const (
 	RiXori
 	RiSlti
 	RiSltiu
+	RiAddiw
 	riOpCount
 )
 
@@ -58,6 +59,7 @@ var riCalls = [riOpCount]func(riscv.Builder, RiParams) riscv.Instr{
 	RiXori:  func(b riscv.Builder, p RiParams) riscv.Instr { return b.Xori(p.Rd, p.Rs1, p.Imm) },
 	RiSlti:  func(b riscv.Builder, p RiParams) riscv.Instr { return b.Slti(p.Rd, p.Rs1, p.Imm) },
 	RiSltiu: func(b riscv.Builder, p RiParams) riscv.Instr { return b.Sltiu(p.Rd, p.Rs1, p.Imm) },
+	RiAddiw: func(b riscv.Builder, p RiParams) riscv.Instr { return b.Addiw(p.Rd, p.Rs1, p.Imm) },
 }
 
 // riGen — the shared generator of the I-type group.

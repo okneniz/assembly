@@ -1,8 +1,8 @@
 package arm64
 
 // Generator for extr — one generator, one type, one constructor (Extr).
-// Only the 64-bit form exists in the ctor (the ror alias is the w spell);
-// lsb stays below 64.
+// Both widths walk (the 64-bit form shifts lsb 0..63, the 32-bit one
+// 0..31).
 
 import (
 	"iter"
@@ -17,7 +17,7 @@ import (
 
 // ExtrParams — parameters of extr rd, rn, rm, #lsb.
 type ExtrParams struct {
-	Rd, Rn, Rm arm64.Reg // x-registers, 31 reads as zr
+	Rd, Rn, Rm arm64.Reg // same-width registers, 31 reads as zr
 	Lsb        uint32
 }
 
@@ -42,7 +42,8 @@ func (p ExtrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
 
-// extrGen — generator for extr: x-registers, lsb 0..63.
+// extrGen — generator for extr: registers of the same width, lsb
+// 0..regsize-1.
 type extrGen struct {
 	rnd *rand.Rand
 }
@@ -58,11 +59,17 @@ func Extr(rnd *rand.Rand) ohsnap.Arbitrary[ExtrParams] {
 
 func (g extrGen) Generate() iter.Seq[ExtrParams] {
 	return arbStream(func() ExtrParams {
+		is64 := g.rnd.IntN(2) == 1
+		lsb := uint32(g.rnd.IntN(64))
+		if !is64 {
+			lsb = uint32(g.rnd.IntN(32))
+		}
+
 		return NewExtrParams(
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-			uint32(g.rnd.IntN(64)),
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, is64, false, true),
+			genReg(g.rnd, is64, false, true),
+			lsb,
 		)
 	})
 }

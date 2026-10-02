@@ -217,6 +217,7 @@ func TestPropertyRiscvSingleInstrRoundTrip(t *testing.T) {
 		newRvFamily("Add", rv.Add),
 		newRvFamily("Sub", rv.Sub),
 		newRvFamily("Addi", rv.Addi),
+		newRvFamily("Addiw", rv.Addiw),
 		newRvFamily("Lui", rv.Lui),
 		newRvFamily("Lw", rv.Lw),
 		newRvFamily("Ld", rv.Ld),
@@ -391,11 +392,148 @@ func TestPropertyRiscvAliasRoundTrip(t *testing.T) {
 			p.Imm = riscv.Imm12{}
 			return p
 		}),
+		newRvAliasFamily("not", rv.Xori, func(p rv.RiParams) rv.RiParams {
+			if v, err := riscv.New().Imm12(-1); err == nil {
+				p.Imm = v
+			}
+
+			return p
+		}),
+		newRvAliasFamily("seqz", rv.Sltiu, func(p rv.RiParams) rv.RiParams {
+			if v, err := riscv.New().Imm12(1); err == nil {
+				p.Imm = v
+			}
+
+			return p
+		}),
+		newRvAliasFamily("zext.b", rv.Andi, func(p rv.RiParams) rv.RiParams {
+			if v, err := riscv.New().Imm12(0xff); err == nil {
+				p.Imm = v
+			}
+
+			return p
+		}),
+		newRvAliasFamily("sext.w", rv.Addiw, func(p rv.RiParams) rv.RiParams {
+			p.Imm = riscv.Imm12{}
+			return p
+		}),
+		newRvAliasFamily("neg", rv.Sub, func(p rv.SubParams) rv.SubParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("negw", rv.Subw, func(p rv.RrrParams) rv.RrrParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("snez", rv.Sltu, func(p rv.RrrParams) rv.RrrParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("sltz", rv.Slt, func(p rv.RrrParams) rv.RrrParams {
+			p.Rs2 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("sgtz", rv.Slt, func(p rv.RrrParams) rv.RrrParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("beqz", rv.Beq, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs2 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("bnez", rv.Bne, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs2 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("bgtz", rv.Blt, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("bltz", rv.Blt, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs2 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("bgez", rv.Bge, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("blez", rv.Bge, func(p rv.BranchParams) rv.BranchParams {
+			p.Rs2 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("j", rv.Jal, func(p rv.JalParams) rv.JalParams {
+			p.Rd = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("ret", rv.Jalr, func(p rv.JalrParams) rv.JalrParams {
+			p.Rd = riscv.Zero
+			p.Rs1 = riscv.Ra
+			p.Off = riscv.Off{}
+			return p
+		}),
+		newRvAliasFamily("jr", rv.Jalr, func(p rv.JalrParams) rv.JalrParams {
+			p.Rd = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("csrr", rv.Csrrs, func(p rv.CsrParams) rv.CsrParams {
+			p.Rs1 = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("csrw", rv.Csrrw, func(p rv.CsrParams) rv.CsrParams {
+			p.Rd = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("csrwi", rv.Csrrwi, func(p rv.CsrParams) rv.CsrParams {
+			p.Rd = riscv.Zero
+			return p
+		}),
+		newRvAliasFamily("frcsr", rv.Csrrs, csrRead(riscvCSRfcsr)),
+		newRvAliasFamily("frrm", rv.Csrrs, csrRead(riscvCSRfrm)),
+		newRvAliasFamily("frflags", rv.Csrrs, csrRead(riscvCSRfflags)),
+		newRvAliasFamily("rdcycle", rv.Csrrs, csrRead(riscvCSRcycle)),
+		newRvAliasFamily("rdtime", rv.Csrrs, csrRead(riscvCSRtime)),
+		newRvAliasFamily("rdinstret", rv.Csrrs, csrRead(riscvCSRinstret)),
+		newRvAliasFamily("fscsr", rv.Csrrw, csrWrite(riscvCSRfcsr)),
+		newRvAliasFamily("fsrm", rv.Csrrw, csrWrite(riscvCSRfrm)),
+		newRvAliasFamily("fsflags", rv.Csrrw, csrWrite(riscvCSRfflags)),
+		newRvAliasFamily("fscsri", rv.Csrrwi, csrWrite(riscvCSRfcsr)),
+		newRvAliasFamily("fsrmi", rv.Csrrwi, csrWrite(riscvCSRfrm)),
+		newRvAliasFamily("fsflagsi", rv.Csrrwi, csrWrite(riscvCSRfflags)),
 	}
 	for _, f := range families {
 		t.Run(f.name, func(t *testing.T) {
 			f.run(t, seedRnd(t))
 		})
+	}
+}
+
+// The CSR addresses of the pseudo read/write families (the named pool
+// of the csr core).
+const (
+	riscvCSRfflags  uint16 = 0x001
+	riscvCSRfrm     uint16 = 0x002
+	riscvCSRfcsr    uint16 = 0x003
+	riscvCSRcycle   uint16 = 0xc00
+	riscvCSRtime    uint16 = 0xc01
+	riscvCSRinstret uint16 = 0xc02
+)
+
+// csrRead - the pin of the read pseudo-forms (csrrs with rs1 = x0).
+func csrRead(csr uint16) func(rv.CsrParams) rv.CsrParams {
+	return func(p rv.CsrParams) rv.CsrParams {
+		p.Rs1 = riscv.Zero
+		p.Csr = csr
+		return p
+	}
+}
+
+// csrWrite - the pin of the write pseudo-forms (csrrw/csrrwi with
+// rd = x0).
+func csrWrite(csr uint16) func(rv.CsrParams) rv.CsrParams {
+	return func(p rv.CsrParams) rv.CsrParams {
+		p.Rd = riscv.Zero
+		p.Csr = csr
+		return p
 	}
 }
 

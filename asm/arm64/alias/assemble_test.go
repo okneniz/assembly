@@ -175,3 +175,45 @@ func TestDupScalarAlias(t *testing.T) {
 		require.Empty(t, res.Sections, "case %q", src)
 	}
 }
+
+// TestAliasBitfieldWords - the width-fixed alias forms of the bitfield
+// round, the words llvm-mc emits (clang 19.1.7).
+func TestAliasBitfieldWords(t *testing.T) {
+	cases := []struct {
+		src  string
+		word uint32
+	}{
+		{"sxtb w0, w1", 0x13001c20},         // sbfm w0, w1, #0, #7
+		{"sxth w0, w1", 0x13003c20},         // sbfm w0, w1, #0, #15
+		{"sxtb x0, w1", 0x93401c20},         // sbfm x0, x1, #0, #7
+		{"sxtw x0, w1", 0x93407c20},         // sbfm x0, x1, #0, #31
+		{"uxtb w0, w1", 0x53001c20},         // ubfm w0, w1, #0, #7
+		{"uxtb x0, w1", 0x53001c20},         // clang canonicalizes the x spelling
+		{"uxth w0, w1", 0x53003c20},         // ubfm w0, w1, #0, #15
+		{"ror w0, w1, #7", 0x13811c20},      // extr w0, w1, w1, #7
+		{"ror x0, x1, #7", 0x93c11c20},      // extr x0, x1, x1, #7
+		{"extr w0, w1, w2, #3", 0x13820c20}, // extr w0, w1, w2, #3
+		{"extr wzr, w2, w2, #31", 0x13827c5f},
+		{"lsl w0, w1, #5", 0x531b6820},
+		{"lsr w0, w1, #5", 0x53057c20},
+		{"asr w0, w1, #31", 0x131f7c20},
+	}
+
+	for _, c := range cases {
+		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+	}
+
+	for _, src := range []string{
+		"sxtw w0, w1",     // sxtw has no 32-bit form
+		"uxtw x0, w1",     // no such standalone alias
+		"ror w0, w1, #32", // the W-form lsb range is 0..31
+		"extr w0, w1, w2, #32",
+		"lsl w0, w1, #32", // the W-form shift range is 0..31
+		"lsr w0, w1, #32",
+		"asr w0, w1, #32",
+	} {
+		res, errs := asm.Assemble(src, 0, NewASMBackend())
+		require.NotEmpty(t, errs, "case %q must not assemble", src)
+		require.Empty(t, res.Sections, "case %q", src)
+	}
+}

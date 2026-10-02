@@ -1,7 +1,7 @@
 package alias
 
 // Generator for the sxtb alias — one generator, one type, one text form
-// family: sxtb xd, wn.
+// family: sxtb xd|wd, wn (both destination widths).
 
 import (
 	"iter"
@@ -16,7 +16,7 @@ import (
 
 // SxtbParams — parameters of the sxtb alias.
 type SxtbParams struct {
-	Rd arm64.Reg // x-register
+	Rd arm64.Reg // x- or w-register
 	Rn arm64.Reg // w-register
 }
 
@@ -40,7 +40,7 @@ func (p SxtbParams) Instr() arm64.Instr {
 	return in
 }
 
-// sxtbGen — generator for sxtb: the destination is an x-register, the
+// sxtbGen — generator for sxtb: the destination of either width, the
 // source a w-register.
 type sxtbGen struct {
 	rnd *rand.Rand
@@ -57,7 +57,7 @@ func Sxtb(rnd *rand.Rand) ohsnap.Arbitrary[SxtbParams] {
 
 func (g sxtbGen) Generate() iter.Seq[SxtbParams] {
 	return stream(func() SxtbParams {
-		return NewSxtbParams(a64.GenReg(g.rnd, true, false, true), a64.GenReg(g.rnd, false, false, true))
+		return NewSxtbParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), a64.GenReg(g.rnd, false, false, true))
 	})
 }
 

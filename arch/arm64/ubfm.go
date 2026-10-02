@@ -105,6 +105,16 @@ func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 		return fmt.Sprintf("ubfiz %s, %s, #%d, #%d", i.rd, i.rn, regsize-i.immr, i.imms+1)
 	}
 
+	// UXTB/UXTH (immr=0, a 32-bit form only: the X form has no alias).
+	if i.immr == 0 && regsize == 32 {
+		switch i.imms {
+		case 7:
+			return fmt.Sprintf("uxtb %s, %s", i.rd, i.rn)
+		case 15:
+			return fmt.Sprintf("uxth %s, %s", i.rd, i.rn)
+		}
+	}
+
 	return fmt.Sprintf("ubfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
 }
 

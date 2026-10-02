@@ -76,6 +76,7 @@ var aliasCtors = map[string]arch.ArmCtor{
 	"cset": newCset, "csetm": newCsetm, "cinc": newCinc, "cinv": newCinv, "cneg": newCneg,
 	// bitfield: sxt* and *bfiz/*bfx (lsb+width -> immr/imms)
 	"sxtb": newSxt("sxtb", 7), "sxth": newSxt("sxth", 15), "sxtw": newSxt("sxtw", 31),
+	"uxtb": newUxt("uxtb", 7), "uxth": newUxt("uxth", 15),
 	"ubfiz": newBf("ubfiz", true, true), "ubfx": newBf("ubfx", true, false),
 	"sbfiz": newBf("sbfiz", false, true), "sbfx": newBf("sbfx", false, false),
 }

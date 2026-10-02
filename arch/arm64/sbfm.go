@@ -101,8 +101,9 @@ func (i Sbfm) ObjDump(_ disasm.ViewCtx) string {
 		return fmt.Sprintf("asr %s, %s, #%d", i.rd, i.rn, i.immr)
 	}
 
-	// SXTB/SXTH/SXTW with immr=0 and imms=7/15/31 (regsize=64): Rn is a W register.
-	if i.immr == 0 && regsize == 64 {
+	// SXTB/SXTH (both widths) and SXTW (64-bit only: in the W form
+	// imms=31 is the ASR shape above) with immr=0: Rn is a W register.
+	if i.immr == 0 {
 		rnW := regNameW(i.rnNum)
 		switch i.imms {
 		case 7:
@@ -110,7 +111,9 @@ func (i Sbfm) ObjDump(_ disasm.ViewCtx) string {
 		case 15:
 			return fmt.Sprintf("sxth %s, %s", i.rd, rnW)
 		case 31:
-			return fmt.Sprintf("sxtw %s, %s", i.rd, rnW)
+			if regsize == 64 {
+				return fmt.Sprintf("sxtw %s, %s", i.rd, rnW)
+			}
 		}
 	}
 

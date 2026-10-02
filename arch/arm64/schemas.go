@@ -1477,7 +1477,13 @@ var arm64Schemas = []Schema{
 	NewSchema(0xFFFFFC00, 0xF9800000, []Field{
 		NewField("Rn", 5, 5, "regXSP"),
 	}, NewMeta("prfm", ""), "prfmFmt", true, decodePrfm),
-	NewSchema(0xFF200000, 0x93000000, []Field{
+	NewSchema(0xFFE00000, 0x13800000, []Field{
+		NewField("Rd", 0, 5, "regW"),
+		NewField("Rn", 5, 5, "regW"),
+		NewField("imms", 10, 6),
+		NewField("Rm", 16, 5, "regW"),
+	}, NewMeta("extr", ""), "extrFmt", true, decodeExtr),
+	NewSchema(0xFFE00000, 0x93C00000, []Field{
 		NewField("Rd", 0, 5, "regX"),
 		NewField("Rn", 5, 5, "regX"),
 		NewField("imms", 10, 6),

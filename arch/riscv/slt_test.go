@@ -21,3 +21,21 @@ func TestSltCtor(t *testing.T) {
 		})
 	}
 }
+
+// TestSltPseudoCanon - the llvm-mc print canon of the zero-operand
+// shapes: sltz (rs2 = x0) and sgtz (rs1 = x0).
+func TestSltPseudoCanon(t *testing.T) {
+	for _, c := range []struct {
+		name string
+		in   Instr
+		text string
+	}{
+		{"sltz a0, a1", New().Slt(xreg(t, 10), xreg(t, 11), xreg(t, 0)), "sltz a0, a1"},
+		{"sgtz a0, a1", New().Slt(xreg(t, 10), xreg(t, 0), xreg(t, 11)), "sgtz a0, a1"},
+		{"sltz zero, zero", New().Slt(xreg(t, 0), xreg(t, 0), xreg(t, 0)), "sltz zero, zero"},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			require.Equal(t, c.text, c.in.ObjDump(nil))
+		})
+	}
+}

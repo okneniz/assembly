@@ -7,7 +7,7 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// Slt - slt rd, rs1, rs2.
+// Slt - slt rd, rs1, rs2; pseudo: sltz (rs2 = x0), sgtz (rs1 = x0).
 type Slt struct {
 	base
 
@@ -15,6 +15,13 @@ type Slt struct {
 }
 
 func (i Slt) ObjDump(_ disasm.ViewCtx) string {
+	switch {
+	case i.rs2 == "zero":
+		return fmt.Sprintf("sltz %s, %s", i.rd, i.rs1)
+	case i.rs1 == "zero":
+		return fmt.Sprintf("sgtz %s, %s", i.rd, i.rs2)
+	}
+
 	return fmt.Sprintf("slt %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
