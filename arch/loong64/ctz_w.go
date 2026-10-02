@@ -14,14 +14,6 @@ type CtzW struct {
 	rd, rj uint8
 }
 
-func decodeCtzW(w uint32) Instr {
-	return CtzW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i CtzW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ctz.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

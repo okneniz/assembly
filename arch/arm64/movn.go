@@ -92,17 +92,3 @@ func (i Movn) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }
-
-func decodeMovn(w uint32) (Instr, error) {
-	in, err := newMovn(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		imm16Of(w>>5&0xffff),
-		hwOf(w>>21&0x3),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

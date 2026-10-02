@@ -17,15 +17,6 @@ type Bne struct {
 	off    imm
 }
 
-func decodeBne(w uint32) Instr {
-	return Bne{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 16) << 2),
-	}
-}
-
 func (i Bne) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bne %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }

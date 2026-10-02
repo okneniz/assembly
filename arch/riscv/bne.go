@@ -15,15 +15,6 @@ type Bne struct {
 	off      imm // pc-relative byte offset
 }
 
-func decodeBne(w uint32) Instr {
-	return Bne{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(bImm(w)),
-	}
-}
-
 // cBne - compressed forms (c.bnez): base - halfword, length 2.
 func cBne(h uint32, rs1, rs2 string, off int64) Bne {
 	return Bne{

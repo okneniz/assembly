@@ -15,15 +15,6 @@ type Bltu struct {
 	off      imm // pc-relative byte offset
 }
 
-func decodeBltu(w uint32) Instr {
-	return Bltu{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(bImm(w)),
-	}
-}
-
 func (i Bltu) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	return fmt.Sprintf("bltu %s, %s, %s", i.rs1, i.rs2, target.text())

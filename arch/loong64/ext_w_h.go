@@ -14,14 +14,6 @@ type ExtWH struct {
 	rd, rj uint8
 }
 
-func decodeExtWH(w uint32) Instr {
-	return ExtWH{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i ExtWH) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ext.w.h %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

@@ -77,31 +77,3 @@ func (i Fcmp) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rn<<5|rm<<16)
 }
-
-func decodeFcmpReg(w uint32) (Instr, error) {
-	in, err := newFcmp(
-		newBase(w),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
-		true,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
-func decodeFcmpZero(w uint32) (Instr, error) {
-	in, err := newFcmp(
-		newBase(w),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-		FReg{},
-		false,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

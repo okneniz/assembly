@@ -14,14 +14,6 @@ type AsrtgtD struct {
 	rj, rk uint8
 }
 
-func decodeAsrtgtD(w uint32) Instr {
-	return AsrtgtD{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i AsrtgtD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("asrtgt.d %s, %s", laRegName(i.rj), laRegName(i.rk))
 }

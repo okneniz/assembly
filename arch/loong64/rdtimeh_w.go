@@ -14,14 +14,6 @@ type RdtimehW struct {
 	rd, rj uint8
 }
 
-func decodeRdtimehW(w uint32) Instr {
-	return RdtimehW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i RdtimehW) ObjDump(_ disasm.ViewCtx) string {
 	if i.rj == 0 {
 		return "rdcntvh.w " + laRegName(i.rd)

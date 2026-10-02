@@ -50,12 +50,3 @@ func (i Mrs) ObjDump(_ disasm.ViewCtx) string {
 func (i Mrs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0xD5300000|regBitsX(i.rd)|invSysRegChecked(i.sysreg)<<5)
 }
-
-func decodeMrs(w uint32) (Instr, error) {
-	in, err := newMrs(newBase(w), gprOf(w&0x1f, true), sysRegName(w>>5&0x7fff))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

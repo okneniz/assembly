@@ -36,16 +36,6 @@ func (i systemInstr) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings[i.name][0])
 }
 
-func decodeSystem(name, group string) func(uint32) Instr {
-	return func(w uint32) Instr {
-		return systemInstr{
-			base:  newBase(w),
-			name:  name,
-			group: group,
-		}
-	}
-}
-
 func newSystem(name string) func([]Op) (Instr, error) {
 	return func(ops []Op) (Instr, error) {
 		if len(ops) != 0 {
@@ -62,13 +52,6 @@ type Fence struct {
 	base
 
 	fm imm
-}
-
-func decodeFence(w uint32) Instr {
-	return Fence{
-		base: newBase(w),
-		fm:   immNum(int64(w >> 20 & 0xf)),
-	}
 }
 
 func (i Fence) ObjDump(_ disasm.ViewCtx) string {

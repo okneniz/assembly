@@ -61,20 +61,3 @@ func (i SqrdmlahElem) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, byElemBits(i.q, sqrdmlahElemU, i.size, rm, sqrdmlahElemOpc, i.idx, rn, rd))
 }
-
-func decodeSqrdmlahElem(w uint32) (Instr, error) {
-	in, err := newSqrdmlahElem(
-		newBase(w),
-		w>>30&1,
-		w>>22&3,
-		byElemIndex(w, w>>22&3),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(byElemVm(w, w>>22&3))),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

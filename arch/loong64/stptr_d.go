@@ -16,15 +16,6 @@ type StptrD struct {
 	off    imm
 }
 
-func decodeStptrD(w uint32) Instr {
-	return StptrD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 14) << 2),
-	}
-}
-
 func (i StptrD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("stptr.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

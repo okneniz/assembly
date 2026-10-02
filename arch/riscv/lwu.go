@@ -15,15 +15,6 @@ type Lwu struct {
 	off     imm
 }
 
-func decodeLwu(w uint32) Instr {
-	return Lwu{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Lwu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lwu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

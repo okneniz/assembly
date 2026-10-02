@@ -14,14 +14,6 @@ type CloD struct {
 	rd, rj uint8
 }
 
-func decodeCloD(w uint32) Instr {
-	return CloD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i CloD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("clo.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

@@ -54,16 +54,3 @@ func (i Fmov) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5)
 }
-
-func decodeFmov(w uint32) (Instr, error) {
-	in, err := newFmov(
-		newBase(w),
-		newFReg(uint8(w&0x1f), w>>22&1 == 1),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

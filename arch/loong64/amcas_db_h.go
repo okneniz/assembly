@@ -14,15 +14,6 @@ type AmcasDbH struct {
 	rd, rk, rj uint8
 }
 
-func decodeAmcasDbH(w uint32) Instr {
-	return AmcasDbH{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i AmcasDbH) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amcas_db.h %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

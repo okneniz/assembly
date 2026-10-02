@@ -15,15 +15,6 @@ type Lu52iD struct {
 	imm    imm
 }
 
-func decodeLu52iD(w uint32) Instr {
-	return Lu52iD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(sField(w, 10, 12)),
-	}
-}
-
 func (i Lu52iD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lu52i.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

@@ -99,18 +99,3 @@ func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, ldpswEnc|rt|rn<<5|rt2<<10|uint32(i.off>>2&0x7f)<<15)
 }
-
-func decodeLdpsw(w uint32) (Instr, error) {
-	in, err := newLdpsw(
-		newBase(w),
-		gprOf(w&0x1f, true),
-		gprOf(w>>10&0x1f, true),
-		xspOf(w>>5&0x1f),
-		Off(signExtendN(w>>15&0x7f, 7)<<2),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

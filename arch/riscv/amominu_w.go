@@ -15,15 +15,6 @@ type AmominuW struct {
 	rd, rs1, rs2 string
 }
 
-func decodeAmominuW(w uint32) Instr {
-	return AmominuW{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 func (i AmominuW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amominu.w %s, %s, (%s)", i.rd, i.rs2, i.rs1)
 }

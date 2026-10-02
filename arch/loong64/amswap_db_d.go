@@ -14,15 +14,6 @@ type AmswapDbD struct {
 	rd, rk, rj uint8
 }
 
-func decodeAmswapDbD(w uint32) Instr {
-	return AmswapDbD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i AmswapDbD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amswap_db.d %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

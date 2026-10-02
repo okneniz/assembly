@@ -17,15 +17,6 @@ type Jirl struct {
 	off    imm
 }
 
-func decodeJirl(w uint32) Instr {
-	return Jirl{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 16) << 2),
-	}
-}
-
 func (i Jirl) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == 0 && i.off.val == 0 {
 		if i.rj == 1 {

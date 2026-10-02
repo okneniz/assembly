@@ -11,12 +11,6 @@ type Ertn struct {
 	base
 }
 
-func decodeErtn(w uint32) Instr {
-	return Ertn{
-		base: newBase(w),
-	}
-}
-
 func (i Ertn) ObjDump(_ disasm.ViewCtx) string {
 	return "ertn"
 }

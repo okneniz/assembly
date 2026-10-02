@@ -14,14 +14,6 @@ type CloW struct {
 	rd, rj uint8
 }
 
-func decodeCloW(w uint32) Instr {
-	return CloW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i CloW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("clo.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

@@ -13,13 +13,6 @@ type Ibar struct {
 	code imm
 }
 
-func decodeIbar(w uint32) Instr {
-	return Ibar{
-		base: newBase(w),
-		code: immNum(int64(uField(w, 0, 15))),
-	}
-}
-
 func (i Ibar) ObjDump(_ disasm.ViewCtx) string {
 	return "ibar " + i.code.text()
 }

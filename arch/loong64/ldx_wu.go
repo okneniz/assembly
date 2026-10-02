@@ -14,15 +14,6 @@ type LdxWu struct {
 	rd, rj, rk uint8
 }
 
-func decodeLdxWu(w uint32) Instr {
-	return LdxWu{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i LdxWu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldx.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

@@ -14,14 +14,6 @@ type CtoW struct {
 	rd, rj uint8
 }
 
-func decodeCtoW(w uint32) Instr {
-	return CtoW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i CtoW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("cto.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

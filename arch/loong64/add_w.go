@@ -18,15 +18,6 @@ type AddW struct {
 	rd, rj, rk uint8
 }
 
-func decodeAddW(w uint32) Instr {
-	return AddW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i AddW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("add.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

@@ -16,16 +16,6 @@ type BstrinsD struct {
 	lsb    imm
 }
 
-func decodeBstrinsD(w uint32) Instr {
-	return BstrinsD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		msb:  immNum(int64(uField(w, 16, 6))),
-		lsb:  immNum(int64(uField(w, 10, 6))),
-	}
-}
-
 func (i BstrinsD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bstrins.d %s, %s, %s, %s",

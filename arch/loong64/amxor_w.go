@@ -14,15 +14,6 @@ type AmxorW struct {
 	rd, rk, rj uint8
 }
 
-func decodeAmxorW(w uint32) Instr {
-	return AmxorW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i AmxorW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amxor.w %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

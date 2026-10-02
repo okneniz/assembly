@@ -16,15 +16,6 @@ type Addi struct {
 	imm     imm
 }
 
-func decodeAddi(w uint32) Instr {
-	return Addi{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		imm:  immNum(iImm(w)),
-	}
-}
-
 // cAddi - compressed forms (c.addi/c.nop/c.li/c.addi4spn/c.addi16sp): base - halfword, length 2.
 func cAddi(h uint32, rd, rs1 string, imm int64) Addi {
 	return Addi{

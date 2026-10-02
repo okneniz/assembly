@@ -58,16 +58,6 @@ func newLdarb(b base, rt, rn Reg) (Ldarb, error) {
 
 const ldarbEnc uint32 = 0x08DFFC00 // ldarb wt, [xn]
 
-func decodeLdarbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Ldarb{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}, nil
-	}
-}
-
 func (i Ldarb) ObjDump(_ disasm.ViewCtx) string {
 	return "ldarb " + i.atText()
 }

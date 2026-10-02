@@ -14,15 +14,6 @@ type SrlD struct {
 	rd, rj, rk uint8
 }
 
-func decodeSrlD(w uint32) Instr {
-	return SrlD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i SrlD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srl.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

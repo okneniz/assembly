@@ -16,14 +16,6 @@ type Csrrw struct {
 	rs1 string
 }
 
-func decodeCsrrw(w uint32) Instr {
-	return Csrrw{
-		base:  newBase(w),
-		csrOp: newCsrOp(rvRegNames[w>>7&0x1f], int64(w>>20&0xfff)),
-		rs1:   rvRegNames[w>>15&0x1f],
-	}
-}
-
 func (i Csrrw) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == "zero" { // write forms (rd == x0)
 		switch i.text() {

@@ -39,16 +39,3 @@ func (i Aese) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, aeseEnc|rd|rn<<5)
 }
-
-func decodeAese(w uint32) (Instr, error) {
-	in, err := newAese(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

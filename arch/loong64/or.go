@@ -14,15 +14,6 @@ type Or struct {
 	rd, rj, rk uint8
 }
 
-func decodeOr(w uint32) Instr {
-	return Or{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i Or) ObjDump(_ disasm.ViewCtx) string {
 	if i.rk == 0 {
 		return fmt.Sprintf("move %s, %s", laRegName(i.rd), laRegName(i.rj))

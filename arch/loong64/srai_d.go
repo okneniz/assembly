@@ -15,15 +15,6 @@ type SraiD struct {
 	imm    imm
 }
 
-func decodeSraiD(w uint32) Instr {
-	return SraiD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 6))),
-	}
-}
-
 func (i SraiD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srai.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

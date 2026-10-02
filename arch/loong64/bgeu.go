@@ -17,15 +17,6 @@ type Bgeu struct {
 	off    imm
 }
 
-func decodeBgeu(w uint32) Instr {
-	return Bgeu{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 16) << 2),
-	}
-}
-
 func (i Bgeu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bgeu %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }

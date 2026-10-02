@@ -15,15 +15,6 @@ type Andi struct {
 	imm    imm
 }
 
-func decodeAndi(w uint32) Instr {
-	return Andi{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 12))),
-	}
-}
-
 func (i Andi) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == 0 && i.rj == 0 && i.imm.val == 0 {
 		return "nop"

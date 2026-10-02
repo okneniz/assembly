@@ -55,12 +55,3 @@ func (i Ret) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, retMatch|num<<5)
 }
-
-func decodeRet(w uint32) (Instr, error) {
-	in, err := newRet(newBase(w), gprOf(w>>5&0x1f, true))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

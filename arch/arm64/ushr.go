@@ -52,19 +52,3 @@ func (i Ushr) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, ushrEnc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
 }
-
-func decodeUshr(w uint32) (Instr, error) {
-	in, err := newUshr(
-		newBase(w),
-		w>>30&1,
-		w>>19&0xf,
-		w>>16&7,
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

@@ -14,14 +14,6 @@ type Revbit8B struct {
 	rd, rj uint8
 }
 
-func decodeRevbit8B(w uint32) Instr {
-	return Revbit8B{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i Revbit8B) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bitrev.8b %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

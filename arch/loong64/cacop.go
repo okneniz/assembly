@@ -17,15 +17,6 @@ type Cacop struct {
 	off imm
 }
 
-func decodeCacop(w uint32) Instr {
-	return Cacop{
-		base: newBase(w),
-		op:   immNum(int64(uField(w, 0, 5))),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 12)),
-	}
-}
-
 func (i Cacop) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("cacop %s, %s, %s", i.op.text(), laRegName(i.rj), i.off.text())
 }

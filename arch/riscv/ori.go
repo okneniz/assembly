@@ -15,15 +15,6 @@ type Ori struct {
 	imm     imm
 }
 
-func decodeOri(w uint32) Instr {
-	return Ori{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		imm:  immNum(iImm(w)),
-	}
-}
-
 func (i Ori) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ori %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }

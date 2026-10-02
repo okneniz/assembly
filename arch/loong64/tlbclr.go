@@ -12,12 +12,6 @@ type Tlbclr struct {
 	base
 }
 
-func decodeTlbclr(w uint32) Instr {
-	return Tlbclr{
-		base: newBase(w),
-	}
-}
-
 func (i Tlbclr) ObjDump(_ disasm.ViewCtx) string {
 	return "tlbclr"
 }

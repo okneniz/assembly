@@ -34,18 +34,3 @@ func (i Csinv) ObjDump(_ disasm.ViewCtx) string {
 func (i Csinv) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i.Csel, csinvX, csinvW, "csinv")
 }
-
-func decodeCsinv(w uint32) (Instr, error) {
-	ci, cerr := decodeCsel(w)
-	if cerr != nil {
-		return nil, cerr
-	}
-
-	c, ok := ci.(Csel)
-	if !ok {
-		// decodeCsel always returns Csel; the branch guards against schema desynchronization
-		return Csinv{}, nil
-	}
-
-	return Csinv{Csel: c}, nil
-}

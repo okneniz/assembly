@@ -13,13 +13,6 @@ type Syscall struct {
 	code imm
 }
 
-func decodeSyscall(w uint32) Instr {
-	return Syscall{
-		base: newBase(w),
-		code: immNum(int64(uField(w, 0, 15))),
-	}
-}
-
 func (i Syscall) ObjDump(_ disasm.ViewCtx) string {
 	return "syscall " + i.code.text()
 }

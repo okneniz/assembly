@@ -14,14 +14,6 @@ type RevbD struct {
 	rd, rj uint8
 }
 
-func decodeRevbD(w uint32) Instr {
-	return RevbD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i RevbD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("revb.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

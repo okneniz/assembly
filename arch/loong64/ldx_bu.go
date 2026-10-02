@@ -14,15 +14,6 @@ type LdxBu struct {
 	rd, rj, rk uint8
 }
 
-func decodeLdxBu(w uint32) Instr {
-	return LdxBu{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i LdxBu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldx.bu %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

@@ -15,13 +15,6 @@ type Bl struct {
 	off imm
 }
 
-func decodeBl(w uint32) Instr {
-	return Bl{
-		base: newBase(w),
-		off:  immNum(d10k16Imm(w) << 2),
-	}
-}
-
 func (i Bl) ObjDump(_ disasm.ViewCtx) string {
 	return "bl " + i.off.text()
 }

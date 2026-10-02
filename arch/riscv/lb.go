@@ -15,15 +15,6 @@ type Lb struct {
 	off     imm
 }
 
-func decodeLb(w uint32) Instr {
-	return Lb{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Lb) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lb %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

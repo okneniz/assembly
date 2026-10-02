@@ -17,14 +17,6 @@ type Pcalau12i struct {
 	imm imm
 }
 
-func decodePcalau12i(w uint32) Instr {
-	return Pcalau12i{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		imm:  immNum(sField(w, 5, 20)),
-	}
-}
-
 func (i Pcalau12i) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("pcalau12i %s, %s", laRegName(i.rd), i.imm.text())
 }

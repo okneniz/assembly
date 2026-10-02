@@ -17,15 +17,6 @@ type Jalr struct {
 	off     imm
 }
 
-func decodeJalr(w uint32) Instr {
-	return Jalr{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 // cJalr - compressed forms (c.jr/c.jalr): base - halfword, length 2.
 func cJalr(h uint32, rd, rs1 string, off int64) Jalr {
 	return Jalr{

@@ -55,31 +55,6 @@ func (i DupElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, dupElemEnc|i.q<<30|imm5<<16|rn<<5|rd)
 }
 
-// decodeSimdDupElem — DUP (element): 0x0E000400/0xBFE0FC00.
-func decodeSimdDupElem(w uint32) (Instr, error) {
-	imm5 := w >> 16 & 0x1f
-	// the size is the lowest set bit (0=b..3=d); unencodable sizes go to
-	// the .word fallback (the schema mask does not express this)
-	if imm5 == 0 || bitsCtz(imm5) > 3 {
-		return decodeUnknown(w)
-	}
-
-	size := uint32(bitsCtz(imm5))
-	in, err := newDupElem(
-		newBase(w),
-		w>>30&1,
-		size,
-		imm5>>(size+1),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 // InsElem — ins.sz vd[idx], vn[idx] (INS element: copy one lane into
 // another; the source lane rides imm4, bits [14:11]).
 type InsElem struct {
@@ -132,29 +107,6 @@ func (i InsElem) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, insElemEnc|imm5<<16|i.srcIdx<<i.size<<11|rn<<5|rd)
 }
 
-// decodeSimdInsElem — INS (element): 0x6E000400/0xFFE08400.
-func decodeSimdInsElem(w uint32) (Instr, error) {
-	imm5 := w >> 16 & 0x1f
-	if imm5 == 0 || bitsCtz(imm5) > 3 {
-		return decodeUnknown(w)
-	}
-
-	size := uint32(bitsCtz(imm5))
-	in, err := newInsElem(
-		newBase(w),
-		size,
-		imm5>>(size+1),
-		w>>11&0xf>>size,
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 // DupScalar — the scalar DUP alias (llvm prints mov.d/mov.s vd, vn):
 // the bottom fp lane of vn replicated into vd's scalar; imm5 is
 // one-hot (size only - the index is always 0).
@@ -196,25 +148,4 @@ func (i DupScalar) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, dupScalarEnc|1<<i.size<<16|rn<<5|rd)
-}
-
-// decodeSimdDupScalar — the scalar DUP alias: 0x5E000400/0xFFE0FC00;
-// imm5 is one-hot (size only).
-func decodeSimdDupScalar(w uint32) (Instr, error) {
-	imm5 := w >> 16 & 0x1f
-	if imm5 == 0 || imm5 > 8 || imm5&(imm5-1) != 0 {
-		return decodeUnknown(w)
-	}
-
-	in, err := newDupScalar(
-		newBase(w),
-		uint32(bitsCtz(imm5)),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
 }

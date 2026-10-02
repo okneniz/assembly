@@ -45,16 +45,6 @@ const (
 	ldarWEnc uint32 = 0x88DFFC00 // ldar wt, [xn]
 )
 
-func decodeLdarOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Ldar{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}, nil
-	}
-}
-
 func (i Ldar) ObjDump(_ disasm.ViewCtx) string {
 	return "ldar " + i.atText()
 }

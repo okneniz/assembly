@@ -15,15 +15,6 @@ type Srai struct {
 	shamt   imm
 }
 
-func decodeSrai(w uint32) Instr {
-	return Srai{
-		base:  newBase(w),
-		rd:    rvRegNames[w>>7&0x1f],
-		rs1:   rvRegNames[w>>15&0x1f],
-		shamt: immNum(int64(shamt6(w))),
-	}
-}
-
 // cSrai - compressed forms (c.srai): base - halfword, length 2.
 func cSrai(h uint32, rd, rs1 string, shamt int64) Srai {
 	return Srai{

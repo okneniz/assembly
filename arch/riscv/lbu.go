@@ -15,15 +15,6 @@ type Lbu struct {
 	off     imm
 }
 
-func decodeLbu(w uint32) Instr {
-	return Lbu{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Lbu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lbu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

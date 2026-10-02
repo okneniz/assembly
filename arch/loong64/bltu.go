@@ -17,15 +17,6 @@ type Bltu struct {
 	off    imm
 }
 
-func decodeBltu(w uint32) Instr {
-	return Bltu{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 16) << 2),
-	}
-}
-
 func (i Bltu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bltu %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }

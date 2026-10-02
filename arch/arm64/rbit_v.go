@@ -52,22 +52,3 @@ func (i RbitV) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, rbitVEnc|q<<30|size<<22|rd|rn<<5)
 }
-
-func decodeRbitV(w uint32) (Instr, error) {
-	arr := "8b"
-	if w>>30&1 == 1 {
-		arr = "16b"
-	}
-
-	in, err := newRbitV(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		arr,
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

@@ -45,16 +45,6 @@ const (
 	stlrWEnc uint32 = 0x889FFC00 // stlr wt, [xn]
 )
 
-func decodeStlrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Stlr{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}, nil
-	}
-}
-
 func (i Stlr) ObjDump(_ disasm.ViewCtx) string {
 	return "stlr " + i.atText()
 }

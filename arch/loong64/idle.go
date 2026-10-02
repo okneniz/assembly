@@ -14,13 +14,6 @@ type Idle struct {
 	code imm
 }
 
-func decodeIdle(w uint32) Instr {
-	return Idle{
-		base: newBase(w),
-		code: immNum(int64(uField(w, 0, 15))),
-	}
-}
-
 func (i Idle) ObjDump(_ disasm.ViewCtx) string {
 	return "idle " + i.code.text()
 }

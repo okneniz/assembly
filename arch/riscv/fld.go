@@ -15,15 +15,6 @@ type Fld struct {
 	off     imm
 }
 
-func decodeFld(w uint32) Instr {
-	return Fld{
-		base: newBase(w),
-		rd:   rvFRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Fld) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fld %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

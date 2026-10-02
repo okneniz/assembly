@@ -17,14 +17,6 @@ type Beqz struct {
 	off imm
 }
 
-func decodeBeqz(w uint32) Instr {
-	return Beqz{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(d5k16Imm(w) << 2),
-	}
-}
-
 func (i Beqz) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("beqz %s, %s", laRegName(i.rj), i.off.text())
 }

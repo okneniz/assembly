@@ -57,19 +57,3 @@ func (i Uaddw) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, uaddwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }
-
-func decodeUaddw(w uint32) (Instr, error) {
-	in, err := newUaddw(
-		newBase(w),
-		w>>30&1,
-		w>>22&3,
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(w>>16&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

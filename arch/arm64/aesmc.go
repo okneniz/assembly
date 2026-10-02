@@ -39,16 +39,3 @@ func (i Aesmc) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, aesmcEnc|rd|rn<<5)
 }
-
-func decodeAesmc(w uint32) (Instr, error) {
-	in, err := newAesmc(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

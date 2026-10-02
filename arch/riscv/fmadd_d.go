@@ -15,17 +15,6 @@ type FmaddD struct {
 	rm                imm
 }
 
-func decodeFmaddD(w uint32) Instr {
-	return FmaddD{
-		base: newBase(w),
-		rd:   rvFRegNames[w>>7&0x1f],
-		rs1:  rvFRegNames[w>>15&0x1f],
-		rs2:  rvFRegNames[w>>20&0x1f],
-		rs3:  rvFRegNames[w>>27&0x1f],
-		rm:   immNum(int64(w >> 12 & 0x7)),
-	}
-}
-
 func (i FmaddD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fmadd.d %s, %s, %s, %s", i.rd, i.rs1, i.rs2, i.rs3)
 }

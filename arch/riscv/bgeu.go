@@ -15,15 +15,6 @@ type Bgeu struct {
 	off      imm // pc-relative byte offset
 }
 
-func decodeBgeu(w uint32) Instr {
-	return Bgeu{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(bImm(w)),
-	}
-}
-
 func (i Bgeu) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	return fmt.Sprintf("bgeu %s, %s, %s", i.rs1, i.rs2, target.text())

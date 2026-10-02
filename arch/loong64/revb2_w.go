@@ -14,14 +14,6 @@ type Revb2W struct {
 	rd, rj uint8
 }
 
-func decodeRevb2W(w uint32) Instr {
-	return Revb2W{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i Revb2W) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("revb.2w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

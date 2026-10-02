@@ -39,17 +39,3 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, tblEnc|rd|rn<<5|rm<<16)
 }
-
-func decodeTbl(w uint32) (Instr, error) {
-	in, err := newTbl(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(w>>16&0x1f)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

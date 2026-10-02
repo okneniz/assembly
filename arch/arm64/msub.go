@@ -38,18 +38,3 @@ func (i Msub) Encode(w io.Writer) (int64, error) {
 
 	return msubWrite(w, match, i.Madd)
 }
-
-func decodeMsub(w uint32) (Instr, error) {
-	mi, merr := decodeMadd(w)
-	if merr != nil {
-		return nil, merr
-	}
-
-	m, ok := mi.(Madd)
-	if !ok {
-		// decodeMadd always returns Madd; this branch guards against schema desynchronization
-		return Msub{}, nil
-	}
-
-	return Msub{Madd: m}, nil
-}

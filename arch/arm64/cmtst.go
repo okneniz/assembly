@@ -53,18 +53,3 @@ func (i Cmtst) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, cmtstEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
 }
-
-func decodeCmtst(w uint32) (Instr, error) {
-	in, err := newCmtst(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(w>>16&0x1f)),
-		decodeArrangement(w>>30&1, w>>22&3),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

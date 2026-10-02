@@ -11,12 +11,6 @@ type Tlbflush struct {
 	base
 }
 
-func decodeTlbflush(w uint32) Instr {
-	return Tlbflush{
-		base: newBase(w),
-	}
-}
-
 func (i Tlbflush) ObjDump(_ disasm.ViewCtx) string {
 	return "tlbflush"
 }

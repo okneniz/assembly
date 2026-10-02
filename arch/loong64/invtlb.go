@@ -16,15 +16,6 @@ type Invtlb struct {
 	op     imm
 }
 
-func decodeInvtlb(w uint32) Instr {
-	return Invtlb{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		op:   immNum(int64(uField(w, 0, 5))),
-	}
-}
-
 func (i Invtlb) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("invtlb %s, %s, %s", i.op.text(), laRegName(i.rj), laRegName(i.rk))
 }

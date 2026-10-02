@@ -16,15 +16,6 @@ type Csrxchg struct {
 	csr    imm
 }
 
-func decodeCsrxchg(w uint32) Instr {
-	return Csrxchg{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		csr:  immNum(int64(uField(w, 10, 14))),
-	}
-}
-
 func (i Csrxchg) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrxchg %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.csr.text())
 }

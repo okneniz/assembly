@@ -18,19 +18,6 @@ type Tbz struct {
 	isTbnz bool
 }
 
-func decodeTbzOf(isTbnz bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		x64 := w>>31&1 == 1
-		return Tbz{
-			base:   newBase(w),
-			rt:     armRegName(w&0x1f, x64),
-			bit:    w>>19&0x1f | w>>26&0x20,
-			off:    immNum(signExtendN(w>>5&0x3fff, 14) * 4),
-			isTbnz: isTbnz,
-		}, nil
-	}
-}
-
 func (i Tbz) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	if i.isTbnz {

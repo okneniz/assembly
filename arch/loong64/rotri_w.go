@@ -15,15 +15,6 @@ type RotriW struct {
 	imm    imm
 }
 
-func decodeRotriW(w uint32) Instr {
-	return RotriW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 5))),
-	}
-}
-
 func (i RotriW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rotri.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

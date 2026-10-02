@@ -84,12 +84,3 @@ func (i Clz) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5)
 }
-
-func decodeClz(w uint32) (Instr, error) {
-	in, err := newClz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), gprOf(w>>5&0x1f, w>>31&1 == 1))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

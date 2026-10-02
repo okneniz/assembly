@@ -15,15 +15,6 @@ type Sw struct {
 	off      imm
 }
 
-func decodeSw(w uint32) Instr {
-	return Sw{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(sImm(w)),
-	}
-}
-
 // cSw - compressed forms (c.sw/c.swsp): base - halfword, length 2.
 func cSw(h uint32, rs1, rs2 string, off int64) Sw {
 	return Sw{

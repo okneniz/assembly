@@ -50,20 +50,6 @@ func fmovImmEnc(rd FReg) uint32 {
 	return fmovImmSEnc
 }
 
-func decodeFmovImmOf(isS bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		imm8 := w >> 13 & 0xff
-		rd := newFReg(uint8(w&0x1f), !isS)
-		if isS {
-			v := vfpExpandImm32(imm8)
-			return newFmovImm(newBase(w), rd, float64(v), fmt.Sprintf("%.8f", v))
-		}
-
-		v := vfpExpandImm64(imm8)
-		return newFmovImm(newBase(w), rd, v, fmt.Sprintf("%.8f", v))
-	}
-}
-
 func (i FmovImm) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fmov %s, #%s", i.rd, i.text)
 }

@@ -15,14 +15,6 @@ type Csrrci struct {
 	zimm imm
 }
 
-func decodeCsrrci(w uint32) Instr {
-	return Csrrci{
-		base:  newBase(w),
-		csrOp: newCsrOp(rvRegNames[w>>7&0x1f], int64(w>>20&0xfff)),
-		zimm:  immNum(int64(w >> 15 & 0x1f)),
-	}
-}
-
 func (i Csrrci) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrrci %s, %s, %s", i.rd, i.text(), i.zimm.text())
 }

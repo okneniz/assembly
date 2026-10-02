@@ -52,19 +52,6 @@ func (i Fcvtzs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func decodeFcvtzs(w uint32) (Instr, error) {
-	in, err := newFcvtzs(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 // Fcvtzu — fcvtzu wd|xd, fn (FP to unsigned integer).
 type Fcvtzu struct {
 	base
@@ -107,17 +94,4 @@ func (i Fcvtzu) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
-}
-
-func decodeFcvtzu(w uint32) (Instr, error) {
-	in, err := newFcvtzu(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
 }

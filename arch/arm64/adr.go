@@ -53,17 +53,3 @@ func (i Adr) ObjDump(_ disasm.ViewCtx) string {
 func (i Adr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }
-
-func decodeAdr(w uint32) (Instr, error) {
-	raw := (w>>5&0x7ffff)<<2 | w>>29&3
-	in, err := newAdr(
-		newBase(w),
-		gprOf(w&0x1f, true),
-		signExtendN(raw, 21),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

@@ -86,18 +86,3 @@ func (i Ccmp) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, ccmpX|i.immVal|rn<<5|c<<12|rm<<16)
 }
-
-func decodeCcmp(w uint32) (Instr, error) {
-	in, err := newCcmp(
-		newBase(w),
-		gprOf(w>>5&0x1f, true),
-		gprOf(w>>16&0x1f, true),
-		w&0xf,
-		condName(w>>12&0xf),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

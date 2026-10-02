@@ -14,14 +14,6 @@ type IocsrrdD struct {
 	rd, rj uint8
 }
 
-func decodeIocsrrdD(w uint32) Instr {
-	return IocsrrdD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i IocsrrdD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("iocsrrd.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

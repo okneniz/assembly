@@ -24,16 +24,6 @@ func newBcond(b base, cond string, off imm) Bcond {
 	}
 }
 
-func decodeBcondOf(cond string) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return newBcond(
-			newBase(w),
-			cond,
-			immNum(signExtendN(w>>5&0x7ffff, 19)*4),
-		), nil
-	}
-}
-
 func (i Bcond) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	return fmt.Sprintf("b.%s %s", i.cond, target.textHex())

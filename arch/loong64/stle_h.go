@@ -15,15 +15,6 @@ type StleH struct {
 	rd, rj, rk uint8
 }
 
-func decodeStleH(w uint32) Instr {
-	return StleH{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i StleH) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("stle.h %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

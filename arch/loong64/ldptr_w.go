@@ -16,15 +16,6 @@ type LdptrW struct {
 	off    imm
 }
 
-func decodeLdptrW(w uint32) Instr {
-	return LdptrW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 14) << 2),
-	}
-}
-
 func (i LdptrW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldptr.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

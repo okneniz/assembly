@@ -14,15 +14,6 @@ type RotrD struct {
 	rd, rj, rk uint8
 }
 
-func decodeRotrD(w uint32) Instr {
-	return RotrD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i RotrD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rotr.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

@@ -61,22 +61,6 @@ func (i Fmadd) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
 }
 
-func decodeFmadd(w uint32) (Instr, error) {
-	is64 := w>>22&1 == 1
-	in, err := newFmadd(
-		newBase(w),
-		newFReg(uint8(w&0x1f), is64),
-		newFReg(uint8(w>>5&0x1f), is64),
-		newFReg(uint8(w>>16&0x1f), is64),
-		newFReg(uint8(w>>10&0x1f), is64),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 // Fnmsub — fnmsub fd, fn, fm, fa (fd = -(fn*fm - fa); double/single
 // by the operand kind, the type rides bit 22).
 type Fnmsub struct {
@@ -129,20 +113,4 @@ func (i Fnmsub) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
-}
-
-func decodeFnmsub(w uint32) (Instr, error) {
-	is64 := w>>22&1 == 1
-	in, err := newFnmsub(
-		newBase(w),
-		newFReg(uint8(w&0x1f), is64),
-		newFReg(uint8(w>>5&0x1f), is64),
-		newFReg(uint8(w>>16&0x1f), is64),
-		newFReg(uint8(w>>10&0x1f), is64),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
 }

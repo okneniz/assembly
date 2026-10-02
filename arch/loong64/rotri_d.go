@@ -15,15 +15,6 @@ type RotriD struct {
 	imm    imm
 }
 
-func decodeRotriD(w uint32) Instr {
-	return RotriD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 6))),
-	}
-}
-
 func (i RotriD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rotri.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

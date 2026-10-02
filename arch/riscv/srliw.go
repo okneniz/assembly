@@ -15,15 +15,6 @@ type Srliw struct {
 	shamt   imm
 }
 
-func decodeSrliw(w uint32) Instr {
-	return Srliw{
-		base:  newBase(w),
-		rd:    rvRegNames[w>>7&0x1f],
-		rs1:   rvRegNames[w>>15&0x1f],
-		shamt: immNum(int64(shamt5(w))),
-	}
-}
-
 func (i Srliw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("srliw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }

@@ -140,18 +140,3 @@ func msubWrite(w io.Writer, match uint32, i Madd) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
 }
-
-func decodeMadd(w uint32) (Instr, error) {
-	in, err := newMadd(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-		gprOf(w>>10&0x1f, w>>31&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

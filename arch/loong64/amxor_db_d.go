@@ -14,15 +14,6 @@ type AmxorDbD struct {
 	rd, rk, rj uint8
 }
 
-func decodeAmxorDbD(w uint32) Instr {
-	return AmxorDbD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i AmxorDbD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("amxor_db.d %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

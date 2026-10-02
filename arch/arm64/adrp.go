@@ -55,18 +55,3 @@ func (i Adrp) ObjDump(ctx disasm.ViewCtx) string {
 func (i Adrp) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0x90000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }
-
-func decodeAdrp(w uint32) (Instr, error) {
-	raw := (w>>5&0x7ffff)<<2 | w>>29&3
-	imm21 := signExtendN(raw, 21)
-	in, err := newAdrp(
-		newBase(w),
-		gprOf(w&0x1f, true),
-		imm21,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

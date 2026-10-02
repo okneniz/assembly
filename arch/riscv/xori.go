@@ -15,15 +15,6 @@ type Xori struct {
 	imm     imm
 }
 
-func decodeXori(w uint32) Instr {
-	return Xori{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		imm:  immNum(iImm(w)),
-	}
-}
-
 func (i Xori) ObjDump(_ disasm.ViewCtx) string {
 	if i.imm.val == -1 {
 		return fmt.Sprintf("not %s, %s", i.rd, i.rs1)

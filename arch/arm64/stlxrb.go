@@ -71,16 +71,6 @@ func newStlxrb(b base, rs, rt, rn Reg) (Stlxrb, error) {
 
 const stlxrbEnc uint32 = 0x0800FC00 // stlxrb ws, wt, [xn]
 
-func decodeStlxrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Stlxrb{
-			base: newBase(w),
-			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:  enc,
-		}, nil
-	}
-}
-
 func (i Stlxrb) ObjDump(_ disasm.ViewCtx) string {
 	return "stlxrb " + i.exText()
 }

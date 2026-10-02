@@ -14,15 +14,6 @@ type And struct {
 	rd, rs1, rs2 string
 }
 
-func decodeAnd(w uint32) Instr {
-	return And{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cAnd - compressed forms (c.and): base - halfword, length 2.
 func cAnd(h uint32, rd, rs1, rs2 string) And {
 	return And{

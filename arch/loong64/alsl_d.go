@@ -16,16 +16,6 @@ type AlslD struct {
 	shift      imm
 }
 
-func decodeAlslD(w uint32) Instr {
-	return AlslD{
-		base:  newBase(w),
-		rd:    uint8(w & 0x1f),
-		rj:    uint8(w >> 5 & 0x1f),
-		rk:    uint8(w >> 10 & 0x1f),
-		shift: immNum(int64(uField(w, 15, 2)) + 1),
-	}
-}
-
 func (i AlslD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"alsl.d %s, %s, %s, %s",

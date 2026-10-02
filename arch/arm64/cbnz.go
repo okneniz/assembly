@@ -64,12 +64,3 @@ func (i Cbnz) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|bits<<5|num)
 }
-
-func decodeCbnz(w uint32) (Instr, error) {
-	in, err := newCbnz(newBase(w), gprOf(w&0x1f, w>>31&1 == 1), signExtendN(w>>5&0x7ffff, 19)*4)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

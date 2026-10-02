@@ -17,14 +17,6 @@ type Jal struct {
 	off imm // pc-relative byte offset
 }
 
-func decodeJal(w uint32) Instr {
-	return Jal{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		off:  immNum(jImm(w)),
-	}
-}
-
 // cJal - compressed forms (c.j): base - halfword, length 2.
 func cJal(h uint32, rd string, off int64) Jal {
 	return Jal{

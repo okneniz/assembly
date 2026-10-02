@@ -14,15 +14,6 @@ type Xor struct {
 	rd, rs1, rs2 string
 }
 
-func decodeXor(w uint32) Instr {
-	return Xor{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cXor - compressed forms (c.xor): base - halfword, length 2.
 func cXor(h uint32, rd, rs1, rs2 string) Xor {
 	return Xor{

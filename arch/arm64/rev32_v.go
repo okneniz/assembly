@@ -51,17 +51,3 @@ func (i Rev32V) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, rev32VEnc|q<<30|size<<22|rd|rn<<5)
 }
-
-func decodeRev32V(w uint32) (Instr, error) {
-	in, err := newRev32V(
-		newBase(w),
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		decodeArrangement(w>>30&1, w>>22&3),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

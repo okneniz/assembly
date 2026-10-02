@@ -14,15 +14,6 @@ type MulhWu struct {
 	rd, rj, rk uint8
 }
 
-func decodeMulhWu(w uint32) Instr {
-	return MulhWu{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i MulhWu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mulh.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

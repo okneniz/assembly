@@ -16,15 +16,6 @@ type Preldx struct {
 	hint   imm
 }
 
-func decodePreldx(w uint32) Instr {
-	return Preldx{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		hint: immNum(int64(uField(w, 0, 5))),
-	}
-}
-
 func (i Preldx) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("preldx %s, %s, %s", i.hint.text(), laRegName(i.rj), laRegName(i.rk))
 }

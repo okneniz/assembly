@@ -49,22 +49,3 @@ func (i Uaddlv) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, uaddlvEnc|rd|rn<<5)
 }
-
-func decodeUaddlv(w uint32) (Instr, error) {
-	rd := vReg(w & 0x1f)
-	size := w >> 22 & 3
-	switch size {
-	case 0:
-		rd = fmt.Sprintf("h%d", regIndex(rd))
-	case 1:
-		rd = fmt.Sprintf("s%d", regIndex(rd))
-	}
-
-	return Uaddlv{
-		base: newBase(w),
-		rd:   rd,
-		rn:   vReg(w >> 5 & 0x1f),
-		q:    w >> 30 & 1,
-		size: size,
-	}, nil
-}

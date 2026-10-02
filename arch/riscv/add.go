@@ -14,15 +14,6 @@ type Add struct {
 	rd, rs1, rs2 string
 }
 
-func decodeAdd(w uint32) Instr {
-	return Add{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cAdd - compressed forms (c.add): base - halfword, length 2.
 func cAdd(h uint32, rd, rs1, rs2 string) Add {
 	return Add{

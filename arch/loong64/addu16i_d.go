@@ -16,15 +16,6 @@ type Addu16iD struct {
 	imm    imm
 }
 
-func decodeAddu16iD(w uint32) Instr {
-	return Addu16iD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(sField(w, 10, 16)),
-	}
-}
-
 func (i Addu16iD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("addu16i.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

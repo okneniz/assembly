@@ -16,14 +16,6 @@ type Pcaddi struct {
 	imm imm
 }
 
-func decodePcaddi(w uint32) Instr {
-	return Pcaddi{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		imm:  immNum(sField(w, 5, 20)),
-	}
-}
-
 func (i Pcaddi) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("pcaddi %s, %s", laRegName(i.rd), i.imm.text())
 }

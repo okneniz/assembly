@@ -15,15 +15,6 @@ type Blt struct {
 	off      imm // pc-relative byte offset
 }
 
-func decodeBlt(w uint32) Instr {
-	return Blt{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(bImm(w)),
-	}
-}
-
 func (i Blt) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	if i.rs1 == "zero" {

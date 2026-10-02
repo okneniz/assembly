@@ -53,17 +53,3 @@ func (i Fsub) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
 }
-
-func decodeFsub(w uint32) (Instr, error) {
-	in, err := newFsub(
-		newBase(w),
-		newFReg(uint8(w&0x1f), w>>22&1 == 1),
-		newFReg(uint8(w>>5&0x1f), w>>22&1 == 1),
-		newFReg(uint8(w>>16&0x1f), w>>22&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

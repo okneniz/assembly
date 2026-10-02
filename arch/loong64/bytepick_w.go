@@ -16,16 +16,6 @@ type BytepickW struct {
 	sel        imm
 }
 
-func decodeBytepickW(w uint32) Instr {
-	return BytepickW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-		sel:  immNum(int64(uField(w, 15, 2))),
-	}
-}
-
 func (i BytepickW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bytepick.w %s, %s, %s, %s",

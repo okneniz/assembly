@@ -121,18 +121,3 @@ func cselWrite(w io.Writer, i Csel, matchX, matchW uint32, name string) (int64, 
 
 	return writeWord(w, match|rd|rn<<5|c<<12|rm<<16)
 }
-
-func decodeCsel(w uint32) (Instr, error) {
-	in, err := newCsel(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-		condName(w>>12&0xf),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

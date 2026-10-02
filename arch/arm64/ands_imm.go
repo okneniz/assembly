@@ -106,17 +106,3 @@ func (i AndsImm) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
 }
-
-func decodeAndsImm(w uint32) (Instr, error) {
-	in, err := newAndsImm(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

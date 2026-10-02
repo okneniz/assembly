@@ -38,12 +38,3 @@ func (i Bl) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, blMatch|bits)
 }
-
-func decodeBl(w uint32) (Instr, error) {
-	in, err := newBl(newBase(w), immNum(signExtendN(w&0x3ffffff, 26)*4))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

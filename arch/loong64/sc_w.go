@@ -17,15 +17,6 @@ type ScW struct {
 	off    imm
 }
 
-func decodeScW(w uint32) Instr {
-	return ScW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 14) << 2),
-	}
-}
-
 func (i ScW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sc.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

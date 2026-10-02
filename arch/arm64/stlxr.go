@@ -58,16 +58,6 @@ const (
 	stlxrWEnc uint32 = 0x8800FC00 // stlxr ws, wt, [xn]
 )
 
-func decodeStlxrOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Stlxr{
-			base: newBase(w),
-			excl: newExcl(regNameW(w>>16&0x1f), armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:  enc,
-		}, nil
-	}
-}
-
 func (i Stlxr) ObjDump(_ disasm.ViewCtx) string {
 	return "stlxr " + i.exText()
 }

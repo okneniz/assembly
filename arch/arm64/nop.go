@@ -28,12 +28,3 @@ func (i Nop) ObjDump(_ disasm.ViewCtx) string {
 func (i Nop) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, nopMatch)
 }
-
-func decodeNop(w uint32) (Instr, error) {
-	in, err := newNop(newBase(w))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

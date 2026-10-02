@@ -15,16 +15,6 @@ type FaddD struct {
 	rm           imm // rounding mode (not shown in text)
 }
 
-func decodeFaddD(w uint32) Instr {
-	return FaddD{
-		base: newBase(w),
-		rd:   rvFRegNames[w>>7&0x1f],
-		rs1:  rvFRegNames[w>>15&0x1f],
-		rs2:  rvFRegNames[w>>20&0x1f],
-		rm:   immNum(int64(w >> 12 & 0x7)),
-	}
-}
-
 func (i FaddD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fadd.d %s, %s, %s", i.rd, i.rs1, i.rs2)
 }

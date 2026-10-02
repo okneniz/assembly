@@ -70,17 +70,3 @@ func (i Ldrsh) ObjDump(_ disasm.ViewCtx) string {
 func (i Ldrsh) Encode(w io.Writer) (int64, error) {
 	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
 }
-
-func decodeLdrsh(w uint32) (Instr, error) {
-	in, err := newLdrsh(
-		newBase(w),
-		gprOf(w&0x1f, true),
-		xspOf(w>>5&0x1f),
-		Off(int64(w>>10&0xfff)<<1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

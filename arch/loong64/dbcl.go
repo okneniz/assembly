@@ -13,13 +13,6 @@ type Dbcl struct {
 	code imm
 }
 
-func decodeDbcl(w uint32) Instr {
-	return Dbcl{
-		base: newBase(w),
-		code: immNum(int64(uField(w, 0, 15))),
-	}
-}
-
 func (i Dbcl) ObjDump(_ disasm.ViewCtx) string {
 	return "dbcl " + i.code.text()
 }

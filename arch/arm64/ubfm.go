@@ -103,18 +103,3 @@ func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 func (i Ubfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }
-
-func decodeUbfm(w uint32) (Instr, error) {
-	in, err := newUbfm(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		w>>16&0x3f,
-		w>>10&0x3f,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

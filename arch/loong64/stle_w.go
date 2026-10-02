@@ -15,15 +15,6 @@ type StleW struct {
 	rd, rj, rk uint8
 }
 
-func decodeStleW(w uint32) Instr {
-	return StleW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i StleW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("stle.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

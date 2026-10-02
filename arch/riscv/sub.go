@@ -14,15 +14,6 @@ type Sub struct {
 	rd, rs1, rs2 string
 }
 
-func decodeSub(w uint32) Instr {
-	return Sub{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cSub - compressed forms (c.sub): base - halfword, length 2.
 func cSub(h uint32, rd, rs1, rs2 string) Sub {
 	return Sub{

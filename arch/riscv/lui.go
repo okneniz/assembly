@@ -16,14 +16,6 @@ type Lui struct {
 	imm imm
 }
 
-func decodeLui(w uint32) Instr {
-	return Lui{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		imm:  immNum(int64(uImm(w))),
-	}
-}
-
 // cLui - compressed forms (c.lui): base - halfword, length 2.
 func cLui(h uint32, rd string, imm int64) Lui {
 	return Lui{

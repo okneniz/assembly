@@ -17,15 +17,6 @@ type Bge struct {
 	off    imm
 }
 
-func decodeBge(w uint32) Instr {
-	return Bge{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(sField(w, 10, 16) << 2),
-	}
-}
-
 func (i Bge) ObjDump(_ disasm.ViewCtx) string {
 	if i.rj == 0 {
 		return fmt.Sprintf("blez %s, %s", laRegName(i.rd), i.off.text())

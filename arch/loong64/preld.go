@@ -18,15 +18,6 @@ type Preld struct {
 	off  imm
 }
 
-func decodePreld(w uint32) Instr {
-	return Preld{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		hint: immNum(int64(uField(w, 0, 5))),
-		off:  immNum(sField(w, 10, 12)),
-	}
-}
-
 func (i Preld) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("preld %s, %s, %s", i.hint.text(), laRegName(i.rj), i.off.text())
 }

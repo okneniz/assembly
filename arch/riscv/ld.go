@@ -15,15 +15,6 @@ type Ld struct {
 	off     imm
 }
 
-func decodeLd(w uint32) Instr {
-	return Ld{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 // cLd - compressed forms (c.ld/c.ldsp): base - halfword, length 2.
 func cLd(h uint32, rd, rs1 string, off int64) Ld {
 	return Ld{

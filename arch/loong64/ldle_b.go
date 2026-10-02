@@ -15,15 +15,6 @@ type LdleB struct {
 	rd, rj, rk uint8
 }
 
-func decodeLdleB(w uint32) Instr {
-	return LdleB{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i LdleB) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldle.b %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

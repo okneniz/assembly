@@ -13,13 +13,6 @@ type Break struct {
 	code imm
 }
 
-func decodeBreak(w uint32) Instr {
-	return Break{
-		base: newBase(w),
-		code: immNum(int64(uField(w, 0, 15))),
-	}
-}
-
 func (i Break) ObjDump(_ disasm.ViewCtx) string {
 	return "break " + i.code.text()
 }

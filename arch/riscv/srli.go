@@ -15,15 +15,6 @@ type Srli struct {
 	shamt   imm
 }
 
-func decodeSrli(w uint32) Instr {
-	return Srli{
-		base:  newBase(w),
-		rd:    rvRegNames[w>>7&0x1f],
-		rs1:   rvRegNames[w>>15&0x1f],
-		shamt: immNum(int64(shamt6(w))),
-	}
-}
-
 // cSrli - compressed forms (c.srli): base - halfword, length 2.
 func cSrli(h uint32, rd, rs1 string, shamt int64) Srli {
 	return Srli{

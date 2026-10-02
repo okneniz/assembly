@@ -16,14 +16,6 @@ type Lu12iW struct {
 	imm imm
 }
 
-func decodeLu12iW(w uint32) Instr {
-	return Lu12iW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		imm:  immNum(sField(w, 5, 20)),
-	}
-}
-
 func (i Lu12iW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lu12i.w %s, %s", laRegName(i.rd), i.imm.text())
 }

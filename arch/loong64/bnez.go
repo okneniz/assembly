@@ -17,14 +17,6 @@ type Bnez struct {
 	off imm
 }
 
-func decodeBnez(w uint32) Instr {
-	return Bnez{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		off:  immNum(d5k16Imm(w) << 2),
-	}
-}
-
 func (i Bnez) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("bnez %s, %s", laRegName(i.rj), i.off.text())
 }

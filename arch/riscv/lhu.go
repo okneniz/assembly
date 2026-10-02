@@ -15,15 +15,6 @@ type Lhu struct {
 	off     imm
 }
 
-func decodeLhu(w uint32) Instr {
-	return Lhu{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Lhu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lhu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

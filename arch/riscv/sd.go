@@ -15,15 +15,6 @@ type Sd struct {
 	off      imm
 }
 
-func decodeSd(w uint32) Instr {
-	return Sd{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(sImm(w)),
-	}
-}
-
 // cSd - compressed forms (c.sd/c.sdsp): base - halfword, length 2.
 func cSd(h uint32, rs1, rs2 string, off int64) Sd {
 	return Sd{

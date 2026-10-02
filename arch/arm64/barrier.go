@@ -83,16 +83,3 @@ func domainOf(option string) (BarrierDomain, bool) {
 
 	return 0, false
 }
-
-// decodeBarrierOf - the decoder for one barrier mnemonic: the CRm nibble
-// back to the domain (an unassigned nibble is not this instruction).
-func decodeBarrierOf(name string) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		domain := BarrierDomain((w >> 8) & 0xF)
-		if _, ok := barrierNames[domain]; !ok {
-			return nil, unknownDomain(name, domain)
-		}
-
-		return newBarrier(newBase(w), name, domain)
-	}
-}

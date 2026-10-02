@@ -82,17 +82,3 @@ func (i Adc) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, adcX|rd|rn<<5|rm<<16)
 }
-
-func decodeAdc(w uint32) (Instr, error) {
-	in, err := newAdc(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

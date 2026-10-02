@@ -15,15 +15,6 @@ type Sb struct {
 	off      imm
 }
 
-func decodeSb(w uint32) Instr {
-	return Sb{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-		off:  immNum(sImm(w)),
-	}
-}
-
 func (i Sb) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sb %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }

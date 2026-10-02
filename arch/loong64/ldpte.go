@@ -16,14 +16,6 @@ type Ldpte struct {
 	imm imm
 }
 
-func decodeLdpte(w uint32) Instr {
-	return Ldpte{
-		base: newBase(w),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 8))),
-	}
-}
-
 func (i Ldpte) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ldpte %s, %s", laRegName(i.rj), i.imm.text())
 }

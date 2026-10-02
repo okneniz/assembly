@@ -15,15 +15,6 @@ type SlliD struct {
 	imm    imm
 }
 
-func decodeSlliD(w uint32) Instr {
-	return SlliD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 6))),
-	}
-}
-
 func (i SlliD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("slli.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

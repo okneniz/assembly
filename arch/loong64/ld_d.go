@@ -16,15 +16,6 @@ type LdD struct {
 	imm    imm
 }
 
-func decodeLdD(w uint32) Instr {
-	return LdD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(sField(w, 10, 12)),
-	}
-}
-
 func (i LdD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("ld.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

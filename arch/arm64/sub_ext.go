@@ -109,19 +109,3 @@ func (i SubExt) ObjDump(_ disasm.ViewCtx) string {
 func (i SubExt) Encode(w io.Writer) (int64, error) {
 	return i.extWrite(w, SubExtX, SubExtW, "sub")
 }
-
-func decodeSubExt(w uint32) (Instr, error) {
-	in, err := newSubExt(
-		newBase(w),
-		numReg(w&0x1f, w>>31&1 == 1),    // rd 31 reads as sp/wsp in the plain add/sub ext words
-		numReg(w>>5&0x1f, w>>31&1 == 1), // rn 31 reads as sp/wsp in the ext words
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-		extName(w>>13&7),
-		w>>10&7,
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

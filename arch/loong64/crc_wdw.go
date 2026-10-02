@@ -15,15 +15,6 @@ type CrcWDW struct {
 	rd, rj, rk uint8
 }
 
-func decodeCrcWDW(w uint32) Instr {
-	return CrcWDW{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		rk:   uint8(w >> 10 & 0x1f),
-	}
-}
-
 func (i CrcWDW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("crc.w.d.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

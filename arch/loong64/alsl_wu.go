@@ -16,16 +16,6 @@ type AlslWu struct {
 	shift      imm
 }
 
-func decodeAlslWu(w uint32) Instr {
-	return AlslWu{
-		base:  newBase(w),
-		rd:    uint8(w & 0x1f),
-		rj:    uint8(w >> 5 & 0x1f),
-		rk:    uint8(w >> 10 & 0x1f),
-		shift: immNum(int64(uField(w, 15, 2)) + 1),
-	}
-}
-
 func (i AlslWu) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"alsl.wu %s, %s, %s, %s",

@@ -15,15 +15,6 @@ type Fsd struct {
 	off      imm
 }
 
-func decodeFsd(w uint32) Instr {
-	return Fsd{
-		base: newBase(w),
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvFRegNames[w>>20&0x1f],
-		off:  immNum(sImm(w)),
-	}
-}
-
 func (i Fsd) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("fsd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }

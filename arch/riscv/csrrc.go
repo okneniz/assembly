@@ -15,14 +15,6 @@ type Csrrc struct {
 	rs1 string
 }
 
-func decodeCsrrc(w uint32) Instr {
-	return Csrrc{
-		base:  newBase(w),
-		csrOp: newCsrOp(rvRegNames[w>>7&0x1f], int64(w>>20&0xfff)),
-		rs1:   rvRegNames[w>>15&0x1f],
-	}
-}
-
 func (i Csrrc) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrrc %s, %s, %s", i.rd, i.text(), i.rs1)
 }

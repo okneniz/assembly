@@ -58,16 +58,6 @@ func newStlrb(b base, rt, rn Reg) (Stlrb, error) {
 
 const stlrbEnc uint32 = 0x089FFC00 // stlrb wt, [xn]
 
-func decodeStlrbOf(enc uint32, x64 bool) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return Stlrb{
-			base:   newBase(w),
-			atomic: newAtomic(armRegName(w&0x1f, x64), regNameXSP(w>>5&0x1f)),
-			enc:    enc,
-		}, nil
-	}
-}
-
 func (i Stlrb) ObjDump(_ disasm.ViewCtx) string {
 	return "stlrb " + i.atText()
 }

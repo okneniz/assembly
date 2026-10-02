@@ -14,15 +14,6 @@ type Or struct {
 	rd, rs1, rs2 string
 }
 
-func decodeOr(w uint32) Instr {
-	return Or{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cOr - compressed forms (c.or): base - halfword, length 2.
 func cOr(h uint32, rd, rs1, rs2 string) Or {
 	return Or{

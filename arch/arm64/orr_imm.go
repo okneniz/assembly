@@ -144,17 +144,3 @@ func (i OrrImm) immText() string {
 
 	return fmt.Sprintf("#0x%x", m)
 }
-
-func decodeOrrImm(w uint32) (Instr, error) {
-	in, err := newOrrImm(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		decodeBitMasks(w>>22&1 == 1, w>>16&0x3f, w>>10&0x3f, w>>31&1 == 1),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

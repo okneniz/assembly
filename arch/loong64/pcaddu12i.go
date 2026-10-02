@@ -16,14 +16,6 @@ type Pcaddu12i struct {
 	imm imm
 }
 
-func decodePcaddu12i(w uint32) Instr {
-	return Pcaddu12i{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		imm:  immNum(sField(w, 5, 20)),
-	}
-}
-
 func (i Pcaddu12i) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("pcaddu12i %s, %s", laRegName(i.rd), i.imm.text())
 }

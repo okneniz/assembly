@@ -124,19 +124,3 @@ func (i EorShift) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }
-
-func decodeEorShift(w uint32) (Instr, error) {
-	in, err := newEorShift(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-		imm6Of(w>>10&0x3f),
-		shiftOf(w>>22&3),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

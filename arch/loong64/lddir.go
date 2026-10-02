@@ -16,15 +16,6 @@ type Lddir struct {
 	imm    imm
 }
 
-func decodeLddir(w uint32) Instr {
-	return Lddir{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-		imm:  immNum(int64(uField(w, 10, 8))),
-	}
-}
-
 func (i Lddir) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("lddir %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

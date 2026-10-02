@@ -14,15 +14,6 @@ type Mul struct {
 	rd, rs1, rs2 string
 }
 
-func decodeMul(w uint32) Instr {
-	return Mul{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 func (i Mul) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("mul %s, %s, %s", i.rd, i.rs1, i.rs2)
 }

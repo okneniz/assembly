@@ -15,15 +15,6 @@ type Sraiw struct {
 	shamt   imm
 }
 
-func decodeSraiw(w uint32) Instr {
-	return Sraiw{
-		base:  newBase(w),
-		rd:    rvRegNames[w>>7&0x1f],
-		rs1:   rvRegNames[w>>15&0x1f],
-		shamt: immNum(int64(shamt5(w))),
-	}
-}
-
 func (i Sraiw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("sraiw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }

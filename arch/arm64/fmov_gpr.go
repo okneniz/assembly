@@ -59,20 +59,6 @@ func (i FmovFromGpr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, match|rd|rn<<5)
 }
 
-func decodeFmovFromGpr(w uint32) (Instr, error) {
-	is64 := w>>22&1 == 1
-	in, err := newFmovFromGpr(
-		newBase(w),
-		newFReg(uint8(w&0x1f), is64),
-		gprOf(w>>5&0x1f, is64),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}
-
 // FmovToGpr — fmov xn, fd | fmov wn, sn (register bits moved to the
 // integer file).
 type FmovToGpr struct {
@@ -123,18 +109,4 @@ func (i FmovToGpr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
-}
-
-func decodeFmovToGpr(w uint32) (Instr, error) {
-	is64 := w>>22&1 == 1
-	in, err := newFmovToGpr(
-		newBase(w),
-		gprOf(w&0x1f, is64),
-		newFReg(uint8(w>>5&0x1f), is64),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
 }

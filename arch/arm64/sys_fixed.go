@@ -16,18 +16,6 @@ type sysFixed struct {
 	enc   uint32
 }
 
-func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) (Instr, error) {
-	return func(w uint32) (Instr, error) {
-		return sysFixed{
-			base:  newBase(w),
-			name:  name,
-			ops:   ops,
-			group: group,
-			enc:   enc,
-		}, nil
-	}
-}
-
 func (i sysFixed) ObjDump(_ disasm.ViewCtx) string {
 	if i.ops == "" {
 		return i.name

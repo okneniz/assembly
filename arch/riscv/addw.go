@@ -14,15 +14,6 @@ type Addw struct {
 	rd, rs1, rs2 string
 }
 
-func decodeAddw(w uint32) Instr {
-	return Addw{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		rs2:  rvRegNames[w>>20&0x1f],
-	}
-}
-
 // cAddw - compressed forms (c.addw): base - halfword, length 2.
 func cAddw(h uint32, rd, rs1, rs2 string) Addw {
 	return Addw{

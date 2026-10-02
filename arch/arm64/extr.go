@@ -89,18 +89,3 @@ func (i Extr) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, extrX|rd|rn<<5|i.lsb<<10|rm<<16)
 }
-
-func decodeExtr(w uint32) (Instr, error) {
-	in, err := newExtr(
-		newBase(w),
-		gprOf(w&0x1f, w>>31&1 == 1),
-		gprOf(w>>5&0x1f, w>>31&1 == 1),
-		gprOf(w>>16&0x1f, w>>31&1 == 1),
-		imm6Of(w>>10&0x3f),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

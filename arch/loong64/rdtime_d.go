@@ -14,14 +14,6 @@ type RdtimeD struct {
 	rd, rj uint8
 }
 
-func decodeRdtimeD(w uint32) Instr {
-	return RdtimeD{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		rj:   uint8(w >> 5 & 0x1f),
-	}
-}
-
 func (i RdtimeD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rdtime.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

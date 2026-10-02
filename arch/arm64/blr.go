@@ -51,12 +51,3 @@ func (i Blr) Encode(w io.Writer) (int64, error) {
 
 	return writeWord(w, blrMatch|num<<5)
 }
-
-func decodeBlr(w uint32) (Instr, error) {
-	in, err := newBlr(newBase(w), gprOf(w>>5&0x1f, true))
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
-}

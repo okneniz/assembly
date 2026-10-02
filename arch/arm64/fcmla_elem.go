@@ -71,22 +71,3 @@ func (i FcmlaElem) Encode(w io.Writer) (int64, error) {
 	opc := fcmlaElemOpcBase + i.rot/90*2
 	return writeWord(w, byElemBits(i.q, fcmlaElemU, i.size, rm, opc, i.idx, rn, rd))
 }
-
-func decodeFcmlaElem(w uint32) (Instr, error) {
-	size := w >> 22 & 3
-	in, err := newFcmlaElem(
-		newBase(w),
-		w>>30&1,
-		size,
-		byElemIndex(w, size),
-		w>>12&0xf/2*90%360,
-		newVReg(uint8(w&0x1f)),
-		newVReg(uint8(w>>5&0x1f)),
-		newVReg(uint8(byElemVm(w, size))),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
-}

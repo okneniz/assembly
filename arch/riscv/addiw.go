@@ -15,15 +15,6 @@ type Addiw struct {
 	imm     imm
 }
 
-func decodeAddiw(w uint32) Instr {
-	return Addiw{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		imm:  immNum(iImm(w)),
-	}
-}
-
 // cAddiw - compressed forms (c.addiw): base - halfword, length 2.
 func cAddiw(h uint32, rd, rs1 string, imm int64) Addiw {
 	return Addiw{

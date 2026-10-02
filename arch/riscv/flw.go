@@ -15,15 +15,6 @@ type Flw struct {
 	off     imm
 }
 
-func decodeFlw(w uint32) Instr {
-	return Flw{
-		base: newBase(w),
-		rd:   rvFRegNames[w>>7&0x1f],
-		rs1:  rvRegNames[w>>15&0x1f],
-		off:  immNum(iImm(w)),
-	}
-}
-
 func (i Flw) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("flw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }

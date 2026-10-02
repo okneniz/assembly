@@ -99,32 +99,6 @@ const (
 	ldpWEnc uint32 = 0x29400000 // ldp wt, wt2, [xn, #imm7<<2]
 )
 
-func decodeLdpOf(enc uint32, scale uint32, x64 bool, rtKind string) func(uint32) (Instr, error) {
-	kind := rtKind
-	if kind == "" {
-		if x64 {
-			kind = "x"
-		} else {
-			kind = "w"
-		}
-	}
-
-	return func(w uint32) (Instr, error) {
-		rt, rt2, rn, k, off, load := pairDecode(w, scale, kind)
-		if !load {
-			return newStpBase(
-				newBase(w),
-				newPairBase(rt, rt2, rn, k, off, scale, enc&^(1<<22)),
-			), nil
-		}
-
-		return Ldp{
-			base:     newBase(w),
-			pairBase: newPairBase(rt, rt2, rn, k, off, scale, enc|1<<22),
-		}, nil
-	}
-}
-
 func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
 	return "ldp " + i.pairText()
 }

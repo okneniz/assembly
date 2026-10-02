@@ -15,14 +15,6 @@ type Csrrd struct {
 	csr imm
 }
 
-func decodeCsrrd(w uint32) Instr {
-	return Csrrd{
-		base: newBase(w),
-		rd:   uint8(w & 0x1f),
-		csr:  immNum(int64(uField(w, 10, 14))),
-	}
-}
-
 func (i Csrrd) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("csrrd %s, %s", laRegName(i.rd), i.csr.text())
 }

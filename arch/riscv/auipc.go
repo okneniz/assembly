@@ -16,14 +16,6 @@ type Auipc struct {
 	imm imm
 }
 
-func decodeAuipc(w uint32) Instr {
-	return Auipc{
-		base: newBase(w),
-		rd:   rvRegNames[w>>7&0x1f],
-		imm:  immNum(int64(uImm(w))),
-	}
-}
-
 func (i Auipc) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("auipc %s, %s", i.rd, i.imm.text())
 }
