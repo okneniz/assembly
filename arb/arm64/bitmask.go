@@ -10,10 +10,12 @@ package arm64
 
 import (
 	"iter"
-
-	"github.com/okneniz/assembly/arch/arm64"
 	"math/rand/v2"
 	"slices"
+
+	ohsnap "github.com/okneniz/oh-snap"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // BitmaskParams — the structural axes of a logical immediate.
@@ -135,4 +137,10 @@ func u32Halved(v uint32) []uint32 {
 	}
 
 	return out
+}
+
+// Bitmask — the exported face of the structural generator (the alias
+// package builds its immediate forms on top of the same axes).
+func Bitmask(rnd *rand.Rand) ohsnap.Arbitrary[BitmaskParams] {
+	return newBitmaskGen(rnd)
 }

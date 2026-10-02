@@ -97,6 +97,21 @@ func requireShift(rd Reg, instr string, imm Imm6, sh Shift) error {
 	return nil
 }
 
+// requireExtWidth - the extension of an add/sub extended-register form
+// must not out-width the registers: the x-only extensions (uxtx/sxtx)
+// never ride a W form (clang: "expected uxtb/uxth/uxtw...").
+func requireExtWidth(instr string, is64 bool, ext string) error {
+	if !is64 && (ext == "uxtx" || ext == "sxtx") {
+		return fmt.Errorf(
+			"arm64.New%s: operand ext: %s does not fit the W form (the x-only extension)",
+			instr,
+			ext,
+		)
+	}
+
+	return nil
+}
+
 // requireOff - offset must be non-negative, aligned, and within imm12.
 func requireOff(instr string, off Off, scale uint32) error {
 	if off < 0 || uint64(off)&(uint64(1)<<scale-1) != 0 || uint64(off)>>scale > 0xfff {

@@ -675,3 +675,20 @@ func TestUaddlvWords(t *testing.T) {
 		require.Equal(t, c.word, got, "case %q", c.src)
 	}
 }
+
+// TestZeroShiftSpellings — the zero-amount shift modifiers are the
+// canonical no-shift spelling (clang accepts them; the decoder prints
+// without), pinned after the loose-compare learned to drop the suffix.
+func TestZeroShiftSpellings(t *testing.T) {
+	for _, c := range []struct {
+		src  string
+		word uint32
+	}{
+		{"neg w17, w22, lsl #0", 0x4b1603f1},
+		{"add w0, w1, w2, lsr #0", 0x0b420020},
+		{"and x0, x1, x2, ror #0", 0x8ac20020},
+	} {
+		got := armAssembleOne(t, c.src, 0)
+		require.Equal(t, c.word, got, "case %q", c.src)
+	}
+}

@@ -33,7 +33,7 @@ func newRbitV(b base, rd, rn VReg, arr string) (RbitV, error) {
 	}, nil
 }
 
-const rbitVEnc uint32 = 0x6E605800 // rbit vd, vn (Q=0 form)
+const rbitVEnc uint32 = 0x2E605800 // rbit vd, vn (Q=0 form; bit 22 is the fixed 01 of the class)
 
 func (i RbitV) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf("rbit.%s %s, %s", i.arr, i.rd, i.rn)

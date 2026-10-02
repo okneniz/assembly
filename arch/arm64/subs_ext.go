@@ -82,8 +82,12 @@ func newSubsExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (SubsEx
 		return SubsExt{}, err
 	}
 
-	if _, err := extNum(ext); err != nil {
+if _, err := extNum(ext); err != nil {
 		return SubsExt{}, fmt.Errorf("arm64.NewSubsExt: operand ext: %w", err)
+	}
+
+	if err := requireExtWidth("SubsExt", rd.Is64(), ext); err != nil {
+		return SubsExt{}, err
 	}
 
 	if imm3 > 7 {

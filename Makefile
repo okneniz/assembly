@@ -45,7 +45,7 @@ tests:
 	$(MAKE) -C tests all
 
 # prop-a64 — the arm64 property suite of the root package. The
-# single-instruction families (114 now) no longer fit one go-test timeout,
+# single-instruction family table no longer fits one go-test timeout,
 # so the table is split in two halves by family name; the halves and the
 # remaining properties (the list round trips, the alias families, the
 # decode robustness) run as separate processes. Progress lines land in

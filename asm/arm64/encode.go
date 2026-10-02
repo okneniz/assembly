@@ -383,7 +383,18 @@ func looseNormalize(s string) string {
 		i++
 	}
 
-	return b.String()
+	// a zero shift modifier is the canonical no-shift spelling: the
+	// decoder never prints it (neg w17, w22, lsl #0 decodes as
+	// "neg w17, w22"), so both sides lose the suffix or the verify
+	// would refuse a word clang accepts
+	out := b.String()
+	for _, suf := range []string{"lsl#0", "lsr#0", "asr#0", "ror#0"} {
+		if strings.HasSuffix(out, suf) {
+			out = strings.TrimSuffix(out, suf)
+		}
+	}
+
+	return out
 }
 
 func lowerByte(c byte) byte {

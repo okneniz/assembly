@@ -69,6 +69,14 @@ func newSbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Sbfm, error) {
 		)
 	}
 
+	if !rd.Is64() && (immr > 31 || imms > 31) {
+		return Sbfm{}, fmt.Errorf(
+			"arm64.NewSbfm: operands immr/imms: %d/%d are out of the W-form range 0..31",
+			immr,
+			imms,
+		)
+	}
+
 	return Sbfm{
 		base:  b,
 		rd:    rd.name(),

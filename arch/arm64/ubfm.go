@@ -68,6 +68,14 @@ func newUbfm(b base, rd Reg, rn Reg, immr uint32, imms uint32) (Ubfm, error) {
 		)
 	}
 
+	if !rd.Is64() && (immr > 31 || imms > 31) {
+		return Ubfm{}, fmt.Errorf(
+			"arm64.NewUbfm: operands immr/imms: %d/%d are out of the W-form range 0..31",
+			immr,
+			imms,
+		)
+	}
+
 	return Ubfm{
 		base: b,
 		rd:   rd.name(),

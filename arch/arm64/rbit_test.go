@@ -43,3 +43,19 @@ func TestRbitBuild(t *testing.T) {
 		assertErr(t, c.name, err)
 	}
 }
+
+// TestRbitVWordsDecode — the vector rbit words decode (the fixed 01 of
+// the class at bit 22 once pinned apart from cnt/not, whose size is 00).
+func TestRbitVWordsDecode(t *testing.T) {
+	for _, c := range []struct {
+		word uint32
+		text string
+	}{
+		{0x2e605820, "rbit.8b v0, v1"},
+		{0x6e605820, "rbit.16b v0, v1"},
+	} {
+		in, err := DecodeWord(c.word)
+		require.NoError(t, err, "case %#x", c.word)
+		require.Equal(t, c.text, in.ObjDump(nil), "case %#x", c.word)
+	}
+}

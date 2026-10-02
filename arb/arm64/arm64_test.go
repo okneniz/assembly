@@ -647,6 +647,9 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("Rev32V", func() arm64.Instr {
 			return ohsnap.First(Rev32V(rnd).Generate()).Instr()
 		}),
+		newInstrCase("RbitV", func() arm64.Instr {
+			return ohsnap.First(RbitV(rnd).Generate()).Instr()
+		}),
 		newInstrCase("Uaddlv", func() arm64.Instr {
 			return ohsnap.First(Uaddlv(rnd).Generate()).Instr()
 		}),

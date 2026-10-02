@@ -82,8 +82,12 @@ func newAddExt(b base, rd Reg, rn Reg, rm Reg, ext string, imm3 uint32) (AddExt,
 		return AddExt{}, err
 	}
 
-	if _, err := extNum(ext); err != nil {
+if _, err := extNum(ext); err != nil {
 		return AddExt{}, fmt.Errorf("arm64.NewAddExt: operand ext: %w", err)
+	}
+
+	if err := requireExtWidth("AddExt", rd.Is64(), ext); err != nil {
+		return AddExt{}, err
 	}
 
 	if imm3 > 7 {

@@ -1267,7 +1267,7 @@ var arm64Schemas = []Schema{
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
 	}, NewMeta("cmeq", "SIMD"), "simd3", true, decodeCmeq),
-	NewSchema(0xBFB0FC00, 0x0E205800, []Field{
+	NewSchema(0xBFF0FC00, 0x0E205800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
@@ -1279,7 +1279,7 @@ var arm64Schemas = []Schema{
 		NewField("Q", 30, 1),
 		NewField("size", 22, 2),
 	}, NewMeta("rev32", "SIMD"), "simd2", true, decodeRev32V),
-	NewSchema(0xBFB0FC00, 0x2E205800, []Field{
+	NewSchema(0xBFF0FC00, 0x2E205800, []Field{
 		NewField("Rd", 0, 5, "regV"),
 		NewField("Rn", 5, 5, "regV"),
 		NewField("Q", 30, 1),
