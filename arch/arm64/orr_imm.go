@@ -96,24 +96,6 @@ func movnRep(v uint64, bits int) bool {
 	return movzRep(^v&all, bits)
 }
 
-// ObjDump — orr rd, rn, #bitmask. With Rn = ZR LLVM objdump prints the mov
-// alias, but ONLY if the immediate is not representable by a single
-// MOVZ/MOVN (otherwise the text is ambiguous on reassembly:
-// mov x, #0x20 canonically = the MOVZ encoding).
-func (i OrrImm) ObjDump(_ disasm.ViewCtx) string {
-	bits := 32
-	if i.is64 {
-		bits = 64
-	}
-
-	if (i.rn == "xzr" || i.rn == "wzr") &&
-		!movzRep(i.mask(), bits) && !movnRep(i.mask(), bits) {
-		return fmt.Sprintf("mov %s, %s", i.rd, i.immText())
-	}
-
-	return fmt.Sprintf("orr %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
 func (i OrrImm) Encode(w io.Writer) (int64, error) {
 	match := orrImmX
 	if !i.is64 {
@@ -130,6 +112,24 @@ func (i OrrImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
+
+// ObjDump — orr rd, rn, #bitmask. With Rn = ZR LLVM objdump prints the mov
+// alias, but ONLY if the immediate is not representable by a single
+// MOVZ/MOVN (otherwise the text is ambiguous on reassembly:
+// mov x, #0x20 canonically = the MOVZ encoding).
+func (i OrrImm) ObjDump(_ disasm.ViewCtx) string {
+	bits := 32
+	if i.is64 {
+		bits = 64
+	}
+
+	if (i.rn == "xzr" || i.rn == "wzr") &&
+		!movzRep(i.mask(), bits) && !movnRep(i.mask(), bits) {
+		return fmt.Sprintf("mov %s, %s", i.rd, i.immText())
+	}
+
+	return fmt.Sprintf("orr %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }
 
 // immText - the immediate in objdump style: 64-bit patterns with the top

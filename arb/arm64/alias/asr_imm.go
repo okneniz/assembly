@@ -32,10 +32,6 @@ func NewAsrImmParams(rd arm64.Reg, rn arm64.Reg, sh uint32) AsrImmParams {
 	}
 }
 
-func (p AsrImmParams) String() string {
-	return fmt.Sprintf("asr %s, %s, #%d", p.Rd, p.Rn, p.Sh)
-}
-
 func (p AsrImmParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -45,19 +41,23 @@ func (p AsrImmParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p AsrImmParams) String() string {
+	return fmt.Sprintf("asr %s, %s, #%d", p.Rd, p.Rn, p.Sh)
+}
+
 // asrImmGen — generator for asr #imm: registers of the same width, the
 // amount 1..regsize-1.
 type asrImmGen struct {
 	rnd *rand.Rand
 }
 
-func newAsrImmGen(rnd *rand.Rand) asrImmGen {
-	return asrImmGen{rnd: rnd}
-}
-
 // AsrImm — an arbitrary asr #imm.
 func AsrImm(rnd *rand.Rand) ohsnap.Arbitrary[AsrImmParams] {
 	return newAsrImmGen(rnd)
+}
+
+func newAsrImmGen(rnd *rand.Rand) asrImmGen {
+	return asrImmGen{rnd: rnd}
 }
 
 func (g asrImmGen) Generate() iter.Seq[AsrImmParams] {

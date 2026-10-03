@@ -30,10 +30,6 @@ type pairSym struct {
 	build  func(target, pc uint64) ([]Resolved, error)
 }
 
-func (s pairSym) Size() int {
-	return s.size
-}
-
 func (s pairSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	t, ok := ctx.Resolve(s.target)
 	if !ok {
@@ -46,4 +42,8 @@ func (s pairSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	}
 
 	return rs, nil
+}
+
+func (s pairSym) Size() int {
+	return s.size
 }

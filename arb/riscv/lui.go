@@ -31,6 +31,7 @@ func NewLuiParams(rd riscv.Reg, imm riscv.Imm20) LuiParams {
 func (p LuiParams) Instr() riscv.Instr {
 	return riscv.New().Lui(p.Rd, p.Imm)
 }
+
 func (p LuiParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type luiGen struct {
 	rnd *rand.Rand
 }
 
-func newLuiGen(rnd *rand.Rand) luiGen {
-	return luiGen{rnd: rnd}
-}
-
 // Lui — an arbitrary lui.
 func Lui(rnd *rand.Rand) ohsnap.Arbitrary[LuiParams] {
 	return newLuiGen(rnd)
+}
+
+func newLuiGen(rnd *rand.Rand) luiGen {
+	return luiGen{rnd: rnd}
 }
 
 func (g luiGen) Generate() iter.Seq[LuiParams] {

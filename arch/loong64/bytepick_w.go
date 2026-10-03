@@ -14,6 +14,14 @@ type BytepickW struct {
 	sel        imm
 }
 
+func (i BytepickW) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["bytepick.w"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
+		scatterU(i.sel.val, 15, 2)
+
+	return writeWord(w, word)
+}
+
 func (i BytepickW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bytepick.w %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i BytepickW) ObjDump(_ disasm.ViewCtx) string {
 		laRegName(i.rk),
 		i.sel.text(),
 	)
-}
-
-func (i BytepickW) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["bytepick.w"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
-		scatterU(i.sel.val, 15, 2)
-
-	return writeWord(w, word)
 }

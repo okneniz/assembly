@@ -12,13 +12,13 @@ type AmswapDbH struct {
 	rd, rk, rj uint8
 }
 
-func (i AmswapDbH) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amswap_db.h %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
-}
-
 func (i AmswapDbH) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["amswap_db.h"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i AmswapDbH) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amswap_db.h %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

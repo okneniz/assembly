@@ -69,10 +69,10 @@ func result(f *unit.Fixed) *prog.Result {
 }
 
 // errNeedsLayout - the flat Assemble met a program with two streams.
-var errNeedsLayout = errNeedsLayoutType{}
+var errNeedsLayout = errNeedsLayoutError{}
 
-type errNeedsLayoutType struct{}
+type errNeedsLayoutError struct{}
 
-func (errNeedsLayoutType) Error() string {
+func (errNeedsLayoutError) Error() string {
 	return "the data stream needs AssembleLayout"
 }

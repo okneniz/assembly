@@ -38,6 +38,7 @@ func (p ExtrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p ExtrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,13 +49,13 @@ type extrGen struct {
 	rnd *rand.Rand
 }
 
-func newExtrGen(rnd *rand.Rand) extrGen {
-	return extrGen{rnd: rnd}
-}
-
 // Extr — an arbitrary extr.
 func Extr(rnd *rand.Rand) ohsnap.Arbitrary[ExtrParams] {
 	return newExtrGen(rnd)
+}
+
+func newExtrGen(rnd *rand.Rand) extrGen {
+	return extrGen{rnd: rnd}
 }
 
 func (g extrGen) Generate() iter.Seq[ExtrParams] {
@@ -75,8 +76,9 @@ func (g extrGen) Generate() iter.Seq[ExtrParams] {
 }
 
 func (g extrGen) Shrink(p ExtrParams) iter.Seq[ExtrParams] {
-	var out []ExtrParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]ExtrParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewExtrParams(r, p.Rn, p.Rm, p.Lsb))
 	}
 

@@ -145,15 +145,6 @@ type u5ri12Gen struct {
 	off   ohsnap.Arbitrary[arch.Imm12]
 }
 
-func newU5RI12Gen(rnd *rand.Rand, ctors []u5ri12Entry) u5ri12Gen {
-	return u5ri12Gen{
-		rnd:   rnd,
-		ctors: ctors,
-		op:    UImm5(rnd),
-		off:   Imm12(rnd),
-	}
-}
-
 func (g u5ri12Gen) Generate() iter.Seq[U5RI12Params] {
 	return arb.Stream(func() U5RI12Params {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -237,14 +228,6 @@ type u5rrGen struct {
 	op    ohsnap.Arbitrary[arch.UImm5]
 }
 
-func newU5rrGen(rnd *rand.Rand, ctors []u5rrentry) u5rrGen {
-	return u5rrGen{
-		rnd:   rnd,
-		ctors: ctors,
-		op:    UImm5(rnd),
-	}
-}
-
 func (g u5rrGen) Generate() iter.Seq[U5RRParams] {
 	return arb.Stream(func() U5RRParams {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -280,4 +263,21 @@ var preldx = []u5rrentry{
 // Preldx — an arbitrary preldx instruction.
 func Preldx(rnd *rand.Rand) ohsnap.Arbitrary[U5RRParams] {
 	return newU5rrGen(rnd, preldx)
+}
+
+func newU5RI12Gen(rnd *rand.Rand, ctors []u5ri12Entry) u5ri12Gen {
+	return u5ri12Gen{
+		rnd:   rnd,
+		ctors: ctors,
+		op:    UImm5(rnd),
+		off:   Imm12(rnd),
+	}
+}
+
+func newU5rrGen(rnd *rand.Rand, ctors []u5rrentry) u5rrGen {
+	return u5rrGen{
+		rnd:   rnd,
+		ctors: ctors,
+		op:    UImm5(rnd),
+	}
 }

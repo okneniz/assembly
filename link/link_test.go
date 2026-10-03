@@ -10,19 +10,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// flatPlace - the streams at fixed bases: the addresses under test are
-// layout facts, not placement ones.
-func flatPlace(textBase, dataBase uint64) unit.Place {
-	return func(textSize, dataSize, dataMem int) (uint64, uint64) {
-		return textBase, dataBase
-	}
-}
-
-// deps - the arm64 assembler as the driver's test injection.
-func deps() Deps {
-	return Deps{Parse: alias.ParseSourceUnit}
-}
-
 // linkCase - one table row of the driver: the sources, the entry, and
 // the expected resolve - a subset of the symbol table (the global
 // interface), the memory size of the data stream, or an error.
@@ -257,4 +244,17 @@ func TestEntryOf(t *testing.T) {
 
 	_, ok = EntryOf(&unit.Fixed{Syms: map[string]uint64{}}, "")
 	require.False(t, ok)
+}
+
+// flatPlace - the streams at fixed bases: the addresses under test are
+// layout facts, not placement ones.
+func flatPlace(textBase, dataBase uint64) unit.Place {
+	return func(textSize, dataSize, dataMem int) (uint64, uint64) {
+		return textBase, dataBase
+	}
+}
+
+// deps - the arm64 assembler as the driver's test injection.
+func deps() Deps {
+	return Deps{Parse: alias.ParseSourceUnit}
 }

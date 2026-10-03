@@ -52,8 +52,9 @@ func (a fmulArb) Generate() iter.Seq[FmulParams] {
 }
 
 func (a fmulArb) Shrink(p FmulParams) iter.Seq[FmulParams] {
-	var out []FmulParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F3Params))
+	out := make([]FmulParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFmulParams(s))
 	}
 

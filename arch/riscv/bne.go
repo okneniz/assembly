@@ -22,15 +22,6 @@ func cBne(rs1, rs2 string, off int64) Bne {
 	}
 }
 
-func (i Bne) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	if i.rs2 == "zero" {
-		return fmt.Sprintf("bnez %s, %s", i.rs1, target.text())
-	}
-
-	return fmt.Sprintf("bne %s, %s, %s", i.rs1, i.rs2, target.text())
-}
-
 func (i Bne) Encode(w io.Writer, o EncOpts) (int64, error) {
 	bits, err := encB(i.off.val)
 	if err != nil {
@@ -45,6 +36,15 @@ func (i Bne) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Bne) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	if i.rs2 == "zero" {
+		return fmt.Sprintf("bnez %s, %s", i.rs1, target.text())
+	}
+
+	return fmt.Sprintf("bne %s, %s, %s", i.rs1, i.rs2, target.text())
 }
 
 func newBne(ops []Op) (Instr, error) {

@@ -13,10 +13,6 @@ type FnmsubD struct {
 	rm                imm
 }
 
-func (i FnmsubD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fnmsub.d %s, %s, %s, %s", i.rd, i.rs1, i.rs2, i.rs3)
-}
-
 func (i FnmsubD) Encode(w io.Writer, o EncOpts) (int64, error) {
 	rm := i.rm.val
 
@@ -26,6 +22,10 @@ func (i FnmsubD) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	return writeWord(w, riscvEncodings["fnmsub_d"][0]|uint32(rm)<<12|
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20|fregBits(i.rs3)<<27)
+}
+
+func (i FnmsubD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fnmsub.d %s, %s, %s, %s", i.rd, i.rs1, i.rs2, i.rs3)
 }
 
 func newFnmsubD(ops []Op) (Instr, error) {

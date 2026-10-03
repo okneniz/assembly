@@ -16,30 +16,122 @@ import (
 // register 1 (register 0 doubles as the only GPR shown in dumps).
 type fakeTarget struct{}
 
-func newFakeTarget() fakeTarget {
-	return fakeTarget{}
-}
+func (fakeTarget) Arch() string { return "fake" }
 
-func (fakeTarget) Arch() string             { return "fake" }
-func (fakeTarget) QemuBinary() string       { return "qemu-system-fake" }
-func (fakeTarget) PCNum() int               { return 1 }
-func (fakeTarget) SPNum() int               { return 0 }
-func (fakeTarget) InstrLen([]byte) int      { return 4 }
-func (fakeTarget) QemuArgs(string) []string { return nil }
 func (fakeTarget) Disasm(code []byte, addr uint64) []string {
 	return []string{fmt.Sprintf("%x: % x", addr, code)}
 }
+
+func (fakeTarget) InstrLen([]byte) int { return 4 }
+
+func (fakeTarget) PCNum() int { return 1 }
+
+func (fakeTarget) QemuArgs(string) []string { return nil }
+
+func (fakeTarget) QemuBinary() string { return "qemu-system-fake" }
+
 func (fakeTarget) Registers() []debug.Reg {
-	r0, _ := debug.NewReg("r0", 0, 64)
-	pc, _ := debug.NewReg("pc", 1, 64)
-	return []debug.Reg{r0, pc}
+	return []debug.Reg{mustReg("r0", 0), mustReg("pc", 1)}
 }
+
+func (fakeTarget) SPNum() int { return 0 }
 
 // dialogStep is one expected request with its reply (the rsp fake
 // without retransmission - the framing is covered there).
 type dialogStep struct {
 	expect string
 	reply  string
+}
+
+func TestPC(t *testing.T) {
+	s, wait := newTestSession(t, []dialogStep{
+		{expect: "p1", reply: "00104000"},
+	}, nil, nil)
+	defer func() { require.NoError(t, wait()) }()
+
+	pc, err := s.PC()
+	require.NoError(t, err)
+	require.Equal(t, uint64(0x401000), pc)
+}
+
+func TestBreakAtSymbolAndAddress(t *testing.T) {
+	syms := map[string]uint64{"start": 0x401000}
+
+	s, wait := newTestSession(t, []dialogStep{
+		{expect: "Z0,401000,4", reply: "OK"},
+		{expect: "Z0,401008,4", reply: "OK"},
+	}, syms, nil)
+	defer func() { require.NoError(t, wait()) }()
+
+	addr, err := s.BreakAt("start")
+	require.NoError(t, err)
+	require.Equal(t, uint64(0x401000), addr)
+
+	addr, err = s.BreakAt("0x401008")
+	require.NoError(t, err)
+	require.Equal(t, uint64(0x401008), addr)
+
+	_, err = s.BreakAt("nowhere")
+	require.Error(t, err)
+}
+
+func TestRegs(t *testing.T) {
+	// the 'g' block of two 8-byte registers: r0 = 0x41, pc = 0x401000
+	s, wait := newTestSession(t, []dialogStep{
+		{expect: "g", reply: "4100000000000000" + "0010400000000000"},
+	}, nil, nil)
+	defer func() { require.NoError(t, wait()) }()
+
+	regs, err := s.Regs()
+	require.NoError(t, err)
+	require.Equal(t, []RegValue{
+		NewRegValue("r0", 0x41),
+		NewRegValue("pc", 0x401000),
+	}, regs)
+}
+
+func TestReadAndDisasm(t *testing.T) {
+	s, wait := newTestSession(t, []dialogStep{
+		{expect: "m401000,4", reply: "200080d2"},
+	}, nil, nil)
+	defer func() { require.NoError(t, wait()) }()
+
+	lines, err := s.Disasm(0x401000, 1)
+	require.NoError(t, err)
+	require.Equal(t, []string{"401000: 20 00 80 d2"}, lines)
+}
+
+func TestLineAt(t *testing.T) {
+	lines := []Line{
+		NewLine("a.s", 2, 0x1000, 4),
+		NewLine("a.s", 4, 0x1004, 8),
+		NewLine("a.s", 6, 0x1010, 4),
+	}
+	s, wait := newTestSession(t, nil, nil, lines)
+	defer func() { require.NoError(t, wait()) }()
+
+	cases := []struct {
+		name   string
+		addr   uint64
+		want   Line
+		wantOK bool
+	}{
+		{"exact", 0x1004, lines[1], true},
+		{"mid-line (8-byte line)", 0x1008, lines[1], true},
+		{"after the last", 0x1014, lines[2], true},
+		{"below the first", 0xffc, Line{}, false},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			got, ok := s.LineAt(c.addr)
+			require.Equal(t, c.wantOK, ok)
+			require.Equal(t, c.want, got)
+		})
+	}
+}
+
+func newFakeTarget() fakeTarget {
+	return fakeTarget{}
 }
 
 // The wire codec in miniature for the dialog server (the rsp package
@@ -175,89 +267,13 @@ func newTestSession(
 	return s, wait
 }
 
-func TestPC(t *testing.T) {
-	s, wait := newTestSession(t, []dialogStep{
-		{expect: "p1", reply: "00104000"},
-	}, nil, nil)
-	defer func() { require.NoError(t, wait()) }()
-
-	pc, err := s.PC()
-	require.NoError(t, err)
-	require.Equal(t, uint64(0x401000), pc)
-}
-
-func TestBreakAtSymbolAndAddress(t *testing.T) {
-	syms := map[string]uint64{"start": 0x401000}
-
-	s, wait := newTestSession(t, []dialogStep{
-		{expect: "Z0,401000,4", reply: "OK"},
-		{expect: "Z0,401008,4", reply: "OK"},
-	}, syms, nil)
-	defer func() { require.NoError(t, wait()) }()
-
-	addr, err := s.BreakAt("start")
-	require.NoError(t, err)
-	require.Equal(t, uint64(0x401000), addr)
-
-	addr, err = s.BreakAt("0x401008")
-	require.NoError(t, err)
-	require.Equal(t, uint64(0x401008), addr)
-
-	_, err = s.BreakAt("nowhere")
-	require.Error(t, err)
-}
-
-func TestRegs(t *testing.T) {
-	// the 'g' block of two 8-byte registers: r0 = 0x41, pc = 0x401000
-	s, wait := newTestSession(t, []dialogStep{
-		{expect: "g", reply: "4100000000000000" + "0010400000000000"},
-	}, nil, nil)
-	defer func() { require.NoError(t, wait()) }()
-
-	regs, err := s.Regs()
-	require.NoError(t, err)
-	require.Equal(t, []RegValue{
-		NewRegValue("r0", 0x41),
-		NewRegValue("pc", 0x401000),
-	}, regs)
-}
-
-func TestReadAndDisasm(t *testing.T) {
-	s, wait := newTestSession(t, []dialogStep{
-		{expect: "m401000,4", reply: "200080d2"},
-	}, nil, nil)
-	defer func() { require.NoError(t, wait()) }()
-
-	lines, err := s.Disasm(0x401000, 1)
-	require.NoError(t, err)
-	require.Equal(t, []string{"401000: 20 00 80 d2"}, lines)
-}
-
-func TestLineAt(t *testing.T) {
-	lines := []Line{
-		NewLine("a.s", 2, 0x1000, 4),
-		NewLine("a.s", 4, 0x1004, 8),
-		NewLine("a.s", 6, 0x1010, 4),
+// mustReg builds a register of the fake target: the names/nums are
+// hard-wired in the dialogs, a failure here is a broken fixture.
+func mustReg(name string, num int) debug.Reg {
+	r, err := debug.NewReg(name, num, 64)
+	if err != nil {
+		panic(err)
 	}
-	s, wait := newTestSession(t, nil, nil, lines)
-	defer func() { require.NoError(t, wait()) }()
 
-	cases := []struct {
-		name   string
-		addr   uint64
-		want   Line
-		wantOK bool
-	}{
-		{"exact", 0x1004, lines[1], true},
-		{"mid-line (8-byte line)", 0x1008, lines[1], true},
-		{"after the last", 0x1014, lines[2], true},
-		{"below the first", 0xffc, Line{}, false},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			got, ok := s.LineAt(c.addr)
-			require.Equal(t, c.wantOK, ok)
-			require.Equal(t, c.want, got)
-		})
-	}
+	return r
 }

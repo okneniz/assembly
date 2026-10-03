@@ -13,17 +13,17 @@ type Andi struct {
 	imm    imm
 }
 
+func (i Andi) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["andi"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 12)
+
+	return writeWord(w, word)
+}
+
 func (i Andi) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == 0 && i.rj == 0 && i.imm.val == 0 {
 		return "nop"
 	}
 
 	return fmt.Sprintf("andi %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
-}
-
-func (i Andi) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["andi"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 12)
-
-	return writeWord(w, word)
 }

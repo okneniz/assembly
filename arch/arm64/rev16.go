@@ -64,10 +64,6 @@ func newRev16(rd Reg, rn Reg) (Rev16, error) {
 
 const Rev16X uint32 = 0xDAC00400
 
-func (i Rev16) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rev16 %s, %s", i.rd, i.rn)
-}
-
 func (i Rev16) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, Rev16X, 0x5AC00400)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Rev16) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Rev16) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rev16 %s, %s", i.rd, i.rn)
 }

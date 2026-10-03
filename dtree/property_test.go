@@ -13,17 +13,6 @@ import (
 	"github.com/okneniz/assembly/dtree/arb"
 )
 
-// propFirstMatch is an oracle: the first match of the linear list.
-func propFirstMatch(c arb.Case) (payload int, ok bool) {
-	for _, r := range c.Rules {
-		if c.Word&r.Mask == r.Match {
-			return r.Payload, true
-		}
-	}
-
-	return 0, false
-}
-
 // TestPropertyLookupMatchesList: Lookup is equivalent to the linear list on
 // any rules and words: it returns the payload of the first (in New order)
 // matching rule. The generator is dtree/arb (three kinds of masks, dead
@@ -55,22 +44,6 @@ func TestPropertyLookupMatchesList(t *testing.T) {
 
 		return true
 	})
-}
-
-// propSeed is the seed from ASSEMBLY_SEED (default 42), logged.
-func propSeed(tb testing.TB) *mrnd.Rand {
-	tb.Helper()
-
-	seed := uint64(42)
-	if s := os.Getenv("ASSEMBLY_SEED"); s != "" {
-		if v, err := strconv.ParseUint(s, 0, 64); err == nil {
-			seed = v
-		}
-	}
-
-	tb.Logf("seed: %d (ASSEMBLY_SEED)", seed)
-
-	return mrnd.New(mrnd.NewPCG(seed, seed))
 }
 
 // TestPropertyDepthBoundedByWordBits: the depth of the tree is bounded by the
@@ -160,4 +133,31 @@ func TestPropertyRefinementFamilySingleLeaf(t *testing.T) {
 			require.Equal(t, 1, tree.MaxDepth())
 		})
 	}
+}
+
+// propFirstMatch is an oracle: the first match of the linear list.
+func propFirstMatch(c arb.Case) (payload int, ok bool) {
+	for _, r := range c.Rules {
+		if c.Word&r.Mask == r.Match {
+			return r.Payload, true
+		}
+	}
+
+	return 0, false
+}
+
+// propSeed is the seed from ASSEMBLY_SEED (default 42), logged.
+func propSeed(tb testing.TB) *mrnd.Rand {
+	tb.Helper()
+
+	seed := uint64(42)
+	if s := os.Getenv("ASSEMBLY_SEED"); s != "" {
+		if v, err := strconv.ParseUint(s, 0, 64); err == nil {
+			seed = v
+		}
+	}
+
+	tb.Logf("seed: %d (ASSEMBLY_SEED)", seed)
+
+	return mrnd.New(mrnd.NewPCG(seed, seed))
 }

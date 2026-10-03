@@ -33,10 +33,6 @@ func newBif(rd, rn, rm VReg, arr string) (Bif, error) {
 
 const bifEnc uint32 = 786439168 // bif vd, vn, vm (Q=0 form)
 
-func (i Bif) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bif.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Bif) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Bif) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, bifEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Bif) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bif.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

@@ -22,10 +22,6 @@ type regArb struct {
 	rnd *rand.Rand
 }
 
-func newRegArb(rnd *rand.Rand) regArb {
-	return regArb{rnd: rnd}
-}
-
 // Reg — an arbitrary register of any width and class (including the named
 // 31st ones); positions with instruction-specific constraints are filtered
 // by the instruction generator.
@@ -44,6 +40,10 @@ func GenReg(rnd *rand.Rand, is64 bool, spOK, zrOK bool) arm64.Reg {
 // regShrunk for the subpackages (alias).
 func RegShrunk(r arm64.Reg) []arm64.Reg {
 	return regShrunk(r)
+}
+
+func newRegArb(rnd *rand.Rand) regArb {
+	return regArb{rnd: rnd}
 }
 
 func (a regArb) Generate() iter.Seq[arm64.Reg] {

@@ -33,14 +33,6 @@ func newOrr(rd, rn, rm VReg, arr string) (Orr, error) {
 
 const orrEnc uint32 = 245373952 // orr vd, vn, vm (Q=0 form)
 
-func (i Orr) ObjDump(_ disasm.ViewCtx) string {
-	if i.rn == i.rm { // the mov alias: and/orr with Rn == Rm
-		return fmt.Sprintf("mov.%s %s, %s", i.arr, i.rd, i.rm)
-	}
-
-	return fmt.Sprintf("orr.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Orr) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -53,4 +45,12 @@ func (i Orr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, orrEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Orr) ObjDump(_ disasm.ViewCtx) string {
+	if i.rn == i.rm { // the mov alias: and/orr with Rn == Rm
+		return fmt.Sprintf("mov.%s %s, %s", i.arr, i.rd, i.rm)
+	}
+
+	return fmt.Sprintf("orr.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

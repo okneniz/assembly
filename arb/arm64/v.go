@@ -16,6 +16,277 @@ import (
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
+// V2Params — rd, rn, arr of the two-register vector forms.
+type V2Params struct {
+	Rd, Rn arm64.VReg
+	Arr    string
+}
+
+func NewV2Params(rd arm64.VReg, rn arm64.VReg, arr string) V2Params {
+	return V2Params{
+		Rd:  rd,
+		Rn:  rn,
+		Arr: arr,
+	}
+}
+
+// v2Gen — the two-register core over the family's arrangement set.
+type v2Gen struct {
+	rnd *rand.Rand
+	set []string
+}
+
+func (g v2Gen) Generate() iter.Seq[V2Params] {
+	return arbStream(func() V2Params {
+		return NewV2Params(
+			genV(g.rnd),
+			genV(g.rnd),
+			g.set[g.rnd.IntN(len(g.set))],
+		)
+	})
+}
+
+func (g v2Gen) Shrink(p V2Params) iter.Seq[V2Params] {
+	vs := vShrunk(p.Rd)
+	out := make([]V2Params, 0, len(vs))
+	for _, r := range vs {
+		out = append(out, NewV2Params(r, p.Rn, p.Arr))
+	}
+
+	for _, r := range vShrunk(p.Rn) {
+		out = append(out, NewV2Params(p.Rd, r, p.Arr))
+	}
+
+	for _, a := range arrShrunk(p.Arr, g.set) {
+		out = append(out, NewV2Params(p.Rd, p.Rn, a))
+	}
+
+	return slices.Values(out)
+}
+
+// V3Params — rd, rn, rm, arr of the three-register vector forms.
+type V3Params struct {
+	Rd, Rn, Rm arm64.VReg
+	Arr        string
+}
+
+func NewV3Params(rd arm64.VReg, rn arm64.VReg, rm arm64.VReg, arr string) V3Params {
+	return V3Params{
+		Rd:  rd,
+		Rn:  rn,
+		Rm:  rm,
+		Arr: arr,
+	}
+}
+
+// v3Gen — the three-register core over the family's arrangement set.
+type v3Gen struct {
+	rnd *rand.Rand
+	set []string
+}
+
+func (g v3Gen) Generate() iter.Seq[V3Params] {
+	return arbStream(func() V3Params {
+		return NewV3Params(
+			genV(g.rnd),
+			genV(g.rnd),
+			genV(g.rnd),
+			g.set[g.rnd.IntN(len(g.set))],
+		)
+	})
+}
+
+func (g v3Gen) Shrink(p V3Params) iter.Seq[V3Params] {
+	vs := vShrunk(p.Rd)
+	out := make([]V3Params, 0, len(vs))
+	for _, r := range vs {
+		out = append(out, NewV3Params(r, p.Rn, p.Rm, p.Arr))
+	}
+
+	for _, r := range vShrunk(p.Rn) {
+		out = append(out, NewV3Params(p.Rd, r, p.Rm, p.Arr))
+	}
+
+	for _, r := range vShrunk(p.Rm) {
+		out = append(out, NewV3Params(p.Rd, p.Rn, r, p.Arr))
+	}
+
+	for _, a := range arrShrunk(p.Arr, g.set) {
+		out = append(out, NewV3Params(p.Rd, p.Rn, p.Rm, a))
+	}
+
+	return slices.Values(out)
+}
+
+// V2PlainParams — rd, rn of the arrangement-less vector forms (aese,
+// tbl takes its own shape).
+type V2PlainParams struct {
+	Rd, Rn arm64.VReg
+}
+
+func NewV2PlainParams(rd arm64.VReg, rn arm64.VReg) V2PlainParams {
+	return V2PlainParams{
+		Rd: rd,
+		Rn: rn,
+	}
+}
+
+// v2PlainGen — the arrangement-less two-register core.
+type v2PlainGen struct {
+	rnd *rand.Rand
+}
+
+func (g v2PlainGen) Generate() iter.Seq[V2PlainParams] {
+	return arbStream(func() V2PlainParams {
+		return NewV2PlainParams(genV(g.rnd), genV(g.rnd))
+	})
+}
+
+func (g v2PlainGen) Shrink(p V2PlainParams) iter.Seq[V2PlainParams] {
+	vs := vShrunk(p.Rd)
+	out := make([]V2PlainParams, 0, len(vs))
+	for _, r := range vs {
+		out = append(out, NewV2PlainParams(r, p.Rn))
+	}
+
+	for _, r := range vShrunk(p.Rn) {
+		out = append(out, NewV2PlainParams(p.Rd, r))
+	}
+
+	return slices.Values(out)
+}
+
+// V3PlainParams — rd, rn, rm of the arrangement-less tbl.
+type V3PlainParams struct {
+	Rd, Rn, Rm arm64.VReg
+}
+
+func NewV3PlainParams(rd arm64.VReg, rn arm64.VReg, rm arm64.VReg) V3PlainParams {
+	return V3PlainParams{
+		Rd: rd,
+		Rn: rn,
+		Rm: rm,
+	}
+}
+
+// v3PlainGen — the arrangement-less three-register core.
+type v3PlainGen struct {
+	rnd *rand.Rand
+}
+
+func (g v3PlainGen) Generate() iter.Seq[V3PlainParams] {
+	return arbStream(func() V3PlainParams {
+		return NewV3PlainParams(genV(g.rnd), genV(g.rnd), genV(g.rnd))
+	})
+}
+
+func (g v3PlainGen) Shrink(p V3PlainParams) iter.Seq[V3PlainParams] {
+	vs := vShrunk(p.Rd)
+	out := make([]V3PlainParams, 0, len(vs))
+	for _, r := range vs {
+		out = append(out, NewV3PlainParams(r, p.Rn, p.Rm))
+	}
+
+	for _, r := range vShrunk(p.Rn) {
+		out = append(out, NewV3PlainParams(p.Rd, r, p.Rm))
+	}
+
+	for _, r := range vShrunk(p.Rm) {
+		out = append(out, NewV3PlainParams(p.Rd, p.Rn, r))
+	}
+
+	return slices.Values(out)
+}
+
+// VShiftParams — rd, rn, arr, shift of the element-bound shift forms.
+type VShiftParams struct {
+	Rd, Rn arm64.VReg
+	Arr    string
+	Shift  uint32
+}
+
+func NewVShiftParams(rd arm64.VReg, rn arm64.VReg, arr string, shift uint32) VShiftParams {
+	return VShiftParams{
+		Rd:    rd,
+		Rn:    rn,
+		Arr:   arr,
+		Shift: shift,
+	}
+}
+
+// vShiftGen — the shift core: the full arrangement set, the shift
+// uniform in the lane width (0..elemBits-1; the right-shift families
+// are 1-based — min1).
+type vShiftGen struct {
+	rnd  *rand.Rand
+	set  []string
+	min1 bool
+}
+
+func (g vShiftGen) Generate() iter.Seq[VShiftParams] {
+	return arbStream(func() VShiftParams {
+		arr := g.set[g.rnd.IntN(len(g.set))]
+		bits := int(elemBits(arr))
+		shift := g.rnd.IntN(bits)
+		if g.min1 {
+			shift++ // the right-shift families: 1..elemBits
+		}
+
+		return NewVShiftParams(
+			genV(g.rnd),
+			genV(g.rnd),
+			arr,
+			uint32(shift),
+		)
+	})
+}
+
+func (g vShiftGen) Shrink(p VShiftParams) iter.Seq[VShiftParams] {
+	vs := vShrunk(p.Rd)
+	out := make([]VShiftParams, 0, len(vs))
+	for _, r := range vs {
+		out = append(out, NewVShiftParams(r, p.Rn, p.Arr, p.Shift))
+	}
+
+	for _, r := range vShrunk(p.Rn) {
+		out = append(out, NewVShiftParams(p.Rd, r, p.Arr, p.Shift))
+	}
+
+	for _, v := range u32Halved(p.Shift) {
+		if g.min1 && v == 0 {
+			continue // zero is outside the 1-based range
+		}
+
+		out = append(out, NewVShiftParams(p.Rd, p.Rn, p.Arr, v))
+	}
+
+	for _, a := range arrShrunk(p.Arr, g.set) {
+		sh := p.Shift
+		if sh >= elemBits(a) {
+			sh = 0
+		}
+
+		out = append(out, NewVShiftParams(p.Rd, p.Rn, a, sh))
+	}
+
+	return slices.Values(out)
+}
+
+// DupParams — vd, wn (a gpr source), arr of the dup-to-vector forms.
+type DupParams struct {
+	Rd  arm64.VReg
+	Wn  arm64.Reg // x/w (the 31st reads as zr)
+	Arr string
+}
+
+func NewDupParams(rd arm64.VReg, wn arm64.Reg, arr string) DupParams {
+	return DupParams{
+		Rd:  rd,
+		Wn:  wn,
+		Arr: arr,
+	}
+}
+
 // mustV — the checked VReg constructor: the input is bounded by the
 // caller (0..31), the error is unreachable.
 func mustV(n int) arm64.VReg {
@@ -88,26 +359,6 @@ func elemBits(arr string) uint32 {
 	}
 }
 
-// V2Params — rd, rn, arr of the two-register vector forms.
-type V2Params struct {
-	Rd, Rn arm64.VReg
-	Arr    string
-}
-
-func NewV2Params(rd arm64.VReg, rn arm64.VReg, arr string) V2Params {
-	return V2Params{
-		Rd:  rd,
-		Rn:  rn,
-		Arr: arr,
-	}
-}
-
-// v2Gen — the two-register core over the family's arrangement set.
-type v2Gen struct {
-	rnd *rand.Rand
-	set []string
-}
-
 func newV2Gen(rnd *rand.Rand, set []string) v2Gen {
 	return v2Gen{
 		rnd: rnd,
@@ -115,109 +366,11 @@ func newV2Gen(rnd *rand.Rand, set []string) v2Gen {
 	}
 }
 
-func (g v2Gen) Generate() iter.Seq[V2Params] {
-	return arbStream(func() V2Params {
-		return NewV2Params(
-			genV(g.rnd),
-			genV(g.rnd),
-			g.set[g.rnd.IntN(len(g.set))],
-		)
-	})
-}
-
-func (g v2Gen) Shrink(p V2Params) iter.Seq[V2Params] {
-	var out []V2Params
-	for _, r := range vShrunk(p.Rd) {
-		out = append(out, NewV2Params(r, p.Rn, p.Arr))
-	}
-
-	for _, r := range vShrunk(p.Rn) {
-		out = append(out, NewV2Params(p.Rd, r, p.Arr))
-	}
-
-	for _, a := range arrShrunk(p.Arr, g.set) {
-		out = append(out, NewV2Params(p.Rd, p.Rn, a))
-	}
-
-	return slices.Values(out)
-}
-
-// V3Params — rd, rn, rm, arr of the three-register vector forms.
-type V3Params struct {
-	Rd, Rn, Rm arm64.VReg
-	Arr        string
-}
-
-func NewV3Params(rd arm64.VReg, rn arm64.VReg, rm arm64.VReg, arr string) V3Params {
-	return V3Params{
-		Rd:  rd,
-		Rn:  rn,
-		Rm:  rm,
-		Arr: arr,
-	}
-}
-
-// v3Gen — the three-register core over the family's arrangement set.
-type v3Gen struct {
-	rnd *rand.Rand
-	set []string
-}
-
 func newV3Gen(rnd *rand.Rand, set []string) v3Gen {
 	return v3Gen{
 		rnd: rnd,
 		set: set,
 	}
-}
-
-func (g v3Gen) Generate() iter.Seq[V3Params] {
-	return arbStream(func() V3Params {
-		return NewV3Params(
-			genV(g.rnd),
-			genV(g.rnd),
-			genV(g.rnd),
-			g.set[g.rnd.IntN(len(g.set))],
-		)
-	})
-}
-
-func (g v3Gen) Shrink(p V3Params) iter.Seq[V3Params] {
-	var out []V3Params
-	for _, r := range vShrunk(p.Rd) {
-		out = append(out, NewV3Params(r, p.Rn, p.Rm, p.Arr))
-	}
-
-	for _, r := range vShrunk(p.Rn) {
-		out = append(out, NewV3Params(p.Rd, r, p.Rm, p.Arr))
-	}
-
-	for _, r := range vShrunk(p.Rm) {
-		out = append(out, NewV3Params(p.Rd, p.Rn, r, p.Arr))
-	}
-
-	for _, a := range arrShrunk(p.Arr, g.set) {
-		out = append(out, NewV3Params(p.Rd, p.Rn, p.Rm, a))
-	}
-
-	return slices.Values(out)
-}
-
-// V2PlainParams — rd, rn of the arrangement-less vector forms (aese,
-// tbl takes its own shape).
-type V2PlainParams struct {
-	Rd, Rn arm64.VReg
-}
-
-func NewV2PlainParams(rd arm64.VReg, rn arm64.VReg) V2PlainParams {
-	return V2PlainParams{
-		Rd: rd,
-		Rn: rn,
-	}
-}
-
-// v2PlainGen — the arrangement-less two-register core.
-type v2PlainGen struct {
-	rnd *rand.Rand
 }
 
 func newV2PlainGen(rnd *rand.Rand) v2PlainGen {
@@ -228,97 +381,12 @@ func v2Plain(rnd *rand.Rand) v2PlainGen {
 	return newV2PlainGen(rnd)
 }
 
-func (g v2PlainGen) Generate() iter.Seq[V2PlainParams] {
-	return arbStream(func() V2PlainParams {
-		return NewV2PlainParams(genV(g.rnd), genV(g.rnd))
-	})
-}
-
-func (g v2PlainGen) Shrink(p V2PlainParams) iter.Seq[V2PlainParams] {
-	var out []V2PlainParams
-	for _, r := range vShrunk(p.Rd) {
-		out = append(out, NewV2PlainParams(r, p.Rn))
-	}
-
-	for _, r := range vShrunk(p.Rn) {
-		out = append(out, NewV2PlainParams(p.Rd, r))
-	}
-
-	return slices.Values(out)
-}
-
-// V3PlainParams — rd, rn, rm of the arrangement-less tbl.
-type V3PlainParams struct {
-	Rd, Rn, Rm arm64.VReg
-}
-
-func NewV3PlainParams(rd arm64.VReg, rn arm64.VReg, rm arm64.VReg) V3PlainParams {
-	return V3PlainParams{
-		Rd: rd,
-		Rn: rn,
-		Rm: rm,
-	}
-}
-
-// v3PlainGen — the arrangement-less three-register core.
-type v3PlainGen struct {
-	rnd *rand.Rand
-}
-
 func newV3PlainGen(rnd *rand.Rand) v3PlainGen {
 	return v3PlainGen{rnd: rnd}
 }
 
 func v3Plain(rnd *rand.Rand) v3PlainGen {
 	return newV3PlainGen(rnd)
-}
-
-func (g v3PlainGen) Generate() iter.Seq[V3PlainParams] {
-	return arbStream(func() V3PlainParams {
-		return NewV3PlainParams(genV(g.rnd), genV(g.rnd), genV(g.rnd))
-	})
-}
-
-func (g v3PlainGen) Shrink(p V3PlainParams) iter.Seq[V3PlainParams] {
-	var out []V3PlainParams
-	for _, r := range vShrunk(p.Rd) {
-		out = append(out, NewV3PlainParams(r, p.Rn, p.Rm))
-	}
-
-	for _, r := range vShrunk(p.Rn) {
-		out = append(out, NewV3PlainParams(p.Rd, r, p.Rm))
-	}
-
-	for _, r := range vShrunk(p.Rm) {
-		out = append(out, NewV3PlainParams(p.Rd, p.Rn, r))
-	}
-
-	return slices.Values(out)
-}
-
-// VShiftParams — rd, rn, arr, shift of the element-bound shift forms.
-type VShiftParams struct {
-	Rd, Rn arm64.VReg
-	Arr    string
-	Shift  uint32
-}
-
-func NewVShiftParams(rd arm64.VReg, rn arm64.VReg, arr string, shift uint32) VShiftParams {
-	return VShiftParams{
-		Rd:    rd,
-		Rn:    rn,
-		Arr:   arr,
-		Shift: shift,
-	}
-}
-
-// vShiftGen — the shift core: the full arrangement set, the shift
-// uniform in the lane width (0..elemBits-1; the right-shift families
-// are 1-based — min1).
-type vShiftGen struct {
-	rnd  *rand.Rand
-	set  []string
-	min1 bool
 }
 
 func newVShiftGen(rnd *rand.Rand, set []string) vShiftGen {
@@ -333,69 +401,6 @@ func newVShiftGen1(rnd *rand.Rand, set []string) vShiftGen {
 	g := newVShiftGen(rnd, set)
 	g.min1 = true
 	return g
-}
-
-func (g vShiftGen) Generate() iter.Seq[VShiftParams] {
-	return arbStream(func() VShiftParams {
-		arr := g.set[g.rnd.IntN(len(g.set))]
-		bits := int(elemBits(arr))
-		shift := g.rnd.IntN(bits)
-		if g.min1 {
-			shift++ // the right-shift families: 1..elemBits
-		}
-
-		return NewVShiftParams(
-			genV(g.rnd),
-			genV(g.rnd),
-			arr,
-			uint32(shift),
-		)
-	})
-}
-
-func (g vShiftGen) Shrink(p VShiftParams) iter.Seq[VShiftParams] {
-	var out []VShiftParams
-	for _, r := range vShrunk(p.Rd) {
-		out = append(out, NewVShiftParams(r, p.Rn, p.Arr, p.Shift))
-	}
-
-	for _, r := range vShrunk(p.Rn) {
-		out = append(out, NewVShiftParams(p.Rd, r, p.Arr, p.Shift))
-	}
-
-	for _, v := range u32Halved(p.Shift) {
-		if g.min1 && v == 0 {
-			continue // zero is outside the 1-based range
-		}
-
-		out = append(out, NewVShiftParams(p.Rd, p.Rn, p.Arr, v))
-	}
-
-	for _, a := range arrShrunk(p.Arr, g.set) {
-		sh := p.Shift
-		if sh >= elemBits(a) {
-			sh = 0
-		}
-
-		out = append(out, NewVShiftParams(p.Rd, p.Rn, a, sh))
-	}
-
-	return slices.Values(out)
-}
-
-// DupParams — vd, wn (a gpr source), arr of the dup-to-vector forms.
-type DupParams struct {
-	Rd  arm64.VReg
-	Wn  arm64.Reg // x/w (the 31st reads as zr)
-	Arr string
-}
-
-func NewDupParams(rd arm64.VReg, wn arm64.Reg, arr string) DupParams {
-	return DupParams{
-		Rd:  rd,
-		Wn:  wn,
-		Arr: arr,
-	}
 }
 
 // dupGen — the dup core: the gpr width follows the lane size (the b/h/s
@@ -421,8 +426,9 @@ func (g dupGen) Generate() iter.Seq[DupParams] {
 }
 
 func (g dupGen) Shrink(p DupParams) iter.Seq[DupParams] {
-	var out []DupParams
-	for _, r := range vShrunk(p.Rd) {
+	vs := vShrunk(p.Rd)
+	out := make([]DupParams, 0, len(vs))
+	for _, r := range vs {
 		out = append(out, NewDupParams(r, p.Wn, p.Arr))
 	}
 

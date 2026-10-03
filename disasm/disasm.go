@@ -45,12 +45,12 @@ type viewCtx struct {
 	addr  uint64
 }
 
-func (c viewCtx) Style() text.CodeStyle {
-	return c.style
-}
-
 func (c viewCtx) Addr() uint64 {
 	return c.addr
+}
+
+func (c viewCtx) Style() text.CodeStyle {
+	return c.style
 }
 
 // DefaultViewCtx is the representation context without an address (zero):
@@ -101,12 +101,22 @@ func Line(addr uint64, code []byte, in ObjDump, opts Options) string {
 // instruction at the head of the remaining code. Write is generic so that
 // it can accept slices of concrete instructions ([ ]arm64.Instr,
 // [ ]riscv.Instr) without manually converting them to an interface slice.
-func Write[T ObjDump](w io.Writer, base uint64, code []byte, instrs []T, opts Options, size func(code []byte) int) error {
+func Write[T ObjDump](
+	w io.Writer,
+	base uint64,
+	code []byte,
+	instrs []T,
+	opts Options,
+	size func(code []byte) int,
+) error {
 	off := 0
 	for _, in := range instrs {
 		if off < len(code) {
 			n := size(code[off:])
-			if _, err := fmt.Fprintln(w, Line(base+uint64(off), code[off:off+n], in, opts)); err != nil {
+			if _, err := fmt.Fprintln(
+				w,
+				Line(base+uint64(off), code[off:off+n], in, opts),
+			); err != nil {
 				return err
 			}
 
@@ -120,10 +130,7 @@ func Write[T ObjDump](w io.Writer, base uint64, code []byte, instrs []T, opts Op
 // instrBytes is the buffer as a little-endian word (the 2 or 4 bytes of an
 // instruction encoding). A truncated buffer tail is returned as is.
 func instrBytes(code []byte) (uint32, int) {
-	n := len(code)
-	if n > 4 {
-		n = 4
-	}
+	n := min(len(code), 4)
 
 	var raw uint32
 	for i := range n {

@@ -17,10 +17,6 @@ func newQuadSym(name string) quadSym {
 	return quadSym{name: name}
 }
 
-func (q quadSym) Size() int {
-	return 8
-}
-
 func (q quadSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	v, ok := ctx.Resolve(q.name)
 	if !ok {
@@ -28,4 +24,8 @@ func (q quadSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	}
 
 	return []Resolved{blob(binary.LittleEndian.AppendUint64(nil, v))}, nil
+}
+
+func (q quadSym) Size() int {
+	return 8
 }

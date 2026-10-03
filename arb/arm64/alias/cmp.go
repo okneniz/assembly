@@ -32,6 +32,15 @@ func NewCmpParams(rn arm64.Reg, rm arm64.Reg, imm int64, sh bool, isImm bool) Cm
 	}
 }
 
+func (p CmpParams) Instr() arm64.Instr {
+	in, err := instrOfText(p.String())
+	if err != nil {
+		return nil // unreachable: fields are produced by a valid generator/shrink
+	}
+
+	return in
+}
+
 func (p CmpParams) String() string {
 	if !p.IsImm {
 		return "cmp " + p.Rn.String() + ", " + p.Rm.String()
@@ -44,27 +53,18 @@ func (p CmpParams) String() string {
 	return "cmp " + p.Rn.String() + ", #" + itoa(p.Imm)
 }
 
-func (p CmpParams) Instr() arm64.Instr {
-	in, err := instrOfText(p.String())
-	if err != nil {
-		return nil // unreachable: fields are produced by a valid generator/shrink
-	}
-
-	return in
-}
-
 // cmpGen — generator for cmp: same-width registers, immediate 0..4095.
 type cmpGen struct {
 	rnd *rand.Rand
 }
 
-func newCmpGen(rnd *rand.Rand) cmpGen {
-	return cmpGen{rnd: rnd}
-}
-
 // Cmp — an arbitrary cmp.
 func Cmp(rnd *rand.Rand) ohsnap.Arbitrary[CmpParams] {
 	return newCmpGen(rnd)
+}
+
+func newCmpGen(rnd *rand.Rand) cmpGen {
+	return cmpGen{rnd: rnd}
 }
 
 func (g cmpGen) Generate() iter.Seq[CmpParams] {

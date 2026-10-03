@@ -38,11 +38,6 @@ func newDupElem(q, size, idx uint32, rd, rn VReg) (DupElem, error) {
 
 const dupElemEnc uint32 = 0x0E000400 // dup vd, vn[idx] (Q=0 form)
 
-func (i DupElem) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("dup.%s %s, %s[%d]",
-		decodeArrangement(i.q, i.size), i.rd, i.rn, i.idx)
-}
-
 func (i DupElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -51,6 +46,11 @@ func (i DupElem) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, dupElemEnc|i.q<<30|imm5<<16|rn<<5|rd)
+}
+
+func (i DupElem) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("dup.%s %s, %s[%d]",
+		decodeArrangement(i.q, i.size), i.rd, i.rn, i.idx)
 }
 
 // InsElem — ins.sz vd[idx], vn[idx] (INS element: copy one lane into
@@ -87,11 +87,6 @@ func newInsElem(size, idx, srcIdx uint32, rd, rn VReg) (InsElem, error) {
 
 const insElemEnc uint32 = 0x6E000400 // ins vd[idx], vn[idx]
 
-func (i InsElem) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ins.%s %s[%d], %s[%d]",
-		elemName(i.size), i.rd, i.idx, i.rn, i.srcIdx)
-}
-
 func (i InsElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -100,6 +95,11 @@ func (i InsElem) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, insElemEnc|imm5<<16|i.srcIdx<<i.size<<11|rn<<5|rd)
+}
+
+func (i InsElem) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ins.%s %s[%d], %s[%d]",
+		elemName(i.size), i.rd, i.idx, i.rn, i.srcIdx)
 }
 
 // DupScalar — the scalar DUP alias (llvm prints mov b/h/s/d<n>,
@@ -136,11 +136,6 @@ func newDupScalar(size, idx uint32, rd, rn VReg) (DupScalar, error) {
 
 const dupScalarEnc uint32 = 0x5E000400 // mov <b|h|s|d>n, vn.sz[idx]
 
-func (i DupScalar) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mov %s, %s.%s[%d]",
-		scalarRegName(elemName(i.size), i.rd), i.rn, elemName(i.size), i.idx)
-}
-
 func (i DupScalar) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -149,6 +144,11 @@ func (i DupScalar) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, dupScalarEnc|imm5<<16|rn<<5|rd)
+}
+
+func (i DupScalar) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mov %s, %s.%s[%d]",
+		scalarRegName(elemName(i.size), i.rd), i.rn, elemName(i.size), i.idx)
 }
 
 // scalarRegName — the scalar view name of a vector register ("v9" and

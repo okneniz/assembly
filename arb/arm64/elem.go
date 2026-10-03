@@ -16,49 +16,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// elemLanes — the lane count of the full vector register by the element
-// width number (b:16 h:8 s:4 d:2): the bound of the lane indexes.
-func elemLanes(size uint32) uint32 {
-	return 16 >> size
-}
-
-// elemWidth — the element width number by its letter (b/h/s/d).
-func elemWidth(elem string) uint32 {
-	switch elem {
-	case "h":
-		return 1
-	case "s":
-		return 2
-	case "d":
-		return 3
-	default:
-		return 0
-	}
-}
-
-// genElem — an element letter from the set.
-func genElem(rnd *rand.Rand, set []string) string {
-	return set[rnd.IntN(len(set))]
-}
-
-// genWidthReg — a gpr of the given width class.
-func genWidthReg(rnd *rand.Rand, is64 bool) arm64.Reg {
-	return genReg(rnd, is64, false, true)
-}
-
-// elemShrunk — the element letter shrink: the narrowest letter whose
-// width keeps the register rule valid (the caller filters by its own
-// width law).
-func elemShrunk(elem string) []string {
-	if elem == "b" {
-		return nil
-	}
-
-	return []string{"b"}
-}
-
-// --- ins (general): mov.sz vd[idx], wn --------------------------------
-
 // InsParams — parameters of ins (general).
 type InsParams struct {
 	Vd   arm64.VReg
@@ -411,12 +368,6 @@ func (p DupElemParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
 
-// arrDupElem — the dup element arrangement set (the .1d form does not
-// exist: clang refuses it).
-func arrDupElem() []string {
-	return []string{"8b", "16b", "4h", "8h", "2s", "4s", "2d"}
-}
-
 // DupElem — an arbitrary dup (element).
 func DupElem(rnd *rand.Rand) ohsnap.Arbitrary[DupElemParams] {
 	return dupElemArb{rnd: rnd}
@@ -494,6 +445,55 @@ func (p DupScalarParams) String() string {
 // DupScalar — an arbitrary dup (scalar).
 func DupScalar(rnd *rand.Rand) ohsnap.Arbitrary[DupScalarParams] {
 	return dupScalarArb{rnd: rnd}
+}
+
+// elemLanes — the lane count of the full vector register by the element
+// width number (b:16 h:8 s:4 d:2): the bound of the lane indexes.
+func elemLanes(size uint32) uint32 {
+	return 16 >> size
+}
+
+// elemWidth — the element width number by its letter (b/h/s/d).
+func elemWidth(elem string) uint32 {
+	switch elem {
+	case "h":
+		return 1
+	case "s":
+		return 2
+	case "d":
+		return 3
+	default:
+		return 0
+	}
+}
+
+// genElem — an element letter from the set.
+func genElem(rnd *rand.Rand, set []string) string {
+	return set[rnd.IntN(len(set))]
+}
+
+// genWidthReg — a gpr of the given width class.
+func genWidthReg(rnd *rand.Rand, is64 bool) arm64.Reg {
+	return genReg(rnd, is64, false, true)
+}
+
+// elemShrunk — the element letter shrink: the narrowest letter whose
+// width keeps the register rule valid (the caller filters by its own
+// width law).
+func elemShrunk(elem string) []string {
+	if elem == "b" {
+		return nil
+	}
+
+	return []string{"b"}
+}
+
+// --- ins (general): mov.sz vd[idx], wn --------------------------------
+
+// arrDupElem — the dup element arrangement set (the .1d form does not
+// exist: clang refuses it).
+func arrDupElem() []string {
+	return []string{"8b", "16b", "4h", "8h", "2s", "4s", "2d"}
 }
 
 type dupScalarArb struct {

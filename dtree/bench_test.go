@@ -18,58 +18,6 @@ var benchSink int
 // op[28:25], opc[23:21].
 const benchField = 0x9E00_0000
 
-// benchRegistry normalizes a live Generate rule to the registry structure:
-// the sf/op/opc fields are additionally defined with random values. Without
-// this, random broad masks cover each bit about half the time - duplicates
-// are always above the 1/4 threshold and the tree degenerates into a leaf
-// list: the benchmark would measure a linear scan, not a descent.
-func benchRegistry(rnd *mrnd.Rand, r dtree.Rule[int]) dtree.Rule[int] {
-	match := r.Match &^ benchField
-	match |= (rnd.Uint32() & 0x1) << 31 // sf
-	match |= (rnd.Uint32() & 0xF) << 25 // op
-	match |= (rnd.Uint32() & 0x7) << 21 // opc
-
-	return dtree.Rule[int]{
-		Mask:    r.Mask | benchField,
-		Match:   match,
-		Payload: r.Payload,
-	}
-}
-
-// benchCases is deterministic material from arb.LookupCase.Generate():
-// cases (a rule set of <=40 + a word), a large "registry", and a word pool.
-// The registry is live rules (without catch-alls and dead ones), normalized
-// to the common fields; the words are half random (miss path) and half
-// generated within the class of a random rule of the registry (hit path).
-func benchCases(b *testing.B) (cases []arb.Case, big []dtree.Rule[int], words []uint32) {
-	b.Helper()
-
-	rnd := propSeed(b)
-	gen := arb.LookupCase(rnd)
-
-	for range 1000 {
-		c := ohsnap.First(gen.Generate())
-		cases = append(cases, c)
-
-		for _, r := range c.Rules {
-			if r.Mask != 0 && r.Match&^r.Mask == 0 {
-				big = append(big, benchRegistry(rnd, r))
-			}
-		}
-
-		if len(big) > 0 && rnd.IntN(2) == 0 {
-			r := big[rnd.IntN(len(big))]
-			words = append(words, r.Match|(rnd.Uint32()&^r.Mask))
-
-			continue
-		}
-
-		words = append(words, rnd.Uint32())
-	}
-
-	return cases, big, words
-}
-
 // BenchmarkNew is tree construction from a random set of <=40 rules.
 func BenchmarkNew(b *testing.B) {
 	cases, _, _ := benchCases(b)
@@ -169,4 +117,56 @@ func BenchmarkMaxDepth(b *testing.B) {
 	for range b.N {
 		benchSink = tree.MaxDepth()
 	}
+}
+
+// benchRegistry normalizes a live Generate rule to the registry structure:
+// the sf/op/opc fields are additionally defined with random values. Without
+// this, random broad masks cover each bit about half the time - duplicates
+// are always above the 1/4 threshold and the tree degenerates into a leaf
+// list: the benchmark would measure a linear scan, not a descent.
+func benchRegistry(rnd *mrnd.Rand, r dtree.Rule[int]) dtree.Rule[int] {
+	match := r.Match &^ benchField
+	match |= (rnd.Uint32() & 0x1) << 31 // sf
+	match |= (rnd.Uint32() & 0xF) << 25 // op
+	match |= (rnd.Uint32() & 0x7) << 21 // opc
+
+	return dtree.Rule[int]{
+		Mask:    r.Mask | benchField,
+		Match:   match,
+		Payload: r.Payload,
+	}
+}
+
+// benchCases is deterministic material from arb.LookupCase.Generate():
+// cases (a rule set of <=40 + a word), a large "registry", and a word pool.
+// The registry is live rules (without catch-alls and dead ones), normalized
+// to the common fields; the words are half random (miss path) and half
+// generated within the class of a random rule of the registry (hit path).
+func benchCases(b *testing.B) (cases []arb.Case, big []dtree.Rule[int], words []uint32) {
+	b.Helper()
+
+	rnd := propSeed(b)
+	gen := arb.LookupCase(rnd)
+
+	for range 1000 {
+		c := ohsnap.First(gen.Generate())
+		cases = append(cases, c)
+
+		for _, r := range c.Rules {
+			if r.Mask != 0 && r.Match&^r.Mask == 0 {
+				big = append(big, benchRegistry(rnd, r))
+			}
+		}
+
+		if len(big) > 0 && rnd.IntN(2) == 0 {
+			r := big[rnd.IntN(len(big))]
+			words = append(words, r.Match|(rnd.Uint32()&^r.Mask))
+
+			continue
+		}
+
+		words = append(words, rnd.Uint32())
+	}
+
+	return cases, big, words
 }

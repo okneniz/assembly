@@ -52,8 +52,9 @@ func (a notArb) Generate() iter.Seq[NotParams] {
 }
 
 func (a notArb) Shrink(p NotParams) iter.Seq[NotParams] {
-	var out []NotParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]NotParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewNotParams(s))
 	}
 

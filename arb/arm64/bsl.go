@@ -52,8 +52,9 @@ func (a bslArb) Generate() iter.Seq[BslParams] {
 }
 
 func (a bslArb) Shrink(p BslParams) iter.Seq[BslParams] {
-	var out []BslParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]BslParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewBslParams(s))
 	}
 

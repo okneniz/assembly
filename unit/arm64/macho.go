@@ -1,9 +1,8 @@
-package arm64
-
-// The Mach-O end of the unit output: resolving with the writer's own
-// placement and wrapping as a native image - one call from a Unit to
-// executable bytes, no address computed anywhere outside the file
+// Package arm64 is the Mach-O end of the unit output: resolving with the
+// writer's own placement and wrapping as a native image - one call from a
+// Unit to executable bytes, no address computed anywhere outside the file
 // package.
+package arm64
 
 import (
 	"fmt"
@@ -72,6 +71,7 @@ func MachoOf(f *unit.Fixed, entry string) (*file.MachOImage, error) {
 	for name := range f.Syms {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
 
 	syms := make([]file.MachOSym, 0, len(names))

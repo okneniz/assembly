@@ -96,10 +96,10 @@ const (
 	ldpWEnc uint32 = 0x29400000 // ldp wt, wt2, [xn, #imm7<<2]
 )
 
-func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
-	return "ldp " + i.pairText()
-}
-
 func (i Ldp) Encode(w io.Writer) (int64, error) {
 	return i.pairWrite(w, "ldp")
+}
+
+func (i Ldp) ObjDump(_ disasm.ViewCtx) string {
+	return "ldp " + i.pairText()
 }

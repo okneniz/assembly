@@ -49,16 +49,6 @@ const (
 	movzW uint32 = 0x52800000
 )
 
-func (i Movz) ObjDump(_ disasm.ViewCtx) string {
-	is64 := i.rd[0] == 'x'
-	val := uint64(i.imm16) << (i.hw * 16)
-	if is64 && val&(uint64(1)<<63) != 0 {
-		return fmt.Sprintf("mov %s, #-0x%x", i.rd, (^val)+1)
-	}
-
-	return fmt.Sprintf("mov %s, #0x%x", i.rd, val)
-}
-
 func (i Movz) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, movzX, movzW)
 	if err != nil {
@@ -75,4 +65,14 @@ func (i Movz) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
+}
+
+func (i Movz) ObjDump(_ disasm.ViewCtx) string {
+	is64 := i.rd[0] == 'x'
+	val := uint64(i.imm16) << (i.hw * 16)
+	if is64 && val&(uint64(1)<<63) != 0 {
+		return fmt.Sprintf("mov %s, #-0x%x", i.rd, (^val)+1)
+	}
+
+	return fmt.Sprintf("mov %s, #0x%x", i.rd, val)
 }

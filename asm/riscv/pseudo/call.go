@@ -20,13 +20,6 @@ type Call struct {
 	pc     uint64
 }
 
-func (i Call) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("call %#x", i.target)
-}
-
-func (i Call) Len() int {
-	return 8
-}
 func (i Call) Addr() uint64 {
 	return 0
 } // assembly side: there is no decode address
@@ -34,8 +27,9 @@ func (i Call) Addr() uint64 {
 func (i Call) Encode(w io.Writer) (int64, error) {
 	hi, lo := arch.PcrelHiLo(i.target - int64(i.pc))
 	if hi < -(1<<19) || hi > 1<<19-1 {
-		return 0, fmt.Errorf("call: target out of the pcrel window")
+		return 0, errors.New("call: target out of the pcrel window")
 	}
+
 	hiBits, err := arch.EncU(hi & 0xfffff)
 	if err != nil {
 		return 0, fmt.Errorf("call: %w", err)
@@ -59,6 +53,14 @@ func (i Call) Encode(w io.Writer) (int64, error) {
 
 	n, err := w.Write(buf.Bytes())
 	return int64(n), err
+}
+
+func (i Call) Len() int {
+	return 8
+}
+
+func (i Call) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("call %#x", i.target)
 }
 
 // resolveCall is the evaluator wired to parsing: call sym.

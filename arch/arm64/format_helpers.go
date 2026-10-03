@@ -11,6 +11,11 @@ import (
 	"math"
 )
 
+// LdStructDecode — the ldN structural name/arr/count by opcode bits.
+func LdStructDecode(opcode, size, q, l uint32) (name, arr string, count int, isElem bool) {
+	return ldStructDecode(opcode, size, q, l)
+}
+
 // vfpExpandImm64 — the FP immediate expansion (ARM ARM VFPExpandImm):
 // imm8 = a:u2u1u0:v3v2v1v0 — a sign, a 3-bit exponent field u, a
 // 4-bit mantissa v. The exponent picks the power (u<4 → 2^(u+1),
@@ -122,17 +127,6 @@ func decodeShiftImm(immh, immb uint32) (size, shift uint32) {
 	}
 
 	return 0, immb
-}
-
-// simdShiftAmount decodes a SIMD shift: SHL uses immh:immb directly,
-// USHR/SSHR/SRI invert it (esize - immh:immb).
-func simdShiftAmount(name string, immh, immb uint32) (size, shift uint32) {
-	size, shift = decodeShiftImm(immh, immb)
-	if name == "ushr" || name == "sshr" || name == "sri" {
-		shift = (uint32(8) << size) - shift
-	}
-
-	return
 }
 
 // ldStructDecode decodes opcode[15:12]+size+Q into (name, arrangement, count, isElement).
@@ -258,9 +252,4 @@ func bfmRegsize(rd string, immr, imms uint32) uint32 {
 	}
 
 	return 64
-}
-
-// LdStructDecode — the ldN structural name/arr/count by opcode bits.
-func LdStructDecode(opcode, size, q, l uint32) (name, arr string, count int, isElem bool) {
-	return ldStructDecode(opcode, size, q, l)
 }

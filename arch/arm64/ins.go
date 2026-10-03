@@ -48,10 +48,6 @@ func newIns(size, idx uint32, vd VReg, gpr Reg) (Ins, error) {
 
 const insEnc uint32 = 0x4E001C00 // ins vd[idx], wn (op bits 01, Q=1)
 
-func (i Ins) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mov.%s %s[%d], %s", elemName(i.size), i.vd, i.idx, i.gpr)
-}
-
 func (i Ins) Encode(w io.Writer) (int64, error) {
 	vd, err := armRegNum(i.vd)
 	if err != nil {
@@ -65,4 +61,8 @@ func (i Ins) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, insEnc|imm5<<16|gpr<<5|vd)
+}
+
+func (i Ins) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mov.%s %s[%d], %s", elemName(i.size), i.vd, i.idx, i.gpr)
 }

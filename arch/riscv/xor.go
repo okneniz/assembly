@@ -21,10 +21,6 @@ func cXor(rd, rs1, rs2 string) Xor {
 	}
 }
 
-func (i Xor) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("xor %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Xor) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["xor"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 	if half, ok := cR3(i.rd, i.rs1, i.rs2, 0x8C01, 1); ok && !o.NoRVC {
@@ -32,6 +28,10 @@ func (i Xor) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Xor) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("xor %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newXor(ops []Op) (Instr, error) {

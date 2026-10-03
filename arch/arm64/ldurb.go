@@ -61,10 +61,10 @@ func newLdurb(rt, rn Reg, off Off) (Ldurb, error) {
 
 const ldurbEnc uint32 = 0x38400000 // ldurb wt, [xn, #±imm9]
 
-func (i Ldurb) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("ldurb %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Ldurb) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldurb")
+}
+
+func (i Ldurb) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("ldurb %s, %s", i.rt, i.lsText(ctx))
 }

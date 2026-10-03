@@ -31,10 +31,6 @@ func newCnt(rd, rn VReg, arr string) (Cnt, error) {
 
 const cntEnc uint32 = 0x0E205800 // cnt vd, vn (Q=0 form)
 
-func (i Cnt) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cnt.%s %s, %s", i.arr, i.rd, i.rn)
-}
-
 func (i Cnt) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -47,4 +43,8 @@ func (i Cnt) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, cntEnc|q<<30|size<<22|rd|rn<<5)
+}
+
+func (i Cnt) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("cnt.%s %s, %s", i.arr, i.rd, i.rn)
 }

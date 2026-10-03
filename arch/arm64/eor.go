@@ -33,10 +33,6 @@ func newEor(rd, rn, rm VReg, arr string) (Eor, error) {
 
 const eorEnc uint32 = 773856256 // eor vd, vn, vm (Q=0 form)
 
-func (i Eor) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("eor.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Eor) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Eor) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, eorEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Eor) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("eor.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

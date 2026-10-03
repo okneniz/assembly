@@ -27,10 +27,6 @@ func NewUxtbParams(rd arm64.Reg, rn arm64.Reg) UxtbParams {
 	}
 }
 
-func (p UxtbParams) String() string {
-	return "uxtb " + p.Rd.String() + ", " + p.Rn.String()
-}
-
 func (p UxtbParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,18 +36,22 @@ func (p UxtbParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p UxtbParams) String() string {
+	return "uxtb " + p.Rd.String() + ", " + p.Rn.String()
+}
+
 // uxtbGen — generator for uxtb: both registers are w-registers.
 type uxtbGen struct {
 	rnd *rand.Rand
 }
 
-func newUxtbGen(rnd *rand.Rand) uxtbGen {
-	return uxtbGen{rnd: rnd}
-}
-
 // Uxtb — an arbitrary uxtb.
 func Uxtb(rnd *rand.Rand) ohsnap.Arbitrary[UxtbParams] {
 	return newUxtbGen(rnd)
+}
+
+func newUxtbGen(rnd *rand.Rand) uxtbGen {
+	return uxtbGen{rnd: rnd}
 }
 
 func (g uxtbGen) Generate() iter.Seq[UxtbParams] {
@@ -64,8 +64,9 @@ func (g uxtbGen) Generate() iter.Seq[UxtbParams] {
 }
 
 func (g uxtbGen) Shrink(p UxtbParams) iter.Seq[UxtbParams] {
-	var out []UxtbParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]UxtbParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewUxtbParams(r, p.Rn))
 	}
 

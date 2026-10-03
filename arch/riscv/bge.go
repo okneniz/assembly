@@ -13,6 +13,17 @@ type Bge struct {
 	off      imm // pc-relative byte offset
 }
 
+func (i Bge) Encode(w io.Writer, o EncOpts) (int64, error) {
+	bits, err := encB(i.off.val)
+	if err != nil {
+		return 0, err
+	}
+
+	word := riscvEncodings["bge"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
+
+	return writeWord(w, word)
+}
+
 func (i Bge) ObjDump(ctx disasm.ViewCtx) string {
 	target := immNum(int64(ctx.Addr()) + i.off.val)
 	if i.rs1 == "zero" {
@@ -24,17 +35,6 @@ func (i Bge) ObjDump(ctx disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("bge %s, %s, %s", i.rs1, i.rs2, target.text())
-}
-
-func (i Bge) Encode(w io.Writer, o EncOpts) (int64, error) {
-	bits, err := encB(i.off.val)
-	if err != nil {
-		return 0, err
-	}
-
-	word := riscvEncodings["bge"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
-
-	return writeWord(w, word)
 }
 
 func newBge(ops []Op) (Instr, error) {

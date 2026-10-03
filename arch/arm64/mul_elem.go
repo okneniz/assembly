@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,9 +20,7 @@ type MulElem struct {
 // calls it with values read from the word).
 func newMulElem(q, size, idx uint32, rd, rn, rm VReg) (MulElem, error) {
 	if size == 0 || size == 3 {
-		return MulElem{}, fmt.Errorf(
-			"arm64.NewMulElem: only the .h and .s integer lanes exist",
-		)
+		return MulElem{}, errors.New("arm64.NewMulElem: only the .h and .s integer lanes exist")
 	}
 
 	err := requireByElemLane("MulElem", size, idx, rm)
@@ -45,11 +44,6 @@ const (
 	mulElemOpc uint32 = 8
 )
 
-func (i MulElem) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mul.%s %s, %s, %s[%d]",
-		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
-}
-
 func (i MulElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -57,4 +51,9 @@ func (i MulElem) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, byElemBits(i.q, mulElemU, i.size, rm, mulElemOpc, i.idx, rn, rd))
+}
+
+func (i MulElem) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mul.%s %s, %s, %s[%d]",
+		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
 }

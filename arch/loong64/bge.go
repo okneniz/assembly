@@ -15,18 +15,6 @@ type Bge struct {
 	off    imm
 }
 
-func (i Bge) ObjDump(_ disasm.ViewCtx) string {
-	if i.rj == 0 {
-		return fmt.Sprintf("blez %s, %s", laRegName(i.rd), i.off.text())
-	}
-
-	if i.rd == 0 {
-		return fmt.Sprintf("bgez %s, %s", laRegName(i.rj), i.off.text())
-	}
-
-	return fmt.Sprintf("bge %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
-}
-
 func (i Bge) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "bge offset")
 	if err != nil {
@@ -37,4 +25,16 @@ func (i Bge) Encode(w io.Writer) (int64, error) {
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(off, 10, 16)
 
 	return writeWord(w, word)
+}
+
+func (i Bge) ObjDump(_ disasm.ViewCtx) string {
+	if i.rj == 0 {
+		return fmt.Sprintf("blez %s, %s", laRegName(i.rd), i.off.text())
+	}
+
+	if i.rd == 0 {
+		return fmt.Sprintf("bgez %s, %s", laRegName(i.rj), i.off.text())
+	}
+
+	return fmt.Sprintf("bge %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }

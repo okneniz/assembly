@@ -9,8 +9,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/okneniz/assembly/arch/arm64"
 	ohsnap "github.com/okneniz/oh-snap"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // FParams — the parameters of the FP-addressed load/store forms.
@@ -128,8 +129,9 @@ func (g fGen) Generate() iter.Seq[FParams] {
 }
 
 func (g fGen) Shrink(p FParams) iter.Seq[FParams] {
-	var out []FParams
-	for _, r := range slices.Collect(g.freg.Shrink(p.Rt)) {
+	shrinks := slices.Collect(g.freg.Shrink(p.Rt))
+	out := make([]FParams, 0, len(shrinks))
+	for _, r := range shrinks {
 		out = append(out, NewFParams(r, p.Rn, p.Off))
 	}
 

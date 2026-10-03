@@ -37,6 +37,7 @@ func (p LdrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p LdrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,13 +49,13 @@ type ldrGen struct {
 	rnd *rand.Rand
 }
 
-func newLdrGen(rnd *rand.Rand) ldrGen {
-	return ldrGen{rnd: rnd}
-}
-
 // Ldr — an arbitrary ldr (unsigned offset).
 func Ldr(rnd *rand.Rand) ohsnap.Arbitrary[LdrParams] {
 	return newLdrGen(rnd)
+}
+
+func newLdrGen(rnd *rand.Rand) ldrGen {
+	return ldrGen{rnd: rnd}
 }
 
 func (g ldrGen) Generate() iter.Seq[LdrParams] {

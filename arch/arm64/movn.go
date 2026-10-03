@@ -49,6 +49,24 @@ func newMovn(rd Reg, imm Imm16, hw Hw) (Movn, error) {
 	}, nil
 }
 
+func (i Movn) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, movnX, movnW)
+	if err != nil {
+		return 0, fmt.Errorf("movn: %w", err)
+	}
+
+	rd, err := armRegNum(i.rd)
+	if err != nil {
+		return 0, fmt.Errorf("movn: %w", err)
+	}
+
+	if i.imm16 > 0xffff || i.hw > 3 {
+		return 0, errors.New("movn: imm/hw out of range")
+	}
+
+	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
+}
+
 func (i Movn) ObjDump(_ disasm.ViewCtx) string {
 	is64 := i.rd[0] == 'x'
 	if i.hw == 0 {
@@ -70,22 +88,4 @@ func (i Movn) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("mov %s, #0x%x", i.rd, val)
-}
-
-func (i Movn) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, movnX, movnW)
-	if err != nil {
-		return 0, fmt.Errorf("movn: %w", err)
-	}
-
-	rd, err := armRegNum(i.rd)
-	if err != nil {
-		return 0, fmt.Errorf("movn: %w", err)
-	}
-
-	if i.imm16 > 0xffff || i.hw > 3 {
-		return 0, errors.New("movn: imm/hw out of range")
-	}
-
-	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
 }

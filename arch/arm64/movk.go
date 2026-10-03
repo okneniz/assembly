@@ -49,14 +49,6 @@ func newMovk(rd Reg, imm Imm16, hw Hw) (Movk, error) {
 	}, nil
 }
 
-func (i Movk) ObjDump(_ disasm.ViewCtx) string {
-	if i.hw == 0 {
-		return fmt.Sprintf("movk %s, #0x%x", i.rd, i.imm16)
-	}
-
-	return fmt.Sprintf("movk %s, #0x%x, lsl #%d", i.rd, i.imm16, i.hw*16)
-}
-
 func (i Movk) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, movkX, movkW)
 	if err != nil {
@@ -73,4 +65,12 @@ func (i Movk) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|i.imm16<<5|i.hw<<21)
+}
+
+func (i Movk) ObjDump(_ disasm.ViewCtx) string {
+	if i.hw == 0 {
+		return fmt.Sprintf("movk %s, #0x%x", i.rd, i.imm16)
+	}
+
+	return fmt.Sprintf("movk %s, #0x%x, lsl #%d", i.rd, i.imm16, i.hw*16)
 }

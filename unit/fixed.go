@@ -22,13 +22,12 @@ type Fixed struct {
 	Errs    []error
 }
 
-// EncodeText materializes the text stream. The records were verified at
-// resolve (each deferred record encodes to exactly its reserved size),
-// so an error here can only be a record's own late encode failure.
-func (f *Fixed) EncodeText() ([]byte, error) {
+// EncodeData materializes the data stream - the file bytes; the bss tail
+// is the DataMem beyond them (memory the kernel zeroes, no records).
+func (f *Fixed) EncodeData() ([]byte, error) {
 	var buf bytes.Buffer
 	var errs []error
-	for _, r := range f.Text {
+	for _, r := range f.Data {
 		if _, err := r.Encode(&buf); err != nil {
 			errs = append(errs, err)
 		}
@@ -37,12 +36,13 @@ func (f *Fixed) EncodeText() ([]byte, error) {
 	return buf.Bytes(), errors.Join(errs...)
 }
 
-// EncodeData materializes the data stream - the file bytes; the bss tail
-// is the DataMem beyond them (memory the kernel zeroes, no records).
-func (f *Fixed) EncodeData() ([]byte, error) {
+// EncodeText materializes the text stream. The records were verified at
+// resolve (each deferred record encodes to exactly its reserved size),
+// so an error here can only be a record's own late encode failure.
+func (f *Fixed) EncodeText() ([]byte, error) {
 	var buf bytes.Buffer
 	var errs []error
-	for _, r := range f.Data {
+	for _, r := range f.Text {
 		if _, err := r.Encode(&buf); err != nil {
 			errs = append(errs, err)
 		}

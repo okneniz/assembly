@@ -81,10 +81,6 @@ func newAsrReg(rd Reg, rn Reg, rm Reg) (AsrReg, error) {
 
 const AsrRegX uint32 = 0x9AC02800
 
-func (i AsrReg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("asr %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i AsrReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, AsrRegX, 0x1AC02800)
 	if err != nil {
@@ -97,4 +93,8 @@ func (i AsrReg) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i AsrReg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("asr %s, %s, %s", i.rd, i.rn, i.rm)
 }

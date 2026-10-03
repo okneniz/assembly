@@ -17,31 +17,6 @@ import (
 
 // --- operand generators ----------------------------------------------
 
-// mustX/mustW — registers by number in tests: a constructor error here
-// means a broken test (the numbers are fixed and known to be in 0..30).
-func mustX(t *testing.T, n int) arm64.Reg {
-	t.Helper()
-	r, err := arm64.X(n)
-	require.NoError(t, err, "arm64.X(%d)", n)
-	return r
-}
-
-func mustW(t *testing.T, n int) arm64.Reg {
-	t.Helper()
-	r, err := arm64.W(n)
-	require.NoError(t, err, "arm64.W(%d)", n)
-	return r
-}
-
-// mustImmValue — the numeric value of an immediate: a String() parse error
-// of our own type is a bug of the type, not of the test.
-func mustImmValue(t *testing.T, v any) int64 {
-	t.Helper()
-	n, err := immValue(v)
-	require.NoError(t, err, "immValue(%v)", v)
-	return n
-}
-
 // TestRegGenProperty — every sample is valid, the name is parsed by arm,
 // shrinking preserves the width.
 func TestRegGenProperty(t *testing.T) {
@@ -227,6 +202,129 @@ func TestOffGen(t *testing.T) {
 type instrCase struct {
 	name string
 	gen  func() arm64.Instr
+}
+
+// TestInstrGenValid — a generated instruction always encodes
+// (the generator produces no invalid combinations — otherwise a constructor error).
+func TestInstrGenValid(t *testing.T) {
+	rnd := arb.Rnd(42)
+	for _, c := range instrCases(rnd) {
+		var buf bytes.Buffer
+		for range 300 {
+			buf.Reset()
+			in := c.gen()
+			_, err := in.Encode(&buf)
+			require.NoError(t, err, "%s: Encode (%s)", c.name, in.ObjDump(disasm.DefaultViewCtx()))
+		}
+	}
+}
+
+// TestInstrGenText — String() of the parameters = ObjDump of the instruction.
+func TestInstrGenText(t *testing.T) {
+	rnd := arb.Rnd(42)
+	require.NotEmpty(t, ohsnap.First(Movz(rnd).Generate()).String(), "MovzParams.String() is empty")
+	got := ohsnap.First(Ldr(rnd).Generate()).String()
+	require.True(t, strings.HasPrefix(got, "ldr "), "LdrParams.String() = %q", got)
+}
+
+// TestInstrGenShrinkValid — every shrink candidate is a valid instruction
+// (component-wise shrinking does not break contextual invariants).
+func TestInstrGenShrinkValid(t *testing.T) {
+	rnd := arb.Rnd(9)
+	// Movz/Movk/Movn: shrinking a W-form never leaves hw>=2.
+	movz := Movz(rnd)
+	for range 200 {
+		p := ohsnap.First(movz.Generate())
+		for s := range movz.Shrink(p) {
+			require.True(
+				t,
+				s.Rd.Is64() || s.Hw <= arm64.Hw1,
+				"shrink broke the invariant: %s",
+				s,
+			)
+			s.Instr() // the constructor error path is unreachable by construction of the shrink
+		}
+	}
+
+	movn := Movn(rnd)
+	for range 200 {
+		p := ohsnap.First(movn.Generate())
+		for s := range movn.Shrink(p) {
+			require.True(
+				t,
+				s.Rd.Is64() || s.Hw <= arm64.Hw1,
+				"shrink broke the invariant: %s",
+				s,
+			)
+			s.Instr()
+		}
+	}
+
+	// AddImm: the width of rd/rn matches after shrinking.
+	add := AddImm(rnd)
+	for range 200 {
+		p := ohsnap.First(add.Generate())
+		for s := range add.Shrink(p) {
+			require.Equal(t, s.Rd.Is64(), s.Rn.Is64(), "shrink broke the width: %s", s)
+			s.Instr()
+		}
+	}
+
+	// Sdiv: the width of rd/rn/rm matches after shrinking.
+	sdiv := Sdiv(rnd)
+	for range 200 {
+		p := ohsnap.First(sdiv.Generate())
+		for s := range sdiv.Shrink(p) {
+			require.Equal(
+				t,
+				s.Rd.Is64(),
+				s.Rn.Is64() && s.Rm.Is64(),
+				"shrink broke the width: %s",
+				s,
+			)
+			s.Instr()
+		}
+	}
+
+	// Ldr: the offset is aligned to the width of rt after shrinking.
+	ldr := Ldr(rnd)
+	for range 200 {
+		p := ohsnap.First(ldr.Generate())
+		for s := range ldr.Shrink(p) {
+			align := int64(4)
+			if s.Rt.Is64() {
+				align = 8
+			}
+
+			require.Zero(t, int64(s.Off)%align, "shrink broke the alignment: %s", s)
+			s.Instr()
+		}
+	}
+}
+
+// mustX/mustW — registers by number in tests: a constructor error here
+// means a broken test (the numbers are fixed and known to be in 0..30).
+func mustX(t *testing.T, n int) arm64.Reg {
+	t.Helper()
+	r, err := arm64.X(n)
+	require.NoError(t, err, "arm64.X(%d)", n)
+	return r
+}
+
+func mustW(t *testing.T, n int) arm64.Reg {
+	t.Helper()
+	r, err := arm64.W(n)
+	require.NoError(t, err, "arm64.W(%d)", n)
+	return r
+}
+
+// mustImmValue — the numeric value of an immediate: a String() parse error
+// of our own type is a bug of the type, not of the test.
+func mustImmValue(t *testing.T, v any) int64 {
+	t.Helper()
+	n, err := immValue(v)
+	require.NoError(t, err, "immValue(%v)", v)
+	return n
 }
 
 func newInstrCase(name string, gen func() arm64.Instr) instrCase {
@@ -680,103 +778,5 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("Aesmc", func() arm64.Instr {
 			return ohsnap.First(Aesmc(rnd).Generate()).Instr()
 		}),
-	}
-}
-
-// TestInstrGenValid — a generated instruction always encodes
-// (the generator produces no invalid combinations — otherwise a constructor error).
-func TestInstrGenValid(t *testing.T) {
-	rnd := arb.Rnd(42)
-	for _, c := range instrCases(rnd) {
-		var buf bytes.Buffer
-		for range 300 {
-			buf.Reset()
-			in := c.gen()
-			_, err := in.Encode(&buf)
-			require.NoError(t, err, "%s: Encode (%s)", c.name, in.ObjDump(disasm.DefaultViewCtx()))
-		}
-	}
-}
-
-// TestInstrGenText — String() of the parameters = ObjDump of the instruction.
-func TestInstrGenText(t *testing.T) {
-	rnd := arb.Rnd(42)
-	require.NotEmpty(t, ohsnap.First(Movz(rnd).Generate()).String(), "MovzParams.String() is empty")
-	got := ohsnap.First(Ldr(rnd).Generate()).String()
-	require.True(t, strings.HasPrefix(got, "ldr "), "LdrParams.String() = %q", got)
-}
-
-// TestInstrGenShrinkValid — every shrink candidate is a valid instruction
-// (component-wise shrinking does not break contextual invariants).
-func TestInstrGenShrinkValid(t *testing.T) {
-	rnd := arb.Rnd(9)
-	// Movz/Movk/Movn: shrinking a W-form never leaves hw>=2.
-	movz := Movz(rnd)
-	for range 200 {
-		p := ohsnap.First(movz.Generate())
-		for s := range movz.Shrink(p) {
-			require.True(
-				t,
-				s.Rd.Is64() || s.Hw <= arm64.Hw1,
-				"shrink broke the invariant: %s",
-				s,
-			)
-			s.Instr() // the constructor error path is unreachable by construction of the shrink
-		}
-	}
-
-	movn := Movn(rnd)
-	for range 200 {
-		p := ohsnap.First(movn.Generate())
-		for s := range movn.Shrink(p) {
-			require.True(
-				t,
-				s.Rd.Is64() || s.Hw <= arm64.Hw1,
-				"shrink broke the invariant: %s",
-				s,
-			)
-			s.Instr()
-		}
-	}
-
-	// AddImm: the width of rd/rn matches after shrinking.
-	add := AddImm(rnd)
-	for range 200 {
-		p := ohsnap.First(add.Generate())
-		for s := range add.Shrink(p) {
-			require.Equal(t, s.Rd.Is64(), s.Rn.Is64(), "shrink broke the width: %s", s)
-			s.Instr()
-		}
-	}
-
-	// Sdiv: the width of rd/rn/rm matches after shrinking.
-	sdiv := Sdiv(rnd)
-	for range 200 {
-		p := ohsnap.First(sdiv.Generate())
-		for s := range sdiv.Shrink(p) {
-			require.Equal(
-				t,
-				s.Rd.Is64(),
-				s.Rn.Is64() && s.Rm.Is64(),
-				"shrink broke the width: %s",
-				s,
-			)
-			s.Instr()
-		}
-	}
-
-	// Ldr: the offset is aligned to the width of rt after shrinking.
-	ldr := Ldr(rnd)
-	for range 200 {
-		p := ohsnap.First(ldr.Generate())
-		for s := range ldr.Shrink(p) {
-			align := int64(4)
-			if s.Rt.Is64() {
-				align = 8
-			}
-
-			require.Zero(t, int64(s.Off)%align, "shrink broke the alignment: %s", s)
-			s.Instr()
-		}
 	}
 }

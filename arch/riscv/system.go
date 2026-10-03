@@ -25,12 +25,12 @@ func cSystem(name, group string) systemInstr {
 	}
 }
 
-func (i systemInstr) ObjDump(_ disasm.ViewCtx) string {
-	return i.name
-}
-
 func (i systemInstr) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings[i.name][0])
+}
+
+func (i systemInstr) ObjDump(_ disasm.ViewCtx) string {
+	return i.name
 }
 
 func newSystem(name string) func([]Op) (Instr, error) {
@@ -49,14 +49,6 @@ type Fence struct {
 	fm imm
 }
 
-func (i Fence) ObjDump(_ disasm.ViewCtx) string {
-	if i.fm.val == 0 {
-		return "fence"
-	}
-
-	return "fence " + i.fm.text()
-}
-
 func (i Fence) Encode(w io.Writer, o EncOpts) (int64, error) {
 	fm := i.fm.val
 
@@ -66,6 +58,14 @@ func (i Fence) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	// llvm-mc parity: the bare fence is iorw|iorw (pred = succ = 0xf)
 	return writeWord(w, riscvEncodings["fence"][0]|uint32(fm)<<28|0xff<<20)
+}
+
+func (i Fence) ObjDump(_ disasm.ViewCtx) string {
+	if i.fm.val == 0 {
+		return "fence"
+	}
+
+	return "fence " + i.fm.text()
 }
 
 func newFence(ops []Op) (Instr, error) {

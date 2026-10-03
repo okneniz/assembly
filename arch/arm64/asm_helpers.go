@@ -10,6 +10,22 @@ import (
 	"strings"
 )
 
+// invSysReg: system register name → 15-bit key (inverse of sysregNames;
+// the objdump form S<op0>_<op1>_C<n>_C<m>_<op2> is also accepted).
+// The lookup is case-insensitive (the canonical names are upper case;
+// kernel headers spell them lower). A derived data table, built once.
+var invSysRegNames = buildInvSysRegNames()
+
+// WantTarget — a computed target operand, unwrapped to int64.
+func WantTarget(op ArmOp, name string) (int64, error) {
+	v, err := wantTarget(op, name)
+	if err != nil {
+		return 0, err
+	}
+
+	return v.val, nil
+}
+
 // wantTarget — a target operand (a computed value).
 func wantTarget(op vOp, name string) (imm, error) {
 	if op.kind != armOpImm || op.sym != "" {
@@ -106,12 +122,6 @@ func armRegNum(name string) (uint32, error) {
 // shiftAmt — the shift amount of a modifier operand.
 func shiftAmt(op vOp) int64 { return op.num }
 
-// invSysReg: system register name → 15-bit key (inverse of sysregNames;
-// the objdump form S<op0>_<op1>_C<n>_C<m>_<op2> is also accepted).
-// The lookup is case-insensitive (the canonical names are upper case;
-// kernel headers spell them lower). A derived data table, built once.
-var invSysRegNames = buildInvSysRegNames()
-
 func buildInvSysRegNames() map[string]uint32 {
 	m := map[string]uint32{}
 	for k, name := range sysregNames {
@@ -180,14 +190,4 @@ func arrQSize(arr string) (q, size uint32, err error) {
 	}
 
 	return 0, 0, fmt.Errorf("unknown arrangement %q", arr)
-}
-
-// WantTarget — a computed target operand, unwrapped to int64.
-func WantTarget(op ArmOp, name string) (int64, error) {
-	v, err := wantTarget(op, name)
-	if err != nil {
-		return 0, err
-	}
-
-	return v.val, nil
 }

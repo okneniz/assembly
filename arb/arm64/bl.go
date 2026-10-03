@@ -26,6 +26,7 @@ func NewBlParams(off int64) BlParams {
 func (p BlParams) Instr() arm64.Instr {
 	return arm64.New().Bl(p.Off)
 }
+
 func (p BlParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -35,13 +36,13 @@ type blGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
-func newBlGen(rnd *rand.Rand) blGen {
-	return blGen{off: BrOff(rnd, 1<<27)}
-}
-
 // Bl — an arbitrary bl.
 func Bl(rnd *rand.Rand) ohsnap.Arbitrary[BlParams] {
 	return newBlGen(rnd)
+}
+
+func newBlGen(rnd *rand.Rand) blGen {
+	return blGen{off: BrOff(rnd, 1<<27)}
 }
 
 func (g blGen) Generate() iter.Seq[BlParams] {
@@ -51,8 +52,9 @@ func (g blGen) Generate() iter.Seq[BlParams] {
 }
 
 func (g blGen) Shrink(p BlParams) iter.Seq[BlParams] {
-	var out []BlParams
-	for _, v := range slices.Collect(g.off.Shrink(p.Off)) {
+	shrinks := slices.Collect(g.off.Shrink(p.Off))
+	out := make([]BlParams, 0, len(shrinks))
+	for _, v := range shrinks {
 		out = append(out, NewBlParams(v))
 	}
 

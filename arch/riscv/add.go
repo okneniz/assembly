@@ -21,10 +21,6 @@ func cAdd(rd, rs1, rs2 string) Add {
 	}
 }
 
-func (i Add) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("add %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Add) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["add"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 	rs2, ok := asmRegNum[i.rs2]
@@ -39,6 +35,10 @@ func (i Add) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Add) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("add %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newAdd(ops []Op) (Instr, error) {

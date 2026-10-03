@@ -14,13 +14,13 @@ type LlW struct {
 	off    imm
 }
 
-func (i LlW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ll.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
-}
-
 func (i LlW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ll.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.off.val>>2, 10, 14)
 
 	return writeWord(w, word)
+}
+
+func (i LlW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ll.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

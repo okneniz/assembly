@@ -13,13 +13,13 @@ type AmoswapW struct {
 	rd, rs1, rs2 string
 }
 
-func (i AmoswapW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amoswap.w %s, %s, (%s)", i.rd, i.rs2, i.rs1)
-}
-
 func (i AmoswapW) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["amoswap_w"][0]|
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
+}
+
+func (i AmoswapW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amoswap.w %s, %s, (%s)", i.rd, i.rs2, i.rs1)
 }
 
 func newAmoswapW(ops []Op) (Instr, error) {

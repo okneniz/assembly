@@ -13,10 +13,6 @@ type Lbu struct {
 	off     imm
 }
 
-func (i Lbu) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lbu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Lbu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Lbu) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["lbu"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | bits
 	return writeWord(w, word)
+}
+
+func (i Lbu) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lbu %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 func newLbu(ops []Op) (Instr, error) {

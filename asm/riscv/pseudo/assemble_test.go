@@ -20,26 +20,6 @@ import (
 	"github.com/okneniz/assembly/tests/cmd/objdump"
 )
 
-func assembleOne(t *testing.T, src string, addr uint64) []byte {
-	t.Helper()
-	res, errs := asm.Assemble(src, addr, NewASMBackend())
-	require.Empty(t, errs, "assemble %q: %v", src, errs)
-	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
-	return res.Sections[0].Data
-}
-
-func wordOf(b []byte) uint32 {
-	if len(b) != 4 {
-		return 0
-	}
-
-	return binary.LittleEndian.Uint32(b)
-}
-
-func instrTextSource(inst arch.Instr, addr uint64) string {
-	return inst.ObjDump(disasm.ViewCtxAt(addr))
-}
-
 func TestAssemblePseudo(t *testing.T) {
 	words := []struct {
 		src  string
@@ -719,20 +699,6 @@ func TestSymbolPseudoWords(t *testing.T) {
 	}
 }
 
-// hexOf - the byte slice as a hex string (the pin table face).
-func hexOf(b []byte) string {
-	return strings.Join(fieldsOf(b), " ")
-}
-
-func fieldsOf(b []byte) []string {
-	out := make([]string, len(b))
-	for i, v := range b {
-		out[i] = fmt.Sprintf("%02x", v)
-	}
-
-	return out
-}
-
 // TestSignChainOperands - the leading '+' and sign chains are unary
 // operators of the expression grammar, never a crash: every chain
 // assembles to the value it denotes. A stack overflow once surfaced on
@@ -769,9 +735,9 @@ func TestSignChainOperands(t *testing.T) {
 	rnd := mr.New(mr.NewPCG(7, 8))
 	alphabet := []rune("+-0123456789xab")
 	forms := []string{"li a0, ", "la a0, ", "call ", "tail "}
-	for i := 0; i < 5000; i++ {
+	for i := range 5000 {
 		var sb strings.Builder
-		for j := 0; j < 1+rnd.IntN(12); j++ {
+		for range 1 + rnd.IntN(12) {
 			sb.WriteRune(alphabet[rnd.IntN(len(alphabet))])
 		}
 
@@ -780,4 +746,38 @@ func TestSignChainOperands(t *testing.T) {
 			_, _ = asm.Assemble(src, 0x1000, NewASMBackend())
 		}, "case %q", src)
 	}
+}
+
+func assembleOne(t *testing.T, src string, addr uint64) []byte {
+	t.Helper()
+	res, errs := asm.Assemble(src, addr, NewASMBackend())
+	require.Empty(t, errs, "assemble %q: %v", src, errs)
+	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
+	return res.Sections[0].Data
+}
+
+func wordOf(b []byte) uint32 {
+	if len(b) != 4 {
+		return 0
+	}
+
+	return binary.LittleEndian.Uint32(b)
+}
+
+func instrTextSource(inst arch.Instr, addr uint64) string {
+	return inst.ObjDump(disasm.ViewCtxAt(addr))
+}
+
+// hexOf - the byte slice as a hex string (the pin table face).
+func hexOf(b []byte) string {
+	return strings.Join(fieldsOf(b), " ")
+}
+
+func fieldsOf(b []byte) []string {
+	out := make([]string, len(b))
+	for i, v := range b {
+		out[i] = fmt.Sprintf("%02x", v)
+	}
+
+	return out
 }

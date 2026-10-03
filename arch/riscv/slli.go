@@ -22,10 +22,6 @@ func cSlli(rd, rs1 string, shamt int64) Slli {
 	}
 }
 
-func (i Slli) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("slli %s, %s, %s", i.rd, i.rs1, i.shamt.text())
-}
-
 func (i Slli) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
@@ -42,6 +38,10 @@ func (i Slli) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Slli) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("slli %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
 func newSlli(ops []Op) (Instr, error) {

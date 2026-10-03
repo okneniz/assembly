@@ -197,97 +197,6 @@ type instrCase struct {
 	shrink func() []arch.Instr
 }
 
-// newInstrCase — a family entry: closes over the generic instantiation
-// (Arbitrary is invariant — a common Arbitrary[laInstrParam] cannot be
-// assembled, see newRvFamily in property_rv_test.go).
-func newInstrCase[P laInstrParam](name string, mk func() ohsnap.Arbitrary[P]) instrCase {
-	return instrCase{
-		name: name,
-		sample: func() (arch.Instr, string) {
-			p := ohsnap.First(mk().Generate())
-			return p.Instr(), p.String()
-		},
-		shrink: func() []arch.Instr {
-			g := mk()
-			cs := slices.Collect(g.Shrink(ohsnap.First(g.Generate())))
-			out := make([]arch.Instr, len(cs))
-			for i, c := range cs {
-				out[i] = c.Instr()
-			}
-
-			return out
-		},
-	}
-}
-
-func instrCases(rnd *rand.Rand) []instrCase {
-	return []instrCase{
-		newInstrCase("Alu3R", func() ohsnap.Arbitrary[R3Params] { return Alu3R(rnd) }),
-		newInstrCase("Alu2R", func() ohsnap.Arbitrary[R2Params] { return Alu2R(rnd) }),
-		newInstrCase("AluImm12", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
-			return AluImm12(rnd)
-		}),
-		newInstrCase("AluUImm12", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm12]] {
-			return AluUImm12(rnd)
-		}),
-		newInstrCase("AluImm16", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm16]] {
-			return AluImm16(rnd)
-		}),
-		newInstrCase("Imm20", func() ohsnap.Arbitrary[R1RoleParams[arch.Imm20]] {
-			return Imm20Instr(rnd)
-		}),
-		newInstrCase("Code15", func() ohsnap.Arbitrary[CodeParams] { return Code15Instr(rnd) }),
-		newInstrCase("Branch2", func() ohsnap.Arbitrary[Branch2Params] { return Branch2(rnd) }),
-		newInstrCase("Branch1", func() ohsnap.Arbitrary[Branch1Params] { return Branch1(rnd) }),
-		newInstrCase("Jump", func() ohsnap.Arbitrary[JumpParams] { return Jump(rnd) }),
-		newInstrCase("Jirl", func() ohsnap.Arbitrary[R2RoleParams[arch.Off16]] {
-			return Jirl(rnd)
-		}),
-		newInstrCase("LdSt", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
-			return LdSt(rnd)
-		}),
-		newInstrCase("Ldptr", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm14]] {
-			return Ldptr(rnd)
-		}),
-		newInstrCase("LdxStx", func() ohsnap.Arbitrary[R3Params] { return LdxStx(rnd) }),
-		newInstrCase("LdAcq", func() ohsnap.Arbitrary[R2Params] { return LdAcq(rnd) }),
-		newInstrCase("Hints", func() ohsnap.Arbitrary[U5RI12Params] { return Hints(rnd) }),
-		newInstrCase("Preldx", func() ohsnap.Arbitrary[U5RRParams] { return Preldx(rnd) }),
-		newInstrCase("ShiftW", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm5]] {
-			return ShiftW(rnd)
-		}),
-		newInstrCase("ShiftD", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm6]] {
-			return ShiftD(rnd)
-		}),
-		newInstrCase("FieldW", func() ohsnap.Arbitrary[FieldWParams] { return FieldW(rnd) }),
-		newInstrCase("FieldD", func() ohsnap.Arbitrary[FieldDParams] { return FieldD(rnd) }),
-		newInstrCase("Alsl", func() ohsnap.Arbitrary[R3RoleParams[arch.Shift3]] {
-			return Alsl(rnd)
-		}),
-		newInstrCase("BytepickW", func() ohsnap.Arbitrary[R3RoleParams[arch.UImm2]] {
-			return BytepickW(rnd)
-		}),
-		newInstrCase("BytepickD", func() ohsnap.Arbitrary[R3RoleParams[arch.UImm3]] {
-			return BytepickD(rnd)
-		}),
-		newInstrCase("Atomics", func() ohsnap.Arbitrary[R3Params] { return Atomics(rnd) }),
-		newInstrCase("CsrRW", func() ohsnap.Arbitrary[R1RoleParams[arch.UImm14]] {
-			return CsrRW(rnd)
-		}),
-		newInstrCase("CsrXchg", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
-			return CsrXchg(rnd)
-		}),
-		newInstrCase("IoCsr", func() ohsnap.Arbitrary[R2Params] { return IoCsr(rnd) }),
-		newInstrCase("Lddir", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm8]] {
-			return Lddir(rnd)
-		}),
-		newInstrCase("Ldpte", func() ohsnap.Arbitrary[R1RoleParams[arch.UImm8]] {
-			return Ldpte(rnd)
-		}),
-		newInstrCase("Invtlb", func() ohsnap.Arbitrary[U5RRParams] { return Invtlb(rnd) }),
-	}
-}
-
 // TestInstrGenValid — a generated instruction always encodes into a
 // single 4-byte word (LA64: no compression), at the family base pc.
 func TestInstrGenValid(t *testing.T) {
@@ -566,4 +475,95 @@ func TestOracleLaws(t *testing.T) {
 	ohsnap.Check(t, 300, CsrXchg(rnd), func(p R2RoleParams[arch.UImm14]) bool {
 		return p.B.Num() > 1
 	})
+}
+
+// newInstrCase — a family entry: closes over the generic instantiation
+// (Arbitrary is invariant — a common Arbitrary[laInstrParam] cannot be
+// assembled, see newRvFamily in property_rv_test.go).
+func newInstrCase[P laInstrParam](name string, mk func() ohsnap.Arbitrary[P]) instrCase {
+	return instrCase{
+		name: name,
+		sample: func() (arch.Instr, string) {
+			p := ohsnap.First(mk().Generate())
+			return p.Instr(), p.String()
+		},
+		shrink: func() []arch.Instr {
+			g := mk()
+			cs := slices.Collect(g.Shrink(ohsnap.First(g.Generate())))
+			out := make([]arch.Instr, len(cs))
+			for i, c := range cs {
+				out[i] = c.Instr()
+			}
+
+			return out
+		},
+	}
+}
+
+func instrCases(rnd *rand.Rand) []instrCase {
+	return []instrCase{
+		newInstrCase("Alu3R", func() ohsnap.Arbitrary[R3Params] { return Alu3R(rnd) }),
+		newInstrCase("Alu2R", func() ohsnap.Arbitrary[R2Params] { return Alu2R(rnd) }),
+		newInstrCase("AluImm12", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
+			return AluImm12(rnd)
+		}),
+		newInstrCase("AluUImm12", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm12]] {
+			return AluUImm12(rnd)
+		}),
+		newInstrCase("AluImm16", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm16]] {
+			return AluImm16(rnd)
+		}),
+		newInstrCase("Imm20", func() ohsnap.Arbitrary[R1RoleParams[arch.Imm20]] {
+			return Imm20Instr(rnd)
+		}),
+		newInstrCase("Code15", func() ohsnap.Arbitrary[CodeParams] { return Code15Instr(rnd) }),
+		newInstrCase("Branch2", func() ohsnap.Arbitrary[Branch2Params] { return Branch2(rnd) }),
+		newInstrCase("Branch1", func() ohsnap.Arbitrary[Branch1Params] { return Branch1(rnd) }),
+		newInstrCase("Jump", func() ohsnap.Arbitrary[JumpParams] { return Jump(rnd) }),
+		newInstrCase("Jirl", func() ohsnap.Arbitrary[R2RoleParams[arch.Off16]] {
+			return Jirl(rnd)
+		}),
+		newInstrCase("LdSt", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm12]] {
+			return LdSt(rnd)
+		}),
+		newInstrCase("Ldptr", func() ohsnap.Arbitrary[R2RoleParams[arch.Imm14]] {
+			return Ldptr(rnd)
+		}),
+		newInstrCase("LdxStx", func() ohsnap.Arbitrary[R3Params] { return LdxStx(rnd) }),
+		newInstrCase("LdAcq", func() ohsnap.Arbitrary[R2Params] { return LdAcq(rnd) }),
+		newInstrCase("Hints", func() ohsnap.Arbitrary[U5RI12Params] { return Hints(rnd) }),
+		newInstrCase("Preldx", func() ohsnap.Arbitrary[U5RRParams] { return Preldx(rnd) }),
+		newInstrCase("ShiftW", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm5]] {
+			return ShiftW(rnd)
+		}),
+		newInstrCase("ShiftD", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm6]] {
+			return ShiftD(rnd)
+		}),
+		newInstrCase("FieldW", func() ohsnap.Arbitrary[FieldWParams] { return FieldW(rnd) }),
+		newInstrCase("FieldD", func() ohsnap.Arbitrary[FieldDParams] { return FieldD(rnd) }),
+		newInstrCase("Alsl", func() ohsnap.Arbitrary[R3RoleParams[arch.Shift3]] {
+			return Alsl(rnd)
+		}),
+		newInstrCase("BytepickW", func() ohsnap.Arbitrary[R3RoleParams[arch.UImm2]] {
+			return BytepickW(rnd)
+		}),
+		newInstrCase("BytepickD", func() ohsnap.Arbitrary[R3RoleParams[arch.UImm3]] {
+			return BytepickD(rnd)
+		}),
+		newInstrCase("Atomics", func() ohsnap.Arbitrary[R3Params] { return Atomics(rnd) }),
+		newInstrCase("CsrRW", func() ohsnap.Arbitrary[R1RoleParams[arch.UImm14]] {
+			return CsrRW(rnd)
+		}),
+		newInstrCase("CsrXchg", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
+			return CsrXchg(rnd)
+		}),
+		newInstrCase("IoCsr", func() ohsnap.Arbitrary[R2Params] { return IoCsr(rnd) }),
+		newInstrCase("Lddir", func() ohsnap.Arbitrary[R2RoleParams[arch.UImm8]] {
+			return Lddir(rnd)
+		}),
+		newInstrCase("Ldpte", func() ohsnap.Arbitrary[R1RoleParams[arch.UImm8]] {
+			return Ldpte(rnd)
+		}),
+		newInstrCase("Invtlb", func() ohsnap.Arbitrary[U5RRParams] { return Invtlb(rnd) }),
+	}
 }

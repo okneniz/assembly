@@ -27,10 +27,6 @@ func NewCsetmParams(rd arm64.Reg, cond string) CsetmParams {
 	}
 }
 
-func (p CsetmParams) String() string {
-	return "csetm " + p.Rd.String() + ", " + p.Cond
-}
-
 func (p CsetmParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,19 +36,23 @@ func (p CsetmParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p CsetmParams) String() string {
+	return "csetm " + p.Rd.String() + ", " + p.Cond
+}
+
 // csetmGen — generator for csetm: a register and a condition (al/nv are
 // not alias conditions).
 type csetmGen struct {
 	rnd *rand.Rand
 }
 
-func newCsetmGen(rnd *rand.Rand) csetmGen {
-	return csetmGen{rnd: rnd}
-}
-
 // Csetm — an arbitrary csetm.
 func Csetm(rnd *rand.Rand) ohsnap.Arbitrary[CsetmParams] {
 	return newCsetmGen(rnd)
+}
+
+func newCsetmGen(rnd *rand.Rand) csetmGen {
+	return csetmGen{rnd: rnd}
 }
 
 func (g csetmGen) Generate() iter.Seq[CsetmParams] {

@@ -38,6 +38,7 @@ func (p TbzParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p TbzParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -49,16 +50,16 @@ type tbzGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
+// Tbz — an arbitrary tbz.
+func Tbz(rnd *rand.Rand) ohsnap.Arbitrary[TbzParams] {
+	return newTbzGen(rnd)
+}
+
 func newTbzGen(rnd *rand.Rand) tbzGen {
 	return tbzGen{
 		rnd: rnd,
 		off: BrOff(rnd, 1<<15),
 	}
-}
-
-// Tbz — an arbitrary tbz.
-func Tbz(rnd *rand.Rand) ohsnap.Arbitrary[TbzParams] {
-	return newTbzGen(rnd)
 }
 
 func (g tbzGen) Generate() iter.Seq[TbzParams] {

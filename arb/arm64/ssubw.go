@@ -52,8 +52,9 @@ func (a ssubwArb) Generate() iter.Seq[SsubwParams] {
 }
 
 func (a ssubwArb) Shrink(p SsubwParams) iter.Seq[SsubwParams] {
-	var out []SsubwParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]SsubwParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSsubwParams(s))
 	}
 

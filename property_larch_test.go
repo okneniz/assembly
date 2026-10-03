@@ -36,163 +36,11 @@ import (
 	"github.com/okneniz/assembly/tests/cmd/objdump"
 )
 
-// laText - normalized ObjDump text of a loong64 instruction.
-func laText(in loong64.Instr) string {
-	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
-}
-
-// laCanon - the decode-only aliases back into the base forms the
-// assembler accepts. The rdcnt* names are objdump notation (llvm prints
-// them too), but neither the syntax layer nor pseudo has a spelling for
-// them; the base form assembles into the same word, so the round trip
-// stays honest. Everything else passes through untouched. Applied per
-// line (the input is a whole program in the list properties).
-func laCanon(src string) string {
-	lines := strings.Split(src, "\n")
-	for i, ln := range lines {
-		fields := strings.Fields(ln)
-		switch {
-		case len(fields) == 2 && fields[0] == "rdcntid.w":
-			lines[i] = "rdtimel.w $zero, " + fields[1]
-		case len(fields) == 2 && fields[0] == "rdcntvl.w":
-			lines[i] = "rdtimel.w " + fields[1] + ", $zero"
-		case len(fields) == 2 && fields[0] == "rdcntvh.w":
-			lines[i] = "rdtimeh.w " + fields[1] + ", $zero"
-		}
-	}
-
-	return strings.Join(lines, "\n")
-}
-
-// laAssemblesTo - bytes from assembling the text (false on assembly
-// error); the decode-only aliases are canonicalized first.
-func laAssemblesTo(t *testing.T, src string) ([]byte, bool) {
-	t.Helper()
-	res, errs := pseudo.Assemble(laCanon(src), propAddr)
-	if len(errs) != 0 {
-		t.Logf("%q: assemble: %v", src, errs)
-		return nil, false
-	}
-
-	return res.Sections[0].Data, true
-}
-
-// laBytesOf - the instruction word (LA64 words are fixed 32-bit).
-func laBytesOf(t *testing.T, in loong64.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	if _, err := in.Encode(&buf); err != nil {
-		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
-		return nil, false
-	}
-
-	return buf.Bytes(), true
-}
-
 // laEnc - the encoding context of the "bytes" property: a fixed address
 // (PC-relative forms), no symbols. It equals the branch families' base
 // (larch.BranchBase), so every generated target encodes.
 type laEnc struct {
 	addr uint64
-}
-
-// laEncodeAll - encodes a list sequentially starting at propAddr (each
-// instruction at propAddr + 4*i; branch targets keep the family-span
-// slack above the ±131068 reach of the narrowest forms).
-func laEncodeAll(t *testing.T, ins []loong64.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	addr := uint64(propAddr)
-	for _, in := range ins {
-		n, err := in.Encode(&buf)
-		if err != nil {
-			t.Logf("encode: %v", err)
-			return nil, false
-		}
-
-		addr += uint64(n)
-	}
-
-	return buf.Bytes(), true
-}
-
-// laBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
-// (RoundTrip) in the encoding context propAddr without symbols - the
-// word is stable after the round trip.
-func laBytesRoundTrip(t *testing.T, in loong64.Instr) bool {
-	t.Helper()
-	return RoundTrip[laEnc, loong64.Instr, []byte](
-		laEnc{addr: propAddr},
-		func(_ laEnc, x loong64.Instr) ([]byte, bool) {
-			return laBytesOf(t, x)
-		},
-		func(ctx laEnc, b []byte) (loong64.Instr, bool) {
-			back, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(back) != 1 {
-				t.Logf("% x: decode = %d instr", b, len(back))
-				return nil, false
-			}
-
-			return back[0], true
-		},
-		bytes.Equal,
-	)(in)
-}
-
-// laTextRoundTrip - the "text" property: the RoundTrip law in the
-// DefaultViewCtx context - a fixed point of the "text → assembly →
-// decode" cycle (the alias forms collapse into a single canon: move and
-// its base form print identically). The input is canonicalized through
-// bytes and decode: the fixed point is sought for the decoder's text.
-func laTextRoundTrip(t *testing.T, in loong64.Instr) bool {
-	t.Helper()
-	b, ok := laBytesOf(t, in)
-	if !ok {
-		return false
-	}
-
-	d1, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-	if err != nil {
-		t.Logf("decode: %v", err)
-		return false
-	}
-
-	if len(d1) != 1 {
-		t.Logf("% x: decode = %d instr", b, len(d1))
-		return false
-	}
-
-	return RoundTrip[disasm.ViewCtx, loong64.Instr, string](
-		disasm.DefaultViewCtx(),
-		func(_ disasm.ViewCtx, y loong64.Instr) (string, bool) {
-			return laText(y), true
-		},
-		func(_ disasm.ViewCtx, src string) (loong64.Instr, bool) {
-			data, ok := laAssemblesTo(t, src)
-			if !ok {
-				return nil, false
-			}
-
-			d2, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(d2) != 1 {
-				t.Logf("%q: decode = %d instr", src, len(d2))
-				return nil, false
-			}
-
-			return d2[0], true
-		},
-		func(a, b string) bool { return a == b },
-	)(d1[0])
 }
 
 // laInstrParam - parameters of any loong64 family.
@@ -205,72 +53,6 @@ type laInstrParam interface {
 type laFamilyEntry struct {
 	name string
 	run  func(t *testing.T, rnd *mrnd.Rand)
-}
-
-// newLaFamily - a loong64 family entry: closes over the generic
-// instantiation of the properties (families have different parameter
-// types, Arbitrary is invariant - see newRvFamily in property_rv_test.go;
-// each property is a separate named subtest, the check runs over the
-// parameters for the sake of shrinking).
-func newLaFamily[P laInstrParam](
-	name string,
-	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
-) laFamilyEntry {
-	return laFamilyEntry{
-		name: name,
-		run: func(t *testing.T, rnd *mrnd.Rand) {
-			t.Helper()
-			t.Run("bytes", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					return laBytesRoundTrip(t, p.Instr())
-				})
-			})
-
-			t.Run("text", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					return laTextRoundTrip(t, p.Instr())
-				})
-			})
-		},
-	}
-}
-
-// laFamilies - the round-trip family table (every generator family of
-// arb/loong64; the operandless forms are differential base words).
-func laFamilies() []laFamilyEntry {
-	return []laFamilyEntry{
-		newLaFamily("Alu3R", larch.Alu3R),
-		newLaFamily("Alu2R", larch.Alu2R),
-		newLaFamily("AluImm12", larch.AluImm12),
-		newLaFamily("AluUImm12", larch.AluUImm12),
-		newLaFamily("AluImm16", larch.AluImm16),
-		newLaFamily("Imm20", larch.Imm20Instr),
-		newLaFamily("Code15", larch.Code15Instr),
-		newLaFamily("Branch2", larch.Branch2),
-		newLaFamily("Branch1", larch.Branch1),
-		newLaFamily("Jump", larch.Jump),
-		newLaFamily("Jirl", larch.Jirl),
-		newLaFamily("LdSt", larch.LdSt),
-		newLaFamily("Ldptr", larch.Ldptr),
-		newLaFamily("LdxStx", larch.LdxStx),
-		newLaFamily("LdAcq", larch.LdAcq),
-		newLaFamily("Hints", larch.Hints),
-		newLaFamily("Preldx", larch.Preldx),
-		newLaFamily("ShiftW", larch.ShiftW),
-		newLaFamily("ShiftD", larch.ShiftD),
-		newLaFamily("FieldW", larch.FieldW),
-		newLaFamily("FieldD", larch.FieldD),
-		newLaFamily("Alsl", larch.Alsl),
-		newLaFamily("BytepickW", larch.BytepickW),
-		newLaFamily("BytepickD", larch.BytepickD),
-		newLaFamily("Atomics", larch.Atomics),
-		newLaFamily("CsrRW", larch.CsrRW),
-		newLaFamily("CsrXchg", larch.CsrXchg),
-		newLaFamily("IoCsr", larch.IoCsr),
-		newLaFamily("Lddir", larch.Lddir),
-		newLaFamily("Ldpte", larch.Ldpte),
-		newLaFamily("Invtlb", larch.Invtlb),
-	}
 }
 
 // TestPropertyLoongSingleInstrRoundTrip - round trip of each loong64
@@ -328,52 +110,6 @@ func TestPropertyLoongAliasRoundTrip(t *testing.T) {
 			require.True(t, ok, "re-assemble %q", tc.want)
 			require.Equal(t, data, again, "alias text %q", tc.want)
 		})
-	}
-}
-
-// laInstrOf - a sampler function over a loong64 family generator (the
-// generator is created once; see rvInstrOf in property_rv_test.go).
-func laInstrOf[P laInstrParam](a ohsnap.Arbitrary[P]) func() loong64.Instr {
-	return func() loong64.Instr {
-		return ohsnap.First(a.Generate()).Instr()
-	}
-}
-
-// laPropFamilies - loong64 family generators for composition and the
-// differential.
-func laPropFamilies(rnd *mrnd.Rand) []func() loong64.Instr {
-	return []func() loong64.Instr{
-		laInstrOf(larch.Alu3R(rnd)),
-		laInstrOf(larch.Alu2R(rnd)),
-		laInstrOf(larch.AluImm12(rnd)),
-		laInstrOf(larch.AluUImm12(rnd)),
-		laInstrOf(larch.AluImm16(rnd)),
-		laInstrOf(larch.Imm20Instr(rnd)),
-		laInstrOf(larch.Code15Instr(rnd)),
-		laInstrOf(larch.Branch2(rnd)),
-		laInstrOf(larch.Branch1(rnd)),
-		laInstrOf(larch.Jump(rnd)),
-		laInstrOf(larch.Jirl(rnd)),
-		laInstrOf(larch.LdSt(rnd)),
-		laInstrOf(larch.Ldptr(rnd)),
-		laInstrOf(larch.LdxStx(rnd)),
-		laInstrOf(larch.LdAcq(rnd)),
-		laInstrOf(larch.Hints(rnd)),
-		laInstrOf(larch.Preldx(rnd)),
-		laInstrOf(larch.ShiftW(rnd)),
-		laInstrOf(larch.ShiftD(rnd)),
-		laInstrOf(larch.FieldW(rnd)),
-		laInstrOf(larch.FieldD(rnd)),
-		laInstrOf(larch.Alsl(rnd)),
-		laInstrOf(larch.BytepickW(rnd)),
-		laInstrOf(larch.BytepickD(rnd)),
-		laInstrOf(larch.Atomics(rnd)),
-		laInstrOf(larch.CsrRW(rnd)),
-		laInstrOf(larch.CsrXchg(rnd)),
-		laInstrOf(larch.IoCsr(rnd)),
-		laInstrOf(larch.Lddir(rnd)),
-		laInstrOf(larch.Ldpte(rnd)),
-		laInstrOf(larch.Invtlb(rnd)),
 	}
 }
 
@@ -657,78 +393,6 @@ var laBranchMnemonics = map[string]bool{
 	"bltz": true, "bgez": true, "bgtz": true, "blez": true,
 }
 
-// laIsHexRunes - every rune of s is a hex digit.
-func laIsHexRunes(s string) bool {
-	for _, r := range s {
-		if !strings.ContainsRune("0123456789abcdef", r) {
-			return false
-		}
-	}
-
-	return s != ""
-}
-
-// laInstrTail - the instruction fields of a normalized objdump line
-// (the mnemonic and operands, without the address and code columns).
-// llvm prints the LoongArch code column as four 2-digit bytes, GNU as a
-// single 8-digit word.
-func laInstrTail(line string) []string {
-	fields := strings.Fields(line)
-	if len(fields) < 2 {
-		return nil
-	}
-
-	if len(fields[1]) == 8 && laIsHexRunes(fields[1]) {
-		return fields[2:]
-	}
-
-	if len(fields) >= 6 &&
-		len(fields[1]) == 2 && len(fields[2]) == 2 &&
-		len(fields[3]) == 2 && len(fields[4]) == 2 &&
-		laIsHexRunes(fields[1]) && laIsHexRunes(fields[2]) &&
-		laIsHexRunes(fields[3]) && laIsHexRunes(fields[4]) {
-		return fields[5:]
-	}
-
-	return nil
-}
-
-// laLineEqual - the differential comparison of one address: our
-// instruction text against the instruction tail of the objdump line.
-// Strict equality, except the pc-relative branch forms
-// (laBranchMnemonics): the fields before the target must be equal and
-// the targets must agree arithmetically (our absolute == addr +
-// objdump's offset).
-func laLineEqual(addr uint64, ourInstr, objLine string) bool {
-	tail := laInstrTail(objLine)
-	if tail == nil {
-		return false
-	}
-
-	if ourInstr == strings.Join(tail, " ") {
-		return true
-	}
-
-	of := strings.Fields(ourInstr)
-	if len(of) == 0 || len(of) != len(tail) || !laBranchMnemonics[of[0]] {
-		return false
-	}
-
-	for i := range len(of) - 1 {
-		if of[i] != tail[i] {
-			return false
-		}
-	}
-
-	ourAbs, err1 := strconv.ParseInt(of[len(of)-1], 10, 64)
-	objOff, err2 := strconv.ParseInt(tail[len(tail)-1], 10, 64)
-	if err1 != nil || err2 != nil {
-		return false
-	}
-
-	return ourAbs == int64(addr)+objOff
-}
-
 // TestPropertyLoongVsObjdump - the differential: words produced by the
 // loong64 generators and the base word of every decode-table entry are
 // disassembled identically by us and by objdump (llvm: Apple's objdump
@@ -833,68 +497,6 @@ func TestPropertyLoongVsObjdump(t *testing.T) {
 	require.GreaterOrEqual(t, pct, threshold)
 }
 
-// writeLoongELF - minimal ELF64 LE loongarch (e_machine = EM_LOONGARCH,
-// e_flags = double-float ABI, as real LoongArch toolchains emit):
-// .text @ 0x1000 (the shared writeObjELF writer, machine-parameterized).
-func writeLoongELF(t *testing.T, code []byte) string {
-	t.Helper()
-	const emLoongArch = 258
-	const efLoongArchDoubleFloat = 0x2
-	path, err := writeObjELF(t, code, emLoongArch, efLoongArchDoubleFloat)
-	require.NoError(t, err)
-	return path
-}
-
-// llvmMcPath - the llvm-mc binary (the assembler oracle), probed the
-// objdump.Run way: fixed candidates first, then PATH. Empty when absent
-// (the li differential skips).
-func llvmMcPath() string {
-	candidates := []string{
-		"/opt/homebrew/opt/llvm/bin/llvm-mc",
-		"/opt/homebrew/bin/llvm-mc",
-		"/usr/local/opt/llvm/bin/llvm-mc",
-		"/usr/local/bin/llvm-mc",
-		"llvm-mc",
-	}
-	for _, c := range candidates {
-		if _, err := exec.LookPath(c); err == nil {
-			return c
-		}
-	}
-
-	return ""
-}
-
-// mcAssemble - bytes of the .text llvm-mc assembles from src
-// (loongarch64 object); the test fails on an llvm-mc error.
-func mcAssemble(t *testing.T, mc, src string) []byte {
-	t.Helper()
-	path := t.TempDir() + "/mc.o"
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, mc, "-filetype=obj", "--triple=loongarch64", "-o", path)
-	cmd.Stdin = strings.NewReader(src)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("llvm-mc %q: %v: %s", src, err, out)
-		return nil
-	}
-
-	f, err := file.Detect(path)
-	if err != nil {
-		t.Fatalf("detect %s: %v", path, err)
-		return nil
-	}
-
-	sec, err := f.CodeSection()
-	if err != nil {
-		t.Fatalf(".text of %s: %v", path, err)
-		return nil
-	}
-
-	return sec.Data
-}
-
 // knownLiDeviations - the llvm-mc ladder deviations of the frozen
 // asm/loong64/pseudo li expansion, pinned per mnemonic+value so that any
 // NEW deviation fails the differential while the known ones stay
@@ -977,12 +579,6 @@ func TestPropertyLoongLiVsLlvm(t *testing.T) {
 	}
 }
 
-// laSext - v (already masked to its field) as a signed n-bit value (the
-// la pair field extraction below).
-func laSext(v uint32, bits int) int64 {
-	return int64(int32(v<<(32-bits))) >> (32 - bits)
-}
-
 // TestPropertyLoongLaSemantics - the la pair as a self-consistency
 // property: our own two words decode back into the pcalau12i+addi.d
 // texts, and the pair arithmetic (page + si20<<12 + si12) reconstructs
@@ -1032,4 +628,408 @@ func TestPropertyLoongLaSemantics(t *testing.T) {
 	// the out-of-range target refuses to assemble (the pair spans ±2 GiB)
 	_, errs := pseudo.Assemble("la $t0, .+0x100000000", propAddr)
 	require.NotEmpty(t, errs, "la beyond the pcalau12i+addi.d reach")
+}
+
+// laText - normalized ObjDump text of a loong64 instruction.
+func laText(in loong64.Instr) string {
+	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
+}
+
+// laCanon - the decode-only aliases back into the base forms the
+// assembler accepts. The rdcnt* names are objdump notation (llvm prints
+// them too), but neither the syntax layer nor pseudo has a spelling for
+// them; the base form assembles into the same word, so the round trip
+// stays honest. Everything else passes through untouched. Applied per
+// line (the input is a whole program in the list properties).
+func laCanon(src string) string {
+	lines := strings.Split(src, "\n")
+	for i, ln := range lines {
+		fields := strings.Fields(ln)
+		switch {
+		case len(fields) == 2 && fields[0] == "rdcntid.w":
+			lines[i] = "rdtimel.w $zero, " + fields[1]
+		case len(fields) == 2 && fields[0] == "rdcntvl.w":
+			lines[i] = "rdtimel.w " + fields[1] + ", $zero"
+		case len(fields) == 2 && fields[0] == "rdcntvh.w":
+			lines[i] = "rdtimeh.w " + fields[1] + ", $zero"
+		}
+	}
+
+	return strings.Join(lines, "\n")
+}
+
+// laAssemblesTo - bytes from assembling the text (false on assembly
+// error); the decode-only aliases are canonicalized first.
+func laAssemblesTo(t *testing.T, src string) ([]byte, bool) {
+	t.Helper()
+	res, errs := pseudo.Assemble(laCanon(src), propAddr)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble: %v", src, errs)
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
+// laBytesOf - the instruction word (LA64 words are fixed 32-bit).
+func laBytesOf(t *testing.T, in loong64.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	if _, err := in.Encode(&buf); err != nil {
+		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
+		return nil, false
+	}
+
+	return buf.Bytes(), true
+}
+
+// laEncodeAll - encodes a list sequentially starting at propAddr (each
+// instruction at propAddr + 4*i; branch targets keep the family-span
+// slack above the ±131068 reach of the narrowest forms).
+func laEncodeAll(t *testing.T, ins []loong64.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	addr := uint64(propAddr)
+	for _, in := range ins {
+		n, err := in.Encode(&buf)
+		if err != nil {
+			t.Logf("encode: %v", err)
+			return nil, false
+		}
+
+		addr += uint64(n)
+	}
+
+	return buf.Bytes(), true
+}
+
+// laBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
+// (RoundTrip) in the encoding context propAddr without symbols - the
+// word is stable after the round trip.
+func laBytesRoundTrip(t *testing.T, in loong64.Instr) bool {
+	t.Helper()
+	return RoundTrip[laEnc, loong64.Instr, []byte](
+		laEnc{addr: propAddr},
+		func(_ laEnc, x loong64.Instr) ([]byte, bool) {
+			return laBytesOf(t, x)
+		},
+		func(ctx laEnc, b []byte) (loong64.Instr, bool) {
+			back, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(back) != 1 {
+				t.Logf("% x: decode = %d instr", b, len(back))
+				return nil, false
+			}
+
+			return back[0], true
+		},
+		bytes.Equal,
+	)(in)
+}
+
+// laTextRoundTrip - the "text" property: the RoundTrip law in the
+// DefaultViewCtx context - a fixed point of the "text → assembly →
+// decode" cycle (the alias forms collapse into a single canon: move and
+// its base form print identically). The input is canonicalized through
+// bytes and decode: the fixed point is sought for the decoder's text.
+func laTextRoundTrip(t *testing.T, in loong64.Instr) bool {
+	t.Helper()
+	b, ok := laBytesOf(t, in)
+	if !ok {
+		return false
+	}
+
+	d1, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+	if err != nil {
+		t.Logf("decode: %v", err)
+		return false
+	}
+
+	if len(d1) != 1 {
+		t.Logf("% x: decode = %d instr", b, len(d1))
+		return false
+	}
+
+	return RoundTrip[disasm.ViewCtx, loong64.Instr, string](
+		disasm.DefaultViewCtx(),
+		func(_ disasm.ViewCtx, y loong64.Instr) (string, bool) {
+			return laText(y), true
+		},
+		func(_ disasm.ViewCtx, src string) (loong64.Instr, bool) {
+			data, ok := laAssemblesTo(t, src)
+			if !ok {
+				return nil, false
+			}
+
+			d2, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(d2) != 1 {
+				t.Logf("%q: decode = %d instr", src, len(d2))
+				return nil, false
+			}
+
+			return d2[0], true
+		},
+		func(a, b string) bool { return a == b },
+	)(d1[0])
+}
+
+// newLaFamily - a loong64 family entry: closes over the generic
+// instantiation of the properties (families have different parameter
+// types, Arbitrary is invariant - see newRvFamily in property_rv_test.go;
+// each property is a separate named subtest, the check runs over the
+// parameters for the sake of shrinking).
+func newLaFamily[P laInstrParam](
+	name string,
+	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
+) laFamilyEntry {
+	return laFamilyEntry{
+		name: name,
+		run: func(t *testing.T, rnd *mrnd.Rand) {
+			t.Helper()
+			t.Run("bytes", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					return laBytesRoundTrip(t, p.Instr())
+				})
+			})
+
+			t.Run("text", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					return laTextRoundTrip(t, p.Instr())
+				})
+			})
+		},
+	}
+}
+
+// laFamilies - the round-trip family table (every generator family of
+// arb/loong64; the operandless forms are differential base words).
+func laFamilies() []laFamilyEntry {
+	return []laFamilyEntry{
+		newLaFamily("Alu3R", larch.Alu3R),
+		newLaFamily("Alu2R", larch.Alu2R),
+		newLaFamily("AluImm12", larch.AluImm12),
+		newLaFamily("AluUImm12", larch.AluUImm12),
+		newLaFamily("AluImm16", larch.AluImm16),
+		newLaFamily("Imm20", larch.Imm20Instr),
+		newLaFamily("Code15", larch.Code15Instr),
+		newLaFamily("Branch2", larch.Branch2),
+		newLaFamily("Branch1", larch.Branch1),
+		newLaFamily("Jump", larch.Jump),
+		newLaFamily("Jirl", larch.Jirl),
+		newLaFamily("LdSt", larch.LdSt),
+		newLaFamily("Ldptr", larch.Ldptr),
+		newLaFamily("LdxStx", larch.LdxStx),
+		newLaFamily("LdAcq", larch.LdAcq),
+		newLaFamily("Hints", larch.Hints),
+		newLaFamily("Preldx", larch.Preldx),
+		newLaFamily("ShiftW", larch.ShiftW),
+		newLaFamily("ShiftD", larch.ShiftD),
+		newLaFamily("FieldW", larch.FieldW),
+		newLaFamily("FieldD", larch.FieldD),
+		newLaFamily("Alsl", larch.Alsl),
+		newLaFamily("BytepickW", larch.BytepickW),
+		newLaFamily("BytepickD", larch.BytepickD),
+		newLaFamily("Atomics", larch.Atomics),
+		newLaFamily("CsrRW", larch.CsrRW),
+		newLaFamily("CsrXchg", larch.CsrXchg),
+		newLaFamily("IoCsr", larch.IoCsr),
+		newLaFamily("Lddir", larch.Lddir),
+		newLaFamily("Ldpte", larch.Ldpte),
+		newLaFamily("Invtlb", larch.Invtlb),
+	}
+}
+
+// laInstrOf - a sampler function over a loong64 family generator (the
+// generator is created once; see rvInstrOf in property_rv_test.go).
+func laInstrOf[P laInstrParam](a ohsnap.Arbitrary[P]) func() loong64.Instr {
+	return func() loong64.Instr {
+		return ohsnap.First(a.Generate()).Instr()
+	}
+}
+
+// laPropFamilies - loong64 family generators for composition and the
+// differential.
+func laPropFamilies(rnd *mrnd.Rand) []func() loong64.Instr {
+	return []func() loong64.Instr{
+		laInstrOf(larch.Alu3R(rnd)),
+		laInstrOf(larch.Alu2R(rnd)),
+		laInstrOf(larch.AluImm12(rnd)),
+		laInstrOf(larch.AluUImm12(rnd)),
+		laInstrOf(larch.AluImm16(rnd)),
+		laInstrOf(larch.Imm20Instr(rnd)),
+		laInstrOf(larch.Code15Instr(rnd)),
+		laInstrOf(larch.Branch2(rnd)),
+		laInstrOf(larch.Branch1(rnd)),
+		laInstrOf(larch.Jump(rnd)),
+		laInstrOf(larch.Jirl(rnd)),
+		laInstrOf(larch.LdSt(rnd)),
+		laInstrOf(larch.Ldptr(rnd)),
+		laInstrOf(larch.LdxStx(rnd)),
+		laInstrOf(larch.LdAcq(rnd)),
+		laInstrOf(larch.Hints(rnd)),
+		laInstrOf(larch.Preldx(rnd)),
+		laInstrOf(larch.ShiftW(rnd)),
+		laInstrOf(larch.ShiftD(rnd)),
+		laInstrOf(larch.FieldW(rnd)),
+		laInstrOf(larch.FieldD(rnd)),
+		laInstrOf(larch.Alsl(rnd)),
+		laInstrOf(larch.BytepickW(rnd)),
+		laInstrOf(larch.BytepickD(rnd)),
+		laInstrOf(larch.Atomics(rnd)),
+		laInstrOf(larch.CsrRW(rnd)),
+		laInstrOf(larch.CsrXchg(rnd)),
+		laInstrOf(larch.IoCsr(rnd)),
+		laInstrOf(larch.Lddir(rnd)),
+		laInstrOf(larch.Ldpte(rnd)),
+		laInstrOf(larch.Invtlb(rnd)),
+	}
+}
+
+// laIsHexRunes - every rune of s is a hex digit.
+func laIsHexRunes(s string) bool {
+	for _, r := range s {
+		if !strings.ContainsRune("0123456789abcdef", r) {
+			return false
+		}
+	}
+
+	return s != ""
+}
+
+// laInstrTail - the instruction fields of a normalized objdump line
+// (the mnemonic and operands, without the address and code columns).
+// llvm prints the LoongArch code column as four 2-digit bytes, GNU as a
+// single 8-digit word.
+func laInstrTail(line string) []string {
+	fields := strings.Fields(line)
+	if len(fields) < 2 {
+		return nil
+	}
+
+	if len(fields[1]) == 8 && laIsHexRunes(fields[1]) {
+		return fields[2:]
+	}
+
+	if len(fields) >= 6 &&
+		len(fields[1]) == 2 && len(fields[2]) == 2 &&
+		len(fields[3]) == 2 && len(fields[4]) == 2 &&
+		laIsHexRunes(fields[1]) && laIsHexRunes(fields[2]) &&
+		laIsHexRunes(fields[3]) && laIsHexRunes(fields[4]) {
+		return fields[5:]
+	}
+
+	return nil
+}
+
+// laLineEqual - the differential comparison of one address: our
+// instruction text against the instruction tail of the objdump line.
+// Strict equality, except the pc-relative branch forms
+// (laBranchMnemonics): the fields before the target must be equal and
+// the targets must agree arithmetically (our absolute == addr +
+// objdump's offset).
+func laLineEqual(addr uint64, ourInstr, objLine string) bool {
+	tail := laInstrTail(objLine)
+	if tail == nil {
+		return false
+	}
+
+	if ourInstr == strings.Join(tail, " ") {
+		return true
+	}
+
+	of := strings.Fields(ourInstr)
+	if len(of) == 0 || len(of) != len(tail) || !laBranchMnemonics[of[0]] {
+		return false
+	}
+
+	for i := range len(of) - 1 {
+		if of[i] != tail[i] {
+			return false
+		}
+	}
+
+	ourAbs, err1 := strconv.ParseInt(of[len(of)-1], 10, 64)
+	objOff, err2 := strconv.ParseInt(tail[len(tail)-1], 10, 64)
+	if err1 != nil || err2 != nil {
+		return false
+	}
+
+	return ourAbs == int64(addr)+objOff
+}
+
+// writeLoongELF - minimal ELF64 LE loongarch (e_machine = EM_LOONGARCH,
+// e_flags = double-float ABI, as real LoongArch toolchains emit):
+// .text @ 0x1000 (the shared writeObjELF writer, machine-parameterized).
+func writeLoongELF(t *testing.T, code []byte) string {
+	t.Helper()
+	const emLoongArch = 258
+	const efLoongArchDoubleFloat = 0x2
+	path, err := writeObjELF(t, code, emLoongArch, efLoongArchDoubleFloat)
+	require.NoError(t, err)
+	return path
+}
+
+// llvmMcPath - the llvm-mc binary (the assembler oracle), probed the
+// objdump.Run way: fixed candidates first, then PATH. Empty when absent
+// (the li differential skips).
+func llvmMcPath() string {
+	candidates := []string{
+		"/opt/homebrew/opt/llvm/bin/llvm-mc",
+		"/opt/homebrew/bin/llvm-mc",
+		"/usr/local/opt/llvm/bin/llvm-mc",
+		"/usr/local/bin/llvm-mc",
+		"llvm-mc",
+	}
+	for _, c := range candidates {
+		if _, err := exec.LookPath(c); err == nil {
+			return c
+		}
+	}
+
+	return ""
+}
+
+// mcAssemble - bytes of the .text llvm-mc assembles from src
+// (loongarch64 object); the test fails on an llvm-mc error.
+func mcAssemble(t *testing.T, mc, src string) []byte {
+	t.Helper()
+	path := t.TempDir() + "/mc.o"
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, mc, "-filetype=obj", "--triple=loongarch64", "-o", path)
+	cmd.Stdin = strings.NewReader(src)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("llvm-mc %q: %v: %s", src, err, out)
+		return nil
+	}
+
+	f, err := file.Detect(path)
+	if err != nil {
+		t.Fatalf("detect %s: %v", path, err)
+		return nil
+	}
+
+	sec, err := f.CodeSection()
+	if err != nil {
+		t.Fatalf(".text of %s: %v", path, err)
+		return nil
+	}
+
+	return sec.Data
+}
+
+// laSext - v (already masked to its field) as a signed n-bit value (the
+// la pair field extraction below).
+func laSext(v uint32, bits int) int64 {
+	return int64(int32(v<<(32-bits))) >> (32 - bits)
 }

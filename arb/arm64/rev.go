@@ -34,6 +34,7 @@ func (p RevParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p RevParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type revGen struct {
 	rnd *rand.Rand
 }
 
-func newRevGen(rnd *rand.Rand) revGen {
-	return revGen{rnd: rnd}
-}
-
 // Rev — an arbitrary rev.
 func Rev(rnd *rand.Rand) ohsnap.Arbitrary[RevParams] {
 	return newRevGen(rnd)
+}
+
+func newRevGen(rnd *rand.Rand) revGen {
+	return revGen{rnd: rnd}
 }
 
 func (g revGen) Generate() iter.Seq[RevParams] {
@@ -59,8 +60,9 @@ func (g revGen) Generate() iter.Seq[RevParams] {
 }
 
 func (g revGen) Shrink(p RevParams) iter.Seq[RevParams] {
-	var out []RevParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]RevParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewRevParams(r, p.Rn))
 	}
 

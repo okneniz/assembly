@@ -91,19 +91,6 @@ const (
 	AndsShiftW uint32 = 0x6A000000
 )
 
-func (i AndsShift) ObjDump(_ disasm.ViewCtx) string {
-	zr := zeroReg(i.rd)
-	if i.rd == zr && i.imm6 == 0 {
-		return fmt.Sprintf("tst %s, %s", i.rn, i.rm)
-	}
-
-	if i.imm6 != 0 {
-		return fmt.Sprintf("ands %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
-	}
-
-	return fmt.Sprintf("ands %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i AndsShift) Encode(w io.Writer) (int64, error) {
 	match := AndsShiftX
 	if !i.isf {
@@ -125,4 +112,17 @@ func (i AndsShift) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
+func (i AndsShift) ObjDump(_ disasm.ViewCtx) string {
+	zr := zeroReg(i.rd)
+	if i.rd == zr && i.imm6 == 0 {
+		return fmt.Sprintf("tst %s, %s", i.rn, i.rm)
+	}
+
+	if i.imm6 != 0 {
+		return fmt.Sprintf("ands %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
+	}
+
+	return fmt.Sprintf("ands %s, %s, %s", i.rd, i.rn, i.rm)
 }

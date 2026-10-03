@@ -95,23 +95,6 @@ const (
 	AddsShiftW uint32 = 0x2B000000
 )
 
-func (i AddsShift) ObjDump(_ disasm.ViewCtx) string {
-	zr := zeroReg(i.rd)
-	if i.rd == zr {
-		if i.imm6 != 0 {
-			return fmt.Sprintf("cmn %s, %s, %s #%d", i.rn, i.rm, i.shift, i.imm6)
-		}
-
-		return fmt.Sprintf("cmn %s, %s", i.rn, i.rm)
-	}
-
-	if i.imm6 != 0 {
-		return fmt.Sprintf("adds %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
-	}
-
-	return fmt.Sprintf("adds %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i AddsShift) Encode(w io.Writer) (int64, error) {
 	match := AddsShiftX
 	if !i.isf {
@@ -133,4 +116,21 @@ func (i AddsShift) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
+func (i AddsShift) ObjDump(_ disasm.ViewCtx) string {
+	zr := zeroReg(i.rd)
+	if i.rd == zr {
+		if i.imm6 != 0 {
+			return fmt.Sprintf("cmn %s, %s, %s #%d", i.rn, i.rm, i.shift, i.imm6)
+		}
+
+		return fmt.Sprintf("cmn %s, %s", i.rn, i.rm)
+	}
+
+	if i.imm6 != 0 {
+		return fmt.Sprintf("adds %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
+	}
+
+	return fmt.Sprintf("adds %s, %s, %s", i.rd, i.rn, i.rm)
 }

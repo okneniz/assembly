@@ -24,21 +24,6 @@ import (
 	parsecstrings "github.com/okneniz/parsec/strings"
 )
 
-func isHexRune(r rune) bool {
-	return r >= '0' && r <= '9' || r >= 'a' && r <= 'f' || r >= 'A' && r <= 'F'
-}
-
-func hexVal(r rune) uint64 {
-	switch {
-	case r >= '0' && r <= '9':
-		return uint64(r - '0')
-	case r >= 'a' && r <= 'f':
-		return uint64(r-'a') + 10
-	default:
-		return uint64(r-'A') + 10
-	}
-}
-
 type runeC = parsec.Combinator[rune, parsecstrings.Position, rune, parsec.Stateless]
 
 // lineGrammar is the objdump output line grammar: the shared atoms and
@@ -49,85 +34,6 @@ type lineGrammar struct {
 	parseColon     runeC
 	parseCodeField parsec.Combinator[rune, parsecstrings.Position, []string, parsec.Stateless]
 	parseAddr      parsec.Combinator[rune, parsecstrings.Position, uint64, parsec.Stateless]
-}
-
-// makeLineGrammar builds the whole grammar once.
-func makeLineGrammar() *lineGrammar {
-	g := &lineGrammar{
-		parseHex: parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("hex digit",
-			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
-			'a', 'b', 'c', 'd', 'e', 'f',
-			'A', 'B', 'C', 'D', 'E', 'F')),
-		parseSpace: parsecstrings.Try(parsecstrings.Space[parsec.Stateless]("space")),
-		parseColon: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':')),
-	}
-
-	// a hex address up to ':' (>=1 digit) → uint64
-	g.parseAddr = parsecstrings.Cast(
-		parsecstrings.Some(8, "address", g.parseHex),
-		func(rs []rune) (uint64, error) {
-			var v uint64
-			for _, r := range rs {
-				v = v<<4 | hexVal(r)
-			}
-
-			return v, nil
-		},
-	)
-
-	codeByte := parsecstrings.Count(2, "code byte", g.parseHex)
-
-	// the machine-code column: bytes (2/4) or a hex word (8/4 digits)
-	g.parseCodeField = parsecstrings.Choice("code field",
-		parsecstrings.Try(g.makeBytesFieldParser(4, codeByte)),
-		parsecstrings.Try(g.makeBytesFieldParser(2, codeByte)),
-		parsecstrings.Try(g.makeWordFieldParser(8)),
-		parsecstrings.Try(g.makeWordFieldParser(4)),
-	)
-
-	return g
-}
-
-// noByteAfter - a guard check for the byte code field: skip spaces and make
-// sure the next token is NOT a two-digit hex byte (otherwise the code column
-// continues with a third/fifth byte - that is data, not an instruction).
-// Peek reads character by character; the position is restored.
-func (g *lineGrammar) noByteAfter(
-	buf parsec.Buffer[rune, parsecstrings.Position],
-) parsec.Error[parsecstrings.Position] {
-	start := buf.Position()
-	for {
-		if _, err := g.parseSpace(parsec.Stateless{}, buf); err != nil {
-			break
-		}
-	}
-
-	if buf.IsEOF() {
-		return nil
-	}
-
-	var tok []rune
-	for !buf.IsEOF() {
-		r, err := buf.Read(false)
-		if err != nil || r == ' ' {
-			break
-		}
-
-		tok = append(tok, r)
-		if _, err := buf.Read(true); err != nil {
-			break
-		}
-	}
-
-	if err := buf.Seek(start); err != nil {
-		return parsec.NewParseError(buf.Position(), err.Error())
-	}
-
-	if len(tok) == 2 && isHexRune(tok[0]) && isHexRune(tok[1]) {
-		return parsec.NewParseError(start, "unexpected third code byte")
-	}
-
-	return nil
 }
 
 // bytesField - exactly n two-digit hex bytes separated by spaces. Each byte
@@ -197,6 +103,48 @@ func (g *lineGrammar) makeWordFieldParser(
 	}
 }
 
+// noByteAfter - a guard check for the byte code field: skip spaces and make
+// sure the next token is NOT a two-digit hex byte (otherwise the code column
+// continues with a third/fifth byte - that is data, not an instruction).
+// Peek reads character by character; the position is restored.
+func (g *lineGrammar) noByteAfter(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) parsec.Error[parsecstrings.Position] {
+	start := buf.Position()
+	for {
+		if _, err := g.parseSpace(parsec.Stateless{}, buf); err != nil {
+			break
+		}
+	}
+
+	if buf.IsEOF() {
+		return nil
+	}
+
+	var tok []rune
+	for !buf.IsEOF() {
+		r, err := buf.Read(false)
+		if err != nil || r == ' ' {
+			break
+		}
+
+		tok = append(tok, r)
+		if _, err := buf.Read(true); err != nil {
+			break
+		}
+	}
+
+	if err := buf.Seek(start); err != nil {
+		return parsec.NewParseError(buf.Position(), err.Error())
+	}
+
+	if len(tok) == 2 && isHexRune(tok[0]) && isHexRune(tok[1]) {
+		return parsec.NewParseError(start, "unexpected third code byte")
+	}
+
+	return nil
+}
+
 // parseInstrLine - the address, ':' and the code column; the tail (mnemonic and
 // operands) is not consumed by the grammar. Returns addr.
 func (g *lineGrammar) parseInstrLine(
@@ -212,7 +160,13 @@ func (g *lineGrammar) parseInstrLine(
 		return 0, err
 	}
 
-	if _, err := parsecstrings.SkipMany(g.parseSpace, g.parseCodeField)(parsec.Stateless{}, buf); err != nil {
+	if _, err := parsecstrings.SkipMany(
+		g.parseSpace,
+		g.parseCodeField,
+	)(
+		parsec.Stateless{},
+		buf,
+	); err != nil {
 		return 0, err
 	}
 
@@ -287,4 +241,56 @@ func ParseByAddr(output string) map[uint64]string {
 	}
 
 	return out
+}
+
+func isHexRune(r rune) bool {
+	return r >= '0' && r <= '9' || r >= 'a' && r <= 'f' || r >= 'A' && r <= 'F'
+}
+
+func hexVal(r rune) uint64 {
+	switch {
+	case r >= '0' && r <= '9':
+		return uint64(r - '0')
+	case r >= 'a' && r <= 'f':
+		return uint64(r-'a') + 10
+	default:
+		return uint64(r-'A') + 10
+	}
+}
+
+// makeLineGrammar builds the whole grammar once.
+func makeLineGrammar() *lineGrammar {
+	g := &lineGrammar{
+		parseHex: parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("hex digit",
+			'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
+			'a', 'b', 'c', 'd', 'e', 'f',
+			'A', 'B', 'C', 'D', 'E', 'F')),
+		parseSpace: parsecstrings.Try(parsecstrings.Space[parsec.Stateless]("space")),
+		parseColon: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':')),
+	}
+
+	// a hex address up to ':' (>=1 digit) → uint64
+	g.parseAddr = parsecstrings.Cast(
+		parsecstrings.Some(8, "address", g.parseHex),
+		func(rs []rune) (uint64, error) {
+			var v uint64
+			for _, r := range rs {
+				v = v<<4 | hexVal(r)
+			}
+
+			return v, nil
+		},
+	)
+
+	codeByte := parsecstrings.Count(2, "code byte", g.parseHex)
+
+	// the machine-code column: bytes (2/4) or a hex word (8/4 digits)
+	g.parseCodeField = parsecstrings.Choice("code field",
+		parsecstrings.Try(g.makeBytesFieldParser(4, codeByte)),
+		parsecstrings.Try(g.makeBytesFieldParser(2, codeByte)),
+		parsecstrings.Try(g.makeWordFieldParser(8)),
+		parsecstrings.Try(g.makeWordFieldParser(4)),
+	)
+
+	return g
 }

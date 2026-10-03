@@ -54,19 +54,14 @@ func OpMemExpr(base string, off *expr.Expr) Op {
 
 // --- operand access (for pseudo) ---
 
-// Reg returns the register name ("" if the operand is not a register).
-func (o Op) Reg() string {
-	return o.reg
-}
-
 // Expr returns the operand expression (nil if not an expression).
 func (o Op) Expr() *expr.Expr {
 	return o.e
 }
 
-// Mem returns the memory operand (nil if not memory).
-func (o Op) Mem() *Mem {
-	return o.mem
+// IsMem reports whether the operand is memory.
+func (o Op) IsMem() bool {
+	return o.mem != nil
 }
 
 // IsReg reports whether the operand is a register.
@@ -74,9 +69,14 @@ func (o Op) IsReg() bool {
 	return o.reg != ""
 }
 
-// IsMem reports whether the operand is memory.
-func (o Op) IsMem() bool {
-	return o.mem != nil
+// Mem returns the memory operand (nil if not memory).
+func (o Op) Mem() *Mem {
+	return o.mem
+}
+
+// Reg returns the register name ("" if the operand is not a register).
+func (o Op) Reg() string {
+	return o.reg
 }
 
 // BaseReg returns the base register of the memory operand.

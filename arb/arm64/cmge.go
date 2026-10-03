@@ -52,8 +52,9 @@ func (a cmgeArb) Generate() iter.Seq[CmgeParams] {
 }
 
 func (a cmgeArb) Shrink(p CmgeParams) iter.Seq[CmgeParams] {
-	var out []CmgeParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]CmgeParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewCmgeParams(s))
 	}
 

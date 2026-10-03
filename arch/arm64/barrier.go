@@ -58,16 +58,16 @@ func newBarrier(name string, domain BarrierDomain) (Barrier, error) {
 	return Barrier{name: name, domain: domain}, nil
 }
 
+func (i Barrier) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, barrierBase[i.name]|uint32(i.domain)<<8)
+}
+
 func (i Barrier) ObjDump(_ disasm.ViewCtx) string {
 	if i.name == "isb" {
 		return i.name // llvm canon: the bare spelling is the print form
 	}
 
 	return i.name + " " + barrierNames[i.domain]
-}
-
-func (i Barrier) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, barrierBase[i.name]|uint32(i.domain)<<8)
 }
 
 // domainOf - the BarrierDomain of a text-layer option spelling (the assembler

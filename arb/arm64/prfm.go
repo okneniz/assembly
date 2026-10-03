@@ -31,6 +31,7 @@ func (p PrfmParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p PrfmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type prfmGen struct {
 	rnd *rand.Rand
 }
 
-func newPrfmGen(rnd *rand.Rand) prfmGen {
-	return prfmGen{rnd: rnd}
-}
-
 // Prfm — an arbitrary prfm.
 func Prfm(rnd *rand.Rand) ohsnap.Arbitrary[PrfmParams] {
 	return newPrfmGen(rnd)
+}
+
+func newPrfmGen(rnd *rand.Rand) prfmGen {
+	return prfmGen{rnd: rnd}
 }
 
 func (g prfmGen) Generate() iter.Seq[PrfmParams] {
@@ -56,8 +57,9 @@ func (g prfmGen) Generate() iter.Seq[PrfmParams] {
 }
 
 func (g prfmGen) Shrink(p PrfmParams) iter.Seq[PrfmParams] {
-	var out []PrfmParams
-	for _, r := range regShrunk(p.Rn) {
+	regs := regShrunk(p.Rn)
+	out := make([]PrfmParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewPrfmParams(r))
 	}
 

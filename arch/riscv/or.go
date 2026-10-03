@@ -21,10 +21,6 @@ func cOr(rd, rs1, rs2 string) Or {
 	}
 }
 
-func (i Or) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("or %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Or) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["or"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 	if half, ok := cR3(i.rd, i.rs1, i.rs2, 0x8C01, 2); ok && !o.NoRVC {
@@ -32,6 +28,10 @@ func (i Or) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Or) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("or %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newOr(ops []Op) (Instr, error) {

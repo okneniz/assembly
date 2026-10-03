@@ -52,8 +52,9 @@ func (a uaddlvArb) Generate() iter.Seq[UaddlvParams] {
 }
 
 func (a uaddlvArb) Shrink(p UaddlvParams) iter.Seq[UaddlvParams] {
-	var out []UaddlvParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]UaddlvParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewUaddlvParams(s))
 	}
 

@@ -29,14 +29,14 @@ type regArb struct {
 	rnd *rand.Rand
 }
 
-func newRegArb(rnd *rand.Rand) regArb {
-	return regArb{rnd: rnd}
-}
-
 // Reg — an arbitrary register $r0..$r31 (the canonical name comes from
 // String()).
 func Reg(rnd *rand.Rand) ohsnap.Arbitrary[arch.Reg] {
 	return newRegArb(rnd)
+}
+
+func newRegArb(rnd *rand.Rand) regArb {
+	return regArb{rnd: rnd}
 }
 
 func (a regArb) Generate() iter.Seq[arch.Reg] {

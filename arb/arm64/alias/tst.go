@@ -31,10 +31,6 @@ func NewTstParams(rn arm64.Reg, rm arm64.Reg, sh string, amt int64) TstParams {
 	}
 }
 
-func (p TstParams) String() string {
-	return "tst " + p.Rn.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
-}
-
 func (p TstParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +40,23 @@ func (p TstParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p TstParams) String() string {
+	return "tst " + p.Rn.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
+}
+
 // tstGen — generator for tst: same-width registers, the shift amount
 // below the register width.
 type tstGen struct {
 	rnd *rand.Rand
 }
 
-func newTstGen(rnd *rand.Rand) tstGen {
-	return tstGen{rnd: rnd}
-}
-
 // Tst — an arbitrary tst.
 func Tst(rnd *rand.Rand) ohsnap.Arbitrary[TstParams] {
 	return newTstGen(rnd)
+}
+
+func newTstGen(rnd *rand.Rand) tstGen {
+	return tstGen{rnd: rnd}
 }
 
 func (g tstGen) Generate() iter.Seq[TstParams] {

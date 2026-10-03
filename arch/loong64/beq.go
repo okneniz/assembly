@@ -15,10 +15,6 @@ type Beq struct {
 	off    imm
 }
 
-func (i Beq) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("beq %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
-}
-
 func (i Beq) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "beq offset")
 	if err != nil {
@@ -29,4 +25,8 @@ func (i Beq) Encode(w io.Writer) (int64, error) {
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(off, 10, 16)
 
 	return writeWord(w, word)
+}
+
+func (i Beq) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("beq %s, %s, %s", laRegName(i.rj), laRegName(i.rd), i.off.text())
 }

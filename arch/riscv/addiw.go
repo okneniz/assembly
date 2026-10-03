@@ -22,14 +22,6 @@ func cAddiw(rd, rs1 string, imm int64) Addiw {
 	}
 }
 
-func (i Addiw) ObjDump(_ disasm.ViewCtx) string {
-	if i.imm.val == 0 {
-		return fmt.Sprintf("sext.w %s, %s", i.rd, i.rs1)
-	}
-
-	return fmt.Sprintf("addiw %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Addiw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -46,6 +38,14 @@ func (i Addiw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Addiw) ObjDump(_ disasm.ViewCtx) string {
+	if i.imm.val == 0 {
+		return fmt.Sprintf("sext.w %s, %s", i.rd, i.rs1)
+	}
+
+	return fmt.Sprintf("addiw %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 func newAddiw(ops []Op) (Instr, error) {

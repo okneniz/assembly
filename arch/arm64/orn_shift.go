@@ -91,23 +91,6 @@ const (
 	OrnShiftW uint32 = 0x2A200000
 )
 
-func (i OrnShift) ObjDump(_ disasm.ViewCtx) string {
-	zr := zeroReg(i.rd)
-	if i.rn == zr {
-		if i.imm6 != 0 {
-			return fmt.Sprintf("mvn %s, %s, %s #%d", i.rd, i.rm, i.shift, i.imm6)
-		}
-
-		return fmt.Sprintf("mvn %s, %s", i.rd, i.rm)
-	}
-
-	if i.imm6 != 0 {
-		return fmt.Sprintf("orn %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
-	}
-
-	return fmt.Sprintf("orn %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i OrnShift) Encode(w io.Writer) (int64, error) {
 	match := OrnShiftX
 	if !i.isf {
@@ -129,4 +112,21 @@ func (i OrnShift) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
+func (i OrnShift) ObjDump(_ disasm.ViewCtx) string {
+	zr := zeroReg(i.rd)
+	if i.rn == zr {
+		if i.imm6 != 0 {
+			return fmt.Sprintf("mvn %s, %s, %s #%d", i.rd, i.rm, i.shift, i.imm6)
+		}
+
+		return fmt.Sprintf("mvn %s, %s", i.rd, i.rm)
+	}
+
+	if i.imm6 != 0 {
+		return fmt.Sprintf("orn %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
+	}
+
+	return fmt.Sprintf("orn %s, %s, %s", i.rd, i.rn, i.rm)
 }

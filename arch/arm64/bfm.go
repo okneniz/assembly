@@ -88,10 +88,10 @@ const (
 	bfmW uint32 = 0x33000000
 )
 
-func (i Bfm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bfm %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms)
-}
-
 func (i Bfm) Encode(w io.Writer) (int64, error) {
 	return bfmWrite(w, bfmX, bfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+}
+
+func (i Bfm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bfm %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms)
 }

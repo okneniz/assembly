@@ -31,6 +31,7 @@ func NewSubParams(rd riscv.Reg, rs1 riscv.Reg, rs2 riscv.Reg) SubParams {
 func (p SubParams) Instr() riscv.Instr {
 	return riscv.New().Sub(p.Rd, p.Rs1, p.Rs2)
 }
+
 func (p SubParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type subGen struct {
 	rnd *rand.Rand
 }
 
-func newSubGen(rnd *rand.Rand) subGen {
-	return subGen{rnd: rnd}
-}
-
 // Sub — an arbitrary sub.
 func Sub(rnd *rand.Rand) ohsnap.Arbitrary[SubParams] {
 	return newSubGen(rnd)
+}
+
+func newSubGen(rnd *rand.Rand) subGen {
+	return subGen{rnd: rnd}
 }
 
 func (g subGen) Generate() iter.Seq[SubParams] {

@@ -27,10 +27,6 @@ func NewCsetParams(rd arm64.Reg, cond string) CsetParams {
 	}
 }
 
-func (p CsetParams) String() string {
-	return "cset " + p.Rd.String() + ", " + p.Cond
-}
-
 func (p CsetParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,19 +36,23 @@ func (p CsetParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p CsetParams) String() string {
+	return "cset " + p.Rd.String() + ", " + p.Cond
+}
+
 // csetGen — generator for cset: a register and a condition (al/nv are
 // not alias conditions).
 type csetGen struct {
 	rnd *rand.Rand
 }
 
-func newCsetGen(rnd *rand.Rand) csetGen {
-	return csetGen{rnd: rnd}
-}
-
 // Cset — an arbitrary cset.
 func Cset(rnd *rand.Rand) ohsnap.Arbitrary[CsetParams] {
 	return newCsetGen(rnd)
+}
+
+func newCsetGen(rnd *rand.Rand) csetGen {
+	return csetGen{rnd: rnd}
 }
 
 func (g csetGen) Generate() iter.Seq[CsetParams] {

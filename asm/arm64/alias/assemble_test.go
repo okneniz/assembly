@@ -13,15 +13,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-func assembleOne(t *testing.T, src string, addr uint64) uint32 {
-	t.Helper()
-	res, errs := asm.Assemble(src, addr, NewASMBackend())
-	require.Empty(t, errs, "assemble %q", src)
-	require.NotEmpty(t, res.Sections, "assemble %q", src)
-	require.Len(t, res.Sections[0].Data, 4, "assemble %q: bad output", src)
-	return binary.LittleEndian.Uint32(res.Sections[0].Data)
-}
-
 // TestAliasWords checks the exact words (verified against the encodings
 // of the base instructions: an alias has the same encoding as the base
 // form).
@@ -64,7 +55,7 @@ func TestAliasWords(t *testing.T) {
 		}, // movn w0, #0x1234, lsl #16
 	}
 	for _, c := range cases {
-		got := assembleOne(t, c.src, 0)
+		got := assembleOne(t, c.src)
 		require.Equal(t, c.word, got, "case %q", c.src)
 	}
 }
@@ -101,7 +92,7 @@ func TestAliasRoundTrip(t *testing.T) {
 		"sbfiz x0, x1, #4, #8", "sbfx x0, x1, #4, #8",
 	}
 	for _, src := range cases {
-		word := assembleOne(t, src, 0)
+		word := assembleOne(t, src)
 		insts, err := arch.MakeDecoder()(
 			parsec.Stateless{},
 			bytes.Buffer(binary.LittleEndian.AppendUint32(nil, word)),
@@ -131,7 +122,7 @@ func TestMovFromVectorAlias(t *testing.T) {
 		{"umov x0, v1.d[1]", 0x4E183C20},
 		{"umov w0, v1.s[1]", 0x0E0C3C20},
 	} {
-		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+		require.Equal(t, c.word, assembleOne(t, c.src), "case %q", c.src)
 	}
 
 	for _, src := range []string{
@@ -161,7 +152,7 @@ func TestDupScalarAlias(t *testing.T) {
 		{"mov h9, v19.h[7]", 0x5e1e0669},
 		{"mov d9, v19.d[1]", 0x5e180669},
 	} {
-		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+		require.Equal(t, c.word, assembleOne(t, c.src), "case %q", c.src)
 	}
 
 	for _, src := range []string{
@@ -200,7 +191,7 @@ func TestAliasBitfieldWords(t *testing.T) {
 	}
 
 	for _, c := range cases {
-		require.Equal(t, c.word, assembleOne(t, c.src, 0), "case %q", c.src)
+		require.Equal(t, c.word, assembleOne(t, c.src), "case %q", c.src)
 	}
 
 	for _, src := range []string{
@@ -216,4 +207,13 @@ func TestAliasBitfieldWords(t *testing.T) {
 		require.NotEmpty(t, errs, "case %q must not assemble", src)
 		require.Empty(t, res.Sections, "case %q", src)
 	}
+}
+
+func assembleOne(t *testing.T, src string) uint32 {
+	t.Helper()
+	res, errs := asm.Assemble(src, 0, NewASMBackend())
+	require.Empty(t, errs, "assemble %q", src)
+	require.NotEmpty(t, res.Sections, "assemble %q", src)
+	require.Len(t, res.Sections[0].Data, 4, "assemble %q: bad output", src)
+	return binary.LittleEndian.Uint32(res.Sections[0].Data)
 }

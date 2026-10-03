@@ -19,8 +19,9 @@ import (
 // TstImmParams — parameters of the tst (immediate) alias: a register and
 // the structural axes of the logical immediate.
 type TstImmParams struct {
-	Rn arm64.Reg // 31 reads as zr
 	a64.BitmaskParams
+
+	Rn arm64.Reg // 31 reads as zr
 }
 
 func NewTstImmParams(rn arm64.Reg, p a64.BitmaskParams) TstImmParams {
@@ -30,10 +31,6 @@ func NewTstImmParams(rn arm64.Reg, p a64.BitmaskParams) TstImmParams {
 	}
 }
 
-func (p TstImmParams) String() string {
-	return fmt.Sprintf("tst %s, #0x%x", p.Rn, p.Value())
-}
-
 func (p TstImmParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -41,6 +38,10 @@ func (p TstImmParams) Instr() arm64.Instr {
 	}
 
 	return in
+}
+
+func (p TstImmParams) String() string {
+	return fmt.Sprintf("tst %s, #0x%x", p.Rn, p.Value())
 }
 
 // tstImmArb — the alias family over the shared axes: the register takes
@@ -70,8 +71,9 @@ func (a tstImmArb) Generate() iter.Seq[TstImmParams] {
 }
 
 func (a tstImmArb) Shrink(p TstImmParams) iter.Seq[TstImmParams] {
-	var out []TstImmParams
-	for _, r := range a64.RegShrunk(p.Rn) {
+	regs := a64.RegShrunk(p.Rn)
+	out := make([]TstImmParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewTstImmParams(r, p.BitmaskParams))
 	}
 

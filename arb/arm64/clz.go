@@ -34,6 +34,7 @@ func (p ClzParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p ClzParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type clzGen struct {
 	rnd *rand.Rand
 }
 
-func newClzGen(rnd *rand.Rand) clzGen {
-	return clzGen{rnd: rnd}
-}
-
 // Clz — an arbitrary clz.
 func Clz(rnd *rand.Rand) ohsnap.Arbitrary[ClzParams] {
 	return newClzGen(rnd)
+}
+
+func newClzGen(rnd *rand.Rand) clzGen {
+	return clzGen{rnd: rnd}
 }
 
 func (g clzGen) Generate() iter.Seq[ClzParams] {
@@ -60,8 +61,9 @@ func (g clzGen) Generate() iter.Seq[ClzParams] {
 }
 
 func (g clzGen) Shrink(p ClzParams) iter.Seq[ClzParams] {
-	var out []ClzParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]ClzParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewClzParams(r, p.Rn))
 	}
 

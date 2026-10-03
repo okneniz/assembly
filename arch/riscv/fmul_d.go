@@ -13,10 +13,6 @@ type FmulD struct {
 	rm           imm // rounding mode (not shown in text)
 }
 
-func (i FmulD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmul.d %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i FmulD) Encode(w io.Writer, o EncOpts) (int64, error) {
 	rm := i.rm.val
 
@@ -26,6 +22,10 @@ func (i FmulD) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	return writeWord(w, riscvEncodings["fmul_d"][0]|uint32(rm)<<12|
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20)
+}
+
+func (i FmulD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmul.d %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newFmulD(ops []Op) (Instr, error) {

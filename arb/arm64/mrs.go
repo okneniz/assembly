@@ -35,6 +35,7 @@ func (p MrsParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p MrsParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -46,16 +47,16 @@ type mrsGen struct {
 	sysregs ohsnap.Arbitrary[string]
 }
 
+// Mrs — an arbitrary mrs.
+func Mrs(rnd *rand.Rand) ohsnap.Arbitrary[MrsParams] {
+	return newMrsGen(rnd)
+}
+
 func newMrsGen(rnd *rand.Rand) mrsGen {
 	return mrsGen{
 		rnd:     rnd,
 		sysregs: Sysreg(rnd),
 	}
-}
-
-// Mrs — an arbitrary mrs.
-func Mrs(rnd *rand.Rand) ohsnap.Arbitrary[MrsParams] {
-	return newMrsGen(rnd)
 }
 
 func (g mrsGen) Generate() iter.Seq[MrsParams] {
@@ -65,8 +66,9 @@ func (g mrsGen) Generate() iter.Seq[MrsParams] {
 }
 
 func (g mrsGen) Shrink(p MrsParams) iter.Seq[MrsParams] {
-	var out []MrsParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]MrsParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewMrsParams(r, p.Sysreg))
 	}
 

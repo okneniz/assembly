@@ -52,8 +52,9 @@ func (a fnegArb) Generate() iter.Seq[FnegParams] {
 }
 
 func (a fnegArb) Shrink(p FnegParams) iter.Seq[FnegParams] {
-	var out []FnegParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F2Params))
+	out := make([]FnegParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFnegParams(s))
 	}
 

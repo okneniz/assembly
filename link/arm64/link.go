@@ -13,11 +13,6 @@ import (
 	unitarm64 "github.com/okneniz/assembly/unit/arm64"
 )
 
-// deps is the arm64 injection of the link driver.
-func deps() link.Deps {
-	return link.Deps{Parse: alias.ParseSourceUnit}
-}
-
 // Macho links the sources into a native arm64 Mach-O image: the
 // writer's own placement resolves the streams, every label of the
 // program becomes a global symbol, entry names the entry symbol (""
@@ -72,4 +67,9 @@ func ELF(sources []link.Source, entry string, base uint64) ([]byte, error) {
 	}
 
 	return file.WriteELF(file.EM_AARCH64, 0, base, f.Syms[name], sections)
+}
+
+// deps is the arm64 injection of the link driver.
+func deps() link.Deps {
+	return link.Deps{Parse: alias.ParseSourceUnit}
 }

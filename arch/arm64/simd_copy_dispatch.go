@@ -31,7 +31,6 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 		)
 	case 2: // SMOV: the GPR destination in Rd, the vector source in Rn
 		in, err := newSmov(
-			q,
 			size,
 			idx,
 			newVReg(uint8(w>>5&0x1f)),
@@ -45,7 +44,6 @@ func decodeSimdCopy(w uint32) (Instr, error) {
 		return in, nil
 	default: // UMOV: the GPR destination in Rd, the vector source in Rn
 		in, err := newUmov(
-			q,
 			size,
 			idx,
 			newVReg(uint8(w>>5&0x1f)),

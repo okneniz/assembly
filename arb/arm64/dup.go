@@ -52,8 +52,9 @@ func (a dupArb) Generate() iter.Seq[DupGenParams] {
 }
 
 func (a dupArb) Shrink(p DupGenParams) iter.Seq[DupGenParams] {
-	var out []DupGenParams
-	for _, s := range slices.Collect(a.base.Shrink(p.DupParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.DupParams))
+	out := make([]DupGenParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewDupGenParams(s))
 	}
 

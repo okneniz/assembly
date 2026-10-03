@@ -12,14 +12,14 @@ type Srlw struct {
 	rd, rs1, rs2 string
 }
 
-func (i Srlw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("srlw %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Srlw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["srlw"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 
 	return writeWord(w, word)
+}
+
+func (i Srlw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("srlw %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newSrlw(ops []Op) (Instr, error) {

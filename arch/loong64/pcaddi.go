@@ -14,12 +14,12 @@ type Pcaddi struct {
 	imm imm
 }
 
-func (i Pcaddi) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("pcaddi %s, %s", laRegName(i.rd), i.imm.text())
-}
-
 func (i Pcaddi) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["pcaddi"][0] | uint32(i.rd) | scatterS(i.imm.val, 5, 20)
 
 	return writeWord(w, word)
+}
+
+func (i Pcaddi) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("pcaddi %s, %s", laRegName(i.rd), i.imm.text())
 }

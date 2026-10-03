@@ -40,10 +40,10 @@ func newMrs(rd Reg, sysreg string) (Mrs, error) {
 	}, nil
 }
 
-func (i Mrs) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mrs %s, %s", i.rd, i.sysreg)
-}
-
 func (i Mrs) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0xD5300000|regBitsX(i.rd)|invSysRegChecked(i.sysreg)<<5)
+}
+
+func (i Mrs) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mrs %s, %s", i.rd, i.sysreg)
 }

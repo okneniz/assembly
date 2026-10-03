@@ -64,10 +64,6 @@ func newUmulh(rd Reg, rn Reg, rm Reg) (Umulh, error) {
 
 const UmulhX uint32 = 0x9BC07C00
 
-func (i Umulh) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("umulh %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Umulh) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, UmulhX, 0)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Umulh) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Umulh) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("umulh %s, %s, %s", i.rd, i.rn, i.rm)
 }

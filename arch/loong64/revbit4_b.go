@@ -12,13 +12,13 @@ type Revbit4B struct {
 	rd, rj uint8
 }
 
-func (i Revbit4B) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bitrev.4b %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i Revbit4B) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["bitrev.4b"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i Revbit4B) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bitrev.4b %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

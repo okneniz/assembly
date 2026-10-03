@@ -16,11 +16,12 @@ type Uaddlv struct {
 // newUaddlv - the Uaddlv constructor: the struct is assembled only
 // here (the Builder method and the decoder call it); the destination
 // print name is the scalar view of the register number by size.
-func newUaddlv(q, size uint32, rd, rn VReg) (Uaddlv, error) {
+func newUaddlv(q, size uint32, rd, rn VReg) Uaddlv {
 	scalar := fmt.Sprintf("d%d", rd.Num())
-	if size == 0 {
+	switch size {
+	case 0:
 		scalar = fmt.Sprintf("h%d", rd.Num())
-	} else if size == 1 {
+	case 1:
 		scalar = fmt.Sprintf("s%d", rd.Num())
 	}
 
@@ -29,14 +30,10 @@ func newUaddlv(q, size uint32, rd, rn VReg) (Uaddlv, error) {
 		rn:   rn.name(),
 		q:    q,
 		size: size,
-	}, nil
+	}
 }
 
 const uaddlvEnc uint32 = 0x2E303800
-
-func (i Uaddlv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("uaddlv.%s %s, %s", decodeArrangement(i.q, i.size), i.rd, i.rn)
-}
 
 func (i Uaddlv) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(fmt.Sprintf("v%d", regIndex(i.rd)), i.rn)
@@ -45,4 +42,8 @@ func (i Uaddlv) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, uaddlvEnc|rd|rn<<5)
+}
+
+func (i Uaddlv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("uaddlv.%s %s, %s", decodeArrangement(i.q, i.size), i.rd, i.rn)
 }

@@ -12,13 +12,13 @@ type Revh2W struct {
 	rd, rj uint8
 }
 
-func (i Revh2W) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("revh.2w %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i Revh2W) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["revh.2w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i Revh2W) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("revh.2w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

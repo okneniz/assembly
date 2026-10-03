@@ -52,8 +52,9 @@ func (a faddArb) Generate() iter.Seq[FaddParams] {
 }
 
 func (a faddArb) Shrink(p FaddParams) iter.Seq[FaddParams] {
-	var out []FaddParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F3Params))
+	out := make([]FaddParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFaddParams(s))
 	}
 

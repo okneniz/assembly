@@ -12,12 +12,12 @@ type Idle struct {
 	code imm
 }
 
-func (i Idle) ObjDump(_ disasm.ViewCtx) string {
-	return "idle " + i.code.text()
-}
-
 func (i Idle) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["idle"][0] | scatterU(i.code.val, 0, 15)
 
 	return writeWord(w, word)
+}
+
+func (i Idle) ObjDump(_ disasm.ViewCtx) string {
+	return "idle " + i.code.text()
 }

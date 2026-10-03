@@ -30,147 +30,10 @@ import (
 	"github.com/okneniz/assembly/text"
 )
 
-// rvText - normalized ObjDump text of a riscv instruction.
-func rvText(in riscv.Instr) string {
-	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
-}
-
-// rvTextAt - rvText in the context of an explicit address.
-func rvTextAt(in riscv.Instr, addr uint64) string {
-	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(addr))))
-}
-
-// rvAssemblesTo - bytes from assembling the text (false on assembly error).
-func rvAssemblesTo(t *testing.T, src string) ([]byte, bool) {
-	t.Helper()
-	res, errs := pseudo.Assemble(src, propAddr)
-	if len(errs) != 0 {
-		t.Logf("%q: assemble: %v", src, errs)
-		return nil, false
-	}
-
-	return res.Sections[0].Data, true
-}
-
-// rvBytesOf - instruction bytes (2 or 4 - RVC compression).
-func rvBytesOf(t *testing.T, in riscv.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	if _, err := in.Encode(&buf, riscv.EncOpts{}); err != nil {
-		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
-		return nil, false
-	}
-
-	return buf.Bytes(), true
-}
-
 // rvEnc - the encoding context of the "bytes" property: a fixed address
 // (PC-relative forms), unrestricted modes, no symbols.
 type rvEnc struct {
 	addr uint64
-}
-
-// rvEncodeAll - encodes a list sequentially starting at propAddr (the address
-// of each is propAddr + bytes written; compression allowed, no symbols).
-func rvEncodeAll(t *testing.T, ins []riscv.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	addr := propAddr
-	for _, in := range ins {
-		n, err := in.Encode(&buf, riscv.EncOpts{})
-		if err != nil {
-			t.Logf("encode: %v", err)
-			return nil, false
-		}
-
-		addr += int(n)
-	}
-
-	return buf.Bytes(), true
-}
-
-// rvBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
-// (RoundTrip) in the encoding context propAddr without symbols - bytes are
-// stable after the round trip.
-func rvBytesRoundTrip(t *testing.T, in riscv.Instr) bool {
-	t.Helper()
-	return RoundTrip[rvEnc, riscv.Instr, []byte](
-		rvEnc{addr: propAddr},
-		func(_ rvEnc, x riscv.Instr) ([]byte, bool) {
-			return rvBytesOf(t, x)
-		},
-		func(ctx rvEnc, b []byte) (riscv.Instr, bool) {
-			back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(back) != 1 {
-				t.Logf("% x: decode = %d instr", b, len(back))
-				return nil, false
-			}
-
-			return back[0], true
-		},
-		bytes.Equal,
-	)(in)
-}
-
-// rvTextRoundTrip - the "text" property: the RoundTrip law in the
-// DefaultViewCtx context - a fixed point of the "text → assembly → decode"
-// cycle (pseudo-forms collapse into a single canon: mv and its base form
-// print identically). The input is canonicalized through bytes and decode:
-// the fixed point is sought for the decoder's text, while structures from
-// parsing may be pseudo-forms whose text is not fixed.
-func rvTextRoundTrip(t *testing.T, in riscv.Instr) bool {
-	t.Helper()
-	b, ok := rvBytesOf(t, in)
-	if !ok {
-		return false
-	}
-
-	d1, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-	if err != nil {
-		t.Logf("decode: %v", err)
-		return false
-	}
-
-	if len(d1) != 1 {
-		t.Logf("% x: decode = %d instr", b, len(d1))
-		return false
-	}
-
-	// the text renders and assembles at the SAME base (propAddr): the
-	// pc-relative texts carry absolute targets, the two sides of the
-	// law must not shift them apart
-	return RoundTrip[disasm.ViewCtx, riscv.Instr, string](
-		disasm.ViewCtxAt(propAddr),
-		func(_ disasm.ViewCtx, y riscv.Instr) (string, bool) {
-			return objdump.StripComments(objdump.Normalize(
-				y.ObjDump(disasm.ViewCtxAt(propAddr)))), true
-		},
-		func(_ disasm.ViewCtx, src string) (riscv.Instr, bool) {
-			data, ok := rvAssemblesTo(t, src)
-			if !ok {
-				return nil, false
-			}
-
-			d2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(d2) != 1 {
-				t.Logf("%q: decode = %d instr", src, len(d2))
-				return nil, false
-			}
-
-			return d2[0], true
-		},
-		func(a, b string) bool { return a == b },
-	)(d1[0])
 }
 
 // rvInstrParam - parameters of any riscv family.
@@ -182,34 +45,6 @@ type rvInstrParam interface {
 type rvFamilyEntry struct {
 	name string
 	run  func(t *testing.T, rnd *mrnd.Rand)
-}
-
-// newRvFamily - a riscv family entry: closes over the generic instantiation
-// of the properties (families have different parameter types, Arbitrary is
-// invariant - see newPropFamily in property_a64_test.go; each property is a
-// separate named subtest, the check runs over the parameters for the sake of
-// shrinking).
-func newRvFamily[P rvInstrParam](
-	name string,
-	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
-) rvFamilyEntry {
-	return rvFamilyEntry{
-		name: name,
-		run: func(t *testing.T, rnd *mrnd.Rand) {
-			t.Helper()
-			t.Run("bytes", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					return rvBytesRoundTrip(t, p.Instr())
-				})
-			})
-
-			t.Run("text", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					return rvTextRoundTrip(t, p.Instr())
-				})
-			})
-		},
-	}
 }
 
 // TestPropertyRiscvSingleInstrRoundTrip - round trip of each riscv family.
@@ -329,50 +164,6 @@ func TestPropertyRiscvSingleInstrRoundTrip(t *testing.T) {
 		t.Run(f.name, func(t *testing.T) {
 			f.run(t, seedRnd(t))
 		})
-	}
-}
-
-// newRvAliasFamily - like newRvFamily, but the parameters are pinned
-// (the alias condition of a pseudo-form); combinations invalid after pinning
-// are outside the property. See newAliasFamily in property_a64_test.go.
-func newRvAliasFamily[P rvInstrParam](
-	name string,
-	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
-	pin func(P) P,
-) rvFamilyEntry {
-	return rvFamilyEntry{
-		name: name,
-		run: func(t *testing.T, rnd *mrnd.Rand) {
-			t.Helper()
-			pinned := func(p P) (riscv.Instr, bool) {
-				q := pin(p)
-				if q.Instr() == nil {
-					return nil, false
-				}
-
-				return q.Instr(), true
-			}
-
-			t.Run("bytes", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					if in, ok := pinned(p); ok {
-						return rvBytesRoundTrip(t, in)
-					}
-
-					return true
-				})
-			})
-
-			t.Run("text", func(t *testing.T) {
-				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
-					if in, ok := pinned(p); ok {
-						return rvTextRoundTrip(t, in)
-					}
-
-					return true
-				})
-			})
-		},
 	}
 }
 
@@ -562,6 +353,447 @@ func TestPropertyRiscvSymbolPseudoRoundTrip(t *testing.T) {
 			return rvPcrelLands(t, src, p.Off)
 		})
 	})
+}
+
+// TestPropertyRiscvBytesRoundTripList - the "bytes" property for a list of
+// instructions: the list (variable length 2/4) is encoded, decoded line by
+// line, and encoded again into the same bytes.
+func TestPropertyRiscvBytesRoundTripList(t *testing.T) {
+	rnd := seedRnd(t)
+	seq := arb.Seq(rnd, rvPropFamilies(rnd))
+	ohsnap.Check(t, 100, seq, func(ins []riscv.Instr) bool {
+		raw, ok := rvEncodeAll(t, ins)
+		if !ok {
+			return false
+		}
+
+		buf := *bytes.NewBuffer(raw)
+
+		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
+		if err != nil {
+			t.Logf("decode: %v", err)
+			return false
+		}
+
+		if len(back) != len(ins) {
+			t.Logf("decoded %d of %d", len(back), len(ins))
+			return false
+		}
+
+		raw2, ok := rvEncodeAll(t, back)
+		if !ok {
+			return false
+		}
+
+		buf2 := *bytes.NewBuffer(raw2)
+
+		if !bytes.Equal(buf2.Bytes(), buf.Bytes()) {
+			t.Logf("re-encode: % x ≠ % x", buf2.Bytes(), buf.Bytes())
+			return false
+		}
+
+		return true
+	})
+}
+
+// TestPropertyRiscvTextRoundTripList - the "text" property for a list of
+// instructions: the joined canonical text of the list assembles and decodes
+// line by line into the same texts (canonical - see rvTextRoundTrip).
+func TestPropertyRiscvTextRoundTripList(t *testing.T) {
+	rnd := seedRnd(t)
+	seq := arb.Seq(rnd, rvPropFamilies(rnd))
+	ohsnap.Check(t, 100, seq, func(ins []riscv.Instr) bool {
+		raw, ok := rvEncodeAll(t, ins)
+		if !ok {
+			return false
+		}
+
+		buf := *bytes.NewBuffer(raw)
+
+		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
+		if err != nil {
+			t.Logf("decode: %v", err)
+			return false
+		}
+
+		if len(back) != len(ins) {
+			t.Logf("decoded %d of %d", len(back), len(ins))
+			return false
+		}
+
+		// the text renders at the instruction's own address in the list
+		// (pc-relative targets print absolute, the lengths vary with
+		// RVC) - the joined text assembles at propAddr, the same base
+		// the render used; the addresses step by the stream rule over
+		// the encoded bytes
+		texts := make([]string, len(back))
+		addr := uint64(propAddr)
+		off := 0
+		for i := range back {
+			texts[i] = rvTextAt(back[i], addr)
+			n := riscv.InstrLen(raw[off:])
+			addr += uint64(n)
+			off += n
+		}
+
+		data, ok := rvAssemblesTo(t, strings.Join(texts, "\n"))
+		if !ok {
+			return false
+		}
+
+		back2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
+		if err != nil {
+			t.Logf("decode: %v", err)
+			return false
+		}
+
+		if len(back2) != len(ins) {
+			t.Logf("decoded %d of %d", len(back2), len(ins))
+			return false
+		}
+
+		addr = uint64(propAddr)
+		off = 0
+		for i := range back2 {
+			if rvTextAt(back2[i], addr) != texts[i] {
+				t.Logf("[%d] text %q ≠ %q", i, rvTextAt(back2[i], addr), texts[i])
+				return false
+			}
+
+			n := riscv.InstrLen(data[off:])
+			addr += uint64(n)
+			off += n
+		}
+
+		return true
+	})
+}
+
+// TestPropertyRiscvDecodeRobustness - arbitrary bytes do not crash the decoder.
+func TestPropertyRiscvDecodeRobustness(t *testing.T) {
+	rnd := seedRnd(t)
+	ohsnap.CheckWith(t, 100000, arb.Word(rnd), func(w uint32) bool {
+		ok := true
+		func() {
+			defer func() {
+				if r := recover(); r != nil {
+					t.Errorf("panic at %#08x: %v", w, r)
+					ok = false
+				}
+			}()
+			data := binary.LittleEndian.AppendUint32(nil, w)
+			ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
+			if err != nil {
+				t.Errorf("parse %#08x: %v", w, err)
+				ok = false
+				return
+			}
+
+			// the stream rule must walk the decoded instructions inside
+			// the 4 input bytes, never past the buffer (render errors are
+			// acceptable - garbage words - only the panic check matters)
+			off := 0
+			for _, in := range ins {
+				_ = in.ObjDump(disasm.DefaultViewCtx())
+				off += riscv.InstrLen(data[off:])
+				if off > len(data) {
+					t.Logf("word %#08x: stream overruns at %d", w, off)
+					ok = false
+					break
+				}
+			}
+
+			// the tail may be a truncated 32-bit form - arbitrary bytes are
+			// not required to parse entirely; the requirement is not to crash
+		}()
+		return ok
+	}, ohsnap.CheckOptions{ProgressEvery: checkProgressEvery, LogShrinkSteps: true})
+}
+
+// TestPropertyRiscvVsObjdump - the differential: words produced by the riscv
+// constructors are disassembled identically by us and by objdump.
+func TestPropertyRiscvVsObjdump(t *testing.T) {
+	const perFamily = 48
+	const threshold = 90.0
+
+	rnd := seedRnd(t)
+	gens := rvPropFamilies(rnd)
+	ins := make([]riscv.Instr, 0, perFamily*len(gens))
+	for _, gen := range gens {
+		for range perFamily {
+			ins = append(ins, gen())
+		}
+	}
+
+	raw, ok := rvEncodeAll(t, ins)
+	require.True(t, ok)
+	code := raw
+
+	path := writeRiscvELF(t, code)
+	out, err := objdump.Run(context.Background(), objdump.Args("ELF", 0, path))
+	if err != nil {
+		t.Skipf("no objdump for ELF/riscv64: %v", err)
+	}
+
+	objLines := objdump.ParseByAddr(string(out))
+	require.NotEmpty(t, objLines)
+
+	style := text.StyleFor("ELF")
+	opts := disasm.NewOptions(style)
+	matched, mismatched, notInOurs := 0, 0, 0
+	var samples []string
+	for addr, objLine := range objLines {
+		off := int(addr) - propAddr
+		if off < 0 || off >= len(code) {
+			notInOurs++
+			continue
+		}
+
+		ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(code[off:]))
+		if err != nil {
+			notInOurs++
+			continue
+		}
+
+		if len(ins) == 0 {
+			notInOurs++
+			continue
+		}
+
+		ourLine := objdump.StripComments(objdump.Normalize(
+			disasm.Line(addr, code[off:off+riscv.InstrLen(code[off:])], ins[0], opts)))
+		if ourLine == objdump.StripComments(objLine) {
+			matched++
+		} else {
+			mismatched++
+			if len(samples) < 10 {
+				samples = append(samples, fmt.Sprintf(
+					"0x%x\n    ours:    %s\n    objdump: %s",
+					addr,
+					ourLine,
+					objdump.StripComments(objLine),
+				))
+			}
+		}
+	}
+
+	total := matched + mismatched
+	pct := 0.0
+	if total > 0 {
+		pct = float64(matched) * 100 / float64(total)
+	}
+
+	t.Logf("vs objdump: %d matched (%.2f%%), %d mismatched, %d foreign addresses",
+		matched, pct, mismatched, notInOurs)
+	for _, sm := range samples {
+		t.Log(sm)
+	}
+
+	require.GreaterOrEqual(t, pct, threshold)
+}
+
+// rvTextAt - rvText in the context of an explicit address.
+func rvTextAt(in riscv.Instr, addr uint64) string {
+	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(addr))))
+}
+
+// rvAssemblesTo - bytes from assembling the text (false on assembly error).
+func rvAssemblesTo(t *testing.T, src string) ([]byte, bool) {
+	t.Helper()
+	res, errs := pseudo.Assemble(src, propAddr)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble: %v", src, errs)
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
+// rvBytesOf - instruction bytes (2 or 4 - RVC compression).
+func rvBytesOf(t *testing.T, in riscv.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	if _, err := in.Encode(&buf, riscv.EncOpts{}); err != nil {
+		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
+		return nil, false
+	}
+
+	return buf.Bytes(), true
+}
+
+// rvEncodeAll - encodes a list sequentially starting at propAddr (the address
+// of each is propAddr + bytes written; compression allowed, no symbols).
+func rvEncodeAll(t *testing.T, ins []riscv.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	addr := propAddr
+	for _, in := range ins {
+		n, err := in.Encode(&buf, riscv.EncOpts{})
+		if err != nil {
+			t.Logf("encode: %v", err)
+			return nil, false
+		}
+
+		addr += int(n)
+	}
+
+	return buf.Bytes(), true
+}
+
+// rvBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
+// (RoundTrip) in the encoding context propAddr without symbols - bytes are
+// stable after the round trip.
+func rvBytesRoundTrip(t *testing.T, in riscv.Instr) bool {
+	t.Helper()
+	return RoundTrip[rvEnc, riscv.Instr, []byte](
+		rvEnc{addr: propAddr},
+		func(_ rvEnc, x riscv.Instr) ([]byte, bool) {
+			return rvBytesOf(t, x)
+		},
+		func(ctx rvEnc, b []byte) (riscv.Instr, bool) {
+			back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(back) != 1 {
+				t.Logf("% x: decode = %d instr", b, len(back))
+				return nil, false
+			}
+
+			return back[0], true
+		},
+		bytes.Equal,
+	)(in)
+}
+
+// rvTextRoundTrip - the "text" property: the RoundTrip law in the
+// DefaultViewCtx context - a fixed point of the "text → assembly → decode"
+// cycle (pseudo-forms collapse into a single canon: mv and its base form
+// print identically). The input is canonicalized through bytes and decode:
+// the fixed point is sought for the decoder's text, while structures from
+// parsing may be pseudo-forms whose text is not fixed.
+func rvTextRoundTrip(t *testing.T, in riscv.Instr) bool {
+	t.Helper()
+	b, ok := rvBytesOf(t, in)
+	if !ok {
+		return false
+	}
+
+	d1, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+	if err != nil {
+		t.Logf("decode: %v", err)
+		return false
+	}
+
+	if len(d1) != 1 {
+		t.Logf("% x: decode = %d instr", b, len(d1))
+		return false
+	}
+
+	// the text renders and assembles at the SAME base (propAddr): the
+	// pc-relative texts carry absolute targets, the two sides of the
+	// law must not shift them apart
+	return RoundTrip[disasm.ViewCtx, riscv.Instr, string](
+		disasm.ViewCtxAt(propAddr),
+		func(_ disasm.ViewCtx, y riscv.Instr) (string, bool) {
+			return objdump.StripComments(objdump.Normalize(
+				y.ObjDump(disasm.ViewCtxAt(propAddr)))), true
+		},
+		func(_ disasm.ViewCtx, src string) (riscv.Instr, bool) {
+			data, ok := rvAssemblesTo(t, src)
+			if !ok {
+				return nil, false
+			}
+
+			d2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(d2) != 1 {
+				t.Logf("%q: decode = %d instr", src, len(d2))
+				return nil, false
+			}
+
+			return d2[0], true
+		},
+		func(a, b string) bool { return a == b },
+	)(d1[0])
+}
+
+// newRvFamily - a riscv family entry: closes over the generic instantiation
+// of the properties (families have different parameter types, Arbitrary is
+// invariant - see newPropFamily in property_a64_test.go; each property is a
+// separate named subtest, the check runs over the parameters for the sake of
+// shrinking).
+func newRvFamily[P rvInstrParam](
+	name string,
+	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
+) rvFamilyEntry {
+	return rvFamilyEntry{
+		name: name,
+		run: func(t *testing.T, rnd *mrnd.Rand) {
+			t.Helper()
+			t.Run("bytes", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					return rvBytesRoundTrip(t, p.Instr())
+				})
+			})
+
+			t.Run("text", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					return rvTextRoundTrip(t, p.Instr())
+				})
+			})
+		},
+	}
+}
+
+// newRvAliasFamily - like newRvFamily, but the parameters are pinned
+// (the alias condition of a pseudo-form); combinations invalid after pinning
+// are outside the property. See newAliasFamily in property_a64_test.go.
+func newRvAliasFamily[P rvInstrParam](
+	name string,
+	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
+	pin func(P) P,
+) rvFamilyEntry {
+	return rvFamilyEntry{
+		name: name,
+		run: func(t *testing.T, rnd *mrnd.Rand) {
+			t.Helper()
+			pinned := func(p P) (riscv.Instr, bool) {
+				q := pin(p)
+				if q.Instr() == nil {
+					return nil, false
+				}
+
+				return q.Instr(), true
+			}
+
+			t.Run("bytes", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					if in, ok := pinned(p); ok {
+						return rvBytesRoundTrip(t, in)
+					}
+
+					return true
+				})
+			})
+
+			t.Run("text", func(t *testing.T) {
+				ohsnap.Check(t, 300, mk(rnd), func(p P) bool {
+					if in, ok := pinned(p); ok {
+						return rvTextRoundTrip(t, in)
+					}
+
+					return true
+				})
+			})
+		},
+	}
 }
 
 // rvSymText - the assembled bytes of a pseudo text at the property
@@ -807,243 +1039,6 @@ func rvPropFamilies(rnd *mrnd.Rand) []func() riscv.Instr {
 		rvInstrOf(rv.Fsw(rnd)),
 		rvInstrOf(rv.AmoaddW(rnd)),
 	}
-}
-
-// TestPropertyRiscvBytesRoundTripList - the "bytes" property for a list of
-// instructions: the list (variable length 2/4) is encoded, decoded line by
-// line, and encoded again into the same bytes.
-func TestPropertyRiscvBytesRoundTripList(t *testing.T) {
-	rnd := seedRnd(t)
-	seq := arb.Seq(rnd, rvPropFamilies(rnd))
-	ohsnap.Check(t, 100, seq, func(ins []riscv.Instr) bool {
-		raw, ok := rvEncodeAll(t, ins)
-		if !ok {
-			return false
-		}
-
-		buf := *bytes.NewBuffer(raw)
-
-		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
-		if err != nil {
-			t.Logf("decode: %v", err)
-			return false
-		}
-
-		if len(back) != len(ins) {
-			t.Logf("decoded %d of %d", len(back), len(ins))
-			return false
-		}
-
-		raw2, ok := rvEncodeAll(t, back)
-		if !ok {
-			return false
-		}
-
-		buf2 := *bytes.NewBuffer(raw2)
-
-		if !bytes.Equal(buf2.Bytes(), buf.Bytes()) {
-			t.Logf("re-encode: % x ≠ % x", buf2.Bytes(), buf.Bytes())
-			return false
-		}
-
-		return true
-	})
-}
-
-// TestPropertyRiscvTextRoundTripList - the "text" property for a list of
-// instructions: the joined canonical text of the list assembles and decodes
-// line by line into the same texts (canonical - see rvTextRoundTrip).
-func TestPropertyRiscvTextRoundTripList(t *testing.T) {
-	rnd := seedRnd(t)
-	seq := arb.Seq(rnd, rvPropFamilies(rnd))
-	ohsnap.Check(t, 100, seq, func(ins []riscv.Instr) bool {
-		raw, ok := rvEncodeAll(t, ins)
-		if !ok {
-			return false
-		}
-
-		buf := *bytes.NewBuffer(raw)
-
-		back, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(buf.Bytes()))
-		if err != nil {
-			t.Logf("decode: %v", err)
-			return false
-		}
-
-		if len(back) != len(ins) {
-			t.Logf("decoded %d of %d", len(back), len(ins))
-			return false
-		}
-
-		// the text renders at the instruction's own address in the list
-		// (pc-relative targets print absolute, the lengths vary with
-		// RVC) - the joined text assembles at propAddr, the same base
-		// the render used; the addresses step by the stream rule over
-		// the encoded bytes
-		texts := make([]string, len(back))
-		addr := uint64(propAddr)
-		off := 0
-		for i := range back {
-			texts[i] = rvTextAt(back[i], addr)
-			n := riscv.InstrLen(raw[off:])
-			addr += uint64(n)
-			off += n
-		}
-
-		data, ok := rvAssemblesTo(t, strings.Join(texts, "\n"))
-		if !ok {
-			return false
-		}
-
-		back2, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
-		if err != nil {
-			t.Logf("decode: %v", err)
-			return false
-		}
-
-		if len(back2) != len(ins) {
-			t.Logf("decoded %d of %d", len(back2), len(ins))
-			return false
-		}
-
-		addr = uint64(propAddr)
-		off = 0
-		for i := range back2 {
-			if rvTextAt(back2[i], addr) != texts[i] {
-				t.Logf("[%d] text %q ≠ %q", i, rvTextAt(back2[i], addr), texts[i])
-				return false
-			}
-
-			n := riscv.InstrLen(data[off:])
-			addr += uint64(n)
-			off += n
-		}
-
-		return true
-	})
-}
-
-// TestPropertyRiscvDecodeRobustness - arbitrary bytes do not crash the decoder.
-func TestPropertyRiscvDecodeRobustness(t *testing.T) {
-	rnd := seedRnd(t)
-	ohsnap.CheckWith(t, 100000, arb.Word(rnd), func(w uint32) bool {
-		ok := true
-		func() {
-			defer func() {
-				if r := recover(); r != nil {
-					t.Errorf("panic at %#08x: %v", w, r)
-					ok = false
-				}
-			}()
-			data := binary.LittleEndian.AppendUint32(nil, w)
-			ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
-			if err != nil {
-				t.Errorf("parse %#08x: %v", w, err)
-				ok = false
-				return
-			}
-
-			// the stream rule must walk the decoded instructions inside
-			// the 4 input bytes, never past the buffer (render errors are
-			// acceptable - garbage words - only the panic check matters)
-			off := 0
-			for _, in := range ins {
-				_ = in.ObjDump(disasm.DefaultViewCtx())
-				off += riscv.InstrLen(data[off:])
-				if off > len(data) {
-					t.Logf("word %#08x: stream overruns at %d", w, off)
-					ok = false
-					break
-				}
-			}
-
-			// the tail may be a truncated 32-bit form - arbitrary bytes are
-			// not required to parse entirely; the requirement is not to crash
-		}()
-		return ok
-	}, ohsnap.CheckOptions{ProgressEvery: checkProgressEvery, LogShrinkSteps: true})
-}
-
-// TestPropertyRiscvVsObjdump - the differential: words produced by the riscv
-// constructors are disassembled identically by us and by objdump.
-func TestPropertyRiscvVsObjdump(t *testing.T) {
-	const perFamily = 48
-	const threshold = 90.0
-
-	rnd := seedRnd(t)
-	gens := rvPropFamilies(rnd)
-	ins := make([]riscv.Instr, 0, perFamily*len(gens))
-	for _, gen := range gens {
-		for range perFamily {
-			ins = append(ins, gen())
-		}
-	}
-
-	raw, ok := rvEncodeAll(t, ins)
-	require.True(t, ok)
-	code := raw
-
-	path := writeRiscvELF(t, code)
-	out, err := objdump.Run(context.Background(), objdump.Args("ELF", 0, path))
-	if err != nil {
-		t.Skipf("no objdump for ELF/riscv64: %v", err)
-	}
-
-	objLines := objdump.ParseByAddr(string(out))
-	require.NotEmpty(t, objLines)
-
-	style := text.StyleFor("ELF")
-	opts := disasm.NewOptions(style)
-	matched, mismatched, notInOurs := 0, 0, 0
-	var samples []string
-	for addr, objLine := range objLines {
-		off := int(addr) - propAddr
-		if off < 0 || off >= len(code) {
-			notInOurs++
-			continue
-		}
-
-		ins, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(code[off:]))
-		if err != nil {
-			notInOurs++
-			continue
-		}
-
-		if len(ins) == 0 {
-			notInOurs++
-			continue
-		}
-
-		ourLine := objdump.StripComments(objdump.Normalize(
-			disasm.Line(addr, code[off:off+riscv.InstrLen(code[off:])], ins[0], opts)))
-		if ourLine == objdump.StripComments(objLine) {
-			matched++
-		} else {
-			mismatched++
-			if len(samples) < 10 {
-				samples = append(samples, fmt.Sprintf(
-					"0x%x\n    ours:    %s\n    objdump: %s",
-					addr,
-					ourLine,
-					objdump.StripComments(objLine),
-				))
-			}
-		}
-	}
-
-	total := matched + mismatched
-	pct := 0.0
-	if total > 0 {
-		pct = float64(matched) * 100 / float64(total)
-	}
-
-	t.Logf("vs objdump: %d matched (%.2f%%), %d mismatched, %d foreign addresses",
-		matched, pct, mismatched, notInOurs)
-	for _, sm := range samples {
-		t.Log(sm)
-	}
-
-	require.GreaterOrEqual(t, pct, threshold)
 }
 
 // writeRiscvELF - minimal ELF64 LE riscv (e_machine = EM_RISCV,

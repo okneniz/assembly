@@ -30,11 +30,6 @@ func NewUbfxParams(rd arm64.Reg, rn arm64.Reg, lsb uint32, width uint32) UbfxPar
 	}
 }
 
-func (p UbfxParams) String() string {
-	return "ubfx " + p.Rd.String() + ", " + p.Rn.String() +
-		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
-}
-
 func (p UbfxParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +39,24 @@ func (p UbfxParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p UbfxParams) String() string {
+	return "ubfx " + p.Rd.String() + ", " + p.Rn.String() +
+		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
+}
+
 // ubfxGen — generator for ubfx: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type ubfxGen struct {
 	rnd *rand.Rand
 }
 
-func newUbfxGen(rnd *rand.Rand) ubfxGen {
-	return ubfxGen{rnd: rnd}
-}
-
 // Ubfx — an arbitrary ubfx.
 func Ubfx(rnd *rand.Rand) ohsnap.Arbitrary[UbfxParams] {
 	return newUbfxGen(rnd)
+}
+
+func newUbfxGen(rnd *rand.Rand) ubfxGen {
+	return ubfxGen{rnd: rnd}
 }
 
 func (g ubfxGen) Generate() iter.Seq[UbfxParams] {

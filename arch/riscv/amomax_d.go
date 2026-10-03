@@ -13,13 +13,13 @@ type AmomaxD struct {
 	rd, rs1, rs2 string
 }
 
-func (i AmomaxD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amomax.d %s, %s, (%s)", i.rd, i.rs2, i.rs1)
-}
-
 func (i AmomaxD) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["amomax_d"][0]|
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
+}
+
+func (i AmomaxD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amomax.d %s, %s, (%s)", i.rd, i.rs2, i.rs1)
 }
 
 func newAmomaxD(ops []Op) (Instr, error) {

@@ -13,10 +13,6 @@ type Lb struct {
 	off     imm
 }
 
-func (i Lb) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lb %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Lb) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Lb) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["lb"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | bits
 	return writeWord(w, word)
+}
+
+func (i Lb) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lb %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 func newLb(ops []Op) (Instr, error) {

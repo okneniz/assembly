@@ -74,19 +74,6 @@ const (
 	andsImmW uint32 = 0x72000000
 )
 
-func (i AndsImm) ObjDump(_ disasm.ViewCtx) string {
-	zr := "xzr"
-	if !i.is64 {
-		zr = "wzr"
-	}
-
-	if i.rd == zr {
-		return fmt.Sprintf("tst %s, #0x%x", i.rn, i.mask())
-	}
-
-	return fmt.Sprintf("ands %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
 func (i AndsImm) Encode(w io.Writer) (int64, error) {
 	match := andsImmX
 	if !i.is64 {
@@ -103,4 +90,17 @@ func (i AndsImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
+
+func (i AndsImm) ObjDump(_ disasm.ViewCtx) string {
+	zr := "xzr"
+	if !i.is64 {
+		zr = "wzr"
+	}
+
+	if i.rd == zr {
+		return fmt.Sprintf("tst %s, #0x%x", i.rn, i.mask())
+	}
+
+	return fmt.Sprintf("ands %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }

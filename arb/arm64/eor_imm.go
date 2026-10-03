@@ -52,8 +52,9 @@ func (a eorImmArb) Generate() iter.Seq[EorImmParams] {
 }
 
 func (a eorImmArb) Shrink(p EorImmParams) iter.Seq[EorImmParams] {
-	var out []EorImmParams
-	for _, s := range slices.Collect(a.base.Shrink(p.BitmaskParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.BitmaskParams))
+	out := make([]EorImmParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewEorImmParams(s))
 	}
 

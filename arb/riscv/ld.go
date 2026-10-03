@@ -32,6 +32,7 @@ func NewLdParams(rd riscv.Reg, rs1 riscv.Reg, off riscv.Off) LdParams {
 func (p LdParams) Instr() riscv.Instr {
 	return riscv.New().Ld(p.Rd, p.Rs1, p.Off)
 }
+
 func (p LdParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -41,13 +42,13 @@ type ldGen struct {
 	rnd *rand.Rand
 }
 
-func newLdGen(rnd *rand.Rand) ldGen {
-	return ldGen{rnd: rnd}
-}
-
 // Ld — an arbitrary ld.
 func Ld(rnd *rand.Rand) ohsnap.Arbitrary[LdParams] {
 	return newLdGen(rnd)
+}
+
+func newLdGen(rnd *rand.Rand) ldGen {
+	return ldGen{rnd: rnd}
 }
 
 func (g ldGen) Generate() iter.Seq[LdParams] {

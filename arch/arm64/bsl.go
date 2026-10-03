@@ -33,10 +33,6 @@ func newBsl(rd, rn, rm VReg, arr string) (Bsl, error) {
 
 const bslEnc uint32 = 778050560 // bsl vd, vn, vm (Q=0 form)
 
-func (i Bsl) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bsl.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Bsl) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Bsl) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, bslEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Bsl) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bsl.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

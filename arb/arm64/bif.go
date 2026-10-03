@@ -52,8 +52,9 @@ func (a bifArb) Generate() iter.Seq[BifParams] {
 }
 
 func (a bifArb) Shrink(p BifParams) iter.Seq[BifParams] {
-	var out []BifParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]BifParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewBifParams(s))
 	}
 

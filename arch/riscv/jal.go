@@ -23,18 +23,6 @@ func cJal(rd string, off int64) Jal {
 	}
 }
 
-func (i Jal) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	switch i.rd {
-	case "zero":
-		return "j " + target.text()
-	case "ra":
-		return "jal " + target.text() // rd omitted
-	}
-
-	return fmt.Sprintf("jal %s, %s", i.rd, target.text())
-}
-
 func (i Jal) Encode(w io.Writer, o EncOpts) (int64, error) {
 	bits, err := encJ(i.off.val)
 	if err != nil {
@@ -49,6 +37,18 @@ func (i Jal) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Jal) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	switch i.rd {
+	case "zero":
+		return "j " + target.text()
+	case "ra":
+		return "jal " + target.text() // rd omitted
+	}
+
+	return fmt.Sprintf("jal %s, %s", i.rd, target.text())
 }
 
 // newJal - constructor from parsing: jal off | jal rd, off.

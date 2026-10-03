@@ -31,6 +31,7 @@ func (p DmbParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p DmbParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type dmbGen struct {
 	domains ohsnap.Arbitrary[arm64.BarrierDomain]
 }
 
-func newDmbGen(rnd *rand.Rand) dmbGen {
-	return dmbGen{domains: BarrierDomain(rnd)}
-}
-
 // Dmb — an arbitrary dmb.
 func Dmb(rnd *rand.Rand) ohsnap.Arbitrary[DmbParams] {
 	return newDmbGen(rnd)
+}
+
+func newDmbGen(rnd *rand.Rand) dmbGen {
+	return dmbGen{domains: BarrierDomain(rnd)}
 }
 
 func (g dmbGen) Generate() iter.Seq[DmbParams] {
@@ -56,8 +57,9 @@ func (g dmbGen) Generate() iter.Seq[DmbParams] {
 }
 
 func (g dmbGen) Shrink(p DmbParams) iter.Seq[DmbParams] {
-	var out []DmbParams
-	for _, d := range slices.Collect(g.domains.Shrink(p.Domain)) {
+	shrinks := slices.Collect(g.domains.Shrink(p.Domain))
+	out := make([]DmbParams, 0, len(shrinks))
+	for _, d := range shrinks {
 		out = append(out, NewDmbParams(d))
 	}
 

@@ -34,7 +34,14 @@ type MovParams struct {
 	IsReg  bool
 }
 
-func NewMovParams(rd arm64.Reg, rm arm64.Reg, lane int64, hw uint32, class int, isReg bool) MovParams {
+func NewMovParams(
+	rd arm64.Reg,
+	rm arm64.Reg,
+	lane int64,
+	hw uint32,
+	class int,
+	isReg bool,
+) MovParams {
 	return MovParams{
 		Rd:    rd,
 		Rm:    rm,
@@ -43,6 +50,15 @@ func NewMovParams(rd arm64.Reg, rm arm64.Reg, lane int64, hw uint32, class int, 
 		Class: class,
 		IsReg: isReg,
 	}
+}
+
+func (p MovParams) Instr() arm64.Instr {
+	in, err := instrOfText(p.String())
+	if err != nil {
+		return nil // unreachable: fields are produced by a valid generator/shrink
+	}
+
+	return in
 }
 
 func (p MovParams) String() string {
@@ -61,6 +77,17 @@ func (p MovParams) String() string {
 	}
 }
 
+// movGen — generator for mov: the register form and the three immediate
+// classes of the width (the 32-bit form knows only hw 0/1).
+type movGen struct {
+	rnd *rand.Rand
+}
+
+// Mov — an arbitrary mov.
+func Mov(rnd *rand.Rand) ohsnap.Arbitrary[MovParams] {
+	return newMovGen(rnd)
+}
+
 // movImmText — the immediate text: decimal while it fits int64, hex
 // beyond (the decimal lexer stops at int64; objdump prints these hex).
 func movImmText(v uint64) string {
@@ -71,28 +98,8 @@ func movImmText(v uint64) string {
 	return "#" + strconv.FormatUint(v, 10)
 }
 
-func (p MovParams) Instr() arm64.Instr {
-	in, err := instrOfText(p.String())
-	if err != nil {
-		return nil // unreachable: fields are produced by a valid generator/shrink
-	}
-
-	return in
-}
-
-// movGen — generator for mov: the register form and the three immediate
-// classes of the width (the 32-bit form knows only hw 0/1).
-type movGen struct {
-	rnd *rand.Rand
-}
-
 func newMovGen(rnd *rand.Rand) movGen {
 	return movGen{rnd: rnd}
-}
-
-// Mov — an arbitrary mov.
-func Mov(rnd *rand.Rand) ohsnap.Arbitrary[MovParams] {
-	return newMovGen(rnd)
 }
 
 func (g movGen) Generate() iter.Seq[MovParams] {
@@ -128,7 +135,7 @@ func (g movGen) Generate() iter.Seq[MovParams] {
 			a64.GenReg(g.rnd, is64, false, true),
 			a64.GenReg(g.rnd, is64, false, true),
 			lane,
-			uint32(g.rnd.IntN(int(maxHw) + 1)),
+			uint32(g.rnd.IntN(int(maxHw)+1)),
 			class,
 			false,
 		)

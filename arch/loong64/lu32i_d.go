@@ -14,12 +14,12 @@ type Lu32iD struct {
 	imm imm
 }
 
-func (i Lu32iD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lu32i.d %s, %s", laRegName(i.rd), i.imm.text())
-}
-
 func (i Lu32iD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["lu32i.d"][0] | uint32(i.rd) | scatterS(i.imm.val, 5, 20)
 
 	return writeWord(w, word)
+}
+
+func (i Lu32iD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lu32i.d %s, %s", laRegName(i.rd), i.imm.text())
 }

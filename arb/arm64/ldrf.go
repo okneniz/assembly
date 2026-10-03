@@ -52,8 +52,9 @@ func (a ldrFArb) Generate() iter.Seq[LdrFParams] {
 }
 
 func (a ldrFArb) Shrink(p LdrFParams) iter.Seq[LdrFParams] {
-	var out []LdrFParams
-	for _, s := range slices.Collect(a.base.Shrink(p.FParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.FParams))
+	out := make([]LdrFParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewLdrFParams(s))
 	}
 

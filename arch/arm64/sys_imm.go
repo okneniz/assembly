@@ -15,20 +15,20 @@ type sysImm struct {
 	shift uint // offset of the imm16 field (bits 20:5, shift 5, for the whole family)
 }
 
-func (i sysImm) ObjDump(_ disasm.ViewCtx) string {
-	if i.name == "brk" && i.imm16 == 0 {
-		return "brk #0"
-	}
-
-	return fmt.Sprintf("%s #0x%x", i.name, i.imm16)
-}
-
 func (i sysImm) Encode(w io.Writer) (int64, error) {
 	if i.imm16 > 0xffff {
 		return 0, fmt.Errorf("%s: imm out of range", i.name)
 	}
 
 	return writeWord(w, i.enc|i.imm16<<i.shift)
+}
+
+func (i sysImm) ObjDump(_ disasm.ViewCtx) string {
+	if i.name == "brk" && i.imm16 == 0 {
+		return "brk #0"
+	}
+
+	return fmt.Sprintf("%s #0x%x", i.name, i.imm16)
 }
 
 // SysImmOf — the system instruction with imm16 (svc/brk/hlt/hvc/udf).

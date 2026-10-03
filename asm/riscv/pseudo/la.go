@@ -21,13 +21,6 @@ type La struct {
 	pc     uint64
 }
 
-func (i La) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("la %s, %#x", i.rd, i.target)
-}
-
-func (i La) Len() int {
-	return 8
-}
 func (i La) Addr() uint64 {
 	return 0
 } // assembly side: there is no decode address
@@ -40,7 +33,7 @@ func (i La) Addr() uint64 {
 func (i La) Encode(w io.Writer) (int64, error) {
 	hi, lo := arch.PcrelHiLo(i.target - int64(i.pc))
 	if hi < -(1<<19) || hi > 1<<19-1 {
-		return 0, fmt.Errorf("la: target out of the pcrel window")
+		return 0, errors.New("la: target out of the pcrel window")
 	}
 
 	hiBits, err := arch.EncU(hi & 0xfffff)
@@ -67,6 +60,14 @@ func (i La) Encode(w io.Writer) (int64, error) {
 
 	n, err := w.Write(buf.Bytes())
 	return int64(n), err
+}
+
+func (i La) Len() int {
+	return 8
+}
+
+func (i La) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("la %s, %#x", i.rd, i.target)
 }
 
 // resolveLa is the evaluator wired to parsing: la rd, sym.

@@ -10,10 +10,10 @@ import (
 type Tlbflush struct {
 }
 
-func (i Tlbflush) ObjDump(_ disasm.ViewCtx) string {
-	return "tlbflush"
-}
-
 func (i Tlbflush) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, loongEncodings["tlbflush"][0])
+}
+
+func (i Tlbflush) ObjDump(_ disasm.ViewCtx) string {
+	return "tlbflush"
 }

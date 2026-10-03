@@ -35,6 +35,7 @@ func (p CbzParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p CbzParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -46,6 +47,11 @@ type cbzGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
+// Cbz — an arbitrary cbz.
+func Cbz(rnd *rand.Rand) ohsnap.Arbitrary[CbzParams] {
+	return newCbzGen(rnd)
+}
+
 func newCbzGen(rnd *rand.Rand) cbzGen {
 	return cbzGen{
 		rnd: rnd,
@@ -53,20 +59,19 @@ func newCbzGen(rnd *rand.Rand) cbzGen {
 	}
 }
 
-// Cbz — an arbitrary cbz.
-func Cbz(rnd *rand.Rand) ohsnap.Arbitrary[CbzParams] {
-	return newCbzGen(rnd)
-}
-
 func (g cbzGen) Generate() iter.Seq[CbzParams] {
 	return arb.Stream(func() CbzParams {
-		return NewCbzParams(genReg(g.rnd, g.rnd.IntN(2) == 1, false, true), ohsnap.First(g.off.Generate()))
+		return NewCbzParams(
+			genReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+			ohsnap.First(g.off.Generate()),
+		)
 	})
 }
 
 func (g cbzGen) Shrink(p CbzParams) iter.Seq[CbzParams] {
-	var out []CbzParams
-	for _, r := range regShrunk(p.Rt) {
+	regs := regShrunk(p.Rt)
+	out := make([]CbzParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewCbzParams(r, p.Off))
 	}
 

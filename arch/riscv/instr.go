@@ -86,14 +86,14 @@ func newUnknown(raw uint32) Unknown {
 	return Unknown{raw: raw}
 }
 
-func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
-	return "<unknown>"
-}
-
 func (i Unknown) Encode(w io.Writer, _ EncOpts) (int64, error) {
 	if i.raw&0x3 != 0x3 {
 		return writeHalf(w, uint16(i.raw))
 	}
 
 	return writeWord(w, i.raw)
+}
+
+func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
+	return "<unknown>"
 }

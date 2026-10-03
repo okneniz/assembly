@@ -43,36 +43,9 @@ type dapEditor struct {
 	events []dapMsg
 }
 
-func newDapEditor(t *testing.T, conn net.Conn) *dapEditor {
-	t.Helper()
-
-	return &dapEditor{t: t, r: bufio.NewReader(conn), c: conn}
-}
-
-func (e *dapEditor) request(command string, args any) dapMsg {
+func (e *dapEditor) body(msg dapMsg, out any) {
 	e.t.Helper()
-	e.seq++
-	body, err := json.Marshal(map[string]any{
-		"seq":       e.seq,
-		"type":      "request",
-		"command":   command,
-		"arguments": args,
-	})
-	require.NoError(e.t, err)
-
-	head := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
-	_, err = e.c.Write([]byte(head + string(body)))
-	require.NoError(e.t, err)
-
-	for {
-		msg := e.read()
-		if msg.Type == "response" {
-			require.Equal(e.t, e.seq, msg.ReqSeq, "reply to another request")
-			return msg
-		}
-
-		e.events = append(e.events, msg)
-	}
+	require.NoError(e.t, json.Unmarshal(msg.Body, out))
 }
 
 // event returns the next event of that name (the buffered ones first);
@@ -130,29 +103,30 @@ func (e *dapEditor) read() dapMsg {
 	return msg
 }
 
-func (e *dapEditor) body(msg dapMsg, out any) {
+func (e *dapEditor) request(command string, args any) dapMsg {
 	e.t.Helper()
-	require.NoError(e.t, json.Unmarshal(msg.Body, out))
-}
+	e.seq++
+	body, err := json.Marshal(map[string]any{
+		"seq":       e.seq,
+		"type":      "request",
+		"command":   command,
+		"arguments": args,
+	})
+	require.NoError(e.t, err)
 
-func cutPrefixStr(s, prefix string) (string, bool) {
-	if len(s) < len(prefix) || s[:len(prefix)] != prefix {
-		return "", false
+	head := fmt.Sprintf("Content-Length: %d\r\n\r\n", len(body))
+	_, err = e.c.Write([]byte(head + string(body)))
+	require.NoError(e.t, err)
+
+	for {
+		msg := e.read()
+		if msg.Type == "response" {
+			require.Equal(e.t, e.seq, msg.ReqSeq, "reply to another request")
+			return msg
+		}
+
+		e.events = append(e.events, msg)
 	}
-
-	return s[len(prefix):], true
-}
-
-func trimEOL(s string) string {
-	if len(s) > 0 && s[len(s)-1] == '\n' {
-		s = s[:len(s)-1]
-	}
-
-	if len(s) > 0 && s[len(s)-1] == '\r' {
-		s = s[:len(s)-1]
-	}
-
-	return s
 }
 
 // The typed views of the reply bodies (the untyped json map would need
@@ -409,4 +383,30 @@ func TestDapProg(t *testing.T) {
 
 	msg = e.request("disconnect", nil)
 	require.True(t, msg.Success, msg.Message)
+}
+
+func newDapEditor(t *testing.T, conn net.Conn) *dapEditor {
+	t.Helper()
+
+	return &dapEditor{t: t, r: bufio.NewReader(conn), c: conn}
+}
+
+func cutPrefixStr(s, prefix string) (string, bool) {
+	if len(s) < len(prefix) || s[:len(prefix)] != prefix {
+		return "", false
+	}
+
+	return s[len(prefix):], true
+}
+
+func trimEOL(s string) string {
+	if len(s) > 0 && s[len(s)-1] == '\n' {
+		s = s[:len(s)-1]
+	}
+
+	if len(s) > 0 && s[len(s)-1] == '\r' {
+		s = s[:len(s)-1]
+	}
+
+	return s
 }

@@ -22,10 +22,6 @@ func cSrli(rd, rs1 string, shamt int64) Srli {
 	}
 }
 
-func (i Srli) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("srli %s, %s, %s", i.rd, i.rs1, i.shamt.text())
-}
-
 func (i Srli) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
@@ -42,6 +38,10 @@ func (i Srli) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Srli) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("srli %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
 func newSrli(ops []Op) (Instr, error) {

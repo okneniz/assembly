@@ -13,10 +13,6 @@ type Sh struct {
 	off      imm
 }
 
-func (i Sh) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sh %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
-}
-
 func (i Sh) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Sh) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["sh"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
 	return writeWord(w, word)
+}
+
+func (i Sh) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sh %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
 func newSh(ops []Op) (Instr, error) {

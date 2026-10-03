@@ -14,14 +14,6 @@ type FReg struct {
 	is64 bool  // d = true, s = false
 }
 
-// newFReg - the register constructor: the struct is assembled only here.
-func newFReg(num uint8, is64 bool) FReg {
-	return FReg{
-		num:  num,
-		is64: is64,
-	}
-}
-
 // S — single-precision register s0..s31.
 func S(n int) (FReg, error) {
 	if n < 0 || n > 31 {
@@ -66,14 +58,26 @@ func FRegOf(name string) (FReg, error) {
 	return FReg{}, fmt.Errorf("arm64.FRegOf: unknown register %q", name)
 }
 
-// Num — the register number (0..31).
-func (r FReg) Num() uint8 {
-	return r.num
+// newFReg - the register constructor: the struct is assembled only here.
+func newFReg(num uint8, is64 bool) FReg {
+	return FReg{
+		num:  num,
+		is64: is64,
+	}
 }
 
 // Is64 — width of the view: d = true, s = false.
 func (r FReg) Is64() bool {
 	return r.is64
+}
+
+// Num — the register number (0..31).
+func (r FReg) Num() uint8 {
+	return r.num
+}
+
+func (r FReg) String() string {
+	return r.name()
 }
 
 // kind — the fpKind of the operand.
@@ -83,10 +87,6 @@ func (r FReg) kind() fpKind {
 	}
 
 	return kS
-}
-
-func (r FReg) String() string {
-	return r.name()
 }
 
 // name - canonical name ("s5", "d7").

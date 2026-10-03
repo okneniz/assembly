@@ -40,6 +40,7 @@ func (p SubImmParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p SubImmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -50,13 +51,13 @@ type subImmGen struct {
 	rnd *rand.Rand
 }
 
-func newSubImmGen(rnd *rand.Rand) subImmGen {
-	return subImmGen{rnd: rnd}
-}
-
 // SubImm — an arbitrary sub (immediate).
 func SubImm(rnd *rand.Rand) ohsnap.Arbitrary[SubImmParams] {
 	return newSubImmGen(rnd)
+}
+
+func newSubImmGen(rnd *rand.Rand) subImmGen {
+	return subImmGen{rnd: rnd}
 }
 
 func (g subImmGen) Generate() iter.Seq[SubImmParams] {

@@ -15,18 +15,14 @@ type Aese struct {
 // newAese - the Aese constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the decoder
 // calls it with values read from the word).
-func newAese(rd, rn VReg) (Aese, error) {
+func newAese(rd, rn VReg) Aese {
 	return Aese{
 		rd: rd.name(),
 		rn: rn.name(),
-	}, nil
+	}
 }
 
 const aeseEnc uint32 = 1311262720 // aese vd, vn
-
-func (i Aese) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("aese.16b %s, %s", i.rd, i.rn)
-}
 
 func (i Aese) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
@@ -35,4 +31,8 @@ func (i Aese) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, aeseEnc|rd|rn<<5)
+}
+
+func (i Aese) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("aese.16b %s, %s", i.rd, i.rn)
 }

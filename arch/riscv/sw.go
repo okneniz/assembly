@@ -22,10 +22,6 @@ func cSw(rs1, rs2 string, off int64) Sw {
 	}
 }
 
-func (i Sw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sw %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
-}
-
 func (i Sw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -51,6 +47,10 @@ func (i Sw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Sw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sw %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
 func newSw(ops []Op) (Instr, error) {

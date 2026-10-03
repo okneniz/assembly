@@ -36,10 +36,6 @@ const (
 	fcvtDS uint32 = 0x1E22C000 // fcvt dd, sn
 )
 
-func (i Fcvt) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fcvt %s, %s", i.rd, i.rn)
-}
-
 func (i Fcvt) Encode(w io.Writer) (int64, error) {
 	match := fcvtSD
 	if i.rd[0] == 'd' {
@@ -52,4 +48,8 @@ func (i Fcvt) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Fcvt) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fcvt %s, %s", i.rd, i.rn)
 }

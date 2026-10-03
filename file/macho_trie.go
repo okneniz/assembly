@@ -89,7 +89,7 @@ func machoTrieInsert(root *machoTrieNode, name string, value uint64) {
 // machoTrieCommon - the length of the longest common prefix of a and b.
 func machoTrieCommon(a, b string) int {
 	n := min(len(a), len(b))
-	for i := 0; i < n; i++ {
+	for i := range n {
 		if a[i] != b[i] {
 			return i
 		}
@@ -115,6 +115,7 @@ func machoNewTrie(names []string, valueOf func(string) uint64) []byte {
 		if a.depth != b.depth {
 			return b.depth - a.depth // deepest first
 		}
+
 		return strings.Compare(a.name, b.name)
 	})
 
@@ -135,6 +136,7 @@ func machoNewTrie(names []string, valueOf func(string) uint64) []byte {
 			n.off = cur
 			cur += n.size
 		}
+
 		for _, n := range branches {
 			n.off = cur
 			cur += n.size
@@ -146,6 +148,7 @@ func machoNewTrie(names []string, valueOf func(string) uint64) []byte {
 	for _, n := range leaves {
 		out = append(out, machoTrieBytes(n)...)
 	}
+
 	for _, n := range branches {
 		out = append(out, machoTrieBytes(n)...)
 	}
@@ -193,10 +196,10 @@ func machoTrieSize(n *machoTrieNode) int {
 
 	if n.termSet {
 		size += len(uleb(uint64(1 + len(uleb(n.term))))) // terminal size
-		size += 1                                        // flags: a plain export
+		size++                                           // flags: a plain export
 		size += len(uleb(n.term))
 	} else {
-		size += 1
+		size++
 	}
 
 	size += len(uleb(uint64(len(n.edges))))

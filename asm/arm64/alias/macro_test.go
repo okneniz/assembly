@@ -45,7 +45,7 @@ trap_1: ret
 	// the unit mode assembles the same macro source to the same bytes
 	u := unit.New()
 	require.Empty(t, AssembleUnit(u, "traps.S", src))
-	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x1000))
 	require.Empty(t, fixed.Errs)
 	text, err := fixed.EncodeText()
 	require.NoError(t, err)

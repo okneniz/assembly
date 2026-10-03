@@ -53,8 +53,9 @@ func (a sturhArb) Generate() iter.Seq[SturhParams] {
 }
 
 func (a sturhArb) Shrink(p SturhParams) iter.Seq[SturhParams] {
-	var out []SturhParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]SturhParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSturhParams(s))
 	}
 

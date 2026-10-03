@@ -30,11 +30,6 @@ func NewSbfizParams(rd arm64.Reg, rn arm64.Reg, lsb uint32, width uint32) SbfizP
 	}
 }
 
-func (p SbfizParams) String() string {
-	return "sbfiz " + p.Rd.String() + ", " + p.Rn.String() +
-		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
-}
-
 func (p SbfizParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +39,24 @@ func (p SbfizParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p SbfizParams) String() string {
+	return "sbfiz " + p.Rd.String() + ", " + p.Rn.String() +
+		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
+}
+
 // sbfizGen — generator for sbfiz: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type sbfizGen struct {
 	rnd *rand.Rand
 }
 
-func newSbfizGen(rnd *rand.Rand) sbfizGen {
-	return sbfizGen{rnd: rnd}
-}
-
 // Sbfiz — an arbitrary sbfiz.
 func Sbfiz(rnd *rand.Rand) ohsnap.Arbitrary[SbfizParams] {
 	return newSbfizGen(rnd)
+}
+
+func newSbfizGen(rnd *rand.Rand) sbfizGen {
+	return sbfizGen{rnd: rnd}
 }
 
 func (g sbfizGen) Generate() iter.Seq[SbfizParams] {

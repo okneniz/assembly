@@ -18,19 +18,19 @@ var arm64Schemas = []Schema{
 	}, NewMeta("ret", "Branch"), "retFormatter", false, decodeRet),
 	NewSchema(0xFFFFFFFF, 0x00000000, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("udf", "System"), "udfFormatter", false, decodeSysImmOf("udf", 0x00000000, 5)),
+	}, NewMeta("udf", "System"), "udfFormatter", false, decodeSysImmOf("udf", 0x00000000)),
 	NewSchema(0xFFE0001F, 0xD4200000, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("brk", "System"), "brkFormatter", false, decodeSysImmOf("brk", 0xD4200000, 5)),
+	}, NewMeta("brk", "System"), "brkFormatter", false, decodeSysImmOf("brk", 0xD4200000)),
 	NewSchema(0xFFE0001F, 0xD4400000, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("hlt", "Exception"), "brkFormatter", false, decodeSysImmOf("hlt", 0xD4400000, 5)),
+	}, NewMeta("hlt", "Exception"), "brkFormatter", false, decodeSysImmOf("hlt", 0xD4400000)),
 	NewSchema(0xFFE0001F, 0xD4000002, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("hvc", "Exception"), "brkFormatter", false, decodeSysImmOf("hvc", 0xD4000002, 5)),
+	}, NewMeta("hvc", "Exception"), "brkFormatter", false, decodeSysImmOf("hvc", 0xD4000002)),
 	NewSchema(0xFFE0001F, 0xD4000003, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("smc", "Exception"), "brkFormatter", false, decodeSysImmOf("smc", 0xD4000003, 5)),
+	}, NewMeta("smc", "Exception"), "brkFormatter", false, decodeSysImmOf("smc", 0xD4000003)),
 	NewSchema(0xFF000000, 0x91000000, []Field{
 		NewField("Rd", 0, 5),
 		NewField("Rn", 5, 5),
@@ -1416,11 +1416,11 @@ var arm64Schemas = []Schema{
 		NewMeta("yield", ""),
 		"yieldFmt",
 		true,
-		decodeSysFixedOf("yield", "", "Hint", 0xD503203F),
+		decodeSysFixedOf("yield", "Hint", 0xD503203F),
 	),
 	NewSchema(0xFFE0001F, 0xD4000001, []Field{
 		NewField("imm16", 5, 16),
-	}, NewMeta("svc", ""), "svcFmt", true, decodeSysImmOf("svc", 0xD4000001, 5)),
+	}, NewMeta("svc", ""), "svcFmt", true, decodeSysImmOf("svc", 0xD4000001)),
 	NewSchema(
 		0xFFF8F000,
 		0xD5087000,
@@ -1446,7 +1446,7 @@ var arm64Schemas = []Schema{
 		NewMeta("eret", ""),
 		"eretFmt",
 		true,
-		decodeSysFixedOf("eret", "", "Pseudo", 0xD69F03E0),
+		decodeSysFixedOf("eret", "Pseudo", 0xD69F03E0),
 	),
 	NewSchema(
 		0xFFFFFFFF,
@@ -1455,7 +1455,7 @@ var arm64Schemas = []Schema{
 		NewMeta("eretaa", ""),
 		"eretFmt",
 		true,
-		decodeSysFixedOf("eretaa", "", "Pseudo", 0xD69F0BFF),
+		decodeSysFixedOf("eretaa", "Pseudo", 0xD69F0BFF),
 	),
 	NewSchema(
 		0xFFFFFFFF,
@@ -1464,7 +1464,7 @@ var arm64Schemas = []Schema{
 		NewMeta("eretab", ""),
 		"eretFmt",
 		true,
-		decodeSysFixedOf("eretab", "", "Pseudo", 0xD69F0FFF),
+		decodeSysFixedOf("eretab", "Pseudo", 0xD69F0FFF),
 	),
 	NewSchema(0xFFF00000, 0xD5300000, []Field{
 		NewField("Rd", 0, 5, "regX"),

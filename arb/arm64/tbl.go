@@ -52,8 +52,9 @@ func (a tblArb) Generate() iter.Seq[TblParams] {
 }
 
 func (a tblArb) Shrink(p TblParams) iter.Seq[TblParams] {
-	var out []TblParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3PlainParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3PlainParams))
+	out := make([]TblParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewTblParams(s))
 	}
 

@@ -15,12 +15,6 @@ type fakeInstr struct {
 	s string
 }
 
-func newFakeInstr(s string) fakeInstr {
-	return fakeInstr{
-		s: s,
-	}
-}
-
 func (f fakeInstr) ObjDump(_ ViewCtx) string {
 	return f.s
 }
@@ -83,4 +77,10 @@ func TestWrite(t *testing.T) {
 	require.NoError(t, err)
 	want := "80000000:\t8802\tli s0, 0x2\n80000002:\t00a003b3\tadd x27, x28\n"
 	require.Equal(t, want, buf.String(), "Write")
+}
+
+func newFakeInstr(s string) fakeInstr {
+	return fakeInstr{
+		s: s,
+	}
 }

@@ -32,13 +32,13 @@ func newMsrPstate(ops []vOp) (Instr, error) {
 		return nil, errors.New("msr: unknown pstate field " + ops[0].Sym())
 	}
 
-	max := int64(15)
+	maxImm := int64(15)
 	if imm1 {
-		max = 1
+		maxImm = 1
 	}
 
 	v := ops[1].Num()
-	if v < 0 || v > max {
+	if v < 0 || v > maxImm {
 		return nil, errors.New("msr " + strings.ToLower(ops[0].Sym()) + ": bad imm")
 	}
 

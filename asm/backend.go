@@ -34,34 +34,11 @@ import (
 // (as with '.', also a special resolver name).
 const poolPrefix = "\x00pool/"
 
-// poolName is the literal pool slot name: deterministic from the slot size
-// and the canonical expression key (deduplication of identical literals).
-func poolName(slot int, key string) string {
-	return poolPrefix + strconv.Itoa(slot) + "/" + key
-}
-
-// isPoolName reports whether the name belongs to the literal pool.
-func isPoolName(name string) bool {
-	return strings.HasPrefix(name, poolPrefix)
-}
-
 // PoolSelf is the reserved resolver name: the address of the literal pool
 // slot of the instruction's OWN literal (GAS: ldr xN, =literal). The core
 // substitutes it for the instruction that requested a slot (PoolUser) - the
 // slot naming scheme does not cross the layer boundary.
 const PoolSelf = "\x00pool/self"
-
-// placeholderResolve is the first layout walk resolver: every symbol equals
-// the address of the instruction itself, so all relative offsets are zero
-// and pass the range checks - the most compressible seed. The walk is then
-// relaxed with real symbol values (walkLayout + sizingResolve), so size
-// decisions MAY depend on values, as long as they converge (sizes only grow
-// from this seed).
-func placeholderResolve(addr uint64) func(string) (uint64, bool) {
-	return func(string) (uint64, bool) {
-		return addr, true
-	}
-}
 
 // Section is an output section of assembly. NOBITS (.bss): Data=nil,
 // Size is the memory reserve; for regular ones Size=len(Data).
@@ -73,15 +50,6 @@ type Section struct {
 	Nobits bool   // .bss: no file data
 }
 
-func NewSection(name string, addr uint64, data []byte) Section {
-	return Section{
-		Name: name,
-		Addr: addr,
-		Data: data,
-		Size: len(data),
-	}
-}
-
 // NewNobitsSection is a section without file data (.bss): reserve is the
 // size in memory.
 func NewNobitsSection(name string, addr uint64, reserve int) Section {
@@ -90,6 +58,15 @@ func NewNobitsSection(name string, addr uint64, reserve int) Section {
 		Addr:   addr,
 		Size:   reserve,
 		Nobits: true,
+	}
+}
+
+func NewSection(name string, addr uint64, data []byte) Section {
+	return Section{
+		Name: name,
+		Addr: addr,
+		Data: data,
+		Size: len(data),
 	}
 }
 
@@ -173,4 +150,27 @@ func (e AsmError) Error() string {
 // a message.
 func posErr(pos parsecstrings.Position, msg string) AsmError {
 	return NewAsmError(pos.Line()+1, pos.Column()+1, msg)
+}
+
+// poolName is the literal pool slot name: deterministic from the slot size
+// and the canonical expression key (deduplication of identical literals).
+func poolName(slot int, key string) string {
+	return poolPrefix + strconv.Itoa(slot) + "/" + key
+}
+
+// isPoolName reports whether the name belongs to the literal pool.
+func isPoolName(name string) bool {
+	return strings.HasPrefix(name, poolPrefix)
+}
+
+// placeholderResolve is the first layout walk resolver: every symbol equals
+// the address of the instruction itself, so all relative offsets are zero
+// and pass the range checks - the most compressible seed. The walk is then
+// relaxed with real symbol values (walkLayout + sizingResolve), so size
+// decisions MAY depend on values, as long as they converge (sizes only grow
+// from this seed).
+func placeholderResolve(addr uint64) func(string) (uint64, bool) {
+	return func(string) (uint64, bool) {
+		return addr, true
+	}
 }

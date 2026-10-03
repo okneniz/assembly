@@ -95,6 +95,29 @@ const (
 	SubsShiftW uint32 = 0x6B000000
 )
 
+func (i SubsShift) Encode(w io.Writer) (int64, error) {
+	match := SubsShiftX
+	if !i.isf {
+		match = SubsShiftW
+	}
+
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("subs: %w", err)
+	}
+
+	sh, err := shiftNumByName(i.shift)
+	if err != nil {
+		return 0, fmt.Errorf("subs: %w", err)
+	}
+
+	if i.imm6 > 63 {
+		return 0, errors.New("subs: imm6 out of range")
+	}
+
+	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
 func (i SubsShift) ObjDump(_ disasm.ViewCtx) string {
 	zr := zeroReg(i.rd)
 	if i.rd == zr {
@@ -118,27 +141,4 @@ func (i SubsShift) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("subs %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
-func (i SubsShift) Encode(w io.Writer) (int64, error) {
-	match := SubsShiftX
-	if !i.isf {
-		match = SubsShiftW
-	}
-
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("subs: %w", err)
-	}
-
-	sh, err := shiftNumByName(i.shift)
-	if err != nil {
-		return 0, fmt.Errorf("subs: %w", err)
-	}
-
-	if i.imm6 > 63 {
-		return 0, errors.New("subs: imm6 out of range")
-	}
-
-	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
 }

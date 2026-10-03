@@ -36,6 +36,7 @@ func (p AsrRegParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AsrRegParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -45,13 +46,13 @@ type asrRegGen struct {
 	rnd *rand.Rand
 }
 
-func newAsrRegGen(rnd *rand.Rand) asrRegGen {
-	return asrRegGen{rnd: rnd}
-}
-
 // AsrReg — an arbitrary asr (register).
 func AsrReg(rnd *rand.Rand) ohsnap.Arbitrary[AsrRegParams] {
 	return newAsrRegGen(rnd)
+}
+
+func newAsrRegGen(rnd *rand.Rand) asrRegGen {
+	return asrRegGen{rnd: rnd}
 }
 
 func (g asrRegGen) Generate() iter.Seq[AsrRegParams] {
@@ -66,8 +67,9 @@ func (g asrRegGen) Generate() iter.Seq[AsrRegParams] {
 }
 
 func (g asrRegGen) Shrink(p AsrRegParams) iter.Seq[AsrRegParams] {
-	var out []AsrRegParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]AsrRegParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewAsrRegParams(r, p.Rn, p.Rm))
 	}
 

@@ -58,13 +58,6 @@ type r3Gen struct {
 	ctors []r3Entry
 }
 
-func newR3Gen(rnd *rand.Rand, ctors []r3Entry) r3Gen {
-	return r3Gen{
-		rnd:   rnd,
-		ctors: ctors,
-	}
-}
-
 func (g r3Gen) Generate() iter.Seq[R3Params] {
 	return arb.Stream(func() R3Params {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -183,13 +176,6 @@ type r2Gen struct {
 	ctors []r2Entry
 }
 
-func newR2Gen(rnd *rand.Rand, ctors []r2Entry) r2Gen {
-	return r2Gen{
-		rnd:   rnd,
-		ctors: ctors,
-	}
-}
-
 func (g r2Gen) Generate() iter.Seq[R2Params] {
 	return arb.Stream(func() R2Params {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -244,4 +230,18 @@ var alu2R = []r2Entry{
 // Alu2R — an arbitrary 2R bit-manipulation instruction.
 func Alu2R(rnd *rand.Rand) ohsnap.Arbitrary[R2Params] {
 	return newR2Gen(rnd, alu2R)
+}
+
+func newR3Gen(rnd *rand.Rand, ctors []r3Entry) r3Gen {
+	return r3Gen{
+		rnd:   rnd,
+		ctors: ctors,
+	}
+}
+
+func newR2Gen(rnd *rand.Rand, ctors []r2Entry) r2Gen {
+	return r2Gen{
+		rnd:   rnd,
+		ctors: ctors,
+	}
 }

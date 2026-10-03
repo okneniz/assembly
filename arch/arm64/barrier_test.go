@@ -24,7 +24,7 @@ func TestBarrierBuild(t *testing.T) {
 		{"dmb oshst", func() (Instr, error) { return b.Dmb(Oshst) }, 0xd50332bf},
 		{"dsb sy", func() (Instr, error) { return b.Dsb(Sy) }, 0xd5033f9f},
 		{"dsb ish", func() (Instr, error) { return b.Dsb(Ish) }, 0xd5033b9f},
-		{"isb", func() (Instr, error) { return b.Isb() }, 0xd5033fdf},
+		{"isb", b.Isb, 0xd5033fdf},
 	}
 	for _, c := range cases {
 		in, err := c.in()
@@ -64,5 +64,4 @@ func TestBarrierDecode(t *testing.T) {
 
 	_, err := dmb(0xd50331bf) // CRm 1 - unassigned
 	require.Error(t, err)
-
 }

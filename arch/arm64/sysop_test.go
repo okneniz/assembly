@@ -86,13 +86,6 @@ func TestSysOpDecode(t *testing.T) {
 	}
 }
 
-// instrText - the instruction's own ObjDump text at address zero.
-func instrText(t *testing.T, in Instr) string {
-	t.Helper()
-
-	return in.ObjDump(disasm.ViewCtxAt(0))
-}
-
 // TestSysOpSpellingUniqueness - the words of the table are pairwise
 // distinct: the decode's reverse lookup relies on it.
 func TestSysOpSpellingUniqueness(t *testing.T) {
@@ -102,4 +95,11 @@ func TestSysOpSpellingUniqueness(t *testing.T) {
 		require.False(t, dup, "words of %s and %s collide", name, prev)
 		seen[rec.enc] = name
 	}
+}
+
+// instrText - the instruction's own ObjDump text at address zero.
+func instrText(t *testing.T, in Instr) string {
+	t.Helper()
+
+	return in.ObjDump(disasm.ViewCtxAt(0))
 }

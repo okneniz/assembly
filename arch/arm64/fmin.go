@@ -33,15 +33,8 @@ const (
 	fminS uint32 = 0x1E205800 // fmin sd, sn, sm
 )
 
-func (i Fmin) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmin %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Fmin) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fminD, fminS)
-	if err != nil {
-		return 0, fmt.Errorf("fmin: %w", err)
-	}
+	match := fpMatch(i.rd, fminD, fminS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +42,8 @@ func (i Fmin) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Fmin) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmin %s, %s, %s", i.rd, i.rn, i.rm)
 }

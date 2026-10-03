@@ -32,15 +32,8 @@ const (
 	fnegS uint32 = 0x1E214000 // fneg sd, sn
 )
 
-func (i Fneg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fneg %s, %s", i.rd, i.rn)
-}
-
 func (i Fneg) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fnegD, fnegS)
-	if err != nil {
-		return 0, fmt.Errorf("fneg: %w", err)
-	}
+	match := fpMatch(i.rd, fnegD, fnegS)
 
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -48,4 +41,8 @@ func (i Fneg) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Fneg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fneg %s, %s", i.rd, i.rn)
 }

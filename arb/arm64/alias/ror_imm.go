@@ -31,10 +31,6 @@ func NewRorImmParams(rd arm64.Reg, rn arm64.Reg, sh uint32) RorImmParams {
 	}
 }
 
-func (p RorImmParams) String() string {
-	return fmt.Sprintf("ror %s, %s, #%d", p.Rd, p.Rn, p.Sh)
-}
-
 func (p RorImmParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +40,23 @@ func (p RorImmParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p RorImmParams) String() string {
+	return fmt.Sprintf("ror %s, %s, #%d", p.Rd, p.Rn, p.Sh)
+}
+
 // rorImmGen — generator for ror #imm: registers of the same width, the
 // amount 0..regsize-1.
 type rorImmGen struct {
 	rnd *rand.Rand
 }
 
-func newRorImmGen(rnd *rand.Rand) rorImmGen {
-	return rorImmGen{rnd: rnd}
-}
-
 // RorImm — an arbitrary ror #imm.
 func RorImm(rnd *rand.Rand) ohsnap.Arbitrary[RorImmParams] {
 	return newRorImmGen(rnd)
+}
+
+func newRorImmGen(rnd *rand.Rand) rorImmGen {
+	return rorImmGen{rnd: rnd}
 }
 
 func (g rorImmGen) Generate() iter.Seq[RorImmParams] {
@@ -76,8 +76,9 @@ func (g rorImmGen) Generate() iter.Seq[RorImmParams] {
 }
 
 func (g rorImmGen) Shrink(p RorImmParams) iter.Seq[RorImmParams] {
-	var out []RorImmParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]RorImmParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewRorImmParams(r, p.Rn, p.Sh))
 	}
 

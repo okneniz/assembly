@@ -74,18 +74,6 @@ const (
 	SubImmW uint32 = 0x51000000
 )
 
-func (i SubImm) ObjDump(_ disasm.ViewCtx) string {
-	rd := addSubRegName(i.rdNum, i.isf, false)
-	rn := addSubRegName(i.rnNum, i.isf, false)
-	imm := fmt.Sprintf("#0x%x", i.imm12)
-
-	if i.shift {
-		return fmt.Sprintf("sub %s, %s, %s, lsl #12", rd, rn, imm)
-	}
-
-	return fmt.Sprintf("sub %s, %s, %s", rd, rn, imm)
-}
-
 func (i SubImm) Encode(w io.Writer) (int64, error) {
 	match := SubImmX
 	if !i.isf {
@@ -102,4 +90,16 @@ func (i SubImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
+}
+
+func (i SubImm) ObjDump(_ disasm.ViewCtx) string {
+	rd := addSubRegName(i.rdNum, i.isf, false)
+	rn := addSubRegName(i.rnNum, i.isf, false)
+	imm := fmt.Sprintf("#0x%x", i.imm12)
+
+	if i.shift {
+		return fmt.Sprintf("sub %s, %s, %s, lsl #12", rd, rn, imm)
+	}
+
+	return fmt.Sprintf("sub %s, %s, %s", rd, rn, imm)
 }

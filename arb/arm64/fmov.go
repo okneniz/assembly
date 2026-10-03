@@ -52,8 +52,9 @@ func (a fmovArb) Generate() iter.Seq[FmovParams] {
 }
 
 func (a fmovArb) Shrink(p FmovParams) iter.Seq[FmovParams] {
-	var out []FmovParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F2Params))
+	out := make([]FmovParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFmovParams(s))
 	}
 

@@ -40,56 +40,15 @@ func (Target) Arch() string {
 	return "loong64"
 }
 
-// QemuBinary - the virt machine executor.
-func (Target) QemuBinary() string {
-	return "qemu-system-loongarch64"
-}
-
-// PCNum and SPNum - the gdbstub numbers (pc follows the 32 GPRs).
-func (Target) PCNum() int {
-	return pcNum
-}
-
-func (Target) SPNum() int {
-	return spNum
-}
-
-// QemuArgs - the virt machine with the raw image placed at the flash
-// base the machine resets into (the loader's ELF path is a no-op on
-// this machine; the raw blob with an explicit address is the load
-// mechanism that works).
-func (Target) QemuArgs(imgPath string) []string {
-	return []string{
-		"-machine", "virt",
-		"-device", fmt.Sprintf("loader,file=%s,addr=%#x,cpu-num=0", imgPath, flashMem),
-	}
-}
-
 // mustReg - the pre-minting helper: the names/numbers/widths are
 // constants, the constructor error is unreachable.
-func mustReg(name string, num, bits int) debug.Reg {
-	r, err := debug.NewReg(name, num, bits)
+func mustReg(name string, num int) debug.Reg {
+	r, err := debug.NewReg(name, num, 64)
 	if err != nil {
 		panic(err) // unreachable: the inputs are constants
 	}
 
 	return r
-}
-
-// Registers is the ordered core register set: $r0-$r31, orig_a0, pc
-// (orig_a0 is part of the stub layout - it keeps the block offsets
-// aligned even though the display barely needs it).
-func (Target) Registers() []debug.Reg {
-	regs := make([]debug.Reg, 0, 34)
-	for i := range 32 {
-		regs = append(regs, mustReg(fmt.Sprintf("$r%d", i), i, 64))
-	}
-
-	return append(
-		regs,
-		mustReg("orig_a0", origA0, 64),
-		mustReg("pc", pcNum, 64),
-	)
 }
 
 // Disasm - the listing lines of the buffer at addr through the loong64
@@ -118,4 +77,45 @@ func (Target) Disasm(code []byte, addr uint64) []string {
 // encoding has no compressed form).
 func (Target) InstrLen(code []byte) int {
 	return arch.InstrLen(code)
+}
+
+// PCNum and SPNum - the gdbstub numbers (pc follows the 32 GPRs).
+func (Target) PCNum() int {
+	return pcNum
+}
+
+// QemuArgs - the virt machine with the raw image placed at the flash
+// base the machine resets into (the loader's ELF path is a no-op on
+// this machine; the raw blob with an explicit address is the load
+// mechanism that works).
+func (Target) QemuArgs(imgPath string) []string {
+	return []string{
+		"-machine", "virt",
+		"-device", fmt.Sprintf("loader,file=%s,addr=%#x,cpu-num=0", imgPath, flashMem),
+	}
+}
+
+// QemuBinary - the virt machine executor.
+func (Target) QemuBinary() string {
+	return "qemu-system-loongarch64"
+}
+
+// Registers is the ordered core register set: $r0-$r31, orig_a0, pc
+// (orig_a0 is part of the stub layout - it keeps the block offsets
+// aligned even though the display barely needs it).
+func (Target) Registers() []debug.Reg {
+	regs := make([]debug.Reg, 0, 34)
+	for i := range 32 {
+		regs = append(regs, mustReg(fmt.Sprintf("$r%d", i), i))
+	}
+
+	return append(
+		regs,
+		mustReg("orig_a0", origA0),
+		mustReg("pc", pcNum),
+	)
+}
+
+func (Target) SPNum() int {
+	return spNum
 }

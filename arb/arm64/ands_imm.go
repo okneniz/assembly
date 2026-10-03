@@ -52,8 +52,9 @@ func (a andsImmArb) Generate() iter.Seq[AndsImmParams] {
 }
 
 func (a andsImmArb) Shrink(p AndsImmParams) iter.Seq[AndsImmParams] {
-	var out []AndsImmParams
-	for _, s := range slices.Collect(a.base.Shrink(p.BitmaskParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.BitmaskParams))
+	out := make([]AndsImmParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAndsImmParams(s))
 	}
 

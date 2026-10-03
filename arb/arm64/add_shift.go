@@ -47,6 +47,7 @@ func (p AddShiftParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AddShiftParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -58,13 +59,13 @@ type addShiftGen struct {
 	rnd *rand.Rand
 }
 
-func newAddShiftGen(rnd *rand.Rand) addShiftGen {
-	return addShiftGen{rnd: rnd}
-}
-
 // AddShift — an arbitrary add (shifted register).
 func AddShift(rnd *rand.Rand) ohsnap.Arbitrary[AddShiftParams] {
 	return newAddShiftGen(rnd)
+}
+
+func newAddShiftGen(rnd *rand.Rand) addShiftGen {
+	return addShiftGen{rnd: rnd}
 }
 
 func (g addShiftGen) Generate() iter.Seq[AddShiftParams] {

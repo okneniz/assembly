@@ -229,6 +229,7 @@ func placeSegSections(seg *machoSegPlace, start uint64) {
 			cur = alignUp(cur, uint64(1)<<sp.align)
 			file = alignUp(file, uint64(1)<<sp.align)
 		}
+
 		first = false
 
 		sp.addr = seg.vmaddr + cur

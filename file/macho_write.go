@@ -225,6 +225,7 @@ func emitMachO(m *MachOImage) []byte {
 	for i := range m.sections {
 		id.Write(m.sections[i].Data)
 	}
+
 	copy(out[pos+8:], id.Sum(nil)[:16])
 	pos += 24
 

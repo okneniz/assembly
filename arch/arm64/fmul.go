@@ -33,15 +33,8 @@ const (
 	fmulS uint32 = 0x1E200800 // fmul sd, sn, sm
 )
 
-func (i Fmul) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmul %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Fmul) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fmulD, fmulS)
-	if err != nil {
-		return 0, fmt.Errorf("fmul: %w", err)
-	}
+	match := fpMatch(i.rd, fmulD, fmulS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +42,8 @@ func (i Fmul) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Fmul) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmul %s, %s, %s", i.rd, i.rn, i.rm)
 }

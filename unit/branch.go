@@ -31,10 +31,6 @@ type branchSym struct {
 	build  func(target, pc uint64) (Resolved, error)
 }
 
-func (s branchSym) Size() int {
-	return s.size
-}
-
 func (s branchSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	t, ok := ctx.Resolve(s.target)
 	if !ok {
@@ -47,4 +43,8 @@ func (s branchSym) Resolve(ctx Ctx) ([]Resolved, error) {
 	}
 
 	return []Resolved{r}, nil
+}
+
+func (s branchSym) Size() int {
+	return s.size
 }

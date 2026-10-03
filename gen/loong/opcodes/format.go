@@ -81,15 +81,67 @@ type formatGrammar struct {
 	parseImm     parsec.Combinator[rune, strings.Position, Imm, parsec.Stateless]
 }
 
+// ParseFormat decodes a canonical operand format string ("DJSk12") into
+// its register slots and immediate segments; "EMPTY" - no operands.
+// Registers precede immediates (the upstream canonical order); a register
+// after the first immediate is a notation violation.
+func ParseFormat(format string) (Slots, error) {
+	if format == "EMPTY" {
+		return NewSlots(nil, nil), nil
+	}
+
+	g := makeFormatGrammar()
+	buf := strings.Buffer([]rune(format))
+
+	slots := Slots{}
+	for {
+		if r, err := g.parseRegSlot(parsec.Stateless{}, buf); err == nil {
+			if len(slots.Imms) > 0 {
+				return Slots{}, fmt.Errorf("format %q: register after immediate", format)
+			}
+
+			slots.Regs = append(slots.Regs, r)
+
+			continue
+		}
+
+		if parseImm, err := g.parseImm(parsec.Stateless{}, buf); err == nil {
+			slots.Imms = append(slots.Imms, parseImm)
+
+			continue
+		}
+
+		break
+	}
+
+	if len(slots.Regs)+len(slots.Imms) == 0 {
+		return Slots{}, fmt.Errorf("format %q: no operand slots", format)
+	}
+
+	if !buf.IsEOF() {
+		return Slots{}, fmt.Errorf("format %q: unparsed tail", format)
+	}
+
+	return slots, nil
+}
+
 // newFormatGrammar builds the whole notation grammar once.
 func makeFormatGrammar() *formatGrammar {
 	g := &formatGrammar{
-		parseRegSlot: strings.Try(strings.OneOf[parsec.Stateless]("register slot", 'D', 'J', 'K', 'A')),
+		parseRegSlot: strings.Try(
+			strings.OneOf[parsec.Stateless]("register slot", 'D', 'J', 'K', 'A'),
+		),
 	}
 
-	segIndex := strings.Try(strings.OneOf[parsec.Stateless]("segment index", 'd', 'j', 'k', 'a', 'm', 'n'))
+	segIndex := strings.Try(
+		strings.OneOf[parsec.Stateless]("segment index", 'd', 'j', 'k', 'a', 'm', 'n'),
+	)
 	segDigits := strings.Cast(
-		strings.Some(2, "segment width", strings.Try(strings.Digit[parsec.Stateless]("decimal digit"))),
+		strings.Some(
+			2,
+			"segment width",
+			strings.Try(strings.Digit[parsec.Stateless]("decimal digit")),
+		),
 		castWidth,
 	)
 
@@ -139,50 +191,6 @@ func castWidth(ds []rune) (int, error) {
 	}
 
 	return int(v), nil
-}
-
-// ParseFormat decodes a canonical operand format string ("DJSk12") into
-// its register slots and immediate segments; "EMPTY" - no operands.
-// Registers precede immediates (the upstream canonical order); a register
-// after the first immediate is a notation violation.
-func ParseFormat(format string) (Slots, error) {
-	if format == "EMPTY" {
-		return NewSlots(nil, nil), nil
-	}
-
-	g := makeFormatGrammar()
-	buf := strings.Buffer([]rune(format))
-
-	slots := Slots{}
-	for {
-		if r, err := g.parseRegSlot(parsec.Stateless{}, buf); err == nil {
-			if len(slots.Imms) > 0 {
-				return Slots{}, fmt.Errorf("format %q: register after immediate", format)
-			}
-
-			slots.Regs = append(slots.Regs, r)
-
-			continue
-		}
-
-		if parseImm, err := g.parseImm(parsec.Stateless{}, buf); err == nil {
-			slots.Imms = append(slots.Imms, parseImm)
-
-			continue
-		}
-
-		break
-	}
-
-	if len(slots.Regs)+len(slots.Imms) == 0 {
-		return Slots{}, fmt.Errorf("format %q: no operand slots", format)
-	}
-
-	if !buf.IsEOF() {
-		return Slots{}, fmt.Errorf("format %q: unparsed tail", format)
-	}
-
-	return slots, nil
 }
 
 // Fields - every bit field of the layout: the register slots and the

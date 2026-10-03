@@ -23,68 +23,6 @@ import (
 	"github.com/okneniz/assembly/asm/expr"
 )
 
-// seedRnd is a deterministic generator: the seed comes from ASSEMBLY_SEED
-// (default 42), logged to reproduce a failure (a copy of the root suite
-// helper).
-func seedRnd(t *testing.T) *mrnd.Rand {
-	t.Helper()
-
-	seed := uint64(42)
-	if s := os.Getenv("ASSEMBLY_SEED"); s != "" {
-		if v, err := strconv.ParseUint(s, 0, 64); err == nil {
-			seed = v
-		}
-	}
-
-	t.Logf("seed: %d (ASSEMBLY_SEED)", seed)
-	return arb.Rnd(seed)
-}
-
-// renderExpr is the canonical text of a tree: every internal node in
-// parentheses, a binary operation with spaces around it ("(1 / 2)" - never
-// "//"), a unary one fused with the operand ("(-x)"). Numbers are decimal
-// without leading zeros; the generator leaves are non-negative, so the
-// render is injective on the image of the grammar (a negative literal "-5"
-// parses as unary minus).
-func renderExpr(e *expr.Expr) string {
-	switch e.Kind {
-	case expr.ExprNum:
-		return strconv.FormatInt(e.Num, 10)
-	case expr.ExprSym:
-		return e.Sym
-	case expr.ExprUnary:
-		return "(" + e.Op + renderExpr(e.X) + ")"
-	case expr.ExprBinary:
-		return "(" + renderExpr(e.X) + " " + e.Op + " " + renderExpr(e.Y) + ")"
-	}
-
-	return "?"
-}
-
-// renderBare is the same tree with BARE unary chains: a sign run over a
-// leaf or another unary fuses without parentheses ("+-5", "-~x") - the
-// spelling an operand takes in a source line. A unary over a BINARY node
-// keeps its parentheses ("+(1 + 2)": without them the chain would
-// re-associate into binary(+, unary(+, 1), 2)).
-func renderBare(e *expr.Expr) string {
-	switch e.Kind {
-	case expr.ExprNum:
-		return strconv.FormatInt(e.Num, 10)
-	case expr.ExprSym:
-		return e.Sym
-	case expr.ExprUnary:
-		if e.X.Kind == expr.ExprBinary {
-			return "(" + e.Op + renderBare(e.X) + ")"
-		}
-
-		return e.Op + renderBare(e.X)
-	case expr.ExprBinary:
-		return "(" + renderBare(e.X) + " " + e.Op + " " + renderBare(e.Y) + ")"
-	}
-
-	return "?"
-}
-
 // TestPropertyParseRenderRoundTrip is the "round trip" property: the
 // canonical text of a tree parses back into the same tree. Equality is by
 // ExprKey: the key is injective on structure and it is the same predicate
@@ -118,19 +56,6 @@ type fmtRow struct {
 	render func(uint64) string
 	from   uint64
 	to     uint64
-}
-
-// charLit is a character literal of a printable rune; the quote and the
-// backslash are escaped (a bare quote would close the literal).
-func charLit(v uint64) string {
-	switch r := rune(v); r {
-	case '\'':
-		return `'\''`
-	case '\\':
-		return `'\\'`
-	default:
-		return "'" + string(r) + "'"
-	}
 }
 
 // TestPropertyLiteralFormats is the "formats" property: a literal rendered
@@ -225,12 +150,6 @@ func TestPropertyParseRobustness(t *testing.T) {
 	})
 }
 
-// propResolve is a total resolver: every symbol → 42 (symbol values are not
-// the subject of the property; totality is).
-func propResolve(string) (uint64, bool) {
-	return 42, true
-}
-
 // TestPropertyEvalRobustness is the "evaluator robustness" property: Eval is
 // total on any tree - either a value or an error (shift outside 0..63,
 // division by zero), but not a panic.
@@ -254,41 +173,9 @@ var precLevels = [][]string{
 	{"*", "/", "%"},
 }
 
-// precOf - the level index of a binary operator (the tighter, the
-// bigger).
-func precOf(op string) int {
-	for l, ops := range precLevels {
-		if slices.Contains(ops, op) {
-			return l
-		}
-	}
-
-	panic("unknown operator " + op)
-}
-
-// precAllBinOps - the binary operators in ladder order.
-func precAllBinOps() []string {
-	var out []string
-	for _, ops := range precLevels {
-		out = append(out, ops...)
-	}
-
-	return out
-}
-
 // precUnOps - the unary operators (the tightest level, above every
 // binary one).
 var precUnOps = []string{"-", "~", "+"}
-
-// bin - a binary node.
-func bin(op string, x, y *expr.Expr) *expr.Expr {
-	return expr.NewExpr(expr.ExprBinary, 0, "", op, x, y)
-}
-
-// un - a unary node.
-func un(op string, x *expr.Expr) *expr.Expr {
-	return expr.NewExpr(expr.ExprUnary, 0, "", op, x, nil)
-}
 
 // precLeaf - a leaf of a precedence text: its spelling and its tree.
 type precLeaf struct {
@@ -307,6 +194,20 @@ type precLeafGen struct {
 	rnd *mrnd.Rand
 }
 
+func (g precLeafGen) Generate() iter.Seq[precLeaves] {
+	return arb.Stream(func() precLeaves {
+		return precLeaves{
+			a: g.leaf(),
+			b: g.leaf(),
+			c: g.leaf(),
+		}
+	})
+}
+
+func (precLeafGen) Shrink(precLeaves) iter.Seq[precLeaves] {
+	return slices.Values([]precLeaves{})
+}
+
 func (g precLeafGen) leaf() precLeaf {
 	v := int64(g.rnd.IntN(1 << 12))
 	switch g.rnd.IntN(5) {
@@ -322,20 +223,6 @@ func (g precLeafGen) leaf() precLeaf {
 		s := []string{"a", "zz", "q7", "sym_2", ".L"}[g.rnd.IntN(5)]
 		return precLeaf{s, expr.Sym(s)}
 	}
-}
-
-func (g precLeafGen) Generate() iter.Seq[precLeaves] {
-	return arb.Stream(func() precLeaves {
-		return precLeaves{
-			a: g.leaf(),
-			b: g.leaf(),
-			c: g.leaf(),
-		}
-	})
-}
-
-func (precLeafGen) Shrink(precLeaves) iter.Seq[precLeaves] {
-	return slices.Values([]precLeaves{})
 }
 
 // TestPropertyPrecedence - the binding order of the grammar against the
@@ -386,10 +273,127 @@ func TestPropertyPrecedence(t *testing.T) {
 				ohsnap.Check(t, 40, precLeafGen{rnd: seedRnd(t)}, func(p precLeaves) bool {
 					// the unary binds tighter than any binary operator,
 					// on either side of it
-					return check(t, u+p.a.text+" "+x+" "+p.b.text, bin(x, un(u, p.a.tree), p.b.tree)) &&
+					return check(
+						t,
+						u+p.a.text+" "+x+" "+p.b.text,
+						bin(x, un(u, p.a.tree), p.b.tree),
+					) &&
 						check(t, p.a.text+" "+x+" "+u+p.b.text, bin(x, p.a.tree, un(u, p.b.tree)))
 				})
 			})
 		}
 	}
+}
+
+// seedRnd is a deterministic generator: the seed comes from ASSEMBLY_SEED
+// (default 42), logged to reproduce a failure (a copy of the root suite
+// helper).
+func seedRnd(t *testing.T) *mrnd.Rand {
+	t.Helper()
+
+	seed := uint64(42)
+	if s := os.Getenv("ASSEMBLY_SEED"); s != "" {
+		if v, err := strconv.ParseUint(s, 0, 64); err == nil {
+			seed = v
+		}
+	}
+
+	t.Logf("seed: %d (ASSEMBLY_SEED)", seed)
+	return arb.Rnd(seed)
+}
+
+// renderExpr is the canonical text of a tree: every internal node in
+// parentheses, a binary operation with spaces around it ("(1 / 2)" - never
+// "//"), a unary one fused with the operand ("(-x)"). Numbers are decimal
+// without leading zeros; the generator leaves are non-negative, so the
+// render is injective on the image of the grammar (a negative literal "-5"
+// parses as unary minus).
+func renderExpr(e *expr.Expr) string {
+	switch e.Kind {
+	case expr.ExprNum:
+		return strconv.FormatInt(e.Num, 10)
+	case expr.ExprSym:
+		return e.Sym
+	case expr.ExprUnary:
+		return "(" + e.Op + renderExpr(e.X) + ")"
+	case expr.ExprBinary:
+		return "(" + renderExpr(e.X) + " " + e.Op + " " + renderExpr(e.Y) + ")"
+	}
+
+	return "?"
+}
+
+// renderBare is the same tree with BARE unary chains: a sign run over a
+// leaf or another unary fuses without parentheses ("+-5", "-~x") - the
+// spelling an operand takes in a source line. A unary over a BINARY node
+// keeps its parentheses ("+(1 + 2)": without them the chain would
+// re-associate into binary(+, unary(+, 1), 2)).
+func renderBare(e *expr.Expr) string {
+	switch e.Kind {
+	case expr.ExprNum:
+		return strconv.FormatInt(e.Num, 10)
+	case expr.ExprSym:
+		return e.Sym
+	case expr.ExprUnary:
+		if e.X.Kind == expr.ExprBinary {
+			return "(" + e.Op + renderBare(e.X) + ")"
+		}
+
+		return e.Op + renderBare(e.X)
+	case expr.ExprBinary:
+		return "(" + renderBare(e.X) + " " + e.Op + " " + renderBare(e.Y) + ")"
+	}
+
+	return "?"
+}
+
+// charLit is a character literal of a printable rune; the quote and the
+// backslash are escaped (a bare quote would close the literal).
+func charLit(v uint64) string {
+	switch r := rune(v); r {
+	case '\'':
+		return `'\''`
+	case '\\':
+		return `'\\'`
+	default:
+		return "'" + string(r) + "'"
+	}
+}
+
+// propResolve is a total resolver: every symbol → 42 (symbol values are not
+// the subject of the property; totality is).
+func propResolve(string) (uint64, bool) {
+	return 42, true
+}
+
+// precOf - the level index of a binary operator (the tighter, the
+// bigger).
+func precOf(op string) int {
+	for l, ops := range precLevels {
+		if slices.Contains(ops, op) {
+			return l
+		}
+	}
+
+	panic("unknown operator " + op)
+}
+
+// precAllBinOps - the binary operators in ladder order.
+func precAllBinOps() []string {
+	var out []string
+	for _, ops := range precLevels {
+		out = append(out, ops...)
+	}
+
+	return out
+}
+
+// bin - a binary node.
+func bin(op string, x, y *expr.Expr) *expr.Expr {
+	return expr.NewExpr(expr.ExprBinary, 0, "", op, x, y)
+}
+
+// un - a unary node.
+func un(op string, x *expr.Expr) *expr.Expr {
+	return expr.NewExpr(expr.ExprUnary, 0, "", op, x, nil)
 }

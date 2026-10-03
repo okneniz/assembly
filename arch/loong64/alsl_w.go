@@ -14,6 +14,14 @@ type AlslW struct {
 	shift      imm
 }
 
+func (i AlslW) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["alsl.w"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
+		scatterU(i.shift.val-1, 15, 2)
+
+	return writeWord(w, word)
+}
+
 func (i AlslW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"alsl.w %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i AlslW) ObjDump(_ disasm.ViewCtx) string {
 		laRegName(i.rk),
 		i.shift.text(),
 	)
-}
-
-func (i AlslW) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["alsl.w"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
-		scatterU(i.shift.val-1, 15, 2)
-
-	return writeWord(w, word)
 }

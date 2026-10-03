@@ -17,6 +17,15 @@ type Msub struct {
 	Madd
 }
 
+func (i Msub) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, msubX, msubW)
+	if err != nil {
+		return 0, fmt.Errorf("msub: %w", err)
+	}
+
+	return msubWrite(w, match, i.Madd)
+}
+
 func (i Msub) ObjDump(_ disasm.ViewCtx) string {
 	zr := "xzr"
 	if i.rd[0] == 'w' {
@@ -28,13 +37,4 @@ func (i Msub) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("msub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
-}
-
-func (i Msub) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, msubX, msubW)
-	if err != nil {
-		return 0, fmt.Errorf("msub: %w", err)
-	}
-
-	return msubWrite(w, match, i.Madd)
 }

@@ -165,38 +165,6 @@ type Source struct {
 	Src  string
 }
 
-// Sources renders every file of the program in the dialect.
-func (p Program) Sources(arch Arch) []Source {
-	out := make([]Source, len(p.files))
-	for i := range p.files {
-		out[i] = Source{
-			Name: fmt.Sprintf("t%d.s", i),
-			Src:  p.files[i].render(i, arch, p.ExitLinux),
-		}
-	}
-
-	return out
-}
-
-// Value is the accumulator value the program exits with (32-bit
-// wrapping arithmetic, as in the registers).
-func (p Program) Value() uint32 {
-	e := p.files[p.entry].entry
-	v := e.init + uint32(e.loop)
-	for _, name := range e.calls {
-		f := p.find(name)
-		v += f.add + uint32(f.loop)
-	}
-
-	return v
-}
-
-// Exit is the process exit code of the program (the kernel keeps the
-// low byte of the accumulator).
-func (p Program) Exit() int {
-	return int(p.Value() & 0xFF)
-}
-
 // DataMem is the expected memory size of the linked data stream: the
 // data of every file (the quad pointers 8-aligned inside their file,
 // as rendered - .align pads count) plus the bss of every file (the
@@ -219,6 +187,12 @@ func (p Program) DataMem() int {
 	}
 
 	return n
+}
+
+// Exit is the process exit code of the program (the kernel keeps the
+// low byte of the accumulator).
+func (p Program) Exit() int {
+	return int(p.Value() & 0xFF)
 }
 
 // render writes one file: .global for the entry and every function
@@ -355,6 +329,32 @@ func (p Program) LoopingFiles() int {
 	}
 
 	return n
+}
+
+// Sources renders every file of the program in the dialect.
+func (p Program) Sources(arch Arch) []Source {
+	out := make([]Source, len(p.files))
+	for i := range p.files {
+		out[i] = Source{
+			Name: fmt.Sprintf("t%d.s", i),
+			Src:  p.files[i].render(i, arch, p.ExitLinux),
+		}
+	}
+
+	return out
+}
+
+// Value is the accumulator value the program exits with (32-bit
+// wrapping arithmetic, as in the registers).
+func (p Program) Value() uint32 {
+	e := p.files[p.entry].entry
+	v := e.init + uint32(e.loop)
+	for _, name := range e.calls {
+		f := p.find(name)
+		v += f.add + uint32(f.loop)
+	}
+
+	return v
 }
 
 // find locates a function by its global name.

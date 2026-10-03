@@ -52,8 +52,9 @@ func (a rbitvArb) Generate() iter.Seq[RbitVParams] {
 }
 
 func (a rbitvArb) Shrink(p RbitVParams) iter.Seq[RbitVParams] {
-	var out []RbitVParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]RbitVParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewRbitVParams(s))
 	}
 

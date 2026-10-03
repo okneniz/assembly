@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,7 +20,7 @@ type UmlslElem struct {
 // calls it with values read from the word).
 func newUmlslElem(q, size, idx uint32, rd, rn, rm VReg) (UmlslElem, error) {
 	if size == 0 || size > 2 {
-		return UmlslElem{}, fmt.Errorf(
+		return UmlslElem{}, errors.New(
 			"arm64.NewUmlslElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
@@ -45,6 +46,15 @@ const (
 	umlslElemOpc uint32 = 6
 )
 
+func (i UmlslElem) Encode(w io.Writer) (int64, error) {
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("umlsl: %w", err)
+	}
+
+	return writeWord(w, byElemBits(i.q, umlslElemU, i.size, rm, umlslElemOpc, i.idx, rn, rd))
+}
+
 func (i UmlslElem) ObjDump(_ disasm.ViewCtx) string {
 	name := "umlsl"
 	if i.q == 1 {
@@ -53,13 +63,4 @@ func (i UmlslElem) ObjDump(_ disasm.ViewCtx) string {
 
 	return fmt.Sprintf("%s.%s %s, %s, %s[%d]",
 		name, decodeArrangement(1, i.size+1), i.rd, i.rn, i.rm, i.idx)
-}
-
-func (i UmlslElem) Encode(w io.Writer) (int64, error) {
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("umlsl: %w", err)
-	}
-
-	return writeWord(w, byElemBits(i.q, umlslElemU, i.size, rm, umlslElemOpc, i.idx, rn, rd))
 }

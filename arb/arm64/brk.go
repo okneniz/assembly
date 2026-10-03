@@ -27,6 +27,7 @@ func NewBrkParams(imm arm64.Imm16) BrkParams {
 func (p BrkParams) Instr() arm64.Instr {
 	return arm64.New().Brk(p.Imm)
 }
+
 func (p BrkParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -36,13 +37,13 @@ type brkGen struct {
 	rnd *rand.Rand
 }
 
-func newBrkGen(rnd *rand.Rand) brkGen {
-	return brkGen{rnd: rnd}
-}
-
 // Brk — an arbitrary brk.
 func Brk(rnd *rand.Rand) ohsnap.Arbitrary[BrkParams] {
 	return newBrkGen(rnd)
+}
+
+func newBrkGen(rnd *rand.Rand) brkGen {
+	return brkGen{rnd: rnd}
 }
 
 func (g brkGen) Generate() iter.Seq[BrkParams] {

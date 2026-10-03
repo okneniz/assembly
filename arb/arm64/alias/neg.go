@@ -30,10 +30,6 @@ func NewNegParams(rd arm64.Reg, rm arm64.Reg, sh string, amt int64) NegParams {
 	}
 }
 
-func (p NegParams) String() string {
-	return "neg " + p.Rd.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
-}
-
 func (p NegParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -43,19 +39,23 @@ func (p NegParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p NegParams) String() string {
+	return "neg " + p.Rd.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
+}
+
 // negGen — generator for neg: same-width registers, the shift amount
 // below the register width.
 type negGen struct {
 	rnd *rand.Rand
 }
 
-func newNegGen(rnd *rand.Rand) negGen {
-	return negGen{rnd: rnd}
-}
-
 // Neg — an arbitrary neg.
 func Neg(rnd *rand.Rand) ohsnap.Arbitrary[NegParams] {
 	return newNegGen(rnd)
+}
+
+func newNegGen(rnd *rand.Rand) negGen {
+	return negGen{rnd: rnd}
 }
 
 func (g negGen) Generate() iter.Seq[NegParams] {
@@ -74,7 +74,12 @@ func (g negGen) Generate() iter.Seq[NegParams] {
 		}
 
 		return NewNegParams(
-			a64.GenReg(g.rnd, is64, false, false), // zr would read back as cmp (a decoder-canon gap)
+			a64.GenReg(
+				g.rnd,
+				is64,
+				false,
+				false,
+			), // zr would read back as cmp (a decoder-canon gap)
 			a64.GenReg(g.rnd, is64, false, true),
 			sh,
 			amt,

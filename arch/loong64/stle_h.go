@@ -13,13 +13,13 @@ type StleH struct {
 	rd, rj, rk uint8
 }
 
-func (i StleH) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("stle.h %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
-}
-
 func (i StleH) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["stle.h"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 
 	return writeWord(w, word)
+}
+
+func (i StleH) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("stle.h %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

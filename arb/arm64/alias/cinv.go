@@ -28,10 +28,6 @@ func NewCinvParams(rd arm64.Reg, rn arm64.Reg, cond string) CinvParams {
 	}
 }
 
-func (p CinvParams) String() string {
-	return "cinv " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
-}
-
 func (p CinvParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -41,18 +37,22 @@ func (p CinvParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p CinvParams) String() string {
+	return "cinv " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
+}
+
 // cinvGen — generator for cinv: same-width registers and a condition.
 type cinvGen struct {
 	rnd *rand.Rand
 }
 
-func newCinvGen(rnd *rand.Rand) cinvGen {
-	return cinvGen{rnd: rnd}
-}
-
 // Cinv — an arbitrary cinv.
 func Cinv(rnd *rand.Rand) ohsnap.Arbitrary[CinvParams] {
 	return newCinvGen(rnd)
+}
+
+func newCinvGen(rnd *rand.Rand) cinvGen {
+	return cinvGen{rnd: rnd}
 }
 
 func (g cinvGen) Generate() iter.Seq[CinvParams] {

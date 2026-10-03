@@ -9,10 +9,11 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/okneniz/assembly/arch/arm64"
-	"github.com/okneniz/assembly/disasm"
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
+
+	"github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/disasm"
 )
 
 // AddsImmParams — parameters of adds rd, rn, #imm12[, lsl #12].
@@ -39,6 +40,7 @@ func (p AddsImmParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AddsImmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -49,13 +51,13 @@ type addsImmGen struct {
 	rnd *rand.Rand
 }
 
-func newAddsImmGen(rnd *rand.Rand) addsImmGen {
-	return addsImmGen{rnd: rnd}
-}
-
 // AddsImm — an arbitrary adds (immediate).
 func AddsImm(rnd *rand.Rand) ohsnap.Arbitrary[AddsImmParams] {
 	return newAddsImmGen(rnd)
+}
+
+func newAddsImmGen(rnd *rand.Rand) addsImmGen {
+	return addsImmGen{rnd: rnd}
 }
 
 func (g addsImmGen) Generate() iter.Seq[AddsImmParams] {

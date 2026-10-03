@@ -37,6 +37,7 @@ func NewSegment(cmd Cmd, cmdsize uint32) *Segment {
 func (s *Segment) Cmd() Cmd {
 	return s.cmd
 }
+
 func (s *Segment) Cmdsize() uint32 {
 	return s.cmdsize
 }
@@ -80,19 +81,9 @@ func NewSection(segment *Segment, f *File) *Section {
 	}
 }
 
-// Type returns the section type (the low byte of flags).
-func (s *Section) Type() SectionType {
-	return SectionType(s.Flags & 0xff)
-}
-
 // Attr returns the section attributes (the high bits of flags).
 func (s *Section) Attr() AttrFlag {
 	return AttrFlag(s.Flags & 0xffffff00)
-}
-
-// Segment returns the segment the section belongs to.
-func (s *Section) Segment() *Segment {
-	return s.segment
 }
 
 // Data returns the contents of the section: read lazily from the buffer
@@ -117,6 +108,16 @@ func (s *Section) Data() ([]byte, error) {
 
 	s.data = data
 	return data, nil
+}
+
+// Segment returns the segment the section belongs to.
+func (s *Section) Segment() *Segment {
+	return s.segment
+}
+
+// Type returns the section type (the low byte of flags).
+func (s *Section) Type() SectionType {
+	return SectionType(s.Flags & 0xff)
 }
 
 // segment/section layouts.

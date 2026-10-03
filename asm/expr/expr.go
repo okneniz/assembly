@@ -149,11 +149,83 @@ func (e *Expr) Eval(resolve func(string) (uint64, bool)) (int64, error) {
 
 // --- expression grammar ---
 
+// grammar is the precedence ladder of the expression language: primary
+// (parenthesized expression, character literal, local reference, number,
+// symbol), unary - ~ +, then the binary levels from | (lowest) to * / %
+// (highest). It is a STRUCT because the grammar is mutually recursive:
+// primary -> "(expr)" -> expr -> ... -> primary; the inner closures
+// reference the fields, which are all assigned before the first parse.
+//
+// Precedences (low → high): | ^ & << >> + - * / %.
+type grammar struct {
+	primary Combinator
+	unary   Combinator
+	mul     Combinator
+	add     Combinator
+	shift   Combinator
+	and     Combinator
+	xor     Combinator
+	or      Combinator
+	expr    Combinator
+}
+
+// CExpr is the whole GAS expression grammar (numbers/symbols/operators):
+// a fresh ladder per call; consumers capture the returned value once and
+// reuse it (it holds no mutable state).
+func MakeExprParser() Combinator {
+	return makeGrammar().expr
+}
+
+// ParseExpr parses an expression from a string (for tests and utilities);
+// the whole text must be consumed.
+func ParseExpr(s string) (*Expr, error) {
+	cExpr := MakeExprParser()
+
+	body := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
+		e, err := cExpr(state, buf)
+		if err != nil {
+			return nil, err
+		}
+
+		if !buf.IsEOF() {
+			return nil, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
+		}
+
+		return e, nil
+	}
+	e, perr := parsecstrings.ParseString(parsec.Stateless{}, s, body)
+	if perr != nil {
+		return nil, fmt.Errorf("%w (at %s)", perr, perr.Position())
+	}
+
+	return e, nil
+}
+
+// ExprKey is the canonical string of an expression (for literal pool
+// deduplication: identical literals give the same key given the same
+// structure).
+func ExprKey(e *Expr) string {
+	switch e.Kind {
+	case ExprNum:
+		return strconv.FormatInt(e.Num, 10)
+	case ExprSym:
+		return "s:" + e.Sym
+	case ExprUnary:
+		return "(" + e.Op + " " + ExprKey(e.X) + ")"
+	case ExprBinary:
+		return "(" + ExprKey(e.X) + " " + e.Op + " " + ExprKey(e.Y) + ")"
+	}
+
+	return "?"
+}
+
 // op2 is a binary operator combinator for sym, building an ExprBinary node.
 // Special case "/": a single slash is division, but "//" starts a comment
 // (arm/riscv Comment), such an operator does not match (Try restores the
 // position).
-func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless] {
+func op2(
+	sym string,
+) parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless] {
 	str := parsecstrings.String[parsec.Stateless]("operator "+sym, sym)
 	isDiv := sym == "/"
 
@@ -184,7 +256,8 @@ func op2(sym string) parsec.Combinator[rune, parsecstrings.Position, parsec.Bina
 }
 
 // binLevel is a precedence level: strictChainl1(term, op1 | op2).
-func binLevel(term Combinator,
+func binLevel(
+	term Combinator,
 	ops ...parsec.Combinator[rune, parsecstrings.Position, parsec.BinaryOp[*Expr], parsec.Stateless],
 ) Combinator {
 	return strictChainl1(term, parsecstrings.Choice("operator", ops...))
@@ -226,26 +299,6 @@ func strictChainl1(
 
 		return rest, nil
 	}
-}
-
-// grammar is the precedence ladder of the expression language: primary
-// (parenthesized expression, character literal, local reference, number,
-// symbol), unary - ~ +, then the binary levels from | (lowest) to * / %
-// (highest). It is a STRUCT because the grammar is mutually recursive:
-// primary -> "(expr)" -> expr -> ... -> primary; the inner closures
-// reference the fields, which are all assigned before the first parse.
-//
-// Precedences (low → high): | ^ & << >> + - * / %.
-type grammar struct {
-	primary Combinator
-	unary   Combinator
-	mul     Combinator
-	add     Combinator
-	shift   Combinator
-	and     Combinator
-	xor     Combinator
-	or      Combinator
-	expr    Combinator
 }
 
 // newGrammar builds the whole ladder once; the ready Combinators are then
@@ -315,54 +368,4 @@ func makeGrammar() *grammar {
 	g.expr = g.or
 
 	return g
-}
-
-// CExpr is the whole GAS expression grammar (numbers/symbols/operators):
-// a fresh ladder per call; consumers capture the returned value once and
-// reuse it (it holds no mutable state).
-func MakeExprParser() Combinator {
-	return makeGrammar().expr
-}
-
-// ParseExpr parses an expression from a string (for tests and utilities);
-// the whole text must be consumed.
-func ParseExpr(s string) (*Expr, error) {
-	cExpr := MakeExprParser()
-
-	body := func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (*Expr, parsec.Error[parsecstrings.Position]) {
-		e, err := cExpr(state, buf)
-		if err != nil {
-			return nil, err
-		}
-
-		if !buf.IsEOF() {
-			return nil, parsec.NewParseError(buf.Position(), "unexpected trailing characters")
-		}
-
-		return e, nil
-	}
-	e, perr := parsecstrings.ParseString(parsec.Stateless{}, s, body)
-	if perr != nil {
-		return nil, fmt.Errorf("%w (at %s)", perr, perr.Position())
-	}
-
-	return e, nil
-}
-
-// ExprKey is the canonical string of an expression (for literal pool
-// deduplication: identical literals give the same key given the same
-// structure).
-func ExprKey(e *Expr) string {
-	switch e.Kind {
-	case ExprNum:
-		return strconv.FormatInt(e.Num, 10)
-	case ExprSym:
-		return "s:" + e.Sym
-	case ExprUnary:
-		return "(" + e.Op + " " + ExprKey(e.X) + ")"
-	case ExprBinary:
-		return "(" + ExprKey(e.X) + " " + e.Op + " " + ExprKey(e.Y) + ")"
-	}
-
-	return "?"
 }

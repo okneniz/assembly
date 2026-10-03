@@ -41,13 +41,13 @@ type liGen struct {
 	rnd *rand.Rand
 }
 
-func newLiGen(rnd *rand.Rand) liGen {
-	return liGen{rnd: rnd}
-}
-
 // Li — an arbitrary li.
 func Li(rnd *rand.Rand) ohsnap.Arbitrary[LiParams] {
 	return newLiGen(rnd)
+}
+
+func newLiGen(rnd *rand.Rand) liGen {
+	return liGen{rnd: rnd}
 }
 
 func (g liGen) Generate() iter.Seq[LiParams] {
@@ -82,7 +82,7 @@ func (g liGen) Generate() iter.Seq[LiParams] {
 		})
 	default: // the whole signed 32-bit domain
 		return arb.Stream(func() LiParams {
-			return NewLiParams(rd, int64(uint64(g.rnd.Uint64())&0xffffffff)-(1<<31))
+			return NewLiParams(rd, int64(g.rnd.Uint64()&0xffffffff)-(1<<31))
 		})
 	}
 }
@@ -93,7 +93,7 @@ func (g liGen) Shrink(p LiParams) iter.Seq[LiParams] {
 		out = append(out, NewLiParams(r, p.Val))
 	}
 
-	var val int64 = p.Val
+	var val = p.Val
 	for d := range immShrink(-(1 << 31), 1<<31-1)(val) {
 		out = append(out, NewLiParams(p.Rd, d))
 	}

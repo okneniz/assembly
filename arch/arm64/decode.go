@@ -1,6 +1,9 @@
 package arm64
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 func decodeAbs(w uint32) (Instr, error) {
 	in, err := newAbs(
@@ -166,27 +169,17 @@ func decodeAdrp(w uint32) (Instr, error) {
 }
 
 func decodeAese(w uint32) (Instr, error) {
-	in, err := newAese(
+	return newAese(
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
+	), nil
 }
 
 func decodeAesmc(w uint32) (Instr, error) {
-	in, err := newAesmc(
+	return newAesmc(
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
-	)
-	if err != nil {
-		return decodeUnknown(w) // unencodable operand bits: data
-	}
-
-	return in, nil
+	), nil
 }
 
 func decodeAndImm(w uint32) (Instr, error) {
@@ -569,7 +562,7 @@ func decodeEorShift(w uint32) (Instr, error) {
 
 func decodeExtr(w uint32) (Instr, error) {
 	if w>>22&1 != w>>31&1 { // N must equal sf — the fixed 0/1 classes
-		return nil, fmt.Errorf("extr: N != sf")
+		return nil, errors.New("extr: N != sf")
 	}
 
 	in, err := newExtr(
@@ -802,11 +795,11 @@ func decodeFmovImmOf(isS bool) func(uint32) (Instr, error) {
 		rd := newFReg(uint8(w&0x1f), !isS)
 		if isS {
 			v := vfpExpandImm32(imm8)
-			return newFmovImm(rd, float64(v), fmt.Sprintf("%.8f", v))
+			return newFmovImm(rd, float64(v), fmt.Sprintf("%.8f", v)), nil
 		}
 
 		v := vfpExpandImm64(imm8)
-		return newFmovImm(rd, v, fmt.Sprintf("%.8f", v))
+		return newFmovImm(rd, v, fmt.Sprintf("%.8f", v)), nil
 	}
 }
 
@@ -2471,39 +2464,35 @@ func decodeSubsShift(w uint32) (Instr, error) {
 	return in, nil
 }
 
-func decodeSysFixedOf(name, ops, group string, enc uint32) func(uint32) (Instr, error) {
+func decodeSysFixedOf(name, group string, enc uint32) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return sysFixed{
 			name:  name,
-			ops:   ops,
 			group: group,
 			enc:   enc,
 		}, nil
 	}
 }
 
-func decodeSysImmOf(name string, enc uint32, shift uint) func(uint32) (Instr, error) {
+// decodeSysImmOf — the imm16 sits at bits 5..20 for every member of the
+// family (udf/brk/hlt/svc/hvc/smc).
+func decodeSysImmOf(name string, enc uint32) func(uint32) (Instr, error) {
 	return func(w uint32) (Instr, error) {
 		return sysImm{
 			name:  name,
-			imm16: w >> shift & 0xffff,
+			imm16: w >> 5 & 0xffff,
 			enc:   enc,
-			shift: shift,
+			shift: 5,
 		}, nil
 	}
 }
 
 func decodeTbl(w uint32) (Instr, error) {
-	in, err := newTbl(
+	return newTbl(
 		newVReg(uint8(w&0x1f)),
 		newVReg(uint8(w>>5&0x1f)),
 		newVReg(uint8(w>>16&0x1f)),
-	)
-	if err != nil {
-		return nil, err
-	}
-
-	return in, nil
+	), nil
 }
 
 func decodeTbzOf(isTbnz bool) func(uint32) (Instr, error) {

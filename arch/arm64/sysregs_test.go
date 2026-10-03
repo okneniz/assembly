@@ -11,26 +11,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// sysWord assembles an MRS/MSR instruction word from a system-register encoding
-// (op0,op1,CRn,CRm,op2) and a destination/source register Rt. base is 0xD5300000
-// for MRS (read, L=1) and 0xD5100000 for MSR (write, L=0). This mirrors how the
-// ARM encoding packs the sysreg selector into bits 19:5.
-func sysWord(base, op0, op1, crn, crm, op2, rt uint32) uint32 {
-	return base | op0<<19 | op1<<16 | crn<<12 | crm<<8 | op2<<5 | rt
-}
-
-// disasmOne decodes a single word and returns the instruction text
-// (mnemonic + operands) via ObjDump - without the addr\tbytes prefix.
-func disasmOne(t *testing.T, word uint32) string {
-	t.Helper()
-	var buf [4]byte
-	binary.LittleEndian.PutUint32(buf[:], word)
-	insts, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(buf[:]))
-	require.NoError(t, err)
-	require.Len(t, insts, 1, "expected 1 instruction")
-	return insts[0].ObjDump(disasm.DefaultViewCtx())
-}
-
 func TestSysRegNameTransform(t *testing.T) {
 	cases := []struct {
 		key  uint32
@@ -127,4 +107,24 @@ func TestSysRegRoundTrip(t *testing.T) {
 		got := disasmOne(t, c.word)
 		require.Equal(t, c.want, got, "word %#08x", c.word)
 	}
+}
+
+// sysWord assembles an MRS/MSR instruction word from a system-register encoding
+// (op0,op1,CRn,CRm,op2) and a destination/source register Rt. base is 0xD5300000
+// for MRS (read, L=1) and 0xD5100000 for MSR (write, L=0). This mirrors how the
+// ARM encoding packs the sysreg selector into bits 19:5.
+func sysWord(base, op0, op1, crn, crm, op2, rt uint32) uint32 {
+	return base | op0<<19 | op1<<16 | crn<<12 | crm<<8 | op2<<5 | rt
+}
+
+// disasmOne decodes a single word and returns the instruction text
+// (mnemonic + operands) via ObjDump - without the addr\tbytes prefix.
+func disasmOne(t *testing.T, word uint32) string {
+	t.Helper()
+	var buf [4]byte
+	binary.LittleEndian.PutUint32(buf[:], word)
+	insts, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(buf[:]))
+	require.NoError(t, err)
+	require.Len(t, insts, 1, "expected 1 instruction")
+	return insts[0].ObjDump(disasm.DefaultViewCtx())
 }

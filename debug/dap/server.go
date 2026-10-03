@@ -97,6 +97,88 @@ func (s *Server) Serve() error {
 	}
 }
 
+// configurationDone ends the edit phase: the machine is already
+// halted at its reset, report it as the entry stop.
+func (s *Server) configurationDone(req incoming) {
+	if _, ok := s.halted(req); !ok {
+		return
+	}
+
+	s.respond(req, true, "", nil)
+	s.notify("stopped", stoppedBody{Reason: "entry", ThreadId: oneThread, AllThreadsStopped: true})
+}
+
+// disassemble renders the listing window: the walk is per-instruction
+// (the target's InstrLen reads the length at the head - the compressed
+// riscv instructions vary), the reference plus both offsets opens it.
+func (s *Server) disassemble(req incoming) {
+	var args disassembleArgs
+	if err := decodeArgs(req, &args); err != nil {
+		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
+		return
+	}
+
+	if s.ifFinished(req, disassembleResult{}) {
+		return
+	}
+
+	rt, ok := s.halted(req)
+	if !ok {
+		return
+	}
+
+	if args.InstructionCount <= 0 {
+		s.respond(req, false, "assembly/dap: instructionCount must be positive", nil)
+		return
+	}
+
+	base, err := strconv.ParseUint(args.MemoryReference, 0, 64)
+	if err != nil {
+		s.respond(
+			req,
+			false,
+			fmt.Sprintf("assembly/dap: bad memory reference %q", args.MemoryReference),
+			nil,
+		)
+		return
+	}
+
+	at := max(
+		int64(base)+int64(args.Offset)+int64(args.InstructionOffset)*int64(rt.Tgt.InstrLen(nil)),
+		0,
+	)
+
+	code, err := rt.Sess.Read(uint64(at), args.InstructionCount*rt.Tgt.InstrLen(nil))
+	if err != nil {
+		s.respond(req, false, err.Error(), nil)
+		return
+	}
+
+	out := make([]disassembledInstruction, 0, args.InstructionCount)
+	off := 0
+	for len(out) < args.InstructionCount && off < len(code) {
+		instr := code[off:]
+		size := rt.Tgt.InstrLen(instr)
+		if off+size > len(code) {
+			break
+		}
+
+		text := ""
+		if lines := rt.Tgt.Disasm(instr[:size], uint64(at)+uint64(off)); len(lines) > 0 {
+			text = lines[0]
+		}
+
+		out = append(out, disassembledInstruction{
+			Address:     fmt.Sprintf("%#x", uint64(at)+uint64(off)),
+			Instruction: text,
+		})
+
+		off += size
+	}
+
+	s.respond(req, true, "", disassembleResult{Instructions: out})
+}
+
 // dispatch decodes and runs one request; errDisconnect is the clean
 // end, everything else answers the client in place.
 func (s *Server) dispatch(body []byte) error {
@@ -149,6 +231,163 @@ func (s *Server) dispatch(body []byte) error {
 	}
 
 	return nil
+}
+
+// emit marshals and writes; the caller holds mu (framing serializes
+// the bytes, the seq counter needs mu). Write errors are dropped by
+// design: a dying transport surfaces on the next read of the loop,
+// and emit may not propagate (it would strand the conversation in a
+// half-answered request).
+func (s *Server) emit(msg any) {
+	raw, err := json.Marshal(msg)
+	if err != nil {
+		// an unmarshalable DTO is a programming bug: report it without
+		// the notify bookkeeping (mu is already held on this path)
+		fallback, ferr := json.Marshal(eventMsg{
+			Type:  "event",
+			Event: "output",
+			Body:  outputBody{Category: "stderr", Output: err.Error()},
+		})
+		if ferr != nil {
+			return
+		}
+
+		raw = fallback
+	}
+
+	if werr := s.fr.write(raw); werr != nil {
+		return // nothing else to do: the read loop owns the transport verdict
+	}
+}
+
+// evaluate renders a watch expression: a label or an address (hex or
+// dec), shown as the 8-byte word at it.
+func (s *Server) evaluate(req incoming) {
+	var args evaluateArgs
+	if err := decodeArgs(req, &args); err != nil {
+		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
+		return
+	}
+
+	if s.ifFinished(req, evaluateResult{Result: "the program has finished"}) {
+		return
+	}
+
+	rt, ok := s.halted(req)
+	if !ok {
+		return
+	}
+
+	addr, found := rt.Sess.Symbol(args.Expression)
+	if !found {
+		parsed, perr := strconv.ParseUint(args.Expression, 0, 64)
+		if perr != nil {
+			s.respond(
+				req,
+				false,
+				fmt.Sprintf("assembly/dap: %q is neither a symbol nor an address", args.Expression),
+				nil,
+			)
+			return
+		}
+
+		addr = parsed
+	}
+
+	data, err := rt.Sess.Read(addr, 8)
+	if err != nil {
+		s.respond(req, false, err.Error(), nil)
+		return
+	}
+
+	s.respond(req, true, "", evaluateResult{
+		Result: fmt.Sprintf("%#x", binary.LittleEndian.Uint64(data)),
+		Type:   "uint64",
+	})
+}
+
+// finishResume reports the stop of the resumed target: stopped with
+// the reason (breakpoint, step, pause), or the end of the run.
+func (s *Server) finishResume(stop rsp.StopReply, err error) {
+	s.mu.Lock()
+	s.running = false
+	pausing := s.pausing
+	stepping := s.stepping
+	s.mu.Unlock()
+
+	if err != nil || stop.Exited() {
+		// the run is over: the finished flag arms the graceful answers
+		// the same moment - no editor request can slip into the dead
+		// machine anymore. Some poweroffs say farewell with a W reply
+		// (arm64 PSCI), some just cut the wire (the riscv sifive_test)
+		// - the broken pipe of the pending resume is the latter, not
+		// an error worth red ink.
+		s.mu.Lock()
+		s.finished = true
+		rt := s.rt
+		s.rt = nil
+		s.mu.Unlock()
+
+		if rt != nil {
+			// the teardown may block on the exiting executor - it runs
+			// aside, the conversation is already unburdened
+			go func() {
+				if err := rt.Closer.Close(); err != nil {
+					s.warn(err)
+				}
+			}()
+		}
+
+		if err == nil && stop.Kind == 'W' {
+			s.notify("exited", exitedBody{ExitCode: stop.Signal})
+		}
+
+		if err != nil {
+			s.notify("output", outputBody{
+				Category: "console",
+				Output:   "the program finished: the machine powered off\n",
+			})
+		}
+
+		s.notify("terminated", nil)
+		return
+	}
+
+	_, sw := stop.Fields["swbreak"]
+	_, hw := stop.Fields["hwbreak"]
+	reason := "breakpoint"
+	if !sw && !hw {
+		switch {
+		case pausing:
+			reason = "pause"
+		case stepping:
+			reason = "step"
+		}
+	}
+
+	s.notify("stopped", stoppedBody{Reason: reason, ThreadId: oneThread, AllThreadsStopped: true})
+}
+
+// halted reports whether the target is stopped and answers requests:
+// the RSP conversation is one-in-flight, so nothing touches it while a
+// resume is pending. ok carries the runtime for the handler.
+func (s *Server) halted(req incoming) (*Runtime, bool) {
+	s.mu.Lock()
+	rt := s.rt
+	running := s.running
+	s.mu.Unlock()
+
+	if rt == nil {
+		s.respond(req, false, "assembly/dap: no session (launch first)", nil)
+		return nil, false
+	}
+
+	if running {
+		s.respond(req, false, "assembly/dap: target is running (pause it first)", nil)
+		return nil, false
+	}
+
+	return rt, true
 }
 
 // ifFinished answers a target-touching request of an ended run: the
@@ -247,6 +486,157 @@ func (s *Server) launch(req incoming, body []byte) error {
 	s.respond(req, true, "", nil)
 	s.notify("initialized", nil)
 	return nil
+}
+
+// notify fires one event to the client.
+func (s *Server) notify(event string, body any) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.seq++
+	s.emit(eventMsg{Seq: s.seq, Type: "event", Event: event, Body: body})
+}
+
+// pause interrupts the running target: the pending resume reports the
+// stop (reason pause).
+func (s *Server) pause(req incoming) {
+	s.mu.Lock()
+	running := s.running
+	rt := s.rt
+	if running {
+		s.pausing = true
+	}
+
+	s.mu.Unlock()
+
+	if !running || rt == nil {
+		s.respond(req, false, "assembly/dap: target is not running", nil)
+		return
+	}
+
+	if err := rt.Sess.Interrupt(); err != nil {
+		s.respond(req, false, err.Error(), nil)
+		return
+	}
+
+	s.respond(req, true, "", nil)
+}
+
+// readMemory serves the editor's memory viewer: an unreadable window
+// is a success with the unreadable tail counted (the DAP way).
+func (s *Server) readMemory(req incoming) {
+	var args readMemoryArgs
+	if err := decodeArgs(req, &args); err != nil {
+		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
+		return
+	}
+
+	if s.ifFinished(req, readMemoryResult{UnreadableBytes: args.Count}) {
+		return
+	}
+
+	rt, ok := s.halted(req)
+	if !ok {
+		return
+	}
+
+	base, err := strconv.ParseUint(args.MemoryReference, 0, 64)
+	if err != nil {
+		s.respond(
+			req,
+			false,
+			fmt.Sprintf("assembly/dap: bad memory reference %q", args.MemoryReference),
+			nil,
+		)
+		return
+	}
+
+	at := max(int64(base)+int64(args.Offset), 0)
+
+	if args.Count <= 0 {
+		s.respond(req, false, "assembly/dap: count must be positive", nil)
+		return
+	}
+
+	data, err := rt.Sess.Read(uint64(at), args.Count)
+	if err != nil {
+		s.respond(
+			req,
+			true,
+			"",
+			readMemoryResult{Address: fmt.Sprintf("%#x", at), UnreadableBytes: args.Count},
+		)
+		return
+	}
+
+	s.respond(req, true, "", readMemoryResult{Address: fmt.Sprintf("%#x", at), Data: data})
+}
+
+// respond answers one request: success with the body, or the message
+// as the failure reason.
+func (s *Server) respond(req incoming, success bool, message string, body any) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+
+	s.seq++
+	s.emit(responseMsg{
+		Seq:        s.seq,
+		Type:       "response",
+		RequestSeq: req.Seq,
+		Success:    success,
+		Command:    req.Command,
+		Message:    message,
+		Body:       body,
+	})
+}
+
+// resume answers continue/step at once and finishes in a goroutine:
+// the stop arrives as an event (the editor stays responsive for pause
+// and disconnect meanwhile).
+func (s *Server) resume(req incoming, step bool) {
+	rt, ok := s.halted(req)
+	if !ok {
+		return
+	}
+
+	s.mu.Lock()
+	s.running = true
+	s.stepping = step
+	s.pausing = false
+	s.mu.Unlock()
+
+	if step {
+		go func() {
+			stop, err := rt.Sess.Step()
+			s.finishResume(stop, err)
+		}()
+
+		s.respond(req, true, "", nil)
+		return
+	}
+
+	s.respond(req, true, "", continueResult{AllThreadsContinued: true})
+	go func() {
+		stop, err := rt.Sess.Continue()
+		s.finishResume(stop, err)
+	}()
+}
+
+// scopes is the one container of the frame: the core registers.
+func (s *Server) scopes(req incoming) {
+	if s.ifFinished(req, scopesResult{}) {
+		return
+	}
+
+	if _, ok := s.halted(req); !ok {
+		return
+	}
+
+	s.respond(req, true, "", scopesResult{Scopes: []scope{{
+		Name:               "Registers",
+		PresentationHint:   "registers",
+		VariablesReference: registersRef,
+	}}})
 }
 
 // setBreakpoints replaces the source breakpoints of one file: every
@@ -406,29 +796,21 @@ func (s *Server) setInstructionBreakpoints(req incoming) {
 	s.respond(req, true, "", setBreakpointsResult{Breakpoints: out})
 }
 
-// configurationDone ends the edit phase: the machine is already
-// halted at its reset, report it as the entry stop.
-func (s *Server) configurationDone(req incoming) {
-	if _, ok := s.halted(req); !ok {
+// shutdown tears the run down once: the machine dies with the
+// conversation.
+func (s *Server) shutdown() {
+	s.mu.Lock()
+	rt := s.rt
+	s.rt = nil
+	s.mu.Unlock()
+
+	if rt == nil {
 		return
 	}
 
-	s.respond(req, true, "", nil)
-	s.notify("stopped", stoppedBody{Reason: "entry", ThreadId: oneThread, AllThreadsStopped: true})
-}
-
-// threads answers the single bare-metal thread without touching the
-// target (safe while it runs).
-func (s *Server) threads(req incoming) {
-	s.mu.Lock()
-	name := "cpu0"
-	if s.rt != nil {
-		name = s.rt.Tgt.Arch() + " cpu0"
+	if err := rt.Closer.Close(); err != nil {
+		s.warn(err)
 	}
-
-	s.mu.Unlock()
-
-	s.respond(req, true, "", threadsResult{Threads: []thread{{Id: oneThread, Name: name}}})
 }
 
 // stackTrace is the single frame at the pc: the source line when the
@@ -482,21 +864,18 @@ func (s *Server) stackTrace(req incoming) {
 	)
 }
 
-// scopes is the one container of the frame: the core registers.
-func (s *Server) scopes(req incoming) {
-	if s.ifFinished(req, scopesResult{}) {
-		return
+// threads answers the single bare-metal thread without touching the
+// target (safe while it runs).
+func (s *Server) threads(req incoming) {
+	s.mu.Lock()
+	name := "cpu0"
+	if s.rt != nil {
+		name = s.rt.Tgt.Arch() + " cpu0"
 	}
 
-	if _, ok := s.halted(req); !ok {
-		return
-	}
+	s.mu.Unlock()
 
-	s.respond(req, true, "", scopesResult{Scopes: []scope{{
-		Name:               "Registers",
-		PresentationHint:   "registers",
-		VariablesReference: registersRef,
-	}}})
+	s.respond(req, true, "", threadsResult{Threads: []thread{{Id: oneThread, Name: name}}})
 }
 
 // variables lists the registers, each with the memory reference at it
@@ -545,388 +924,9 @@ func (s *Server) variables(req incoming) {
 	s.respond(req, true, "", variablesResult{Variables: out})
 }
 
-// evaluate renders a watch expression: a label or an address (hex or
-// dec), shown as the 8-byte word at it.
-func (s *Server) evaluate(req incoming) {
-	var args evaluateArgs
-	if err := decodeArgs(req, &args); err != nil {
-		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
-		return
-	}
-
-	if s.ifFinished(req, evaluateResult{Result: "the program has finished"}) {
-		return
-	}
-
-	rt, ok := s.halted(req)
-	if !ok {
-		return
-	}
-
-	addr, found := rt.Sess.Symbol(args.Expression)
-	if !found {
-		parsed, perr := strconv.ParseUint(args.Expression, 0, 64)
-		if perr != nil {
-			s.respond(
-				req,
-				false,
-				fmt.Sprintf("assembly/dap: %q is neither a symbol nor an address", args.Expression),
-				nil,
-			)
-			return
-		}
-
-		addr = parsed
-	}
-
-	data, err := rt.Sess.Read(addr, 8)
-	if err != nil {
-		s.respond(req, false, err.Error(), nil)
-		return
-	}
-
-	s.respond(req, true, "", evaluateResult{
-		Result: fmt.Sprintf("%#x", binary.LittleEndian.Uint64(data)),
-		Type:   "uint64",
-	})
-}
-
-// resume answers continue/step at once and finishes in a goroutine:
-// the stop arrives as an event (the editor stays responsive for pause
-// and disconnect meanwhile).
-func (s *Server) resume(req incoming, step bool) {
-	rt, ok := s.halted(req)
-	if !ok {
-		return
-	}
-
-	s.mu.Lock()
-	s.running = true
-	s.stepping = step
-	s.pausing = false
-	s.mu.Unlock()
-
-	if step {
-		go func() {
-			stop, err := rt.Sess.Step()
-			s.finishResume(stop, err)
-		}()
-
-		s.respond(req, true, "", nil)
-		return
-	}
-
-	s.respond(req, true, "", continueResult{AllThreadsContinued: true})
-	go func() {
-		stop, err := rt.Sess.Continue()
-		s.finishResume(stop, err)
-	}()
-}
-
-// finishResume reports the stop of the resumed target: stopped with
-// the reason (breakpoint, step, pause), or the end of the run.
-func (s *Server) finishResume(stop rsp.StopReply, err error) {
-	s.mu.Lock()
-	s.running = false
-	pausing := s.pausing
-	stepping := s.stepping
-	s.mu.Unlock()
-
-	if err != nil || stop.Exited() {
-		// the run is over: the finished flag arms the graceful answers
-		// the same moment - no editor request can slip into the dead
-		// machine anymore. Some poweroffs say farewell with a W reply
-		// (arm64 PSCI), some just cut the wire (the riscv sifive_test)
-		// - the broken pipe of the pending resume is the latter, not
-		// an error worth red ink.
-		s.mu.Lock()
-		s.finished = true
-		rt := s.rt
-		s.rt = nil
-		s.mu.Unlock()
-
-		if rt != nil {
-			// the teardown may block on the exiting executor - it runs
-			// aside, the conversation is already unburdened
-			go func() {
-				if err := rt.Closer.Close(); err != nil {
-					s.warn(err)
-				}
-			}()
-		}
-
-		if err == nil && stop.Kind == 'W' {
-			s.notify("exited", exitedBody{ExitCode: stop.Signal})
-		}
-
-		if err != nil {
-			s.notify("output", outputBody{
-				Category: "console",
-				Output:   "the program finished: the machine powered off\n",
-			})
-		}
-
-		s.notify("terminated", nil)
-		return
-	}
-
-	_, sw := stop.Fields["swbreak"]
-	_, hw := stop.Fields["hwbreak"]
-	reason := "breakpoint"
-	if !sw && !hw {
-		switch {
-		case pausing:
-			reason = "pause"
-		case stepping:
-			reason = "step"
-		}
-	}
-
-	s.notify("stopped", stoppedBody{Reason: reason, ThreadId: oneThread, AllThreadsStopped: true})
-}
-
-// pause interrupts the running target: the pending resume reports the
-// stop (reason pause).
-func (s *Server) pause(req incoming) {
-	s.mu.Lock()
-	running := s.running
-	rt := s.rt
-	if running {
-		s.pausing = true
-	}
-
-	s.mu.Unlock()
-
-	if !running || rt == nil {
-		s.respond(req, false, "assembly/dap: target is not running", nil)
-		return
-	}
-
-	if err := rt.Sess.Interrupt(); err != nil {
-		s.respond(req, false, err.Error(), nil)
-		return
-	}
-
-	s.respond(req, true, "", nil)
-}
-
-// disassemble renders the listing window: the walk is per-instruction
-// (the target's InstrLen reads the length at the head - the compressed
-// riscv instructions vary), the reference plus both offsets opens it.
-func (s *Server) disassemble(req incoming) {
-	var args disassembleArgs
-	if err := decodeArgs(req, &args); err != nil {
-		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
-		return
-	}
-
-	if s.ifFinished(req, disassembleResult{}) {
-		return
-	}
-
-	rt, ok := s.halted(req)
-	if !ok {
-		return
-	}
-
-	if args.InstructionCount <= 0 {
-		s.respond(req, false, "assembly/dap: instructionCount must be positive", nil)
-		return
-	}
-
-	base, err := strconv.ParseUint(args.MemoryReference, 0, 64)
-	if err != nil {
-		s.respond(
-			req,
-			false,
-			fmt.Sprintf("assembly/dap: bad memory reference %q", args.MemoryReference),
-			nil,
-		)
-		return
-	}
-
-	at := max(
-		int64(base)+int64(args.Offset)+int64(args.InstructionOffset)*int64(rt.Tgt.InstrLen(nil)),
-		0,
-	)
-
-	code, err := rt.Sess.Read(uint64(at), args.InstructionCount*rt.Tgt.InstrLen(nil))
-	if err != nil {
-		s.respond(req, false, err.Error(), nil)
-		return
-	}
-
-	out := make([]disassembledInstruction, 0, args.InstructionCount)
-	off := 0
-	for len(out) < args.InstructionCount && off < len(code) {
-		instr := code[off:]
-		size := rt.Tgt.InstrLen(instr)
-		if off+size > len(code) {
-			break
-		}
-
-		text := ""
-		if lines := rt.Tgt.Disasm(instr[:size], uint64(at)+uint64(off)); len(lines) > 0 {
-			text = lines[0]
-		}
-
-		out = append(out, disassembledInstruction{
-			Address:     fmt.Sprintf("%#x", uint64(at)+uint64(off)),
-			Instruction: text,
-		})
-
-		off += size
-	}
-
-	s.respond(req, true, "", disassembleResult{Instructions: out})
-}
-
-// readMemory serves the editor's memory viewer: an unreadable window
-// is a success with the unreadable tail counted (the DAP way).
-func (s *Server) readMemory(req incoming) {
-	var args readMemoryArgs
-	if err := decodeArgs(req, &args); err != nil {
-		s.respond(req, false, fmt.Sprintf("assembly/dap: arguments: %v", err), nil)
-		return
-	}
-
-	if s.ifFinished(req, readMemoryResult{UnreadableBytes: args.Count}) {
-		return
-	}
-
-	rt, ok := s.halted(req)
-	if !ok {
-		return
-	}
-
-	base, err := strconv.ParseUint(args.MemoryReference, 0, 64)
-	if err != nil {
-		s.respond(
-			req,
-			false,
-			fmt.Sprintf("assembly/dap: bad memory reference %q", args.MemoryReference),
-			nil,
-		)
-		return
-	}
-
-	at := max(int64(base)+int64(args.Offset), 0)
-
-	if args.Count <= 0 {
-		s.respond(req, false, "assembly/dap: count must be positive", nil)
-		return
-	}
-
-	data, err := rt.Sess.Read(uint64(at), args.Count)
-	if err != nil {
-		s.respond(
-			req,
-			true,
-			"",
-			readMemoryResult{Address: fmt.Sprintf("%#x", at), UnreadableBytes: args.Count},
-		)
-		return
-	}
-
-	s.respond(req, true, "", readMemoryResult{Address: fmt.Sprintf("%#x", at), Data: data})
-}
-
-// halted reports whether the target is stopped and answers requests:
-// the RSP conversation is one-in-flight, so nothing touches it while a
-// resume is pending. ok carries the runtime for the handler.
-func (s *Server) halted(req incoming) (*Runtime, bool) {
-	s.mu.Lock()
-	rt := s.rt
-	running := s.running
-	s.mu.Unlock()
-
-	if rt == nil {
-		s.respond(req, false, "assembly/dap: no session (launch first)", nil)
-		return nil, false
-	}
-
-	if running {
-		s.respond(req, false, "assembly/dap: target is running (pause it first)", nil)
-		return nil, false
-	}
-
-	return rt, true
-}
-
-// respond answers one request: success with the body, or the message
-// as the failure reason.
-func (s *Server) respond(req incoming, success bool, message string, body any) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.seq++
-	s.emit(responseMsg{
-		Seq:        s.seq,
-		Type:       "response",
-		RequestSeq: req.Seq,
-		Success:    success,
-		Command:    req.Command,
-		Message:    message,
-		Body:       body,
-	})
-}
-
-// notify fires one event to the client.
-func (s *Server) notify(event string, body any) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-
-	s.seq++
-	s.emit(eventMsg{Seq: s.seq, Type: "event", Event: event, Body: body})
-}
-
-// emit marshals and writes; the caller holds mu (framing serializes
-// the bytes, the seq counter needs mu). Write errors are dropped by
-// design: a dying transport surfaces on the next read of the loop,
-// and emit may not propagate (it would strand the conversation in a
-// half-answered request).
-func (s *Server) emit(msg any) {
-	raw, err := json.Marshal(msg)
-	if err != nil {
-		// an unmarshalable DTO is a programming bug: report it without
-		// the notify bookkeeping (mu is already held on this path)
-		fallback, ferr := json.Marshal(eventMsg{
-			Type:  "event",
-			Event: "output",
-			Body:  outputBody{Category: "stderr", Output: err.Error()},
-		})
-		if ferr != nil {
-			return
-		}
-
-		raw = fallback
-	}
-
-	if werr := s.fr.write(raw); werr != nil {
-		return // nothing else to do: the read loop owns the transport verdict
-	}
-}
-
 // warn surfaces a non-fatal failure on the debug console.
 func (s *Server) warn(err error) {
 	s.notify("output", outputBody{Category: "stderr", Output: err.Error() + "\n"})
-}
-
-// shutdown tears the run down once: the machine dies with the
-// conversation.
-func (s *Server) shutdown() {
-	s.mu.Lock()
-	rt := s.rt
-	s.rt = nil
-	s.mu.Unlock()
-
-	if rt == nil {
-		return
-	}
-
-	if err := rt.Closer.Close(); err != nil {
-		s.warn(err)
-	}
 }
 
 // decodeArgs unmarshals the arguments of one request into out (an

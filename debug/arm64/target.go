@@ -28,30 +28,6 @@ func (Target) Arch() string {
 	return "arm64"
 }
 
-// QemuBinary - the virt machine executor.
-func (Target) QemuBinary() string {
-	return "qemu-system-aarch64"
-}
-
-// PCNum and SPNum - the gdbstub numbers: pc follows the 31 GPRs and sp.
-func (Target) PCNum() int {
-	return pcNum
-}
-
-func (Target) SPNum() int {
-	return spNum
-}
-
-// QemuArgs - the virt machine with the image loaded by the loader
-// device: it maps the ELF segments and starts cpu 0 at the entry.
-func (Target) QemuArgs(imgPath string) []string {
-	return []string{
-		"-machine", "virt",
-		"-cpu", "cortex-a53",
-		"-device", fmt.Sprintf("loader,file=%s,cpu-num=0", imgPath),
-	}
-}
-
 // Disasm - the listing lines of the buffer at addr through the arm64
 // decoder (the decode tail falls back to .word lines on its own).
 func (Target) Disasm(code []byte, addr uint64) []string {
@@ -78,4 +54,28 @@ func (Target) Disasm(code []byte, addr uint64) []string {
 // form).
 func (Target) InstrLen(code []byte) int {
 	return arch.InstrLen(code)
+}
+
+// PCNum and SPNum - the gdbstub numbers: pc follows the 31 GPRs and sp.
+func (Target) PCNum() int {
+	return pcNum
+}
+
+// QemuArgs - the virt machine with the image loaded by the loader
+// device: it maps the ELF segments and starts cpu 0 at the entry.
+func (Target) QemuArgs(imgPath string) []string {
+	return []string{
+		"-machine", "virt",
+		"-cpu", "cortex-a53",
+		"-device", fmt.Sprintf("loader,file=%s,cpu-num=0", imgPath),
+	}
+}
+
+// QemuBinary - the virt machine executor.
+func (Target) QemuBinary() string {
+	return "qemu-system-aarch64"
+}
+
+func (Target) SPNum() int {
+	return spNum
 }

@@ -51,12 +51,12 @@ func newUnknown(raw uint32) Unknown {
 	return Unknown{raw: raw}
 }
 
-func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
-	return "<unknown>"
-}
-
 func (i Unknown) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.raw)
+}
+
+func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
+	return "<unknown>"
 }
 
 // imm - the value of an immediate operand: a concrete number. Symbolic

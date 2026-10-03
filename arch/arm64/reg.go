@@ -29,14 +29,6 @@ type Reg struct {
 	class regClass
 }
 
-// newReg - the register constructor: the struct is assembled only here.
-func newReg(num uint8, class regClass) Reg {
-	return Reg{
-		num:   num,
-		class: class,
-	}
-}
-
 // RegOf — a register by its source name (x0, w3, sp, wsp, xzr, wzr):
 // the inverse of (Reg).name.
 func RegOf(name string) (Reg, error) {
@@ -70,6 +62,38 @@ func RegOf(name string) (Reg, error) {
 	return Reg{}, fmt.Errorf("arm64.Reg: unknown register %q", name)
 }
 
+// X — 64-bit register x0..x30.
+func X(n int) (Reg, error) {
+	if n < 0 || n > 30 {
+		return Reg{}, fmt.Errorf(
+			"arm64.X: register number %d is out of 0..30 (register 31 is XZR or SP)",
+			n,
+		)
+	}
+
+	return newReg(uint8(n), classX), nil
+}
+
+// W — 32-bit register w0..w30.
+func W(n int) (Reg, error) {
+	if n < 0 || n > 30 {
+		return Reg{}, fmt.Errorf(
+			"arm64.W: register number %d is out of 0..30 (register 31 is WZR or WSP)",
+			n,
+		)
+	}
+
+	return newReg(uint8(n), classW), nil
+}
+
+// newReg - the register constructor: the struct is assembled only here.
+func newReg(num uint8, class regClass) Reg {
+	return Reg{
+		num:   num,
+		class: class,
+	}
+}
+
 // gprOf - a general register from its decoded number and width (31
 // reads as the zero register): the decode-side counterpart of
 // armRegName; the class matches what the number prints as.
@@ -99,11 +123,6 @@ func xspOf(n uint32) Reg {
 	return newReg(uint8(n), classX)
 }
 
-// xOf - an x register from its decoded number (regNameX's counterpart).
-func xOf(n uint32) Reg {
-	return newReg(uint8(n), classX)
-}
-
 // numReg - a register from its NUMBER (31 reads as sp/wsp): the
 // string-operand layer's number form of add/sub immediate operands.
 func numReg(n uint32, is64 bool) Reg {
@@ -122,30 +141,6 @@ func numReg(n uint32, is64 bool) Reg {
 	return newReg(uint8(n), classW)
 }
 
-// X — 64-bit register x0..x30.
-func X(n int) (Reg, error) {
-	if n < 0 || n > 30 {
-		return Reg{}, fmt.Errorf(
-			"arm64.X: register number %d is out of 0..30 (register 31 is XZR or SP)",
-			n,
-		)
-	}
-
-	return newReg(uint8(n), classX), nil
-}
-
-// W — 32-bit register w0..w30.
-func W(n int) (Reg, error) {
-	if n < 0 || n > 30 {
-		return Reg{}, fmt.Errorf(
-			"arm64.W: register number %d is out of 0..30 (register 31 is WZR or WSP)",
-			n,
-		)
-	}
-
-	return newReg(uint8(n), classW), nil
-}
-
 // Named 31st registers.
 var (
 	XZR = newReg(31, classXZR)
@@ -154,14 +149,14 @@ var (
 	WSP = newReg(31, classWSP)
 )
 
-// Num — the register number (0..30; the named 31st registers are 31).
-func (r Reg) Num() uint8 {
-	return r.num
-}
-
 // Is64 — width of the class.
 func (r Reg) Is64() bool {
 	return r.class == classX || r.class == classXZR || r.class == classSP
+}
+
+// Num — the register number (0..30; the named 31st registers are 31).
+func (r Reg) Num() uint8 {
+	return r.num
 }
 
 func (r Reg) String() string {

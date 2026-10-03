@@ -43,10 +43,10 @@ func newAdr(rd Reg, off int64) (Adr, error) {
 	}, nil
 }
 
-func (i Adr) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("adr %s, #%d", i.rd, i.off)
-}
-
 func (i Adr) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, 0x10000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
+}
+
+func (i Adr) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("adr %s, #%d", i.rd, i.off)
 }

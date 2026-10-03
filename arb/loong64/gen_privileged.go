@@ -42,14 +42,6 @@ type csrXchgGen struct {
 	base r2RoleGen[arch.UImm14]
 }
 
-func newCsrXchgGen(rnd *rand.Rand) csrXchgGen {
-	return csrXchgGen{base: newR2RoleGen(rnd, csrXchg, UImm14(rnd))}
-}
-
-func csrXchgMaskOK(r arch.Reg) bool {
-	return r.Num() > 1
-}
-
 // CsrXchg — an arbitrary csrxchg instruction.
 func CsrXchg(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
 	return newCsrXchgGen(rnd)
@@ -145,4 +137,12 @@ func EmptyForms() []string {
 	out := make([]string, len(emptyForms))
 	copy(out, emptyForms)
 	return out
+}
+
+func newCsrXchgGen(rnd *rand.Rand) csrXchgGen {
+	return csrXchgGen{base: newR2RoleGen(rnd, csrXchg, UImm14(rnd))}
+}
+
+func csrXchgMaskOK(r arch.Reg) bool {
+	return r.Num() > 1
 }

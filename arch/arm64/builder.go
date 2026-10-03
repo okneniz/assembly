@@ -1,6 +1,9 @@
 package arm64
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Builder — the construction vocabulary of the package: instruction
 // constructors named after the mnemonic they build and operand role
@@ -69,11 +72,11 @@ func (Builder) Adrp(rd Reg, off int64) (Instr, error) {
 }
 
 func (Builder) Aese(rd, rn VReg) (Instr, error) {
-	return newAese(rd, rn)
+	return newAese(rd, rn), nil
 }
 
 func (Builder) Aesmc(rd, rn VReg) (Instr, error) {
-	return newAesmc(rd, rn)
+	return newAesmc(rd, rn), nil
 }
 
 func (Builder) And(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -419,7 +422,7 @@ func (Builder) FmovFromGpr(rd FReg, rn Reg) (Instr, error) {
 }
 
 func (Builder) FmovImm(rd FReg, val float64) (Instr, error) {
-	return newFmovImm(rd, val, fmt.Sprintf("%.8f", val))
+	return newFmovImm(rd, val, fmt.Sprintf("%.8f", val)), nil
 }
 
 func (Builder) FmovToGpr(rd Reg, rn FReg) (Instr, error) {
@@ -800,7 +803,7 @@ func (Builder) Saddw(rd, rn, rm VReg, arr string) (Instr, error) {
 	}
 
 	if size == 0 {
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"arm64.NewSaddw: arrangement too narrow (the source is one lane narrower)",
 		)
 	}
@@ -900,7 +903,7 @@ func (Builder) Smov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newSmov(0, size, idx, vn, wd)
+	return newSmov(size, idx, vn, wd)
 }
 
 func (Builder) Smulh(rd, rn, rm Reg) (Instr, error) {
@@ -1118,7 +1121,7 @@ func (Builder) Ssubw(rd, rn, rm VReg, arr string) (Instr, error) {
 	}
 
 	if size == 0 {
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"arm64.NewSsubw: arrangement too narrow (the source is one lane narrower)",
 		)
 	}
@@ -1239,7 +1242,7 @@ func (Builder) Svc(imm Imm16) Instr {
 }
 
 func (Builder) Tbl(rd, rn, rm VReg) (Instr, error) {
-	return newTbl(rd, rn, rm)
+	return newTbl(rd, rn, rm), nil
 }
 
 // Tbz — tbz rt, #bit, off: off — the pc-relative byte offset of the
@@ -1301,7 +1304,7 @@ func (Builder) Uaddlv(rd, rn VReg, arr string) (Instr, error) {
 		return nil, fmt.Errorf("arm64.NewUaddlv: arrangement %q is not one of [8b 16b 4h 8h]", arr)
 	}
 
-	return newUaddlv(q, size, rd, rn)
+	return newUaddlv(q, size, rd, rn), nil
 }
 
 func (Builder) Uaddw(rd, rn, rm VReg, arr string) (Instr, error) {
@@ -1311,7 +1314,7 @@ func (Builder) Uaddw(rd, rn, rm VReg, arr string) (Instr, error) {
 	}
 
 	if size == 0 {
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"arm64.NewUaddw: arrangement too narrow (the source is one lane narrower)",
 		)
 	}
@@ -1381,7 +1384,7 @@ func (Builder) Umov(wd Reg, vn VReg, elem string, idx uint32) (Instr, error) {
 		return nil, err
 	}
 
-	return newUmov(0, size, idx, vn, wd)
+	return newUmov(size, idx, vn, wd)
 }
 
 func (Builder) Umulh(rd, rn, rm Reg) (Instr, error) {
@@ -1437,7 +1440,7 @@ func (Builder) Usubw(rd, rn, rm VReg, arr string) (Instr, error) {
 	}
 
 	if size == 0 {
-		return nil, fmt.Errorf(
+		return nil, errors.New(
 			"arm64.NewUsubw: arrangement too narrow (the source is one lane narrower)",
 		)
 	}

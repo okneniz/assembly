@@ -8,11 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// hexOf is the wire form of qXfer data: the payload as hex.
-func hexOf(s string) string {
-	return hex.EncodeToString([]byte(s))
-}
-
 func TestSupported(t *testing.T) {
 	conn, wait := dialFake(t, []fakeStep{{
 		expect: ourFeatures,
@@ -191,4 +186,9 @@ func TestStep(t *testing.T) {
 	stop, err := NewClient(conn).Step()
 	require.NoError(t, err)
 	require.Equal(t, NewStopReply('S', 7, map[string]string{}), stop)
+}
+
+// hexOf is the wire form of qXfer data: the payload as hex.
+func hexOf(s string) string {
+	return hex.EncodeToString([]byte(s))
 }

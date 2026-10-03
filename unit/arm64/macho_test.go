@@ -17,6 +17,50 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
+const (
+	msg          = "hello world\n"
+	trapMach     = 0x80
+	sysClassUnix = 0x2000000
+	sysWrite     = 4
+	sysExit      = 1
+)
+
+func TestHelloGolden(t *testing.T) {
+	// the flat resolve of a text-only program: base 0, like the prog
+	// chain's flat Assemble
+	f := helloUnit(arch.Builder{}).Resolve(func(text, data, dataMem int) (uint64, uint64) {
+		require.Equal(t, 52, text) // 10 instructions + 12 data bytes
+		return 0, 0
+	})
+	require.Empty(t, f.Errs)
+
+	code, codeErr := f.EncodeText()
+	require.NoError(t, codeErr)
+
+	// the same golden as the prog chain's: the .s pipeline output
+	golden, err := os.ReadFile("../../prog/arm64/testdata/hello-macos.bin")
+	require.NoError(t, err)
+	require.Equal(t, golden, code)
+
+	require.Equal(t, uint64(0), f.Syms["start"])
+	require.Equal(t, uint64(40), f.Syms["msg"])
+}
+
+func TestMachoParityWithProg(t *testing.T) {
+	// the same program in the two worlds: byte-identical images - the
+	// unit output is a drop-in for the chain's Mach-O end
+	progBin, progErrs := streamsProg().Build()
+	require.Empty(t, progErrs)
+
+	progImg, err := progBin.MachO("start")
+	require.NoError(t, err)
+
+	unitImg, err := Macho(streamsUnit(arch.Builder{}), "start")
+	require.NoError(t, err)
+
+	require.Equal(t, progImg.Bytes(), unitImg.Bytes())
+}
+
 // mustX pre-mints a register (0..30 is valid - the panic is unreachable).
 func mustX(n int) arch.Reg {
 	r, err := arch.X(n)
@@ -112,35 +156,6 @@ func svc(b arch.Builder, imm int64) (arch.Instr, error) {
 	return b.Svc(v), nil
 }
 
-const (
-	msg          = "hello world\n"
-	trapMach     = 0x80
-	sysClassUnix = 0x2000000
-	sysWrite     = 4
-	sysExit      = 1
-)
-
-func TestHelloGolden(t *testing.T) {
-	// the flat resolve of a text-only program: base 0, like the prog
-	// chain's flat Assemble
-	f := helloUnit(arch.Builder{}).Resolve(func(text, data, dataMem int) (uint64, uint64) {
-		require.Equal(t, 52, text) // 10 instructions + 12 data bytes
-		return 0, 0
-	})
-	require.Empty(t, f.Errs)
-
-	code, codeErr := f.EncodeText()
-	require.NoError(t, codeErr)
-
-	// the same golden as the prog chain's: the .s pipeline output
-	golden, err := os.ReadFile("../../prog/arm64/testdata/hello-macos.bin")
-	require.NoError(t, err)
-	require.Equal(t, golden, code)
-
-	require.Equal(t, uint64(0), f.Syms["start"])
-	require.Equal(t, uint64(40), f.Syms["msg"])
-}
-
 // streamsUnit - the Go counterpart of prog/arm64's streams program: a
 // data static through an la pair, a bss tail, the layout mode.
 func streamsUnit(b arch.Builder) *unit.Unit {
@@ -202,19 +217,4 @@ func streamsProg() *prog.Program {
 	p.Label("counter").Quad(7)
 	p.Label("buf").Bss(16)
 	return p
-}
-
-func TestMachoParityWithProg(t *testing.T) {
-	// the same program in the two worlds: byte-identical images - the
-	// unit output is a drop-in for the chain's Mach-O end
-	progBin, progErrs := streamsProg().Build()
-	require.Empty(t, progErrs)
-
-	progImg, err := progBin.MachO("start")
-	require.NoError(t, err)
-
-	unitImg, err := Macho(streamsUnit(arch.Builder{}), "start")
-	require.NoError(t, err)
-
-	require.Equal(t, progImg.Bytes(), unitImg.Bytes())
 }

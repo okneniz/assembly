@@ -61,10 +61,10 @@ func newStrb(rt, rn Reg, off Off) (Strb, error) {
 
 const strbEnc uint32 = 0x39000000 // strb wt, [xn, #imm12]
 
-func (i Strb) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("strb %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Strb) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "strb")
+}
+
+func (i Strb) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("strb %s, %s", i.rt, i.lsText(ctx))
 }

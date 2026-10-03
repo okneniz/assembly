@@ -52,8 +52,9 @@ func (a bicShiftArb) Generate() iter.Seq[BicShiftParams] {
 }
 
 func (a bicShiftArb) Shrink(p BicShiftParams) iter.Seq[BicShiftParams] {
-	var out []BicShiftParams
-	for _, s := range slices.Collect(a.base.Shrink(p.ShiftedParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.ShiftedParams))
+	out := make([]BicShiftParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewBicShiftParams(s))
 	}
 

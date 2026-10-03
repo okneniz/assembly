@@ -34,6 +34,7 @@ func (p RbitParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p RbitParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type rbitGen struct {
 	rnd *rand.Rand
 }
 
-func newRbitGen(rnd *rand.Rand) rbitGen {
-	return rbitGen{rnd: rnd}
-}
-
 // Rbit — an arbitrary rbit.
 func Rbit(rnd *rand.Rand) ohsnap.Arbitrary[RbitParams] {
 	return newRbitGen(rnd)
+}
+
+func newRbitGen(rnd *rand.Rand) rbitGen {
+	return rbitGen{rnd: rnd}
 }
 
 func (g rbitGen) Generate() iter.Seq[RbitParams] {
@@ -60,8 +61,9 @@ func (g rbitGen) Generate() iter.Seq[RbitParams] {
 }
 
 func (g rbitGen) Shrink(p RbitParams) iter.Seq[RbitParams] {
-	var out []RbitParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]RbitParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewRbitParams(r, p.Rn))
 	}
 

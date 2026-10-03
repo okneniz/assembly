@@ -33,10 +33,6 @@ func newAddp(rd, rn, rm VReg, arr string) (Addp, error) {
 
 const addpEnc uint32 = 237026304 // addp vd, vn, vm (Q=0, size=0 form)
 
-func (i Addp) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("addp.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Addp) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Addp) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, addpEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
+}
+
+func (i Addp) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("addp.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

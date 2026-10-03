@@ -52,8 +52,9 @@ func (a sturArb) Generate() iter.Seq[SturParams] {
 }
 
 func (a sturArb) Shrink(p SturParams) iter.Seq[SturParams] {
-	var out []SturParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]SturParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSturParams(s))
 	}
 

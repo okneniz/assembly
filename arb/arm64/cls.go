@@ -34,6 +34,7 @@ func (p ClsParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p ClsParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type clsGen struct {
 	rnd *rand.Rand
 }
 
-func newClsGen(rnd *rand.Rand) clsGen {
-	return clsGen{rnd: rnd}
-}
-
 // Cls — an arbitrary cls.
 func Cls(rnd *rand.Rand) ohsnap.Arbitrary[ClsParams] {
 	return newClsGen(rnd)
+}
+
+func newClsGen(rnd *rand.Rand) clsGen {
+	return clsGen{rnd: rnd}
 }
 
 func (g clsGen) Generate() iter.Seq[ClsParams] {
@@ -60,8 +61,9 @@ func (g clsGen) Generate() iter.Seq[ClsParams] {
 }
 
 func (g clsGen) Shrink(p ClsParams) iter.Seq[ClsParams] {
-	var out []ClsParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]ClsParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewClsParams(r, p.Rn))
 	}
 

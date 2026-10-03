@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,7 +20,7 @@ type SqdmlalElem struct {
 // calls it with values read from the word).
 func newSqdmlalElem(q, size, idx uint32, rd, rn, rm VReg) (SqdmlalElem, error) {
 	if size == 0 || size > 2 {
-		return SqdmlalElem{}, fmt.Errorf(
+		return SqdmlalElem{}, errors.New(
 			"arm64.NewSqdmlalElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
@@ -45,6 +46,15 @@ const (
 	sqdmlalElemOpc uint32 = 3
 )
 
+func (i SqdmlalElem) Encode(w io.Writer) (int64, error) {
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("sqdmlal: %w", err)
+	}
+
+	return writeWord(w, byElemBits(i.q, sqdmlalElemU, i.size, rm, sqdmlalElemOpc, i.idx, rn, rd))
+}
+
 func (i SqdmlalElem) ObjDump(_ disasm.ViewCtx) string {
 	name := "sqdmlal"
 	if i.q == 1 {
@@ -53,13 +63,4 @@ func (i SqdmlalElem) ObjDump(_ disasm.ViewCtx) string {
 
 	return fmt.Sprintf("%s.%s %s, %s, %s[%d]",
 		name, decodeArrangement(1, i.size+1), i.rd, i.rn, i.rm, i.idx)
-}
-
-func (i SqdmlalElem) Encode(w io.Writer) (int64, error) {
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("sqdmlal: %w", err)
-	}
-
-	return writeWord(w, byElemBits(i.q, sqdmlalElemU, i.size, rm, sqdmlalElemOpc, i.idx, rn, rd))
 }

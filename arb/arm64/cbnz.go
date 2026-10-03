@@ -35,6 +35,7 @@ func (p CbnzParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p CbnzParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -46,6 +47,11 @@ type cbnzGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
+// Cbnz — an arbitrary cbnz.
+func Cbnz(rnd *rand.Rand) ohsnap.Arbitrary[CbnzParams] {
+	return newCbnzGen(rnd)
+}
+
 func newCbnzGen(rnd *rand.Rand) cbnzGen {
 	return cbnzGen{
 		rnd: rnd,
@@ -53,20 +59,19 @@ func newCbnzGen(rnd *rand.Rand) cbnzGen {
 	}
 }
 
-// Cbnz — an arbitrary cbnz.
-func Cbnz(rnd *rand.Rand) ohsnap.Arbitrary[CbnzParams] {
-	return newCbnzGen(rnd)
-}
-
 func (g cbnzGen) Generate() iter.Seq[CbnzParams] {
 	return arb.Stream(func() CbnzParams {
-		return NewCbnzParams(genReg(g.rnd, g.rnd.IntN(2) == 1, false, true), ohsnap.First(g.off.Generate()))
+		return NewCbnzParams(
+			genReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+			ohsnap.First(g.off.Generate()),
+		)
 	})
 }
 
 func (g cbnzGen) Shrink(p CbnzParams) iter.Seq[CbnzParams] {
-	var out []CbnzParams
-	for _, r := range regShrunk(p.Rt) {
+	regs := regShrunk(p.Rt)
+	out := make([]CbnzParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewCbnzParams(r, p.Off))
 	}
 

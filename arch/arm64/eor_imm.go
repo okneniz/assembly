@@ -74,10 +74,6 @@ const (
 	eorImmW uint32 = 0x52000000
 )
 
-func (i EorImm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("eor %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
 func (i EorImm) Encode(w io.Writer) (int64, error) {
 	match := eorImmX
 	if !i.is64 {
@@ -94,4 +90,8 @@ func (i EorImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
+
+func (i EorImm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("eor %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }

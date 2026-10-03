@@ -59,9 +59,12 @@ type grammar struct {
 // captured by the backend and reused for every line.
 func makeGrammar() *grammar {
 	g := &grammar{
-		parseMnemonic: parsecstrings.MapStrings[string, parsec.Stateless]("mnemonic", buildAsmMnemonics()),
-		parseComma:    expr.MakeCommaParser(),
-		parseExpr:     expr.MakeExprParser(),
+		parseMnemonic: parsecstrings.MapStrings[string, parsec.Stateless](
+			"mnemonic",
+			buildAsmMnemonics(),
+		),
+		parseComma: expr.MakeCommaParser(),
+		parseExpr:  expr.MakeExprParser(),
 	}
 
 	g.parseRegOperand = parsecstrings.Cast(
@@ -187,13 +190,19 @@ func (b *Backend) Separator() rune {
 func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
 	hash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')), body),
+		parsecstrings.Skip(
+			parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')),
+			body,
+		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
 	)
 	slash := parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")), body),
+		parsecstrings.Skip(
+			parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")),
+			body,
+		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},

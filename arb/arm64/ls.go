@@ -10,8 +10,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/okneniz/assembly/arch/arm64"
 	ohsnap "github.com/okneniz/oh-snap"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // LsParams — the parameters of the imm-addressed load/store forms.
@@ -39,7 +40,7 @@ type lsGen struct {
 // ohsnapOff — the offset arbitrary interface (Generate/Shrink).
 type ohsnapOff interface {
 	Generate() iter.Seq[arm64.Off]
-	Shrink(arm64.Off) iter.Seq[arm64.Off]
+	Shrink(off arm64.Off) iter.Seq[arm64.Off]
 }
 
 func newLsGen(rnd *rand.Rand, rt64 *bool, off ohsnapOff) lsGen {
@@ -48,14 +49,6 @@ func newLsGen(rnd *rand.Rand, rt64 *bool, off ohsnapOff) lsGen {
 		rt64: rt64,
 		off:  off,
 	}
-}
-
-func (g lsGen) is64() bool {
-	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
-	}
-
-	return *g.rt64
 }
 
 func (g lsGen) Generate() iter.Seq[LsParams] {
@@ -70,8 +63,9 @@ func (g lsGen) Generate() iter.Seq[LsParams] {
 }
 
 func (g lsGen) Shrink(p LsParams) iter.Seq[LsParams] {
-	var out []LsParams
-	for _, r := range regShrunk(p.Rt) {
+	regs := regShrunk(p.Rt)
+	out := make([]LsParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewLsParams(r, p.Rn, p.Off))
 	}
 
@@ -84,4 +78,12 @@ func (g lsGen) Shrink(p LsParams) iter.Seq[LsParams] {
 	}
 
 	return slices.Values(out)
+}
+
+func (g lsGen) is64() bool {
+	if g.rt64 == nil {
+		return g.rnd.IntN(2) == 1
+	}
+
+	return *g.rt64
 }

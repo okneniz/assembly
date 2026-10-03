@@ -16,14 +16,6 @@ import (
 
 // --- operand generators --------------------------------------------------
 
-// xreg — a register by number for tests: an X(n) error fails the test.
-func xreg(t *testing.T, n int) riscv.Reg {
-	t.Helper()
-	r, err := riscv.X(n)
-	require.NoError(t, err)
-	return r
-}
-
 // TestRegGenProperty — samples in x0..x31, shrink to zero.
 func TestRegGenProperty(t *testing.T) {
 	rnd := arb.Rnd(42)
@@ -134,42 +126,6 @@ type instrCase struct {
 	gen  func() riscv.Instr
 }
 
-func newInstrCase(name string, gen func() riscv.Instr) instrCase {
-	return instrCase{
-		name: name,
-		gen:  gen,
-	}
-}
-
-func instrCases(rnd *rand.Rand) []instrCase {
-	return []instrCase{
-		newInstrCase("Add", func() riscv.Instr {
-			return ohsnap.First(Add(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Sub", func() riscv.Instr {
-			return ohsnap.First(Sub(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Addi", func() riscv.Instr {
-			return ohsnap.First(Addi(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Lui", func() riscv.Instr {
-			return ohsnap.First(Lui(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Lw", func() riscv.Instr {
-			return ohsnap.First(Lw(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Ld", func() riscv.Instr {
-			return ohsnap.First(Ld(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Sw", func() riscv.Instr {
-			return ohsnap.First(Sw(rnd).Generate()).Instr()
-		}),
-		newInstrCase("Sd", func() riscv.Instr {
-			return ohsnap.First(Sd(rnd).Generate()).Instr()
-		}),
-	}
-}
-
 // TestInstrGenValid — a generated instruction always encodes
 // (2 or 4 bytes — RVC compression is legal and consistent with the decoder).
 func TestInstrGenValid(t *testing.T) {
@@ -211,5 +167,49 @@ func TestInstrGenShrinkValid(t *testing.T) {
 		for s := range addi.Shrink(p) {
 			s.Instr() // must not panic
 		}
+	}
+}
+
+// xreg — a register by number for tests: an X(n) error fails the test.
+func xreg(t *testing.T, n int) riscv.Reg {
+	t.Helper()
+	r, err := riscv.X(n)
+	require.NoError(t, err)
+	return r
+}
+
+func newInstrCase(name string, gen func() riscv.Instr) instrCase {
+	return instrCase{
+		name: name,
+		gen:  gen,
+	}
+}
+
+func instrCases(rnd *rand.Rand) []instrCase {
+	return []instrCase{
+		newInstrCase("Add", func() riscv.Instr {
+			return ohsnap.First(Add(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Sub", func() riscv.Instr {
+			return ohsnap.First(Sub(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Addi", func() riscv.Instr {
+			return ohsnap.First(Addi(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Lui", func() riscv.Instr {
+			return ohsnap.First(Lui(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Lw", func() riscv.Instr {
+			return ohsnap.First(Lw(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Ld", func() riscv.Instr {
+			return ohsnap.First(Ld(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Sw", func() riscv.Instr {
+			return ohsnap.First(Sw(rnd).Generate()).Instr()
+		}),
+		newInstrCase("Sd", func() riscv.Instr {
+			return ohsnap.First(Sd(rnd).Generate()).Instr()
+		}),
 	}
 }

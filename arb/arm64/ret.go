@@ -31,6 +31,7 @@ func (p RetParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p RetParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type retGen struct {
 	rnd *rand.Rand
 }
 
-func newRetGen(rnd *rand.Rand) retGen {
-	return retGen{rnd: rnd}
-}
-
 // Ret — an arbitrary ret.
 func Ret(rnd *rand.Rand) ohsnap.Arbitrary[RetParams] {
 	return newRetGen(rnd)
+}
+
+func newRetGen(rnd *rand.Rand) retGen {
+	return retGen{rnd: rnd}
 }
 
 func (g retGen) Generate() iter.Seq[RetParams] {

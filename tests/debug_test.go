@@ -26,73 +26,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// callerPos - a caller-based position resolver for the prog chains:
-// invoked inside a chain method, two frames up is the calling code
-// (this file).
-func callerPos() unit.Pos {
-	_, file, line, _ := runtime.Caller(2)
-	return unit.NewPos(file, line)
-}
-
-// asmDebugLines converts the asm line map into the session's normalized
-// form (the one source file of the run).
-func asmDebugLines(res *asm.Result, file string) []session.Line {
-	out := make([]session.Line, 0, len(res.Lines))
-	for _, e := range res.Lines {
-		out = append(out, session.NewLine(file, int(e.Line), e.Addr, e.Size))
-	}
-
-	return out
-}
-
-// readFile reads a test fixture (skip when absent).
-func readFile(t *testing.T, path string) string {
-	t.Helper()
-
-	data, err := os.ReadFile(path)
-	if err != nil {
-		t.Skipf("fixture not available: %v", err)
-	}
-
-	return string(data)
-}
-
-// startDebugged boots an ELF image under the arch's qemu executor and
-// binds a session to it (the harness of the debugging gates).
-func startDebugged(
-	t *testing.T,
-	tgt debug.Target,
-	img []byte,
-	syms map[string]uint64,
-	lines []session.Line,
-) *session.Session {
-	t.Helper()
-
-	if _, err := exec.LookPath(tgt.QemuBinary()); err != nil {
-		t.Skipf("%s not on PATH (brew install qemu)", tgt.QemuBinary())
-	}
-
-	machine, err := qemu.Start(t.Context(), tgt, img, qemu.NewOptions())
-	require.NoError(t, err)
-	t.Cleanup(func() { require.NoError(t, machine.Close()) })
-
-	s, err := session.New(machine.Conn(), tgt, syms, lines)
-	require.NoError(t, err)
-	return s
-}
-
-// stepPC steps once and returns the pc after it.
-func stepPC(t *testing.T, s *session.Session) uint64 {
-	t.Helper()
-
-	_, err := s.Step()
-	require.NoError(t, err)
-
-	pc, err := s.PC()
-	require.NoError(t, err)
-	return pc
-}
-
 // TestDebugSource - the .s path over all three arches: assemble the
 // bare-metal hello, boot it frozen, and drive it: a breakpoint at the
 // entry (the machines may sit in their reset trampolines before it),
@@ -381,4 +314,71 @@ func TestDebugProgRiscv(t *testing.T) {
 	require.True(t, ok)
 	require.Contains(t, line.File, "tests/debug_test.go")
 	require.Positive(t, line.Line)
+}
+
+// callerPos - a caller-based position resolver for the prog chains:
+// invoked inside a chain method, two frames up is the calling code
+// (this file).
+func callerPos() unit.Pos {
+	_, file, line, _ := runtime.Caller(2)
+	return unit.NewPos(file, line)
+}
+
+// asmDebugLines converts the asm line map into the session's normalized
+// form (the one source file of the run).
+func asmDebugLines(res *asm.Result, file string) []session.Line {
+	out := make([]session.Line, 0, len(res.Lines))
+	for _, e := range res.Lines {
+		out = append(out, session.NewLine(file, int(e.Line), e.Addr, e.Size))
+	}
+
+	return out
+}
+
+// readFile reads a test fixture (skip when absent).
+func readFile(t *testing.T, path string) string {
+	t.Helper()
+
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Skipf("fixture not available: %v", err)
+	}
+
+	return string(data)
+}
+
+// startDebugged boots an ELF image under the arch's qemu executor and
+// binds a session to it (the harness of the debugging gates).
+func startDebugged(
+	t *testing.T,
+	tgt debug.Target,
+	img []byte,
+	syms map[string]uint64,
+	lines []session.Line,
+) *session.Session {
+	t.Helper()
+
+	if _, err := exec.LookPath(tgt.QemuBinary()); err != nil {
+		t.Skipf("%s not on PATH (brew install qemu)", tgt.QemuBinary())
+	}
+
+	machine, err := qemu.Start(t.Context(), tgt, img, qemu.NewOptions())
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, machine.Close()) })
+
+	s, err := session.New(machine.Conn(), tgt, syms, lines)
+	require.NoError(t, err)
+	return s
+}
+
+// stepPC steps once and returns the pc after it.
+func stepPC(t *testing.T, s *session.Session) uint64 {
+	t.Helper()
+
+	_, err := s.Step()
+	require.NoError(t, err)
+
+	pc, err := s.PC()
+	require.NoError(t, err)
+	return pc
 }

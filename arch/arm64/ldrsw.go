@@ -61,10 +61,10 @@ func newLdrsw(rt, rn Reg, off Off) (Ldrsw, error) {
 
 const ldrswEnc uint32 = 0xB9800000 // ldrsw xt, [xn, #imm12<<2]
 
-func (i Ldrsw) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("ldrsw %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Ldrsw) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldrsw")
+}
+
+func (i Ldrsw) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("ldrsw %s, %s", i.rt, i.lsText(ctx))
 }

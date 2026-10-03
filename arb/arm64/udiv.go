@@ -35,6 +35,7 @@ func (p UdivParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p UdivParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -44,13 +45,13 @@ type udivGen struct {
 	rnd *rand.Rand
 }
 
-func newUdivGen(rnd *rand.Rand) udivGen {
-	return udivGen{rnd: rnd}
-}
-
 // Udiv — an arbitrary udiv.
 func Udiv(rnd *rand.Rand) ohsnap.Arbitrary[UdivParams] {
 	return newUdivGen(rnd)
+}
+
+func newUdivGen(rnd *rand.Rand) udivGen {
+	return udivGen{rnd: rnd}
 }
 
 func (g udivGen) Generate() iter.Seq[UdivParams] {
@@ -65,8 +66,9 @@ func (g udivGen) Generate() iter.Seq[UdivParams] {
 }
 
 func (g udivGen) Shrink(p UdivParams) iter.Seq[UdivParams] {
-	var out []UdivParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]UdivParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewUdivParams(r, p.Rn, p.Rm))
 	}
 

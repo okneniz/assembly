@@ -52,8 +52,9 @@ func (a stlrbArb) Generate() iter.Seq[StlrbParams] {
 }
 
 func (a stlrbArb) Shrink(p StlrbParams) iter.Seq[StlrbParams] {
-	var out []StlrbParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]StlrbParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewStlrbParams(s))
 	}
 

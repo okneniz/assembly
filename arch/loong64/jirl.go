@@ -15,18 +15,6 @@ type Jirl struct {
 	off    imm
 }
 
-func (i Jirl) ObjDump(_ disasm.ViewCtx) string {
-	if i.rd == 0 && i.off.val == 0 {
-		if i.rj == 1 {
-			return "ret"
-		}
-
-		return "jr " + laRegName(i.rj)
-	}
-
-	return fmt.Sprintf("jirl %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
-}
-
 func (i Jirl) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 16, "jirl offset")
 	if err != nil {
@@ -37,4 +25,16 @@ func (i Jirl) Encode(w io.Writer) (int64, error) {
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(off, 10, 16)
 
 	return writeWord(w, word)
+}
+
+func (i Jirl) ObjDump(_ disasm.ViewCtx) string {
+	if i.rd == 0 && i.off.val == 0 {
+		if i.rj == 1 {
+			return "ret"
+		}
+
+		return "jr " + laRegName(i.rj)
+	}
+
+	return fmt.Sprintf("jirl %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

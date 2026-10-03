@@ -67,10 +67,6 @@ func newAdc(rd Reg, rn Reg, rm Reg) (Adc, error) {
 
 const adcX uint32 = 0x9A000000
 
-func (i Adc) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("adc %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Adc) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -78,4 +74,8 @@ func (i Adc) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, adcX|rd|rn<<5|rm<<16)
+}
+
+func (i Adc) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("adc %s, %s, %s", i.rd, i.rn, i.rm)
 }

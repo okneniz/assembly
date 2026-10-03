@@ -53,8 +53,9 @@ func (a ldurbArb) Generate() iter.Seq[LdurbParams] {
 }
 
 func (a ldurbArb) Shrink(p LdurbParams) iter.Seq[LdurbParams] {
-	var out []LdurbParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]LdurbParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewLdurbParams(s))
 	}
 

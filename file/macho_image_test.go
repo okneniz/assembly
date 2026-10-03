@@ -24,16 +24,6 @@ import (
 	"github.com/okneniz/assembly/file/macho"
 )
 
-// machoTestText - a deterministic code blob of n bytes.
-func machoTestText(n int) []byte {
-	text := make([]byte, n)
-	for i := range text {
-		text[i] = byte(i*7 + 3)
-	}
-
-	return text
-}
-
 // TestMachOGolden pins the exact bytes WriteMachO produced before the
 // universal writer: same input, same image, forever. The hashes were
 // captured from the template writer at 7673a0e.
@@ -90,6 +80,7 @@ func TestMachOExactPage(t *testing.T) {
 				seg = s
 			}
 		}
+
 		require.NotNil(t, seg)
 		require.Equal(t, r.vmsize, seg.Vmsize)
 		require.Equal(t, r.vmsize, seg.Filesize)
@@ -198,6 +189,7 @@ func TestMachOImageRoundTrip(t *testing.T) {
 	for _, e := range exports {
 		at[e.Name] = e.Addr
 	}
+
 	require.Contains(t, at, "__mh_execute_header")
 	require.Equal(t, uint64(machoVMAddr), at["__mh_execute_header"])
 	require.Equal(t, img.addrs[0], at["_start"])
@@ -214,42 +206,6 @@ func TestMachOImageRoundTrip(t *testing.T) {
 	entry, ok := f.Entry()
 	require.True(t, ok)
 	require.Equal(t, img.addrs[0], entry)
-}
-
-func mustSectData(t *testing.T, s *macho.Section) []byte {
-	t.Helper()
-
-	d, err := s.Data()
-	require.NoError(t, err)
-
-	return d
-}
-
-func mustSymbols(t *testing.T, f *macho.File) []macho.Symbol {
-	t.Helper()
-
-	syms, err := f.Symbols()
-	require.NoError(t, err)
-
-	return syms
-}
-
-func mustExports(t *testing.T, f *macho.File) []macho.Export {
-	t.Helper()
-
-	e, err := f.Exports()
-	require.NoError(t, err)
-
-	return e
-}
-
-func mustFstarts(t *testing.T, f *macho.File) []uint64 {
-	t.Helper()
-
-	s, err := f.FunctionStarts()
-	require.NoError(t, err)
-
-	return s
 }
 
 // TestMachOImageErrors - the constructor rejects every malformed input.
@@ -391,6 +347,7 @@ func TestMachOImageExec(t *testing.T) {
 	// stores back, reloads, and exits with the value - proof the section
 	// is mapped, addressable via adrp+add, writable, and re-readable.
 	rmw := func(t *testing.T, sect MachOSection, inc uint32, want int) []byte {
+		t.Helper()
 		code := machoWords([]uint32{
 			0,                               // adrp x0, <sect>     - patched
 			0,                               // add x0, x0, #lo12   - patched
@@ -431,15 +388,19 @@ func TestMachOImageExec(t *testing.T) {
 		build    func(t *testing.T) []byte
 	}{
 		{"data read-modify-write", 8, func(t *testing.T) []byte {
+			t.Helper()
 			return rmw(t, NewMachOSection("__DATA", "__data", []byte{7, 0, 0, 0}, 0, 8), 1, 8)
 		}},
 		{"bss zero on first touch", 5, func(t *testing.T) []byte {
+			t.Helper()
 			return rmw(t, NewMachOSection("__DATA", "__bss", nil, 16, 8), 5, 5)
 		}},
 		{"entry past the template limit", 42, func(t *testing.T) []byte {
-			code := make([]uint32, 2100) // 8400 bytes of nop
-			for i := range code {
-				code[i] = 0xD503201F
+			t.Helper()
+			// 8400 bytes of nop + the exit setup + the svc pair
+			code := make([]uint32, 0, 2100+len(machoExitSetup)+2)
+			for range 2100 {
+				code = append(code, 0xD503201F)
 			}
 
 			code = append(code, machoExitSetup...)
@@ -475,6 +436,52 @@ func TestMachOImageExec(t *testing.T) {
 			require.Equal(t, r.exitCode, exitErr.ExitCode())
 		})
 	}
+}
+
+// machoTestText - a deterministic code blob of n bytes.
+func machoTestText(n int) []byte {
+	text := make([]byte, n)
+	for i := range text {
+		text[i] = byte(i*7 + 3)
+	}
+
+	return text
+}
+
+func mustSectData(t *testing.T, s *macho.Section) []byte {
+	t.Helper()
+
+	d, err := s.Data()
+	require.NoError(t, err)
+
+	return d
+}
+
+func mustSymbols(t *testing.T, f *macho.File) []macho.Symbol {
+	t.Helper()
+
+	syms, err := f.Symbols()
+	require.NoError(t, err)
+
+	return syms
+}
+
+func mustExports(t *testing.T, f *macho.File) []macho.Export {
+	t.Helper()
+
+	e, err := f.Exports()
+	require.NoError(t, err)
+
+	return e
+}
+
+func mustFstarts(t *testing.T, f *macho.File) []uint64 {
+	t.Helper()
+
+	s, err := f.FunctionStarts()
+	require.NoError(t, err)
+
+	return s
 }
 
 // machoWords - u32 instructions as little-endian bytes.

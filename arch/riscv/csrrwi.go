@@ -14,6 +14,17 @@ type Csrrwi struct {
 	zimm imm
 }
 
+func (i Csrrwi) Encode(w io.Writer, o EncOpts) (int64, error) {
+	csr := i.csrBits()
+
+	z, err := zimmBits(i.zimm)
+	if err != nil {
+		return 0, err
+	}
+
+	return writeWord(w, riscvEncodings["csrrwi"][0]|regBits(i.rd)<<7|z<<15|csr<<20)
+}
+
 func (i Csrrwi) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == "zero" {
 		switch i.text() {
@@ -29,17 +40,6 @@ func (i Csrrwi) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("csrrwi %s, %s, %s", i.rd, i.text(), i.zimm.text())
-}
-
-func (i Csrrwi) Encode(w io.Writer, o EncOpts) (int64, error) {
-	csr := i.csrBits()
-
-	z, err := zimmBits(i.zimm)
-	if err != nil {
-		return 0, err
-	}
-
-	return writeWord(w, riscvEncodings["csrrwi"][0]|regBits(i.rd)<<7|z<<15|csr<<20)
 }
 
 func newCsrrwi(ops []Op) (Instr, error) {

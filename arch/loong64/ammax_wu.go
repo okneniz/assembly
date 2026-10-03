@@ -12,13 +12,13 @@ type AmmaxWu struct {
 	rd, rk, rj uint8
 }
 
-func (i AmmaxWu) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ammax.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
-}
-
 func (i AmmaxWu) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ammax.wu"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i AmmaxWu) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ammax.wu %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

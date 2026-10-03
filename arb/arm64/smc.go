@@ -27,6 +27,7 @@ func NewSmcParams(imm arm64.Imm16) SmcParams {
 func (p SmcParams) Instr() arm64.Instr {
 	return arm64.New().Smc(p.Imm)
 }
+
 func (p SmcParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -36,13 +37,13 @@ type smcGen struct {
 	rnd *rand.Rand
 }
 
-func newSmcGen(rnd *rand.Rand) smcGen {
-	return smcGen{rnd: rnd}
-}
-
 // Smc — an arbitrary smc.
 func Smc(rnd *rand.Rand) ohsnap.Arbitrary[SmcParams] {
 	return newSmcGen(rnd)
+}
+
+func newSmcGen(rnd *rand.Rand) smcGen {
+	return smcGen{rnd: rnd}
 }
 
 func (g smcGen) Generate() iter.Seq[SmcParams] {

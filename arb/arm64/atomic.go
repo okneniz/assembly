@@ -50,14 +50,6 @@ func atomW(rnd *rand.Rand) atomGen {
 	return newAtomGen(rnd, &w)
 }
 
-func (g atomGen) is64() bool {
-	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
-	}
-
-	return *g.rt64
-}
-
 func (g atomGen) Generate() iter.Seq[LsParams] {
 	return arbStream(func() LsParams {
 		return NewLsParams(
@@ -69,8 +61,9 @@ func (g atomGen) Generate() iter.Seq[LsParams] {
 }
 
 func (g atomGen) Shrink(p LsParams) iter.Seq[LsParams] {
-	var out []LsParams
-	for _, r := range regShrunk(p.Rt) {
+	regs := regShrunk(p.Rt)
+	out := make([]LsParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewLsParams(r, p.Rn, 0))
 	}
 
@@ -79,6 +72,14 @@ func (g atomGen) Shrink(p LsParams) iter.Seq[LsParams] {
 	}
 
 	return slices.Values(out)
+}
+
+func (g atomGen) is64() bool {
+	if g.rt64 == nil {
+		return g.rnd.IntN(2) == 1
+	}
+
+	return *g.rt64
 }
 
 // exclGen — the exclusive-pair generator: rs is a w status register,
@@ -106,14 +107,6 @@ func exclW(rnd *rand.Rand) exclGen {
 	return newExclGen(rnd, &w)
 }
 
-func (g exclGen) is64() bool {
-	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
-	}
-
-	return *g.rt64
-}
-
 func (g exclGen) Generate() iter.Seq[ExclParams] {
 	return arbStream(func() ExclParams {
 		return NewExclParams(
@@ -125,8 +118,9 @@ func (g exclGen) Generate() iter.Seq[ExclParams] {
 }
 
 func (g exclGen) Shrink(p ExclParams) iter.Seq[ExclParams] {
-	var out []ExclParams
-	for _, r := range regShrunk(p.Rs) {
+	regs := regShrunk(p.Rs)
+	out := make([]ExclParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewExclParams(r, p.Rt, p.Rn))
 	}
 
@@ -139,4 +133,12 @@ func (g exclGen) Shrink(p ExclParams) iter.Seq[ExclParams] {
 	}
 
 	return slices.Values(out)
+}
+
+func (g exclGen) is64() bool {
+	if g.rt64 == nil {
+		return g.rnd.IntN(2) == 1
+	}
+
+	return *g.rt64
 }

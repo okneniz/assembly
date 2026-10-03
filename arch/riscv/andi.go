@@ -22,14 +22,6 @@ func cAndi(rd, rs1 string, imm int64) Andi {
 	}
 }
 
-func (i Andi) ObjDump(_ disasm.ViewCtx) string {
-	if i.imm.val == 0xff {
-		return fmt.Sprintf("zext.b %s, %s", i.rd, i.rs1)
-	}
-
-	return fmt.Sprintf("andi %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Andi) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -47,6 +39,14 @@ func (i Andi) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Andi) ObjDump(_ disasm.ViewCtx) string {
+	if i.imm.val == 0xff {
+		return fmt.Sprintf("zext.b %s, %s", i.rd, i.rs1)
+	}
+
+	return fmt.Sprintf("andi %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 func newAndi(ops []Op) (Instr, error) {

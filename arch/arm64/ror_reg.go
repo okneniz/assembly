@@ -81,10 +81,6 @@ func newRorReg(rd Reg, rn Reg, rm Reg) (RorReg, error) {
 
 const RorRegX uint32 = 0x9AC02C00
 
-func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i RorReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, RorRegX, 0x1AC02C00)
 	if err != nil {
@@ -97,4 +93,8 @@ func (i RorReg) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i RorReg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ror %s, %s, %s", i.rd, i.rn, i.rm)
 }

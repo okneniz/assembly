@@ -35,20 +35,6 @@ type immArb[T immRole] struct {
 	mk   func(int64) (T, error)
 }
 
-func newImmArb[T immRole](
-	rnd *rand.Rand,
-	from, to, step int64,
-	mk func(int64) (T, error),
-) immArb[T] {
-	return immArb[T]{
-		rnd:  rnd,
-		from: from,
-		to:   to,
-		step: step,
-		mk:   mk,
-	}
-}
-
 // The si12 range of Imm12: shared by the generator bounds and the shrink
 // boundary candidates; it mirrors the checked arch constructor Imm12.
 const (
@@ -126,6 +112,20 @@ func UImm14(rnd *rand.Rand) ohsnap.Arbitrary[arch.UImm14] {
 // Code15 — an arbitrary ui15 code (0..32767).
 func Code15(rnd *rand.Rand) ohsnap.Arbitrary[arch.Code15] {
 	return newImmArb(rnd, 0, 32767, 1, arch.New().Code15)
+}
+
+func newImmArb[T immRole](
+	rnd *rand.Rand,
+	from, to, step int64,
+	mk func(int64) (T, error),
+) immArb[T] {
+	return immArb[T]{
+		rnd:  rnd,
+		from: from,
+		to:   to,
+		step: step,
+		mk:   mk,
+	}
 }
 
 func (a immArb[T]) Generate() iter.Seq[T] {

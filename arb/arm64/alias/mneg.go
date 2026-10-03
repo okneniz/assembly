@@ -27,10 +27,6 @@ func NewMnegParams(rd arm64.Reg, rn arm64.Reg, rm arm64.Reg) MnegParams {
 	}
 }
 
-func (p MnegParams) String() string {
-	return "mneg " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Rm.String()
-}
-
 func (p MnegParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,18 +36,22 @@ func (p MnegParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p MnegParams) String() string {
+	return "mneg " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Rm.String()
+}
+
 // mnegGen — generator for mneg: same-width registers, 31st is zr.
 type mnegGen struct {
 	rnd *rand.Rand
 }
 
-func newMnegGen(rnd *rand.Rand) mnegGen {
-	return mnegGen{rnd: rnd}
-}
-
 // Mneg — an arbitrary mneg.
 func Mneg(rnd *rand.Rand) ohsnap.Arbitrary[MnegParams] {
 	return newMnegGen(rnd)
+}
+
+func newMnegGen(rnd *rand.Rand) mnegGen {
+	return mnegGen{rnd: rnd}
 }
 
 func (g mnegGen) Generate() iter.Seq[MnegParams] {
@@ -66,8 +66,9 @@ func (g mnegGen) Generate() iter.Seq[MnegParams] {
 }
 
 func (g mnegGen) Shrink(p MnegParams) iter.Seq[MnegParams] {
-	var out []MnegParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]MnegParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewMnegParams(r, p.Rn, p.Rm))
 	}
 

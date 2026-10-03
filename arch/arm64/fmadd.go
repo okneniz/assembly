@@ -35,15 +35,8 @@ const (
 	fmaddS uint32 = 0x1F000000 // fmadd sd, sn, sm, sa
 )
 
-func (i Fmadd) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmadd %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
-}
-
 func (i Fmadd) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fmaddD, fmaddS)
-	if err != nil {
-		return 0, fmt.Errorf("fmadd: %w", err)
-	}
+	match := fpMatch(i.rd, fmaddD, fmaddS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -56,6 +49,10 @@ func (i Fmadd) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
+}
+
+func (i Fmadd) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmadd %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
 }
 
 // Fnmsub — fnmsub fd, fn, fm, fa (fd = -(fn*fm - fa); double/single
@@ -86,15 +83,8 @@ const (
 	fnmsubS uint32 = 0x1F208000 // fnmsub sd, sn, sm, sa
 )
 
-func (i Fnmsub) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fnmsub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
-}
-
 func (i Fnmsub) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fnmsubD, fnmsubS)
-	if err != nil {
-		return 0, fmt.Errorf("fnmsub: %w", err)
-	}
+	match := fpMatch(i.rd, fnmsubD, fnmsubS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -107,4 +97,8 @@ func (i Fnmsub) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|ra<<10|rm<<16)
+}
+
+func (i Fnmsub) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fnmsub %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
 }

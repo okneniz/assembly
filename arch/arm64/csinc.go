@@ -18,6 +18,10 @@ type Csinc struct {
 	Csel
 }
 
+func (i Csinc) Encode(w io.Writer) (int64, error) {
+	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
+}
+
 func (i Csinc) ObjDump(_ disasm.ViewCtx) string {
 	zr := zeroReg(i.rd)
 	inv := invertCond(i.cond)
@@ -30,8 +34,4 @@ func (i Csinc) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("csinc %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
-}
-
-func (i Csinc) Encode(w io.Writer) (int64, error) {
-	return cselWrite(w, i.Csel, csincX, csincW, "csinc")
 }

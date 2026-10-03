@@ -12,13 +12,13 @@ type LlacqW struct {
 	rd, rj uint8
 }
 
-func (i LlacqW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("llacq.w %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i LlacqW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["llacq.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i LlacqW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("llacq.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

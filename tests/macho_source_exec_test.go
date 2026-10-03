@@ -85,9 +85,9 @@ func TestMachOStaticLayout(t *testing.T) {
 	text, data, bss := res.Sections[0], res.Sections[1], res.Sections[2]
 
 	require.Equal(t, ".text", text.Name)
-	require.Zero(t, text.Addr % 4)
+	require.Zero(t, text.Addr%4)
 	require.Equal(t, ".data", data.Name)
-	require.Zero(t, data.Addr % 16384) // the page-aligned __DATA start
+	require.Zero(t, data.Addr%16384) // the page-aligned __DATA start
 	require.Equal(t, uint64(4), uint64(data.Size))
 	require.Equal(t, ".bss", bss.Name)
 	require.True(t, bss.Nobits)

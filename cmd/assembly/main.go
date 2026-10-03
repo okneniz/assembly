@@ -15,6 +15,7 @@ package main
 
 import (
 	"encoding/binary"
+	"errors"
 	"flag"
 	"fmt"
 	"io"
@@ -379,7 +380,7 @@ func hexLine(b []byte) string {
 // caller falls back from.
 func machoCode(path string) (*file.Section, error) {
 	if path == "" || path == "-" {
-		return nil, fmt.Errorf("no file to parse")
+		return nil, errors.New("no file to parse")
 	}
 
 	f, err := file.Detect(path)

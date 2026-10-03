@@ -14,13 +14,13 @@ type Ldpte struct {
 	imm imm
 }
 
-func (i Ldpte) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ldpte %s, %s", laRegName(i.rj), i.imm.text())
-}
-
 func (i Ldpte) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ldpte"][0] |
 		uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 8)
 
 	return writeWord(w, word)
+}
+
+func (i Ldpte) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ldpte %s, %s", laRegName(i.rj), i.imm.text())
 }

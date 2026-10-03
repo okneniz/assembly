@@ -13,10 +13,6 @@ type Fsd struct {
 	off      imm
 }
 
-func (i Fsd) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fsd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
-}
-
 func (i Fsd) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Fsd) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["fsd"][0] | regBits(i.rs1)<<15 | fregBits(i.rs2)<<20 | bits
 	return writeWord(w, word)
+}
+
+func (i Fsd) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fsd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
 func newFsd(ops []Op) (Instr, error) {

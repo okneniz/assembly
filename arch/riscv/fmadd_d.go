@@ -13,10 +13,6 @@ type FmaddD struct {
 	rm                imm
 }
 
-func (i FmaddD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmadd.d %s, %s, %s, %s", i.rd, i.rs1, i.rs2, i.rs3)
-}
-
 func (i FmaddD) Encode(w io.Writer, o EncOpts) (int64, error) {
 	rm := i.rm.val
 
@@ -26,6 +22,10 @@ func (i FmaddD) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	return writeWord(w, riscvEncodings["fmadd_d"][0]|uint32(rm)<<12|
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20|fregBits(i.rs3)<<27)
+}
+
+func (i FmaddD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmadd.d %s, %s, %s, %s", i.rd, i.rs1, i.rs2, i.rs3)
 }
 
 func newFmaddD(ops []Op) (Instr, error) {

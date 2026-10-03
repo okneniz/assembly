@@ -8,26 +8,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// imm12v - a validated si12; a validation error fails the test.
-func imm12v(t *testing.T, v int64) Imm12 {
-	t.Helper()
-
-	i, err := New().Imm12(v)
-	require.NoError(t, err)
-
-	return i
-}
-
-// imm20v - a validated si20; a validation error fails the test.
-func imm20v(t *testing.T, v int64) Imm20 {
-	t.Helper()
-
-	i, err := New().Imm20(v)
-	require.NoError(t, err)
-
-	return i
-}
-
 func TestAddiWCtor(t *testing.T) {
 	// llvm-mc-verified: addi.w $t0, $t1, -16.
 	require.Equal(
@@ -148,4 +128,24 @@ func TestTemplatesJSONEncodeError(t *testing.T) {
 		_, err := tc.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", tc.mnem)
 	}
+}
+
+// imm12v - a validated si12; a validation error fails the test.
+func imm12v(t *testing.T, v int64) Imm12 {
+	t.Helper()
+
+	i, err := New().Imm12(v)
+	require.NoError(t, err)
+
+	return i
+}
+
+// imm20v - a validated si20; a validation error fails the test.
+func imm20v(t *testing.T, v int64) Imm20 {
+	t.Helper()
+
+	i, err := New().Imm20(v)
+	require.NoError(t, err)
+
+	return i
 }

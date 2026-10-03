@@ -69,10 +69,10 @@ func newStxrb(rs, rt, rn Reg) (Stxrb, error) {
 
 const stxrbEnc uint32 = 0x08000000 // stxrb ws, wt, [xn]
 
-func (i Stxrb) ObjDump(_ disasm.ViewCtx) string {
-	return "stxrb " + i.exText()
-}
-
 func (i Stxrb) Encode(w io.Writer) (int64, error) {
 	return i.exWrite(w, i.enc, "stxrb")
+}
+
+func (i Stxrb) ObjDump(_ disasm.ViewCtx) string {
+	return "stxrb " + i.exText()
 }

@@ -14,6 +14,14 @@ type BstrinsW struct {
 	lsb    imm
 }
 
+func (i BstrinsW) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["bstrins.w"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 |
+		scatterU(i.msb.val, 16, 5) | scatterU(i.lsb.val, 10, 5)
+
+	return writeWord(w, word)
+}
+
 func (i BstrinsW) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bstrins.w %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i BstrinsW) ObjDump(_ disasm.ViewCtx) string {
 		i.msb.text(),
 		i.lsb.text(),
 	)
-}
-
-func (i BstrinsW) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["bstrins.w"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 |
-		scatterU(i.msb.val, 16, 5) | scatterU(i.lsb.val, 10, 5)
-
-	return writeWord(w, word)
 }

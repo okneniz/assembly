@@ -52,8 +52,9 @@ func (a sriArb) Generate() iter.Seq[SriParams] {
 }
 
 func (a sriArb) Shrink(p SriParams) iter.Seq[SriParams] {
-	var out []SriParams
-	for _, s := range slices.Collect(a.base.Shrink(p.VShiftParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.VShiftParams))
+	out := make([]SriParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSriParams(s))
 	}
 

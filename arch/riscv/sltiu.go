@@ -13,14 +13,6 @@ type Sltiu struct {
 	imm     imm
 }
 
-func (i Sltiu) ObjDump(_ disasm.ViewCtx) string {
-	if i.imm.val == 1 {
-		return fmt.Sprintf("seqz %s, %s", i.rd, i.rs1)
-	}
-
-	return fmt.Sprintf("sltiu %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Sltiu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -30,6 +22,14 @@ func (i Sltiu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, riscvEncodings["sltiu"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|bits)
+}
+
+func (i Sltiu) ObjDump(_ disasm.ViewCtx) string {
+	if i.imm.val == 1 {
+		return fmt.Sprintf("seqz %s, %s", i.rd, i.rs1)
+	}
+
+	return fmt.Sprintf("sltiu %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 func newSltiu(ops []Op) (Instr, error) {

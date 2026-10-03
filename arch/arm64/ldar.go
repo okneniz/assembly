@@ -43,10 +43,10 @@ const (
 	ldarWEnc uint32 = 0x88DFFC00 // ldar wt, [xn]
 )
 
-func (i Ldar) ObjDump(_ disasm.ViewCtx) string {
-	return "ldar " + i.atText()
-}
-
 func (i Ldar) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldar")
+}
+
+func (i Ldar) ObjDump(_ disasm.ViewCtx) string {
+	return "ldar " + i.atText()
 }

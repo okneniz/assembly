@@ -52,8 +52,9 @@ func (a orrShiftArb) Generate() iter.Seq[OrrShiftParams] {
 }
 
 func (a orrShiftArb) Shrink(p OrrShiftParams) iter.Seq[OrrShiftParams] {
-	var out []OrrShiftParams
-	for _, s := range slices.Collect(a.base.Shrink(p.ShiftedParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.ShiftedParams))
+	out := make([]OrrShiftParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewOrrShiftParams(s))
 	}
 

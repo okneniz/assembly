@@ -22,7 +22,7 @@ type FmovImm struct {
 // Builder method delegates here; the decoder calls it with values read
 // from the word). The imm8 search stays in Encode: it is shared with
 // the decode path, which stores the expanded value's text.
-func newFmovImm(rd FReg, val float64, text string) (FmovImm, error) {
+func newFmovImm(rd FReg, val float64, text string) FmovImm {
 	return FmovImm{
 		rd:   rd.name(),
 		val:  val,
@@ -30,7 +30,7 @@ func newFmovImm(rd FReg, val float64, text string) (FmovImm, error) {
 		isS:  !rd.Is64(),
 		enc:  fmovImmEnc(rd),
 		rdK:  rd.kind(),
-	}, nil
+	}
 }
 
 const (
@@ -45,10 +45,6 @@ func fmovImmEnc(rd FReg) uint32 {
 	}
 
 	return fmovImmSEnc
-}
-
-func (i FmovImm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmov %s, #%s", i.rd, i.text)
 }
 
 func (i FmovImm) Encode(w io.Writer) (int64, error) {
@@ -69,4 +65,8 @@ func (i FmovImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return 0, errors.New("fmov: bad imm")
+}
+
+func (i FmovImm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmov %s, #%s", i.rd, i.text)
 }

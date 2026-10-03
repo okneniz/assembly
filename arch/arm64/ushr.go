@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -20,7 +21,7 @@ type Ushr struct {
 // calls it with values read from the word).
 func newUshr(q, immh, immb uint32, rd, rn VReg) (Ushr, error) {
 	if immh > 0xf || immb > 7 {
-		return Ushr{}, fmt.Errorf("arm64.NewUshr: imm out of range")
+		return Ushr{}, errors.New("arm64.NewUshr: imm out of range")
 	}
 
 	return Ushr{
@@ -34,13 +35,6 @@ func newUshr(q, immh, immb uint32, rd, rn VReg) (Ushr, error) {
 
 const ushrEnc uint32 = 0x2F000400 // ushr vd, vn, #shift (Q=0 form)
 
-func (i Ushr) ObjDump(_ disasm.ViewCtx) string {
-	size, shift := decodeShiftImm(i.immh, i.immb)
-	shift = uint32(8<<size) - shift
-	return fmt.Sprintf("ushr.%s %s, %s, #0x%x",
-		decodeArrangement(i.q, size), i.rd, i.rn, shift)
-}
-
 func (i Ushr) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -48,4 +42,11 @@ func (i Ushr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, ushrEnc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
+}
+
+func (i Ushr) ObjDump(_ disasm.ViewCtx) string {
+	size, shift := decodeShiftImm(i.immh, i.immb)
+	shift = uint32(8<<size) - shift
+	return fmt.Sprintf("ushr.%s %s, %s, #0x%x",
+		decodeArrangement(i.q, size), i.rd, i.rn, shift)
 }

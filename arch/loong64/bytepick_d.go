@@ -14,6 +14,14 @@ type BytepickD struct {
 	sel        imm
 }
 
+func (i BytepickD) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["bytepick.d"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
+		scatterU(i.sel.val, 15, 3)
+
+	return writeWord(w, word)
+}
+
 func (i BytepickD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bytepick.d %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i BytepickD) ObjDump(_ disasm.ViewCtx) string {
 		laRegName(i.rk),
 		i.sel.text(),
 	)
-}
-
-func (i BytepickD) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["bytepick.d"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
-		scatterU(i.sel.val, 15, 3)
-
-	return writeWord(w, word)
 }

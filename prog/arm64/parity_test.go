@@ -9,24 +9,6 @@ import (
 	arch "github.com/okneniz/assembly/arch/arm64"
 )
 
-// builderInstrs - the instruction methods of arch.Builder (the ones
-// returning arch.Instr; the operand roles Imm12/Imm16/Imm6 drop out by
-// signature) mapped to their operand count - the set the chain twins
-// mirror.
-func builderInstrs() map[string]int {
-	instr := reflect.TypeFor[arch.Instr]()
-	out := map[string]int{}
-
-	builder := reflect.TypeFor[arch.Builder]()
-	for m := range builder.Methods() {
-		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
-			out[m.Name] = m.Type.NumIn() - 1
-		}
-	}
-
-	return out
-}
-
 func TestBuilderParity(t *testing.T) {
 	// every instruction method of the Builder has a same-named chain
 	// twin on *Program with the same operand count
@@ -80,4 +62,22 @@ func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {
 			)
 		}
 	}
+}
+
+// builderInstrs - the instruction methods of arch.Builder (the ones
+// returning arch.Instr; the operand roles Imm12/Imm16/Imm6 drop out by
+// signature) mapped to their operand count - the set the chain twins
+// mirror.
+func builderInstrs() map[string]int {
+	instr := reflect.TypeFor[arch.Instr]()
+	out := map[string]int{}
+
+	builder := reflect.TypeFor[arch.Builder]()
+	for m := range builder.Methods() {
+		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
+			out[m.Name] = m.Type.NumIn() - 1
+		}
+	}
+
+	return out
 }

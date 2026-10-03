@@ -75,6 +75,39 @@ type parsedLine struct {
 	decl  InsnDecl
 }
 
+var lineKindPrefix = map[lineKind]string{
+	kindMatch: "MATCH",
+	kindMask:  "MASK",
+}
+
+// Parse parses encoding.h text. Unrecognized lines are ignored; the result
+// preserves appearance order for consumers' first-wins policies.
+func Parse(data []rune) (Header, parsec.Error[strings.Position]) {
+	lines, err := strings.Parse(parsec.Stateless{}, data, makeLinesParser())
+	if err != nil {
+		return Header{}, err
+	}
+
+	h := Header{}
+	for _, l := range lines {
+		switch l.kind {
+		case kindMatch, kindMask:
+			h.Macros = append(
+				h.Macros,
+				NewMacro(lineKindPrefix[l.kind]+"_"+l.macro.Name, l.macro.Value),
+			)
+		case kindCSR:
+			h.CSRs = append(h.CSRs, l.macro)
+		case kindDecl:
+			h.Insns = append(h.Insns, l.decl)
+		case kindOther:
+			// not a macro/declaration — skipped
+		}
+	}
+
+	return h, nil
+}
+
 func newParsedLine(kind lineKind, macro Macro, decl InsnDecl) parsedLine {
 	return parsedLine{
 		kind:  kind,
@@ -97,18 +130,23 @@ func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine, p
 	rparen := strings.Try(strings.Eq[parsec.Stateless]("')'", ')'))
 	undersc := strings.Try(strings.Eq[parsec.Stateless]("'_'", '_'))
 	define := strings.Try(strings.String[parsec.Stateless]("expected #define", "#define"))
-	declare := strings.Try(strings.String[parsec.Stateless]("expected DECLARE_INSN", "DECLARE_INSN"))
+	declare := strings.Try(
+		strings.String[parsec.Stateless]("expected DECLARE_INSN", "DECLARE_INSN"),
+	)
 	spaces1 := strings.Some(4, "expected whitespace", space)
 	hexDigit := strings.Try(strings.OneOf[parsec.Stateless]("hex digit",
 		'0', '1', '2', '3', '4', '5', '6', '7', '8', '9',
 		'a', 'b', 'c', 'd', 'e', 'f',
 		'A', 'B', 'C', 'D', 'E', 'F',
 	))
-	kind := strings.MapStrings[lineKind, parsec.Stateless]("expected MATCH, MASK or CSR", map[string]lineKind{
-		"MATCH": kindMatch,
-		"MASK":  kindMask,
-		"CSR":   kindCSR,
-	})
+	kind := strings.MapStrings[lineKind, parsec.Stateless](
+		"expected MATCH, MASK or CSR",
+		map[string]lineKind{
+			"MATCH": kindMatch,
+			"MASK":  kindMask,
+			"CSR":   kindCSR,
+		},
+	)
 	hexValue := strings.Cast(
 		strings.Skip(
 			strings.String[parsec.Stateless]("expected 0x prefix", "0x"),
@@ -221,11 +259,6 @@ func makeLinesParser() parsec.Combinator[rune, strings.Position, []parsedLine, p
 	))
 }
 
-var lineKindPrefix = map[lineKind]string{
-	kindMatch: "MATCH",
-	kindMask:  "MASK",
-}
-
 func castUInt32(ds []rune) (uint32, error) {
 	v, err := strconv.ParseUint(string(ds), 16, 32)
 	if err != nil {
@@ -244,39 +277,14 @@ func isLowerIdent(r rune) bool {
 }
 
 // ident is a non-empty sequence of runes satisfying ok.
-func ident(what string, ok func(rune) bool) parsec.Combinator[rune, strings.Position, string, parsec.Stateless] {
+func ident(
+	what string,
+	ok func(rune) bool,
+) parsec.Combinator[rune, strings.Position, string, parsec.Stateless] {
 	return strings.Cast(
 		strings.Some(16, what, strings.Try(strings.Satisfy[parsec.Stateless](what, true, ok))),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},
 	)
-}
-
-// Parse parses encoding.h text. Unrecognized lines are ignored; the result
-// preserves appearance order for consumers' first-wins policies.
-func Parse(data []rune) (Header, parsec.Error[strings.Position]) {
-	lines, err := strings.Parse(parsec.Stateless{}, data, makeLinesParser())
-	if err != nil {
-		return Header{}, err
-	}
-
-	h := Header{}
-	for _, l := range lines {
-		switch l.kind {
-		case kindMatch, kindMask:
-			h.Macros = append(
-				h.Macros,
-				NewMacro(lineKindPrefix[l.kind]+"_"+l.macro.Name, l.macro.Value),
-			)
-		case kindCSR:
-			h.CSRs = append(h.CSRs, l.macro)
-		case kindDecl:
-			h.Insns = append(h.Insns, l.decl)
-		case kindOther:
-			// not a macro/declaration — skipped
-		}
-	}
-
-	return h, nil
 }

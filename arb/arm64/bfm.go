@@ -38,6 +38,7 @@ func (p BfmParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p BfmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,13 +49,13 @@ type bfmGen struct {
 	rnd *rand.Rand
 }
 
-func newBfmGen(rnd *rand.Rand) bfmGen {
-	return bfmGen{rnd: rnd}
-}
-
 // Bfm — an arbitrary bfm.
 func Bfm(rnd *rand.Rand) ohsnap.Arbitrary[BfmParams] {
 	return newBfmGen(rnd)
+}
+
+func newBfmGen(rnd *rand.Rand) bfmGen {
+	return bfmGen{rnd: rnd}
 }
 
 func (g bfmGen) Generate() iter.Seq[BfmParams] {
@@ -75,8 +76,9 @@ func (g bfmGen) Generate() iter.Seq[BfmParams] {
 }
 
 func (g bfmGen) Shrink(p BfmParams) iter.Seq[BfmParams] {
-	var out []BfmParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]BfmParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewBfmParams(r, p.Rn, p.Immr, p.Imms))
 	}
 

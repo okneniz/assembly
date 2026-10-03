@@ -14,13 +14,13 @@ type Invtlb struct {
 	op     imm
 }
 
-func (i Invtlb) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("invtlb %s, %s, %s", i.op.text(), laRegName(i.rj), laRegName(i.rk))
-}
-
 func (i Invtlb) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["invtlb"][0] |
 		uint32(i.rj)<<5 | uint32(i.rk)<<10 | scatterU(i.op.val, 0, 5)
 
 	return writeWord(w, word)
+}
+
+func (i Invtlb) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("invtlb %s, %s, %s", i.op.text(), laRegName(i.rj), laRegName(i.rk))
 }

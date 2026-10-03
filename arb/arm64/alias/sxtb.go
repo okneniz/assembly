@@ -27,10 +27,6 @@ func NewSxtbParams(rd arm64.Reg, rn arm64.Reg) SxtbParams {
 	}
 }
 
-func (p SxtbParams) String() string {
-	return "sxtb " + p.Rd.String() + ", " + p.Rn.String()
-}
-
 func (p SxtbParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,14 +36,14 @@ func (p SxtbParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p SxtbParams) String() string {
+	return "sxtb " + p.Rd.String() + ", " + p.Rn.String()
+}
+
 // sxtbGen — generator for sxtb: the destination of either width, the
 // source a w-register.
 type sxtbGen struct {
 	rnd *rand.Rand
-}
-
-func newSxtbGen(rnd *rand.Rand) sxtbGen {
-	return sxtbGen{rnd: rnd}
 }
 
 // Sxtb — an arbitrary sxtb.
@@ -55,15 +51,23 @@ func Sxtb(rnd *rand.Rand) ohsnap.Arbitrary[SxtbParams] {
 	return newSxtbGen(rnd)
 }
 
+func newSxtbGen(rnd *rand.Rand) sxtbGen {
+	return sxtbGen{rnd: rnd}
+}
+
 func (g sxtbGen) Generate() iter.Seq[SxtbParams] {
 	return stream(func() SxtbParams {
-		return NewSxtbParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), a64.GenReg(g.rnd, false, false, true))
+		return NewSxtbParams(
+			a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+			a64.GenReg(g.rnd, false, false, true),
+		)
 	})
 }
 
 func (g sxtbGen) Shrink(p SxtbParams) iter.Seq[SxtbParams] {
-	var out []SxtbParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]SxtbParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewSxtbParams(r, p.Rn))
 	}
 

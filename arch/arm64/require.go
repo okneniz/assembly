@@ -181,10 +181,8 @@ func requireUnscaledOff(instr string, off Off) error {
 
 // requireArr - the arrangement must be one of the listed forms.
 func requireArr(instr, arr string, ok ...string) error {
-	for _, a := range ok {
-		if arr == a {
-			return nil
-		}
+	if slices.Contains(ok, arr) {
+		return nil
 	}
 
 	return fmt.Errorf("arm64.New%s: arrangement %q is not one of %v",

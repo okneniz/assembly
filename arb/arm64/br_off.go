@@ -22,16 +22,16 @@ type brOffArb struct {
 	lim int64 // the exclusive byte bound (1<<20 imm19/imm21, 1<<26 imm26, 1<<15 imm14)
 }
 
+// BrOff — an arbitrary branch offset in the ±lim byte range.
+func BrOff(rnd *rand.Rand, lim int64) ohsnap.Arbitrary[int64] {
+	return newBrOffArb(rnd, lim)
+}
+
 func newBrOffArb(rnd *rand.Rand, lim int64) brOffArb {
 	return brOffArb{
 		rnd: rnd,
 		lim: lim,
 	}
-}
-
-// BrOff — an arbitrary branch offset in the ±lim byte range.
-func BrOff(rnd *rand.Rand, lim int64) ohsnap.Arbitrary[int64] {
-	return newBrOffArb(rnd, lim)
 }
 
 func (g brOffArb) Generate() iter.Seq[int64] {
@@ -49,9 +49,7 @@ func (g brOffArb) Shrink(off int64) iter.Seq[int64] {
 	var out []int64
 	// the range edges first (decoder bugs live there), then halving
 	// toward zero keeping the sign; the alignment survives every step.
-	for _, v := range slices.Collect(shrink.Boundaries[int64](-(g.lim - 4), g.lim-4)(off)) {
-		out = append(out, v)
-	}
+	out = append(out, slices.Collect(shrink.Boundaries[int64](-(g.lim-4), g.lim-4)(off))...)
 
 	for d := off / 2 / 4 * 4; ; d = d / 2 / 4 * 4 {
 		out = append(out, d)

@@ -23,6 +23,7 @@ func NewNopParams() NopParams {
 func (p NopParams) Instr() arm64.Instr {
 	return arm64.New().Nop()
 }
+
 func (p NopParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -33,19 +34,17 @@ type nopGen struct {
 	rnd *rand.Rand
 }
 
-func newNopGen(rnd *rand.Rand) nopGen {
-	return nopGen{rnd: rnd}
-}
-
 // Nop — an arbitrary nop.
 func Nop(rnd *rand.Rand) ohsnap.Arbitrary[NopParams] {
 	return newNopGen(rnd)
 }
 
+func newNopGen(rnd *rand.Rand) nopGen {
+	return nopGen{rnd: rnd}
+}
+
 func (g nopGen) Generate() iter.Seq[NopParams] {
-	return arb.Stream(func() NopParams {
-		return NewNopParams()
-	})
+	return arb.Stream(NewNopParams)
 }
 
 func (g nopGen) Shrink(p NopParams) iter.Seq[NopParams] {

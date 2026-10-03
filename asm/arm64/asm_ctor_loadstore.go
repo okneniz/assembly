@@ -96,7 +96,7 @@ func newLsFpArm(
 
 	rt, err := arch.FRegOf(ops[0].Reg())
 	if err != nil {
-		return nil, false, nil // an integer rt: not this shape
+		return nil, false, nil //nolint:nilerr // an integer rt: not this shape, the next ctor tries
 	}
 
 	m := ops[1].Mem()

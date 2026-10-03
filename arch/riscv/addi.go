@@ -23,19 +23,6 @@ func cAddi(rd, rs1 string, imm int64) Addi {
 	}
 }
 
-func (i Addi) ObjDump(_ disasm.ViewCtx) string {
-	switch {
-	case i.rd == "zero" && i.rs1 == "zero" && i.imm.val == 0:
-		return "nop"
-	case i.rs1 == "zero":
-		return fmt.Sprintf("li %s, %s", i.rd, i.imm.text())
-	case i.imm.val == 0:
-		return fmt.Sprintf("mv %s, %s", i.rd, i.rs1)
-	}
-
-	return fmt.Sprintf("addi %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Addi) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -52,6 +39,19 @@ func (i Addi) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Addi) ObjDump(_ disasm.ViewCtx) string {
+	switch {
+	case i.rd == "zero" && i.rs1 == "zero" && i.imm.val == 0:
+		return "nop"
+	case i.rs1 == "zero":
+		return fmt.Sprintf("li %s, %s", i.rd, i.imm.text())
+	case i.imm.val == 0:
+		return fmt.Sprintf("mv %s, %s", i.rd, i.rs1)
+	}
+
+	return fmt.Sprintf("addi %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 // compressAddi - c.nop/c.li/c.addi4spn/c.addi/c.addi16sp (c.addi

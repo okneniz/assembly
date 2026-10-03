@@ -22,25 +22,14 @@ func newBreakpointSet() breakpointSet {
 	return breakpointSet{files: map[string][]uint64{}}
 }
 
-// takeFile returns the installed addresses of the source file and
-// empties the slot (the caller clears them before installing anew).
-func (b *breakpointSet) takeFile(path string) []uint64 {
-	out := b.files[path]
-	delete(b.files, path)
-	return out
+// putAddrs remembers the installed instruction-breakpoint addresses.
+func (b *breakpointSet) putAddrs(addrs []uint64) {
+	b.addrs = addrs
 }
 
 // putFile remembers the installed addresses of the source file.
 func (b *breakpointSet) putFile(path string, addrs []uint64) {
 	b.files[path] = addrs
-}
-
-// takeLabels returns the installed function-breakpoint addresses and
-// empties the slot.
-func (b *breakpointSet) takeLabels() []uint64 {
-	out := b.labels
-	b.labels = nil
-	return out
 }
 
 // putLabels remembers the installed function-breakpoint addresses.
@@ -56,9 +45,20 @@ func (b *breakpointSet) takeAddrs() []uint64 {
 	return out
 }
 
-// putAddrs remembers the installed instruction-breakpoint addresses.
-func (b *breakpointSet) putAddrs(addrs []uint64) {
-	b.addrs = addrs
+// takeFile returns the installed addresses of the source file and
+// empties the slot (the caller clears them before installing anew).
+func (b *breakpointSet) takeFile(path string) []uint64 {
+	out := b.files[path]
+	delete(b.files, path)
+	return out
+}
+
+// takeLabels returns the installed function-breakpoint addresses and
+// empties the slot.
+func (b *breakpointSet) takeLabels() []uint64 {
+	out := b.labels
+	b.labels = nil
+	return out
 }
 
 // unverified is the verdict for every requested source breakpoint of

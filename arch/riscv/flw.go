@@ -13,10 +13,6 @@ type Flw struct {
 	off     imm
 }
 
-func (i Flw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("flw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Flw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Flw) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["flw"][0] | fregBits(i.rd)<<7 | regBits(i.rs1)<<15 | bits
 	return writeWord(w, word)
+}
+
+func (i Flw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("flw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 func newFlw(ops []Op) (Instr, error) {

@@ -52,8 +52,9 @@ func (a fminArb) Generate() iter.Seq[FminParams] {
 }
 
 func (a fminArb) Shrink(p FminParams) iter.Seq[FminParams] {
-	var out []FminParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F3Params))
+	out := make([]FminParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFminParams(s))
 	}
 

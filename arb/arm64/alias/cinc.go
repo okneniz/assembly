@@ -28,10 +28,6 @@ func NewCincParams(rd arm64.Reg, rn arm64.Reg, cond string) CincParams {
 	}
 }
 
-func (p CincParams) String() string {
-	return "cinc " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
-}
-
 func (p CincParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -41,18 +37,22 @@ func (p CincParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p CincParams) String() string {
+	return "cinc " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
+}
+
 // cincGen — generator for cinc: same-width registers and a condition.
 type cincGen struct {
 	rnd *rand.Rand
 }
 
-func newCincGen(rnd *rand.Rand) cincGen {
-	return cincGen{rnd: rnd}
-}
-
 // Cinc — an arbitrary cinc.
 func Cinc(rnd *rand.Rand) ohsnap.Arbitrary[CincParams] {
 	return newCincGen(rnd)
+}
+
+func newCincGen(rnd *rand.Rand) cincGen {
+	return cincGen{rnd: rnd}
 }
 
 func (g cincGen) Generate() iter.Seq[CincParams] {

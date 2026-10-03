@@ -17,6 +17,18 @@ type instrCase struct {
 	gen  func() arm64.Instr
 }
 
+// TestAliasGenValid — a generated alias text always assembles into an
+// instruction (the generator produces no invalid combinations).
+func TestAliasGenValid(t *testing.T) {
+	rnd := arb.Rnd(42)
+	for _, c := range instrCases(rnd) {
+		for range 300 {
+			in := c.gen()
+			require.NotNil(t, in, "%s: the text did not assemble", c.mnem)
+		}
+	}
+}
+
 func newInstrCase(mnem string, gen func() arm64.Instr) instrCase {
 	return instrCase{
 		mnem: mnem,
@@ -91,17 +103,5 @@ func instrCases(rnd *rand.Rand) []instrCase {
 		newInstrCase("sbfx", func() arm64.Instr {
 			return ohsnap.First(Sbfx(rnd).Generate()).Instr()
 		}),
-	}
-}
-
-// TestAliasGenValid — a generated alias text always assembles into an
-// instruction (the generator produces no invalid combinations).
-func TestAliasGenValid(t *testing.T) {
-	rnd := arb.Rnd(42)
-	for _, c := range instrCases(rnd) {
-		for range 300 {
-			in := c.gen()
-			require.NotNil(t, in, "%s: the text did not assemble", c.mnem)
-		}
 	}
 }

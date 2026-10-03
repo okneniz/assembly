@@ -36,6 +36,7 @@ func (p BcondParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p BcondParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -47,16 +48,16 @@ type bcondGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
+// Bcond — an arbitrary b.cond.
+func Bcond(rnd *rand.Rand) ohsnap.Arbitrary[BcondParams] {
+	return newBcondGen(rnd)
+}
+
 func newBcondGen(rnd *rand.Rand) bcondGen {
 	return bcondGen{
 		rnd: rnd,
 		off: BrOff(rnd, 1<<20),
 	}
-}
-
-// Bcond — an arbitrary b.cond.
-func Bcond(rnd *rand.Rand) ohsnap.Arbitrary[BcondParams] {
-	return newBcondGen(rnd)
 }
 
 func (g bcondGen) Generate() iter.Seq[BcondParams] {
@@ -66,8 +67,9 @@ func (g bcondGen) Generate() iter.Seq[BcondParams] {
 }
 
 func (g bcondGen) Shrink(p BcondParams) iter.Seq[BcondParams] {
-	var out []BcondParams
-	for _, c := range slices.Collect(Cond(g.rnd).Shrink(p.Cond)) {
+	shrinks := slices.Collect(Cond(g.rnd).Shrink(p.Cond))
+	out := make([]BcondParams, 0, len(shrinks))
+	for _, c := range shrinks {
 		out = append(out, NewBcondParams(c, p.Off))
 	}
 

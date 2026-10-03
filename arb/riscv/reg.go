@@ -19,13 +19,13 @@ type regArb struct {
 	rnd *rand.Rand
 }
 
-func newRegArb(rnd *rand.Rand) regArb {
-	return regArb{rnd: rnd}
-}
-
 // Reg — an arbitrary register x0..x31 (the ABI name comes from String()).
 func Reg(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Reg] {
 	return newRegArb(rnd)
+}
+
+func newRegArb(rnd *rand.Rand) regArb {
+	return regArb{rnd: rnd}
 }
 
 func (a regArb) Generate() iter.Seq[riscv.Reg] {

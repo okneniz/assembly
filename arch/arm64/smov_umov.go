@@ -51,7 +51,7 @@ type Smov struct {
 // newSmov - the Smov constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newSmov(q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
+func newSmov(size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 	if err := requireElemSize("Smov", size); err != nil {
 		return Smov{}, err
 	}
@@ -61,7 +61,7 @@ func newSmov(q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 	}
 
 	if size == 3 {
-		return Smov{}, fmt.Errorf("arm64.NewSmov: .d elements are not allowed")
+		return Smov{}, errors.New("arm64.NewSmov: .d elements are not allowed")
 	}
 
 	if err := requireGprClass(gpr, "Smov", "wd"); err != nil {
@@ -91,10 +91,6 @@ func newSmov(q, size, idx uint32, vd VReg, gpr Reg) (Smov, error) {
 
 const smovEnc uint32 = 0x0E002C00 // smov wd, vn.sz[idx] (op bits 10)
 
-func (i Smov) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("smov %s, %s.%s[%d]", i.gpr, i.vd, elemName(i.size), i.idx)
-}
-
 func (i Smov) Encode(w io.Writer) (int64, error) {
 	vd, err := armRegNum(i.vd)
 	if err != nil {
@@ -110,6 +106,10 @@ func (i Smov) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, smovEnc|i.q<<30|imm5<<16|vd<<5|gpr)
 }
 
+func (i Smov) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("smov %s, %s.%s[%d]", i.gpr, i.vd, elemName(i.size), i.idx)
+}
+
 // Umov — umov wd|xd, vn.sz[idx] (move one lane into the integer
 // register). llvm prints the form that fills the whole register
 // (.s into w, .d into x) as the mov alias.
@@ -122,7 +122,7 @@ type Umov struct {
 // newUmov - the Umov constructor: validates the operands and
 // assembles the struct (the Builder method delegates here; the
 // decoder calls it with values read from the word).
-func newUmov(q, size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
+func newUmov(size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
 	if err := requireElemSize("Umov", size); err != nil {
 		return Umov{}, err
 	}
@@ -160,15 +160,6 @@ func newUmov(q, size, idx uint32, vd VReg, gpr Reg) (Umov, error) {
 
 const umovEnc uint32 = 0x0E003C00 // umov wd, vn.sz[idx] (op bits 11)
 
-func (i Umov) ObjDump(_ disasm.ViewCtx) string {
-	sz := elemName(i.size)
-	if (i.size == 2 && i.q == 0) || (i.size == 3 && i.q == 1) {
-		return fmt.Sprintf("mov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
-	}
-
-	return fmt.Sprintf("umov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
-}
-
 func (i Umov) Encode(w io.Writer) (int64, error) {
 	vd, err := armRegNum(i.vd)
 	if err != nil {
@@ -182,4 +173,13 @@ func (i Umov) Encode(w io.Writer) (int64, error) {
 
 	imm5 := 1<<i.size | i.idx<<(i.size+1)
 	return writeWord(w, umovEnc|i.q<<30|imm5<<16|vd<<5|gpr)
+}
+
+func (i Umov) ObjDump(_ disasm.ViewCtx) string {
+	sz := elemName(i.size)
+	if (i.size == 2 && i.q == 0) || (i.size == 3 && i.q == 1) {
+		return fmt.Sprintf("mov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
+	}
+
+	return fmt.Sprintf("umov %s, %s.%s[%d]", i.gpr, i.vd, sz, i.idx)
 }

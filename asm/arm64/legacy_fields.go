@@ -1108,7 +1108,12 @@ func armFieldsFor(s *Schema, in resolvedInstr) (map[string]any, error) {
 		}
 
 		if off%scale != 0 || off/scale < -64 || off/scale > 63 {
-			return nil, fmt.Errorf("%s: offset %d is not a multiple of %d or out of the imm7 range", in.mnem, off, scale)
+			return nil, fmt.Errorf(
+				"%s: offset %d is not a multiple of %d or out of the imm7 range",
+				in.mnem,
+				off,
+				scale,
+			)
 		}
 
 		fields["imm7"] = off / scale // raw bits: the lsPairImm7_* context transform

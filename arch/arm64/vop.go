@@ -123,17 +123,14 @@ const (
 // ArmOpKind — the exported alias of the operand kind type.
 type ArmOpKind = armOpKind
 
-// Kind — the operand kind.
-func (v VOp) Kind() ArmOpKind { return v.kind }
-
 // Arr — the arrangement suffix ("" if absent).
 func (v VOp) Arr() string {
 	return v.arr
 }
 
-// LaneIdx — the register has a lane index suffix v30[1] (Num is its value).
-func (v VOp) LaneIdx() bool {
-	return v.laneIdx
+// Float — the value of a floating-point literal.
+func (v VOp) Float() float64 {
+	return v.fval
 }
 
 // HasAmt — shift/extend has an amount set.
@@ -146,24 +143,27 @@ func (v VOp) IsFloat() bool {
 	return v.kind == armOpFloat
 }
 
-// Float — the value of a floating-point literal.
-func (v VOp) Float() float64 {
-	return v.fval
-}
-
 // IsList — a register list.
 func (v VOp) IsList() bool {
 	return v.kind == armOpList
 }
 
-// List — elements of the register list.
-func (v VOp) List() []ArmListReg {
-	return v.list
-}
-
 // IsMem — a memory operand.
 func (v VOp) IsMem() bool {
 	return v.kind == armOpMem
+}
+
+// Kind — the operand kind.
+func (v VOp) Kind() ArmOpKind { return v.kind }
+
+// LaneIdx — the register has a lane index suffix v30[1] (Num is its value).
+func (v VOp) LaneIdx() bool {
+	return v.laneIdx
+}
+
+// List — elements of the register list.
+func (v VOp) List() []ArmListReg {
+	return v.list
 }
 
 // Mem — the memory operand (a copy).
@@ -180,14 +180,24 @@ func (m VMem) Base() string {
 	return m.base
 }
 
-// Off — the byte offset (HasOff tells whether it is set).
-func (m VMem) Off() int64 {
-	return m.off
-}
-
 // HasOff — a numeric offset is set.
 func (m VMem) HasOff() bool {
 	return m.hasOff
+}
+
+// HasOpt — the extension amount is set.
+func (m VMem) HasOpt() bool {
+	return m.hasOpt
+}
+
+// HasPost — post-index is set.
+func (m VMem) HasPost() bool {
+	return m.hasPost
+}
+
+// Off — the byte offset (HasOff tells whether it is set).
+func (m VMem) Off() int64 {
+	return m.off
 }
 
 // OffReg — the index register ("" if absent).
@@ -205,9 +215,9 @@ func (m VMem) OptAmt() int64 {
 	return m.optAmt
 }
 
-// HasOpt — the extension amount is set.
-func (m VMem) HasOpt() bool {
-	return m.hasOpt
+// Post — the post-index imm ([rn], #post; HasPost tells whether it is set).
+func (m VMem) Post() int64 {
+	return m.post
 }
 
 // Pre — the pre-index form [rn, #off]!.
@@ -215,24 +225,14 @@ func (m VMem) Pre() bool {
 	return m.pre
 }
 
-// Post — the post-index imm ([rn], #post; HasPost tells whether it is set).
-func (m VMem) Post() int64 {
-	return m.post
-}
-
-// HasPost — post-index is set.
-func (m VMem) HasPost() bool {
-	return m.hasPost
+// Arr — the arrangement suffix of a list element ("" if absent).
+func (r ArmListReg) Arr() string {
+	return r.arr
 }
 
 // Reg — the register name of a list element.
 func (r ArmListReg) Reg() string {
 	return r.reg
-}
-
-// Arr — the arrangement suffix of a list element ("" if absent).
-func (r ArmListReg) Arr() string {
-	return r.arr
 }
 
 // ArrQSize — (Q, size) of an arrangement suffix (grammar validation).

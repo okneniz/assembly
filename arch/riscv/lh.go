@@ -13,10 +13,6 @@ type Lh struct {
 	off     imm
 }
 
-func (i Lh) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lh %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Lh) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Lh) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["lh"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | bits
 	return writeWord(w, word)
+}
+
+func (i Lh) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lh %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 func newLh(ops []Op) (Instr, error) {

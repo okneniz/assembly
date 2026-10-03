@@ -7,12 +7,13 @@ package arm64
 // the generator does).
 
 import (
-	"github.com/okneniz/assembly/arch/arm64"
 	"iter"
 	"math/rand/v2"
 	"slices"
 
 	"github.com/okneniz/oh-snap/shrink"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // ExtParams — parameters of add rd, rn, rm, ext #imm3 (and its

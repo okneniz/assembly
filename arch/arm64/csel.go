@@ -91,12 +91,12 @@ const (
 	cselW uint32 = 0x1A800000
 )
 
-func (i Csel) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("csel %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
-}
-
 func (i Csel) Encode(w io.Writer) (int64, error) {
 	return cselWrite(w, i, cselX, cselW, "csel")
+}
+
+func (i Csel) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("csel %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
 }
 
 // cselWrite — the common encoding skeleton of the csel family.

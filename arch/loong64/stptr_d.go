@@ -14,13 +14,13 @@ type StptrD struct {
 	off    imm
 }
 
-func (i StptrD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("stptr.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
-}
-
 func (i StptrD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["stptr.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.off.val>>2, 10, 14)
 
 	return writeWord(w, word)
+}
+
+func (i StptrD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("stptr.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.off.text())
 }

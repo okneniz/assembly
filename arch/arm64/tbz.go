@@ -16,15 +16,6 @@ type Tbz struct {
 	isTbnz bool
 }
 
-func (i Tbz) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	if i.isTbnz {
-		return fmt.Sprintf("tbnz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
-	}
-
-	return fmt.Sprintf("tbz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
-}
-
 func (i Tbz) Encode(w io.Writer) (int64, error) {
 	bits, err := offBits(i.off.val, 14)
 	if err != nil {
@@ -50,4 +41,13 @@ func (i Tbz) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, word|rt|bits<<5|i.bit&0x1f<<19)
+}
+
+func (i Tbz) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	if i.isTbnz {
+		return fmt.Sprintf("tbnz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
+	}
+
+	return fmt.Sprintf("tbz %s, #0x%x, %s", i.rt, i.bit, target.textHex())
 }

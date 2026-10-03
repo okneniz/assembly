@@ -13,10 +13,6 @@ type machoFormat struct {
 	f *macho.File
 }
 
-func (x machoFormat) Name() string {
-	return "Mach-O"
-}
-
 func (x machoFormat) ArchKind() ArchKind {
 	if x.f.Header().CpuType == macho.CPU_TYPE_ARM64 {
 		return ArchARM64
@@ -25,14 +21,13 @@ func (x machoFormat) ArchKind() ArchKind {
 	return ArchUnknown
 }
 
-func (x machoFormat) Sections() ([]Section, error) {
-	src := x.f.Sections()
-	out := make([]Section, 0, len(src))
-	for _, s := range src {
-		out = append(out, *NewSection(s.SectName, s.SegName, s.Addr, uint64(s.Offset), s.Size, nil))
-	}
+// CodeSection returns the code section (__text of segment __TEXT).
+func (x machoFormat) CodeSection() (*Section, error) {
+	return x.Section("__text")
+}
 
-	return out, nil
+func (x machoFormat) Name() string {
+	return "Mach-O"
 }
 
 func (x machoFormat) Section(name string) (*Section, error) {
@@ -49,7 +44,12 @@ func (x machoFormat) Section(name string) (*Section, error) {
 	return NewSection(s.SectName, s.SegName, s.Addr, uint64(s.Offset), s.Size, data), nil
 }
 
-// CodeSection returns the code section (__text of segment __TEXT).
-func (x machoFormat) CodeSection() (*Section, error) {
-	return x.Section("__text")
+func (x machoFormat) Sections() ([]Section, error) {
+	src := x.f.Sections()
+	out := make([]Section, 0, len(src))
+	for _, s := range src {
+		out = append(out, *NewSection(s.SectName, s.SegName, s.Addr, uint64(s.Offset), s.Size, nil))
+	}
+
+	return out, nil
 }

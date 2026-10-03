@@ -11,12 +11,12 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/okneniz/assembly/unit"
 	"github.com/okneniz/parsec"
 	parsecstrings "github.com/okneniz/parsec/strings"
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/asm/expr"
+	"github.com/okneniz/assembly/unit"
 )
 
 var errMock = errors.New("mock encode failure")
@@ -25,10 +25,6 @@ var errMock = errors.New("mock encode failure")
 // N bytes of 0xAB, "fail" fails at resolution.
 type mockInstr struct {
 	n int
-}
-
-func newMockInstr(n int) mockInstr {
-	return mockInstr{n: n}
 }
 
 func (m mockInstr) Resolve(unit.Ctx) (unit.Resolved, error) {
@@ -52,6 +48,59 @@ func (failInstr) Resolve(unit.Ctx) (unit.Resolved, error) {
 
 // mockBackend - a minimal Syntax for core tests.
 type mockBackend struct{}
+
+// mockPoolInstr - the "pool N" instruction for literal pool unit tests:
+// it requires a slot with the value N*0x101 (PoolUser), encodes 4 bytes -
+// the low word of the ADDRESS OF ITS OWN SLOT (the reserved name PoolSelf).
+type mockPoolInstr struct {
+	v *expr.Expr
+}
+
+func (m mockPoolInstr) PoolReq() (*expr.Expr, int, bool) {
+	return m.v, 8, true
+}
+
+func (m mockPoolInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
+	addr, ok := c.Resolve(PoolSelf)
+	if !ok {
+		return nil, errors.New("pool slot not resolved")
+	}
+
+	var buf [4]byte
+	binary.LittleEndian.PutUint32(buf[:], uint32(addr))
+	return mockResolved{b: buf[:]}, nil
+}
+
+// mockOpts - the applied .option values (for ApplyOption tests).
+var mockOpts []string
+
+func (mockBackend) ApplyOption(name string) error {
+	mockOpts = append(mockOpts, name)
+	return nil
+}
+
+func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
+	hash := parsecstrings.Cast(
+		parsecstrings.Skip(
+			parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')),
+			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
+		),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+	slash := parsecstrings.Cast(
+		parsecstrings.Skip(
+			parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")),
+			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
+		),
+		func(rs []rune) (string, error) {
+			return string(rs), nil
+		},
+	)
+	// Choice alternatives must be Try-wrapped (the parsec contract)
+	return parsecstrings.Choice("comment", parsecstrings.Try(slash), parsecstrings.Try(hash))
+}
 
 func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position, Unresolved, parsec.Stateless] {
 	pad := parsecstrings.Cast(
@@ -109,65 +158,12 @@ func (mockBackend) Instruction() parsec.Combinator[rune, parsecstrings.Position,
 	)
 }
 
-// mockPoolInstr - the "pool N" instruction for literal pool unit tests:
-// it requires a slot with the value N*0x101 (PoolUser), encodes 4 bytes -
-// the low word of the ADDRESS OF ITS OWN SLOT (the reserved name PoolSelf).
-type mockPoolInstr struct {
-	v *expr.Expr
-}
-
-func (m mockPoolInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
-	addr, ok := c.Resolve(PoolSelf)
-	if !ok {
-		return nil, errors.New("pool slot not resolved")
-	}
-
-	var buf [4]byte
-	binary.LittleEndian.PutUint32(buf[:], uint32(addr))
-	return mockResolved{b: buf[:]}, nil
-}
-
-func (m mockPoolInstr) PoolReq() (*expr.Expr, int, bool) {
-	return m.v, 8, true
+func (mockBackend) ResetOptions() {
+	mockOpts = nil
 }
 
 func (mockBackend) Separator() rune {
 	return 0
-}
-
-func (mockBackend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
-	hash := parsecstrings.Cast(
-		parsecstrings.Skip(
-			parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("comment", '#')),
-			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
-		),
-		func(rs []rune) (string, error) {
-			return string(rs), nil
-		},
-	)
-	slash := parsecstrings.Cast(
-		parsecstrings.Skip(
-			parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")),
-			parsecstrings.Many(4, expr.MakeNotNewlineParser()),
-		),
-		func(rs []rune) (string, error) {
-			return string(rs), nil
-		},
-	)
-	// Choice alternatives must be Try-wrapped (the parsec contract)
-	return parsecstrings.Choice("comment", parsecstrings.Try(slash), parsecstrings.Try(hash))
-}
-
-// mockOpts - the applied .option values (for ApplyOption tests).
-var mockOpts []string
-
-func (mockBackend) ApplyOption(name string) error {
-	mockOpts = append(mockOpts, name)
-	return nil
-}
-
-func (mockBackend) ResetOptions() {
-	mockOpts = nil
 }
 
 func TestSymbolsAndSections(t *testing.T) {
@@ -535,10 +531,6 @@ func TestIncbinErrors(t *testing.T) {
 	require.Contains(t, errs[0].Msg, "NOBITS", "bss - error")
 }
 
-func le32(b []byte) uint64 {
-	return uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24
-}
-
 func TestSubsections(t *testing.T) {
 	src := `
 .text 1
@@ -768,4 +760,12 @@ func TestLineMap(t *testing.T) {
 			require.Equal(t, c.want, res.Lines, "line map")
 		})
 	}
+}
+
+func newMockInstr(n int) mockInstr {
+	return mockInstr{n: n}
+}
+
+func le32(b []byte) uint64 {
+	return uint64(b[0]) | uint64(b[1])<<8 | uint64(b[2])<<16 | uint64(b[3])<<24
 }

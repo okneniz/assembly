@@ -9,23 +9,6 @@ import (
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
-// builderInstrs - the instruction methods of the arch Builder (the
-// ones returning arch.Instr; the operand roles Imm12/UImm12/... drop
-// out by signature).
-func builderInstrs() map[string]bool {
-	instr := reflect.TypeFor[arch.Instr]()
-	out := map[string]bool{}
-
-	builder := reflect.TypeFor[arch.Builder]()
-	for m := range builder.Methods() {
-		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
-			out[m.Name] = true
-		}
-	}
-
-	return out
-}
-
 func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {
 	// the no-alias rule, mechanically: every chain method (returning
 	// *Program) is a DSL directive, a sanctioned macro (La - the
@@ -53,4 +36,21 @@ func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {
 			)
 		}
 	}
+}
+
+// builderInstrs - the instruction methods of the arch Builder (the
+// ones returning arch.Instr; the operand roles Imm12/UImm12/... drop
+// out by signature).
+func builderInstrs() map[string]bool {
+	instr := reflect.TypeFor[arch.Instr]()
+	out := map[string]bool{}
+
+	builder := reflect.TypeFor[arch.Builder]()
+	for m := range builder.Methods() {
+		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
+			out[m.Name] = true
+		}
+	}
+
+	return out
 }

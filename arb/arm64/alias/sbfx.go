@@ -30,11 +30,6 @@ func NewSbfxParams(rd arm64.Reg, rn arm64.Reg, lsb uint32, width uint32) SbfxPar
 	}
 }
 
-func (p SbfxParams) String() string {
-	return "sbfx " + p.Rd.String() + ", " + p.Rn.String() +
-		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
-}
-
 func (p SbfxParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +39,24 @@ func (p SbfxParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p SbfxParams) String() string {
+	return "sbfx " + p.Rd.String() + ", " + p.Rn.String() +
+		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
+}
+
 // sbfxGen — generator for sbfx: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type sbfxGen struct {
 	rnd *rand.Rand
 }
 
-func newSbfxGen(rnd *rand.Rand) sbfxGen {
-	return sbfxGen{rnd: rnd}
-}
-
 // Sbfx — an arbitrary sbfx.
 func Sbfx(rnd *rand.Rand) ohsnap.Arbitrary[SbfxParams] {
 	return newSbfxGen(rnd)
+}
+
+func newSbfxGen(rnd *rand.Rand) sbfxGen {
+	return sbfxGen{rnd: rnd}
 }
 
 func (g sbfxGen) Generate() iter.Seq[SbfxParams] {

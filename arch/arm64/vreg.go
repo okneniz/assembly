@@ -12,13 +12,6 @@ type VReg struct {
 	num uint8 // 0..31
 }
 
-// newVReg - the register constructor: the struct is assembled only here.
-func newVReg(num uint8) VReg {
-	return VReg{
-		num: num,
-	}
-}
-
 // V — vector register v0..v31.
 func V(n int) (VReg, error) {
 	if n < 0 || n > 31 {
@@ -43,6 +36,13 @@ func VRegOf(name string) (VReg, error) {
 	}
 
 	return V(n)
+}
+
+// newVReg - the register constructor: the struct is assembled only here.
+func newVReg(num uint8) VReg {
+	return VReg{
+		num: num,
+	}
 }
 
 // Num — the register number (0..31).

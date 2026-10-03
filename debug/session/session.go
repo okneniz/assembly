@@ -49,16 +49,6 @@ func New(conn net.Conn, tgt debug.Target, syms map[string]uint64, lines []Line) 
 	return s, nil
 }
 
-// PC is the program counter.
-func (s *Session) PC() (uint64, error) {
-	return s.cl.ReadReg(s.tgt.PCNum())
-}
-
-// SetPC writes the program counter.
-func (s *Session) SetPC(addr uint64) error {
-	return s.cl.WriteReg(s.tgt.PCNum(), addr)
-}
-
 // BreakAt sets a breakpoint at a symbol name or a hex address
 // ("0x401000"): resolves through the symbol table first.
 func (s *Session) BreakAt(where string) (uint64, error) {
@@ -89,15 +79,46 @@ func (s *Session) Continue() (rsp.StopReply, error) {
 	return s.cl.Continue()
 }
 
-// Step executes one instruction and returns the stop report.
-func (s *Session) Step() (rsp.StopReply, error) {
-	return s.cl.Step()
+// Disasm reads n instructions of memory at addr and renders them
+// through the target's decoders.
+func (s *Session) Disasm(addr uint64, n int) ([]string, error) {
+	chunk := n * s.tgt.InstrLen(nil)
+	code, err := s.Read(addr, chunk)
+	if err != nil {
+		return nil, fmt.Errorf("assembly/session: disasm read: %w", err)
+	}
+
+	return s.tgt.Disasm(code, addr), nil
 }
 
 // Interrupt asks a running target to stop (from another goroutine
 // while Continue blocks).
 func (s *Session) Interrupt() error {
 	return s.cl.Interrupt()
+}
+
+// LineAt is the line map entry of addr: the last entry starting at or
+// before it (the instruction addr may sit mid-line for multi-instruction
+// source lines). ok is false below the first entry.
+func (s *Session) LineAt(addr uint64) (Line, bool) {
+	i := sort.Search(len(s.lines), func(i int) bool {
+		return s.lines[i].Addr > addr
+	}) - 1
+	if i < 0 {
+		return Line{}, false
+	}
+
+	return s.lines[i], true
+}
+
+// PC is the program counter.
+func (s *Session) PC() (uint64, error) {
+	return s.cl.ReadReg(s.tgt.PCNum())
+}
+
+// Read is n bytes of target memory at addr.
+func (s *Session) Read(addr uint64, n int) ([]byte, error) {
+	return s.cl.ReadMem(addr, n)
 }
 
 // Regs is the core register dump: the 'g' block sliced by the target
@@ -131,26 +152,20 @@ func (s *Session) Regs() ([]RegValue, error) {
 	return out, nil
 }
 
-// Read is n bytes of target memory at addr.
-func (s *Session) Read(addr uint64, n int) ([]byte, error) {
-	return s.cl.ReadMem(addr, n)
+// SetPC writes the program counter.
+func (s *Session) SetPC(addr uint64) error {
+	return s.cl.WriteReg(s.tgt.PCNum(), addr)
 }
 
-// Write patches target memory at addr.
-func (s *Session) Write(addr uint64, b []byte) error {
-	return s.cl.WriteMem(addr, b)
+// Step executes one instruction and returns the stop report.
+func (s *Session) Step() (rsp.StopReply, error) {
+	return s.cl.Step()
 }
 
-// Disasm reads n instructions of memory at addr and renders them
-// through the target's decoders.
-func (s *Session) Disasm(addr uint64, n int) ([]string, error) {
-	chunk := n * s.tgt.InstrLen(nil)
-	code, err := s.Read(addr, chunk)
-	if err != nil {
-		return nil, fmt.Errorf("assembly/session: disasm read: %w", err)
-	}
-
-	return s.tgt.Disasm(code, addr), nil
+// Symbol resolves one name to its address.
+func (s *Session) Symbol(name string) (uint64, bool) {
+	addr, ok := s.syms[name]
+	return addr, ok
 }
 
 // Symbols is the sorted symbol table of the debugged program.
@@ -164,24 +179,9 @@ func (s *Session) Symbols() []string {
 	return out
 }
 
-// Symbol resolves one name to its address.
-func (s *Session) Symbol(name string) (uint64, bool) {
-	addr, ok := s.syms[name]
-	return addr, ok
-}
-
-// LineAt is the line map entry of addr: the last entry starting at or
-// before it (the instruction addr may sit mid-line for multi-instruction
-// source lines). ok is false below the first entry.
-func (s *Session) LineAt(addr uint64) (Line, bool) {
-	i := sort.Search(len(s.lines), func(i int) bool {
-		return s.lines[i].Addr > addr
-	}) - 1
-	if i < 0 {
-		return Line{}, false
-	}
-
-	return s.lines[i], true
+// Write patches target memory at addr.
+func (s *Session) Write(addr uint64, b []byte) error {
+	return s.cl.WriteMem(addr, b)
 }
 
 // resolve maps a breakpoint specification to an address.

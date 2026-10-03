@@ -15,10 +15,6 @@ type Beqz struct {
 	off imm
 }
 
-func (i Beqz) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("beqz %s, %s", laRegName(i.rj), i.off.text())
-}
-
 func (i Beqz) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 21, "beqz offset")
 	if err != nil {
@@ -28,4 +24,8 @@ func (i Beqz) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["beqz"][0] | uint32(i.rj)<<5 | scatterD5k16(off)
 
 	return writeWord(w, word)
+}
+
+func (i Beqz) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("beqz %s, %s", laRegName(i.rj), i.off.text())
 }

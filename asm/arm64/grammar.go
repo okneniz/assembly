@@ -95,9 +95,11 @@ func makeGrammar() *armGrammar {
 		parseRBrace: parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'}'", '}')),
 	}
 
-	letter := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
-		return r >= 'a' && r <= 'z'
-	}))
+	letter := parsecstrings.Try(
+		parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
+			return r >= 'a' && r <= 'z'
+		}),
+	)
 	dot := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("dot", '.'))
 
 	// a register (letter prefix + digits + an optional .arr), or a named
@@ -216,9 +218,11 @@ func makeGrammar() *armGrammar {
 	)
 
 	// lsl/lsr/asr/ror #imm (a modifier operand)
-	shiftKw := parsecstrings.Try(parsecstrings.MapStrings[string, parsec.Stateless]("shift", map[string]string{
-		"lsl": "lsl", "lsr": "lsr", "asr": "asr", "ror": "ror",
-	}))
+	shiftKw := parsecstrings.Try(
+		parsecstrings.MapStrings[string, parsec.Stateless]("shift", map[string]string{
+			"lsl": "lsl", "lsr": "lsr", "asr": "asr", "ror": "ror",
+		}),
+	)
 	g.parseShift = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		name, err := shiftKw(state, buf)
 		if err != nil {
@@ -250,11 +254,13 @@ func makeGrammar() *armGrammar {
 	}
 
 	// an extension (uxtw/sxtw/...) with an optional #imm
-	extendKw := parsecstrings.Try(parsecstrings.MapStrings[string, parsec.Stateless]("extend", map[string]string{
-		"uxtb": "uxtb", "uxth": "uxth", "uxtw": "uxtw", "uxtx": "uxtx",
-		"sxtb": "sxtb", "sxth": "sxth", "sxtw": "sxtw", "sxtx": "sxtx",
-		"lsl": "lsl",
-	}))
+	extendKw := parsecstrings.Try(
+		parsecstrings.MapStrings[string, parsec.Stateless]("extend", map[string]string{
+			"uxtb": "uxtb", "uxth": "uxth", "uxtw": "uxtw", "uxtx": "uxtx",
+			"sxtb": "sxtb", "sxth": "sxth", "sxtw": "sxtw", "sxtx": "sxtx",
+			"lsl": "lsl",
+		}),
+	)
 	g.parseExtend = func(state parsec.Stateless, buf parsec.Buffer[rune, parsecstrings.Position]) (armOp, parsec.Error[parsecstrings.Position]) {
 		name, err := extendKw(state, buf)
 		if err != nil {
@@ -446,14 +452,27 @@ func makeGrammar() *armGrammar {
 	// a parseMnemonic: [a-z][a-z0-9.]* (b.eq, ld1.16b, add)
 	g.parseMnemonic = parsecstrings.Cast(
 		parsecstrings.Concat(8,
-			parsecstrings.Count(1, "mnemonic",
-				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
-					return r >= 'a' && r <= 'z'
-				}))),
-			parsecstrings.Many(6,
-				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("mnemonic char", true, func(r rune) bool {
-					return r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '.'
-				}))),
+			parsecstrings.Count(
+				1,
+				"mnemonic",
+				parsecstrings.Try(
+					parsecstrings.Satisfy[parsec.Stateless]("letter", true, func(r rune) bool {
+						return r >= 'a' && r <= 'z'
+					}),
+				),
+			),
+			parsecstrings.Many(
+				6,
+				parsecstrings.Try(
+					parsecstrings.Satisfy[parsec.Stateless](
+						"mnemonic char",
+						true,
+						func(r rune) bool {
+							return r >= 'a' && r <= 'z' || r >= '0' && r <= '9' || r == '.'
+						},
+					),
+				),
+			),
 		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil

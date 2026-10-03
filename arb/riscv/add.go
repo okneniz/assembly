@@ -33,6 +33,7 @@ func NewAddParams(rd riscv.Reg, rs1 riscv.Reg, rs2 riscv.Reg) AddParams {
 func (p AddParams) Instr() riscv.Instr {
 	return riscv.New().Add(p.Rd, p.Rs1, p.Rs2)
 }
+
 func (p AddParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -42,13 +43,13 @@ type addGen struct {
 	rnd *rand.Rand
 }
 
-func newAddGen(rnd *rand.Rand) addGen {
-	return addGen{rnd: rnd}
-}
-
 // Add — an arbitrary add.
 func Add(rnd *rand.Rand) ohsnap.Arbitrary[AddParams] {
 	return newAddGen(rnd)
+}
+
+func newAddGen(rnd *rand.Rand) addGen {
+	return addGen{rnd: rnd}
 }
 
 func (g addGen) Generate() iter.Seq[AddParams] {

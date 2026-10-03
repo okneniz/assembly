@@ -17,14 +17,14 @@ type Csneg struct {
 	Csel
 }
 
+func (i Csneg) Encode(w io.Writer) (int64, error) {
+	return cselWrite(w, i.Csel, csnegX, csnegW, "csneg")
+}
+
 func (i Csneg) ObjDump(_ disasm.ViewCtx) string {
 	if i.rn == i.rm {
 		return fmt.Sprintf("cneg %s, %s, %s", i.rd, i.rm, invertCond(i.cond))
 	}
 
 	return fmt.Sprintf("csneg %s, %s, %s, %s", i.rd, i.rn, i.rm, i.cond)
-}
-
-func (i Csneg) Encode(w io.Writer) (int64, error) {
-	return cselWrite(w, i.Csel, csnegX, csnegW, "csneg")
 }

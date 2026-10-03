@@ -42,6 +42,7 @@ func (p AddImmParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AddImmParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -52,13 +53,13 @@ type addImmGen struct {
 	rnd *rand.Rand
 }
 
-func newAddImmGen(rnd *rand.Rand) addImmGen {
-	return addImmGen{rnd: rnd}
-}
-
 // AddImm — an arbitrary add (immediate).
 func AddImm(rnd *rand.Rand) ohsnap.Arbitrary[AddImmParams] {
 	return newAddImmGen(rnd)
+}
+
+func newAddImmGen(rnd *rand.Rand) addImmGen {
+	return addImmGen{rnd: rnd}
 }
 
 func (g addImmGen) Generate() iter.Seq[AddImmParams] {

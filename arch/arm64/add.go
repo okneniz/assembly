@@ -33,10 +33,6 @@ func newAdd(rd, rn, rm VReg, arr string) (Add, error) {
 
 const addEnc uint32 = 237011968 // add vd, vn, vm (Q=0, size=0 form)
 
-func (i Add) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("add.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Add) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Add) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, addEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
+}
+
+func (i Add) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("add.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

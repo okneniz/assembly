@@ -22,16 +22,16 @@ type sysregArb struct {
 	names []string
 }
 
+// Sysreg — an arbitrary system register name (mrs/msr operand).
+func Sysreg(rnd *rand.Rand) ohsnap.Arbitrary[string] {
+	return newSysregArb(rnd)
+}
+
 func newSysregArb(rnd *rand.Rand) sysregArb {
 	return sysregArb{
 		rnd:   rnd,
 		names: sysregNamesSorted(),
 	}
-}
-
-// Sysreg — an arbitrary system register name (mrs/msr operand).
-func Sysreg(rnd *rand.Rand) ohsnap.Arbitrary[string] {
-	return newSysregArb(rnd)
 }
 
 func (a sysregArb) Generate() iter.Seq[string] {

@@ -24,36 +24,6 @@ import (
 	"github.com/okneniz/assembly/file"
 )
 
-// a64McText - the code section bytes of the llvm-mc object for src.
-func a64McText(t *testing.T, triple, src string) []byte {
-	t.Helper()
-	path := t.TempDir() + "/mc.o"
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	// the corpus carries aes/rdm/fcmla rows: llvm (19+) gates them behind
-	// explicit feature flags, any llvm accepts the extra -mattr.
-	cmd := exec.CommandContext(ctx, llvmMcPath(),
-		"-assemble", "-triple="+triple, "-mattr=+aes,+rdm,+complxnum",
-		"-filetype=obj", "-o", path)
-	cmd.Stdin = strings.NewReader(src)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("llvm-mc %q (%s): %v: %s", src, triple, err, out)
-	}
-
-	f, err := file.Detect(path)
-	if err != nil {
-		t.Fatalf("detect %s: %v", path, err)
-	}
-
-	sec, err := f.CodeSection()
-	if err != nil {
-		t.Fatalf("code section of %s: %v", path, err)
-	}
-
-	return sec.Data
-}
-
 // TestArm64VsLlvmMc - the hello examples vs llvm-mc, whole code sections,
 // byte for byte.
 func TestArm64VsLlvmMc(t *testing.T) {
@@ -88,4 +58,34 @@ func TestArm64VsLlvmMc(t *testing.T) {
 				tc.path, res.Sections[0].Data, want)
 		})
 	}
+}
+
+// a64McText - the code section bytes of the llvm-mc object for src.
+func a64McText(t *testing.T, triple, src string) []byte {
+	t.Helper()
+	path := t.TempDir() + "/mc.o"
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	// the corpus carries aes/rdm/fcmla rows: llvm (19+) gates them behind
+	// explicit feature flags, any llvm accepts the extra -mattr.
+	cmd := exec.CommandContext(ctx, llvmMcPath(),
+		"-assemble", "-triple="+triple, "-mattr=+aes,+rdm,+complxnum",
+		"-filetype=obj", "-o", path)
+	cmd.Stdin = strings.NewReader(src)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("llvm-mc %q (%s): %v: %s", src, triple, err, out)
+	}
+
+	f, err := file.Detect(path)
+	if err != nil {
+		t.Fatalf("detect %s: %v", path, err)
+	}
+
+	sec, err := f.CodeSection()
+	if err != nil {
+		t.Fatalf("code section of %s: %v", path, err)
+	}
+
+	return sec.Data
 }

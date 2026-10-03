@@ -21,21 +21,25 @@ import (
 // register 1 (register 0 doubles as the only GPR shown in dumps).
 type fakeTarget struct{}
 
-func (fakeTarget) Arch() string             { return "fake" }
-func (fakeTarget) QemuBinary() string       { return "qemu-system-fake" }
-func (fakeTarget) PCNum() int               { return 1 }
-func (fakeTarget) SPNum() int               { return 0 }
-func (fakeTarget) InstrLen([]byte) int      { return 4 }
-func (fakeTarget) QemuArgs(string) []string { return nil }
+func (fakeTarget) Arch() string { return "fake" }
+
 func (fakeTarget) Disasm(code []byte, addr uint64) []string {
 	return []string{fmt.Sprintf("%x: % x", addr, code)}
 }
 
+func (fakeTarget) InstrLen([]byte) int { return 4 }
+
+func (fakeTarget) PCNum() int { return 1 }
+
+func (fakeTarget) QemuArgs(string) []string { return nil }
+
+func (fakeTarget) QemuBinary() string { return "qemu-system-fake" }
+
 func (fakeTarget) Registers() []debug.Reg {
-	r0, _ := debug.NewReg("r0", 0, 64)
-	pc, _ := debug.NewReg("pc", 1, 64)
-	return []debug.Reg{r0, pc}
+	return []debug.Reg{mustReg("r0", 0), mustReg("pc", 1)}
 }
+
+func (fakeTarget) SPNum() int { return 0 }
 
 // dialogStep is one expected RSP request with its reply (the rsp fake
 // without retransmission - the framing is covered there). A step with
@@ -50,165 +54,6 @@ type dialogStep struct {
 	cut    bool
 }
 
-// The wire codec in miniature for the dialog stub (the rsp package
-// owns the real one; its exported surface stays clean).
-func testChecksum(payload string) byte {
-	var sum byte
-	for i := range len(payload) {
-		sum += payload[i]
-	}
-
-	return sum
-}
-
-func testEncode(payload string) []byte {
-	return []byte(fmt.Sprintf("$%s#%02x", payload, testChecksum(payload)))
-}
-
-func testParse(pkt []byte) (string, bool) {
-	if len(pkt) < 4 || pkt[0] != '$' || pkt[len(pkt)-3] != '#' {
-		return "", false
-	}
-
-	payload := string(pkt[1 : len(pkt)-3])
-	var want byte
-	if _, err := fmt.Sscanf(string(pkt[len(pkt)-2:]), "%02x", &want); err != nil {
-		return "", false
-	}
-
-	return payload, testChecksum(payload) == want
-}
-
-// serveStub runs the fake target side of the RSP conversation over a
-// TCP loopback pair (a buffered transport: a concurrent interrupt
-// write must not block the way it would on a raw pipe); the returned
-// wait collects its verdict (all steps served in order).
-func serveStub(t *testing.T, steps []dialogStep) (net.Conn, func() error) {
-	t.Helper()
-
-	var lc net.ListenConfig
-	lst, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
-	require.NoError(t, err)
-
-	type acceptedConn struct {
-		conn net.Conn
-		err  error
-	}
-
-	accepted := make(chan acceptedConn, 1)
-	go func() {
-		conn, aerr := lst.Accept()
-		accepted <- acceptedConn{conn, errors.Join(aerr, lst.Close())}
-	}()
-
-	var dialer net.Dialer
-	client, err := dialer.DialContext(t.Context(), "tcp", lst.Addr().String())
-	require.NoError(t, err)
-
-	res := <-accepted
-	require.NoError(t, res.err, "stub: accept")
-	server := res.conn
-
-	done := make(chan error, 1)
-	go func() {
-		defer close(done)
-		r := bufio.NewReader(server)
-		w := server
-		fail := func(format string, args ...any) {
-			done <- errors.Join(fmt.Errorf(format, args...), server.Close())
-		}
-
-		readRequest := func() (string, bool) {
-			for {
-				b, rerr := r.ReadByte()
-				if rerr != nil {
-					return "", false
-				}
-
-				if b == '$' {
-					pkt := []byte{'$'}
-					for {
-						b, rerr = r.ReadByte()
-						if rerr != nil {
-							return "", false
-						}
-
-						pkt = append(pkt, b)
-						if b == '#' {
-							hi, herr := r.ReadByte()
-							lo, lerr := r.ReadByte()
-							if herr != nil || lerr != nil {
-								return "", false
-							}
-
-							pkt = append(pkt, hi, lo)
-							break
-						}
-					}
-
-					return testParse(pkt)
-				}
-
-				// everything before '$' is a concurrent interrupt byte:
-				// addressed to the target, not part of any request
-			}
-		}
-
-		for _, st := range steps {
-			payload, ok := readRequest()
-			if !ok || payload != st.expect {
-				fail("stub: request %q (ok=%v), want %q", payload, ok, st.expect)
-				return
-			}
-
-			if _, werr := w.Write([]byte{'+'}); werr != nil {
-				fail("stub: ack write: %v", werr)
-				return
-			}
-
-			if st.gate != nil {
-				<-st.gate
-			}
-
-			if st.cut {
-				done <- server.Close()
-				return
-			}
-
-			if _, werr := w.Write(testEncode(st.reply)); werr != nil {
-				fail("stub: reply write: %v", werr)
-				return
-			}
-
-			for { // the reply ack; a concurrent interrupt byte is skipped
-				b, rerr := r.ReadByte()
-				if rerr != nil {
-					fail("stub: reply ack read: %v", rerr)
-					return
-				}
-
-				if b == 0x03 {
-					continue
-				}
-
-				if b != '+' {
-					fail("stub: reply ack %#02x", b)
-					return
-				}
-
-				break
-			}
-		}
-
-		done <- server.Close()
-	}()
-
-	return client, func() error {
-		require.NoError(t, client.Close())
-		return <-done
-	}
-}
-
 // closeSpy is the Runtime teardown in the tests: did disconnect close
 // the machine (atomic: Serve's shutdown writes it from its goroutine).
 type closeSpy struct {
@@ -218,40 +63,6 @@ type closeSpy struct {
 func (c *closeSpy) Close() error {
 	c.closed.Store(true)
 	return nil
-}
-
-// testLauncher is the Launcher over the scripted stub dialog: the
-// launch boots the session against the fake target (the New
-// handshake heads the dialog), the verdict of the stub joins the test
-// cleanup. The spy reports the machine teardown.
-func testLauncher(
-	t *testing.T,
-	steps []dialogStep,
-	syms map[string]uint64,
-	lines []session.Line,
-) (Launcher, *closeSpy) {
-	t.Helper()
-
-	handshake := []dialogStep{
-		{
-			expect: "qSupported:multiprocess-;swbreak+;hwbreak+;xmlRegisters=aarch64,riscv:rv64,loongarch64,i386",
-			reply:  "qXfer:features:read+",
-		},
-		{expect: "?", reply: "T05thread:p1.1;"},
-	}
-
-	spy := &closeSpy{}
-	return func(args launchArgs, console io.Writer) (*Runtime, error) {
-		conn, wait := serveStub(t, append(handshake, steps...))
-		t.Cleanup(func() { require.NoError(t, wait()) })
-
-		s, err := session.New(conn, fakeTarget{}, syms, lines)
-		if err != nil {
-			return nil, err
-		}
-
-		return &Runtime{Tgt: fakeTarget{}, Sess: s, Lines: lines, Closer: spy}, nil
-	}, spy
 }
 
 // wireMsg is the editor-side view of one DAP message.
@@ -275,37 +86,10 @@ type testClient struct {
 	events []wireMsg
 }
 
-func newTestClient(t *testing.T, conn net.Conn) *testClient {
-	t.Helper()
-
-	return &testClient{t: t, fr: newFraming(conn, conn), conn: conn}
-}
-
-func (c *testClient) request(command string, args any) wireMsg {
+// decodeBody unmarshals the body of one message into out.
+func (c *testClient) decodeBody(msg wireMsg, out any) {
 	c.t.Helper()
-	c.seq++
-	raw, err := json.Marshal(map[string]any{
-		"seq":       c.seq,
-		"type":      "request",
-		"command":   command,
-		"arguments": args,
-	})
-	require.NoError(c.t, err)
-	require.NoError(c.t, c.fr.write(raw))
-	return c.waitResponse()
-}
-
-func (c *testClient) waitResponse() wireMsg {
-	c.t.Helper()
-	for {
-		msg := c.read()
-		if msg.Type == "response" {
-			require.Equal(c.t, c.seq, msg.ReqSeq, "reply to another request")
-			return msg
-		}
-
-		c.events = append(c.events, msg)
-	}
+	require.NoError(c.t, json.Unmarshal(msg.Body, out))
 }
 
 // event returns the next event of that name (buffered ones first),
@@ -344,36 +128,31 @@ func (c *testClient) read() wireMsg {
 	return msg
 }
 
-// decodeBody unmarshals the body of one message into out.
-func (c *testClient) decodeBody(msg wireMsg, out any) {
+func (c *testClient) request(command string, args any) wireMsg {
 	c.t.Helper()
-	require.NoError(c.t, json.Unmarshal(msg.Body, out))
+	c.seq++
+	raw, err := json.Marshal(map[string]any{
+		"seq":       c.seq,
+		"type":      "request",
+		"command":   command,
+		"arguments": args,
+	})
+	require.NoError(c.t, err)
+	require.NoError(c.t, c.fr.write(raw))
+	return c.waitResponse()
 }
 
-// newTestServer starts the server over a pipe pair with the scripted
-// launcher (nil steps: no launch may happen); the spy returns for the
-// teardown assertions. The Serve verdict joins the cleanup (a clean
-// conversation ends in a nil).
-func newTestServer(
-	t *testing.T,
-	steps []dialogStep,
-	syms map[string]uint64,
-	lines []session.Line,
-) (*testClient, *closeSpy) {
-	t.Helper()
+func (c *testClient) waitResponse() wireMsg {
+	c.t.Helper()
+	for {
+		msg := c.read()
+		if msg.Type == "response" {
+			require.Equal(c.t, c.seq, msg.ReqSeq, "reply to another request")
+			return msg
+		}
 
-	editor, adapter := net.Pipe()
-
-	launcher, spy := testLauncher(t, steps, syms, lines)
-	srv, err := NewServer(adapter, adapter, launcher)
-	require.NoError(t, err)
-
-	serveErr := make(chan error, 1)
-	go func() { serveErr <- srv.Serve() }()
-	t.Cleanup(func() { require.NoError(t, <-serveErr) })
-	t.Cleanup(func() { require.NoError(t, editor.Close()) })
-
-	return newTestClient(t, editor), spy
+		c.events = append(c.events, msg)
+	}
 }
 
 // TestServerFlow - the whole editor conversation over one scripted
@@ -736,4 +515,240 @@ func TestServerAfterFinished(t *testing.T) {
 
 	// the disconnect still ends cleanly
 	c.request("disconnect", nil)
+}
+
+// The wire codec in miniature for the dialog stub (the rsp package
+// owns the real one; its exported surface stays clean).
+func testChecksum(payload string) byte {
+	var sum byte
+	for i := range len(payload) {
+		sum += payload[i]
+	}
+
+	return sum
+}
+
+func testEncode(payload string) []byte {
+	return []byte(fmt.Sprintf("$%s#%02x", payload, testChecksum(payload)))
+}
+
+func testParse(pkt []byte) (string, bool) {
+	if len(pkt) < 4 || pkt[0] != '$' || pkt[len(pkt)-3] != '#' {
+		return "", false
+	}
+
+	payload := string(pkt[1 : len(pkt)-3])
+	var want byte
+	if _, err := fmt.Sscanf(string(pkt[len(pkt)-2:]), "%02x", &want); err != nil {
+		return "", false
+	}
+
+	return payload, testChecksum(payload) == want
+}
+
+// serveStub runs the fake target side of the RSP conversation over a
+// TCP loopback pair (a buffered transport: a concurrent interrupt
+// write must not block the way it would on a raw pipe); the returned
+// wait collects its verdict (all steps served in order).
+func serveStub(t *testing.T, steps []dialogStep) (net.Conn, func() error) {
+	t.Helper()
+
+	var lc net.ListenConfig
+	lst, err := lc.Listen(t.Context(), "tcp", "127.0.0.1:0")
+	require.NoError(t, err)
+
+	type acceptedConn struct {
+		conn net.Conn
+		err  error
+	}
+
+	accepted := make(chan acceptedConn, 1)
+	go func() {
+		conn, aerr := lst.Accept()
+		accepted <- acceptedConn{conn, errors.Join(aerr, lst.Close())}
+	}()
+
+	var dialer net.Dialer
+	client, err := dialer.DialContext(t.Context(), "tcp", lst.Addr().String())
+	require.NoError(t, err)
+
+	res := <-accepted
+	require.NoError(t, res.err, "stub: accept")
+	server := res.conn
+
+	done := make(chan error, 1)
+	go func() {
+		defer close(done)
+		r := bufio.NewReader(server)
+		w := server
+		fail := func(format string, args ...any) {
+			done <- errors.Join(fmt.Errorf(format, args...), server.Close())
+		}
+
+		readRequest := func() (string, bool) {
+			for {
+				b, rerr := r.ReadByte()
+				if rerr != nil {
+					return "", false
+				}
+
+				if b == '$' {
+					pkt := []byte{'$'}
+					for {
+						b, rerr = r.ReadByte()
+						if rerr != nil {
+							return "", false
+						}
+
+						pkt = append(pkt, b)
+						if b == '#' {
+							hi, herr := r.ReadByte()
+							lo, lerr := r.ReadByte()
+							if herr != nil || lerr != nil {
+								return "", false
+							}
+
+							pkt = append(pkt, hi, lo)
+							break
+						}
+					}
+
+					return testParse(pkt)
+				}
+
+				// everything before '$' is a concurrent interrupt byte:
+				// addressed to the target, not part of any request
+			}
+		}
+
+		for _, st := range steps {
+			payload, ok := readRequest()
+			if !ok || payload != st.expect {
+				fail("stub: request %q (ok=%v), want %q", payload, ok, st.expect)
+				return
+			}
+
+			if _, werr := w.Write([]byte{'+'}); werr != nil {
+				fail("stub: ack write: %v", werr)
+				return
+			}
+
+			if st.gate != nil {
+				<-st.gate
+			}
+
+			if st.cut {
+				done <- server.Close()
+				return
+			}
+
+			if _, werr := w.Write(testEncode(st.reply)); werr != nil {
+				fail("stub: reply write: %v", werr)
+				return
+			}
+
+			for { // the reply ack; a concurrent interrupt byte is skipped
+				b, rerr := r.ReadByte()
+				if rerr != nil {
+					fail("stub: reply ack read: %v", rerr)
+					return
+				}
+
+				if b == 0x03 {
+					continue
+				}
+
+				if b != '+' {
+					fail("stub: reply ack %#02x", b)
+					return
+				}
+
+				break
+			}
+		}
+
+		done <- server.Close()
+	}()
+
+	return client, func() error {
+		require.NoError(t, client.Close())
+		return <-done
+	}
+}
+
+// testLauncher is the Launcher over the scripted stub dialog: the
+// launch boots the session against the fake target (the New
+// handshake heads the dialog), the verdict of the stub joins the test
+// cleanup. The spy reports the machine teardown.
+func testLauncher(
+	t *testing.T,
+	steps []dialogStep,
+	syms map[string]uint64,
+	lines []session.Line,
+) (Launcher, *closeSpy) {
+	t.Helper()
+
+	handshake := []dialogStep{
+		{
+			expect: "qSupported:multiprocess-;swbreak+;hwbreak+;xmlRegisters=aarch64,riscv:rv64,loongarch64,i386",
+			reply:  "qXfer:features:read+",
+		},
+		{expect: "?", reply: "T05thread:p1.1;"},
+	}
+
+	spy := &closeSpy{}
+	return func(args launchArgs, console io.Writer) (*Runtime, error) {
+		conn, wait := serveStub(t, append(handshake, steps...))
+		t.Cleanup(func() { require.NoError(t, wait()) })
+
+		s, err := session.New(conn, fakeTarget{}, syms, lines)
+		if err != nil {
+			return nil, err
+		}
+
+		return &Runtime{Tgt: fakeTarget{}, Sess: s, Lines: lines, Closer: spy}, nil
+	}, spy
+}
+
+func newTestClient(t *testing.T, conn net.Conn) *testClient {
+	t.Helper()
+
+	return &testClient{t: t, fr: newFraming(conn, conn), conn: conn}
+}
+
+// newTestServer starts the server over a pipe pair with the scripted
+// launcher (nil steps: no launch may happen); the spy returns for the
+// teardown assertions. The Serve verdict joins the cleanup (a clean
+// conversation ends in a nil).
+func newTestServer(
+	t *testing.T,
+	steps []dialogStep,
+	syms map[string]uint64,
+	lines []session.Line,
+) (*testClient, *closeSpy) {
+	t.Helper()
+
+	editor, adapter := net.Pipe()
+
+	launcher, spy := testLauncher(t, steps, syms, lines)
+	srv, err := NewServer(adapter, adapter, launcher)
+	require.NoError(t, err)
+
+	serveErr := make(chan error, 1)
+	go func() { serveErr <- srv.Serve() }()
+	t.Cleanup(func() { require.NoError(t, <-serveErr) })
+	t.Cleanup(func() { require.NoError(t, editor.Close()) })
+
+	return newTestClient(t, editor), spy
+}
+
+// mustReg builds a register of the fake target: the names/nums are
+// hard-wired in the dialogs, a failure here is a broken fixture.
+func mustReg(name string, num int) debug.Reg {
+	r, err := debug.NewReg(name, num, 64)
+	if err != nil {
+		panic(err)
+	}
+
+	return r
 }

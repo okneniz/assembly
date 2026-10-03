@@ -31,10 +31,6 @@ func newAbs(rd, rn VReg, arr string) (Abs, error) {
 
 const absEnc uint32 = 0x0E20B800 // abs vd, vn (Q=0 form)
 
-func (i Abs) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("abs.%s %s, %s", i.arr, i.rd, i.rn)
-}
-
 func (i Abs) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -47,4 +43,8 @@ func (i Abs) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, absEnc|q<<30|size<<22|rd|rn<<5)
+}
+
+func (i Abs) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("abs.%s %s, %s", i.arr, i.rd, i.rn)
 }

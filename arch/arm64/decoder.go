@@ -10,6 +10,49 @@ import (
 // decodeCtor - constructor of a registry entry (decision tree payload).
 type decodeCtor = func(word uint32) (Instr, error)
 
+// Decision trees over the registry are derivatives of the registry data
+// (like the schemas themselves): built once at package load, decoding is a
+// bit-by-bit descent instead of a linear scan over ~3.7k entries.
+var (
+	schemaTree = dtree.New(schemaRules())
+	tailTree   = dtree.New(tailRules())
+)
+
+// Parse — constructor of a combinator that decodes ARM64 machine code
+// (fixed 32-bit width, little-endian) from a parsec buffer into []Instr.
+// The word reader is a plain function: unlike bytes.ReadAs (which rebuilds
+// its Count combinator on every invocation) it allocates nothing per word.
+// Try rolls the position back on a truncated tail (<4 bytes), Many
+// swallows its error and drives the loop to the end of the buffer.
+// Every 32-bit word reaches the output: unrecognized encodings become a
+// .word instruction so the total line count matches objdump. The
+// instructions are position-independent: addresses live in the view
+// context (disasm), not in the structures.
+func MakeDecoder() parsec.Combinator[byte, int, []Instr, parsec.Stateless] {
+	instr := func(state parsec.Stateless, buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
+		w, err := decodeWordLE(buf)
+		if err != nil {
+			return nil, err
+		}
+
+		in, derr := decodeOne(w)
+		if derr != nil {
+			// operand validation failed on a schema-matched word: data,
+			// not an instruction - the .word fallback keeps the line
+			// count identical to objdump; decodeUnknown cannot fail
+			// (no operands to validate)
+			in, derr = decodeUnknown(w)
+			if derr != nil {
+				return nil, parsec.NewParseError(buf.Position(), derr.Error())
+			}
+		}
+
+		return in, nil
+	}
+
+	return parsec.Many(0, bytes.Try(instr))
+}
+
 // schemaRules - rules of the curated schemas in priority order. The match
 // bits come from the generated armISA when the entry is mapped
 // (schemaISAEntry, step A): exact matches and sf splits; the remaining
@@ -49,14 +92,6 @@ func tailRules() []dtree.Rule[decodeCtor] {
 	return rules
 }
 
-// Decision trees over the registry are derivatives of the registry data
-// (like the schemas themselves): built once at package load, decoding is a
-// bit-by-bit descent instead of a linear scan over ~3.7k entries.
-var (
-	schemaTree = dtree.New(schemaRules())
-	tailTree   = dtree.New(tailRules())
-)
-
 // decodeOne decodes a single 32-bit word with the decision trees; the
 // registry's first-match is preserved by dtree. A schema match with a ctor
 // builds its structure; a missing match or a barrier (schema without a
@@ -72,41 +107,6 @@ func decodeOne(word uint32) (Instr, error) {
 	}
 
 	return decodeUnknown(word)
-}
-
-// Parse — constructor of a combinator that decodes ARM64 machine code
-// (fixed 32-bit width, little-endian) from a parsec buffer into []Instr.
-// The word reader is a plain function: unlike bytes.ReadAs (which rebuilds
-// its Count combinator on every invocation) it allocates nothing per word.
-// Try rolls the position back on a truncated tail (<4 bytes), Many
-// swallows its error and drives the loop to the end of the buffer.
-// Every 32-bit word reaches the output: unrecognized encodings become a
-// .word instruction so the total line count matches objdump. The
-// instructions are position-independent: addresses live in the view
-// context (disasm), not in the structures.
-func MakeDecoder() parsec.Combinator[byte, int, []Instr, parsec.Stateless] {
-	instr := func(state parsec.Stateless, buf parsec.Buffer[byte, int]) (Instr, parsec.Error[int]) {
-		w, err := decodeWordLE(buf)
-		if err != nil {
-			return nil, err
-		}
-
-		in, derr := decodeOne(w)
-		if derr != nil {
-			// operand validation failed on a schema-matched word: data,
-			// not an instruction - the .word fallback keeps the line
-			// count identical to objdump; decodeUnknown cannot fail
-			// (no operands to validate)
-			in, derr = decodeUnknown(w)
-			if derr != nil {
-				return nil, parsec.NewParseError(buf.Position(), derr.Error())
-			}
-		}
-
-		return in, nil
-	}
-
-	return parsec.Many(0, bytes.Try(instr))
 }
 
 // decodeWordLE reads a 4-byte little-endian word; a truncated tail is an

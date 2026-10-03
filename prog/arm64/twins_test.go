@@ -12,56 +12,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// assemble - Build+Assemble with the checks every twin test needs.
-func assemble(t *testing.T, p *Program) *prog.Result {
-	t.Helper()
-
-	bin, buildErrs := p.Build()
-	require.Empty(t, buildErrs)
-
-	res := bin.Assemble(0)
-	require.Empty(t, res.Errs)
-
-	return res
-}
-
-// words - assembled code as little-endian words.
-func words(b []byte) []uint32 {
-	out := make([]uint32, len(b)/4)
-	for i := range out {
-		out[i] = binary.LittleEndian.Uint32(b[i*4:])
-	}
-
-	return out
-}
-
-// enc - the word of a directly built instruction: the oracle the twins
-// are byte-compared against. Panics on a construction error - the
-// oracle operands are valid by construction (the pre-minted-reg
-// pattern of regs.go).
-func enc(i arch.Instr, err error) uint32 {
-	if err != nil {
-		panic(err)
-	}
-
-	var buf bytes.Buffer
-	if _, err := i.Encode(&buf); err != nil {
-		panic(err)
-	}
-
-	return binary.LittleEndian.Uint32(buf.Bytes())
-}
-
-// wreg - a W register for the byte/halfword twins.
-func wreg(t *testing.T, n int) arch.Reg {
-	t.Helper()
-
-	r, err := arch.W(n)
-	require.NoError(t, err)
-
-	return r
-}
-
 func TestTwinsArithmetic(t *testing.T) {
 	res := assemble(t, New(unit.New()).
 		Adc(X0, X1, X2).
@@ -762,4 +712,54 @@ func TestTwinsSimdErrors(t *testing.T) {
 	_, buildErrs = New(unit.New()).FcmlaElem(V0, V1, V2, "4s", 0, 45).Build()
 	require.Len(t, buildErrs, 1)
 	require.Contains(t, buildErrs[0].Error(), "fcmla")
+}
+
+// assemble - Build+Assemble with the checks every twin test needs.
+func assemble(t *testing.T, p *Program) *prog.Result {
+	t.Helper()
+
+	bin, buildErrs := p.Build()
+	require.Empty(t, buildErrs)
+
+	res := bin.Assemble(0)
+	require.Empty(t, res.Errs)
+
+	return res
+}
+
+// words - assembled code as little-endian words.
+func words(b []byte) []uint32 {
+	out := make([]uint32, len(b)/4)
+	for i := range out {
+		out[i] = binary.LittleEndian.Uint32(b[i*4:])
+	}
+
+	return out
+}
+
+// enc - the word of a directly built instruction: the oracle the twins
+// are byte-compared against. Panics on a construction error - the
+// oracle operands are valid by construction (the pre-minted-reg
+// pattern of regs.go).
+func enc(i arch.Instr, err error) uint32 {
+	if err != nil {
+		panic(err)
+	}
+
+	var buf bytes.Buffer
+	if _, err := i.Encode(&buf); err != nil {
+		panic(err)
+	}
+
+	return binary.LittleEndian.Uint32(buf.Bytes())
+}
+
+// wreg - a W register for the byte/halfword twins.
+func wreg(t *testing.T, n int) arch.Reg {
+	t.Helper()
+
+	r, err := arch.W(n)
+	require.NoError(t, err)
+
+	return r
 }

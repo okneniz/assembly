@@ -49,9 +49,11 @@ func MakeCommaParser() RuneCombinator {
 // '\n' terminates a statement (unicode.IsSpace('\n') == true, hence the
 // explicit exclusion).
 func MakeSpaceParser() RuneCombinator {
-	return parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("whitespace", true, func(r rune) bool {
-		return r != '\n' && unicode.IsSpace(r)
-	}))
+	return parsecstrings.Try(
+		parsecstrings.Satisfy[parsec.Stateless]("whitespace", true, func(r rune) bool {
+			return r != '\n' && unicode.IsSpace(r)
+		}),
+	)
 }
 
 // CDecDigit is a decimal digit (backend numeric literals).
@@ -70,16 +72,93 @@ func IsIdentCont(r rune) bool {
 	return IsIdentStart(r) || r >= '0' && r <= '9'
 }
 
+// Rewind rewinds the buffer to the position saved before a trial branch of
+// the grammar (from buf.Position()). A Seek error is also a parse error, as
+// in parsec.Try.
+func Rewind(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	save parsecstrings.Position,
+) parsec.Error[parsecstrings.Position] {
+	if err := buf.Seek(save); err != nil {
+		return parsec.NewParseError(save, "rewind: "+err.Error())
+	}
+
+	return nil
+}
+
+// ConsumeRune consumes a rune just peeked by PeekRune. A read error after a
+// successful peek is impossible; if it happens anyway - a parse error.
+func ConsumeRune(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) parsec.Error[parsecstrings.Position] {
+	if _, err := buf.Read(true); err != nil {
+		return parsec.NewParseError(buf.Position(), "read: "+err.Error())
+	}
+
+	return nil
+}
+
+// TakeRune is ConsumeRune for the callers with no channel for its error
+// (the rune was just peeked, so the read cannot fail): the checked form
+// stays ConsumeRune.
+func TakeRune(buf parsec.Buffer[rune, parsecstrings.Position]) {
+	_ = ConsumeRune(buf) //nolint:errcheck // provably nil right after a peek
+}
+
+// Restore is Rewind for the callers with no channel for its error (a Seek
+// to a position just saved cannot fail): the checked form stays Rewind.
+func Restore(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	save parsecstrings.Position,
+) {
+	_ = Rewind(buf, save) //nolint:errcheck // provably nil for a just-saved position
+}
+
+// SkipSpaces consumes spaces (except newline).
+func SkipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
+	skipWS(buf)
+}
+
+// PeekRune returns the next rune without consuming it; ok=false at EOF.
+func PeekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
+	return peekRune(buf)
+}
+
+// SkipHash consumes a single '#' (the objdump/GAS immediate prefix) if
+// present.
+func SkipHash(buf parsec.Buffer[rune, parsecstrings.Position]) {
+	if r, ok := peekRune(buf); ok && r == '#' {
+		if err := ConsumeRune(buf); err != nil {
+			return // the rune just peeked - unreadable only at I/O failure
+		}
+	}
+}
+
+// AtEOL is true when the end of line follows (newline or EOF).
+func AtEOL(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
+	r, ok := PeekRune(buf)
+	return !ok || r == '\n'
+}
+
 // newSymbolExpr is a symbol name in an expression:
 // [._$a-zA-Z][._$a-zA-Z0-9]* - captured maximally greedily (start +
 // continuation, digits after the first letter are legal: "foo2").
 func makeSymbolParser() Combinator {
 	return parsecstrings.Cast(
 		parsecstrings.Concat(8,
-			parsecstrings.Some(4, "symbol name",
-				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("symbol start", true, IsIdentStart))),
-			parsecstrings.Many(8,
-				parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("symbol char", true, IsIdentCont))),
+			parsecstrings.Some(
+				4,
+				"symbol name",
+				parsecstrings.Try(
+					parsecstrings.Satisfy[parsec.Stateless]("symbol start", true, IsIdentStart),
+				),
+			),
+			parsecstrings.Many(
+				8,
+				parsecstrings.Try(
+					parsecstrings.Satisfy[parsec.Stateless]("symbol char", true, IsIdentCont),
+				),
+			),
 		),
 		func(rs []rune) (*Expr, error) {
 			return Sym(string(rs)), nil
@@ -97,7 +176,17 @@ func makeNumberParser() Combinator {
 		'A', 'B', 'C', 'D', 'E', 'F'))
 	binDigit := parsecstrings.Try(parsecstrings.OneOf[parsec.Stateless]("binary digit", '0', '1'))
 	octDigit := parsecstrings.Try(
-		parsecstrings.OneOf[parsec.Stateless]("octal digit", '0', '1', '2', '3', '4', '5', '6', '7'),
+		parsecstrings.OneOf[parsec.Stateless](
+			"octal digit",
+			'0',
+			'1',
+			'2',
+			'3',
+			'4',
+			'5',
+			'6',
+			'7',
+		),
 	)
 	zero := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("zero", '0'))
 
@@ -122,9 +211,11 @@ func makeNumberParser() Combinator {
 		},
 	)
 
-	nonZero := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("digit 1-9", true, func(r rune) bool {
-		return r >= '1' && r <= '9'
-	}))
+	nonZero := parsecstrings.Try(
+		parsecstrings.Satisfy[parsec.Stateless]("digit 1-9", true, func(r rune) bool {
+			return r >= '1' && r <= '9'
+		}),
+	)
 	decimal := parsecstrings.Cast(
 		parsecstrings.Concat(8,
 			parsecstrings.Count(1, "non-zero digit", nonZero),
@@ -316,56 +407,4 @@ func peekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
 	}
 
 	return r, true
-}
-
-// Rewind rewinds the buffer to the position saved before a trial branch of
-// the grammar (from buf.Position()). A Seek error is also a parse error, as
-// in parsec.Try.
-func Rewind(
-	buf parsec.Buffer[rune, parsecstrings.Position],
-	save parsecstrings.Position,
-) parsec.Error[parsecstrings.Position] {
-	if err := buf.Seek(save); err != nil {
-		return parsec.NewParseError(save, "rewind: "+err.Error())
-	}
-
-	return nil
-}
-
-// ConsumeRune consumes a rune just peeked by PeekRune. A read error after a
-// successful peek is impossible; if it happens anyway - a parse error.
-func ConsumeRune(
-	buf parsec.Buffer[rune, parsecstrings.Position],
-) parsec.Error[parsecstrings.Position] {
-	if _, err := buf.Read(true); err != nil {
-		return parsec.NewParseError(buf.Position(), "read: "+err.Error())
-	}
-
-	return nil
-}
-
-// SkipSpaces consumes spaces (except newline).
-func SkipSpaces(buf parsec.Buffer[rune, parsecstrings.Position]) {
-	skipWS(buf)
-}
-
-// PeekRune returns the next rune without consuming it; ok=false at EOF.
-func PeekRune(buf parsec.Buffer[rune, parsecstrings.Position]) (rune, bool) {
-	return peekRune(buf)
-}
-
-// SkipHash consumes a single '#' (the objdump/GAS immediate prefix) if
-// present.
-func SkipHash(buf parsec.Buffer[rune, parsecstrings.Position]) {
-	if r, ok := peekRune(buf); ok && r == '#' {
-		if err := ConsumeRune(buf); err != nil {
-			return // the rune just peeked - unreadable only at I/O failure
-		}
-	}
-}
-
-// AtEOL is true when the end of line follows (newline or EOF).
-func AtEOL(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
-	r, ok := PeekRune(buf)
-	return !ok || r == '\n'
 }

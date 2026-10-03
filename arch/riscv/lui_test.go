@@ -4,10 +4,9 @@ import (
 	"bytes"
 	"testing"
 
-	"github.com/stretchr/testify/require"
-
 	parsec "github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
+	"github.com/stretchr/testify/require"
 )
 
 func TestLuiCtor(t *testing.T) {

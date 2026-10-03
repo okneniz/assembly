@@ -52,8 +52,9 @@ func (a ldaxrArb) Generate() iter.Seq[LdaxrParams] {
 }
 
 func (a ldaxrArb) Shrink(p LdaxrParams) iter.Seq[LdaxrParams] {
-	var out []LdaxrParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]LdaxrParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewLdaxrParams(s))
 	}
 

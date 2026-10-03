@@ -70,14 +70,6 @@ func newLdpsw(rt Reg, rt2 Reg, rn Reg, off Off) (Ldpsw, error) {
 
 const ldpswEnc uint32 = 0x69400000
 
-func (i Ldpsw) ObjDump(_ disasm.ViewCtx) string {
-	if i.off == 0 {
-		return fmt.Sprintf("ldpsw %s, %s, [%s]", i.rt, i.rt2, i.rn)
-	}
-
-	return fmt.Sprintf("ldpsw %s, %s, [%s, #%#x]", i.rt, i.rt2, i.rn, i.off)
-}
-
 func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 	rt, err := armRegNum(i.rt)
 	if err != nil {
@@ -95,4 +87,12 @@ func (i Ldpsw) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, ldpswEnc|rt|rn<<5|rt2<<10|uint32(i.off>>2&0x7f)<<15)
+}
+
+func (i Ldpsw) ObjDump(_ disasm.ViewCtx) string {
+	if i.off == 0 {
+		return fmt.Sprintf("ldpsw %s, %s, [%s]", i.rt, i.rt2, i.rn)
+	}
+
+	return fmt.Sprintf("ldpsw %s, %s, [%s, #%#x]", i.rt, i.rt2, i.rn, i.off)
 }

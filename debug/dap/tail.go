@@ -24,6 +24,14 @@ func newTailWriter(w io.Writer) *tailWriter {
 	return &tailWriter{w: w}
 }
 
+// String is the kept tail, trimmed for a message line.
+func (t *tailWriter) String() string {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	return strings.TrimSpace(string(t.tail))
+}
+
 func (t *tailWriter) Write(p []byte) (int, error) {
 	t.mu.Lock()
 	t.tail = append(t.tail, p...)
@@ -34,12 +42,4 @@ func (t *tailWriter) Write(p []byte) (int, error) {
 	t.mu.Unlock()
 
 	return t.w.Write(p)
-}
-
-// String is the kept tail, trimmed for a message line.
-func (t *tailWriter) String() string {
-	t.mu.Lock()
-	defer t.mu.Unlock()
-
-	return strings.TrimSpace(string(t.tail))
 }

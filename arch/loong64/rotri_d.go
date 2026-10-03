@@ -13,13 +13,13 @@ type RotriD struct {
 	imm    imm
 }
 
-func (i RotriD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rotri.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
-}
-
 func (i RotriD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["rotri.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 6)
 
 	return writeWord(w, word)
+}
+
+func (i RotriD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rotri.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

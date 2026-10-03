@@ -144,6 +144,15 @@ linters:
     #                    full godoc style is the same content task as
     #                    revive/exported.
   settings:
+    decorder:
+      dec-order: [type, const, var, func]
+      disable-dec-order-check: true
+      disable-init-func-first-check: true
+    funcorder:
+      constructor: true
+      struct-method: true
+      alphabetical: true
+      function: true
     gosec:
       excludes:
         # G115: decoder bit fields are masked (& 0x1f etc.) before
@@ -239,6 +248,10 @@ linters:
         - after-block
 
   exclusions:
+    paths:
+      # dev/ — local developer tooling (gitignored, e.g. funcfix): the
+      # strict module rules do not apply to scratch tools.
+      - ^dev/
     rules:
       # Rela/RELA — an ELF relocation type (SHT_RELA, Elf64_Rela), not a
       # misspelling of "real": misspell with autofix once renamed them in identifiers.

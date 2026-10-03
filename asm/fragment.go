@@ -29,10 +29,6 @@ type fragStmt struct {
 	line uint
 }
 
-func newFragStmt(in Unresolved, off, stmt int, line uint) fragStmt {
-	return fragStmt{in: in, off: off, stmt: stmt, line: line}
-}
-
 // fragDef is one numeric local label definition: its statement index and
 // its byte offset (Nb/Nf pick the nearest by statement order - a label
 // on the same line as the instruction counts as behind it, see
@@ -42,10 +38,6 @@ type fragDef struct {
 	off  int
 }
 
-func newFragDef(stmt, off int) fragDef {
-	return fragDef{stmt: stmt, off: off}
-}
-
 // Fragment is the parsed inline-asm body (see ParseFragment): a fixed
 // sequence of instructions with fragment-local numeric labels. It
 // satisfies unit.Sym.
@@ -53,12 +45,6 @@ type Fragment struct {
 	stmts []fragStmt
 	defs  map[string][]fragDef
 	size  int
-}
-
-// Size is the byte size of the fragment: the sum of the instruction
-// sizes, computed under the placeholder environment at parse time.
-func (f *Fragment) Size() int {
-	return f.size
 }
 
 // Resolve encodes the fragment at its final address: each instruction
@@ -81,6 +67,12 @@ func (f *Fragment) Resolve(ctx unit.Ctx) ([]unit.Resolved, error) {
 	}
 
 	return out, nil
+}
+
+// Size is the byte size of the fragment: the sum of the instruction
+// sizes, computed under the placeholder environment at parse time.
+func (f *Fragment) Size() int {
+	return f.size
 }
 
 // local is the resolver of one statement: numeric locals against the
@@ -145,7 +137,7 @@ func ParseFragment(src string, be Syntax) (*Fragment, []AsmError) {
 			continue
 		}
 
-		line := uint(st.pos.Line()) + 1
+		line := st.pos.Line() + 1
 
 		for _, lbl := range st.labels {
 			if isNumericLabel(lbl) {
@@ -193,6 +185,14 @@ func ParseFragment(src string, be Syntax) (*Fragment, []AsmError) {
 	}
 
 	return f, nil
+}
+
+func newFragStmt(in Unresolved, off, stmt int, line uint) fragStmt {
+	return fragStmt{in: in, off: off, stmt: stmt, line: line}
+}
+
+func newFragDef(stmt, off int) fragDef {
+	return fragDef{stmt: stmt, off: off}
 }
 
 // compile-time: a Fragment is a deferred record of the unit output.

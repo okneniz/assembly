@@ -52,7 +52,12 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 	}
 
 	if rt2[0] != rt[0] {
-		return nil, fmt.Errorf("%s: pair registers must share the width, got %q and %q", name, rt, rt2)
+		return nil, fmt.Errorf(
+			"%s: pair registers must share the width, got %q and %q",
+			name,
+			rt,
+			rt2,
+		)
 	}
 
 	if name == "stp" {
@@ -73,7 +78,12 @@ func makePairCtor(ops []vOp, name string) (Instr, error) {
 	}
 
 	if off&(int64(1)<<scale-1) != 0 || off>>scale < -64 || off>>scale > 63 {
-		return nil, fmt.Errorf("%s: offset %d is not a multiple of %d or out of the imm7 range", name, off, 1<<scale)
+		return nil, fmt.Errorf(
+			"%s: offset %d is not a multiple of %d or out of the imm7 range",
+			name,
+			off,
+			1<<scale,
+		)
 	}
 
 	if name == "ldp" {

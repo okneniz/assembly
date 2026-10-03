@@ -33,6 +33,14 @@ func fieldValue(w uint32, f Field) uint32 {
 	return (w >> f.Offset) & ((1 << f.Width) - 1)
 }
 
+// Encode — an error: generic instructions are not assembled (decode-only).
+// The text→bytes round trip is undefined for them: the asm grammar does
+// not know this syntax, and silently emitting the raw word would be
+// dishonest.
+func (i Generic) Encode(w io.Writer) (int64, error) {
+	return 0, fmt.Errorf("%s: generic instruction, assembly not supported", i.name)
+}
+
 // ObjDump — "mnemonic name=0xvalue ...". Self-describing and greppable;
 // nobody but a formatter knows the actual ARM operand order, and there is
 // none here.
@@ -44,12 +52,4 @@ func (i Generic) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return b.String()
-}
-
-// Encode — an error: generic instructions are not assembled (decode-only).
-// The text→bytes round trip is undefined for them: the asm grammar does
-// not know this syntax, and silently emitting the raw word would be
-// dishonest.
-func (i Generic) Encode(w io.Writer) (int64, error) {
-	return 0, fmt.Errorf("%s: generic instruction, assembly not supported", i.name)
 }

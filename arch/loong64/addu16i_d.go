@@ -14,13 +14,13 @@ type Addu16iD struct {
 	imm    imm
 }
 
-func (i Addu16iD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("addu16i.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
-}
-
 func (i Addu16iD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["addu16i.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.imm.val, 10, 16)
 
 	return writeWord(w, word)
+}
+
+func (i Addu16iD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("addu16i.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

@@ -97,6 +97,43 @@ var sysOps = map[string]sysOpRec{
 	"s1e3w":        {mnem: "at", enc: 0xD50E7820, hasRt: true},
 }
 
+// SysOp - one IC/DC/TLBI operation: the keyword alone (ic iallu,
+// tlbi alle1) or with the Xt operand (dc zva, x0, tlbi vae1, x3).
+type SysOp struct {
+	mnem  string
+	op    string
+	rt    uint32
+	hasRt bool
+	enc   uint32
+}
+
+// SysOpOf - the system operation by its spelling; rt is "" for the
+// operandless forms, the register name for the Rt-bearing ones.
+func SysOpOf(mnem, op, rt string) (SysOp, error) {
+	rec, ok := sysOpLookup(op)
+	if !ok || rec.mnem != mnem {
+		return SysOp{}, fmt.Errorf("%s: unknown operation %q", mnem, op)
+	}
+
+	if !rec.hasRt && rt != "" {
+		return SysOp{}, fmt.Errorf("%s %s: takes no register", mnem, op)
+	}
+
+	var r Reg
+	if rec.hasRt {
+		if rt == "" {
+			return SysOp{}, fmt.Errorf("%s %s: want register", mnem, op)
+		}
+
+		var err error
+		if r, err = RegOf(rt); err != nil {
+			return SysOp{}, err
+		}
+	}
+
+	return newSysOp(mnem, op, r)
+}
+
 // sysOpLookup - the operation spelling, case-insensitive.
 func sysOpLookup(sym string) (sysOpRec, bool) {
 	r, ok := sysOps[strings.ToLower(sym)]
@@ -122,16 +159,6 @@ func sysOpOfWord(w uint32) (sysOpRec, uint32, bool) {
 	}
 
 	return sysOpRec{}, 0, false
-}
-
-// SysOp - one IC/DC/TLBI operation: the keyword alone (ic iallu,
-// tlbi alle1) or with the Xt operand (dc zva, x0, tlbi vae1, x3).
-type SysOp struct {
-	mnem  string
-	op    string
-	rt    uint32
-	hasRt bool
-	enc   uint32
 }
 
 // newSysOp - the SysOp constructor: the spelling must belong to the
@@ -168,31 +195,8 @@ func newSysOp(mnem, op string, rt Reg) (SysOp, error) {
 	}, nil
 }
 
-// SysOpOf - the system operation by its spelling; rt is "" for the
-// operandless forms, the register name for the Rt-bearing ones.
-func SysOpOf(mnem, op, rt string) (SysOp, error) {
-	rec, ok := sysOpLookup(op)
-	if !ok || rec.mnem != mnem {
-		return SysOp{}, fmt.Errorf("%s: unknown operation %q", mnem, op)
-	}
-
-	if !rec.hasRt && rt != "" {
-		return SysOp{}, fmt.Errorf("%s %s: takes no register", mnem, op)
-	}
-
-	var r Reg
-	if rec.hasRt {
-		if rt == "" {
-			return SysOp{}, fmt.Errorf("%s %s: want register", mnem, op)
-		}
-
-		var err error
-		if r, err = RegOf(rt); err != nil {
-			return SysOp{}, err
-		}
-	}
-
-	return newSysOp(mnem, op, r)
+func (i SysOp) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, i.enc)
 }
 
 func (i SysOp) ObjDump(_ disasm.ViewCtx) string {
@@ -201,10 +205,6 @@ func (i SysOp) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("%s %s, %s", i.mnem, i.op, regNameX(i.rt))
-}
-
-func (i SysOp) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, i.enc)
 }
 
 // sysClassFields - the honest field layout of a sys-class word (the

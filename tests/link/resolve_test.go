@@ -36,36 +36,6 @@ type archCase struct {
 	assembleUnit func(u *unit.Unit, file, src string) []asm.AsmError
 }
 
-// arches - the full table: every dialect the generator speaks, every
-// wiring the library ships.
-func arches() []archCase {
-	return []archCase{
-		{
-			name:         "arm64",
-			arch:         linkarb.Arm64,
-			deps:         func() link.Deps { return link.Deps{Parse: alias.ParseSourceUnit} },
-			assembleUnit: alias.AssembleUnit,
-		},
-		{
-			name:         "riscv64",
-			arch:         linkarb.Riscv,
-			deps:         func() link.Deps { return link.Deps{Parse: rpseudo.ParseSourceUnit} },
-			assembleUnit: rpseudo.AssembleUnit,
-		},
-		{
-			name:         "loong64",
-			arch:         linkarb.Loong64,
-			deps:         func() link.Deps { return link.Deps{Parse: lpseudo.ParseSourceUnit} },
-			assembleUnit: lpseudo.AssembleUnit,
-		},
-	}
-}
-
-// flatPlace - fixed bases: the laws here are layout facts.
-func flatPlace(textSize, dataSize, dataMem int) (uint64, uint64) {
-	return 0x1000, 0x8000
-}
-
 func TestLinkProgramResolves(t *testing.T) {
 	for _, ac := range arches() {
 		t.Run(ac.name, func(t *testing.T) {
@@ -105,6 +75,36 @@ func TestLinkProgramResolves(t *testing.T) {
 			)
 		})
 	}
+}
+
+// arches - the full table: every dialect the generator speaks, every
+// wiring the library ships.
+func arches() []archCase {
+	return []archCase{
+		{
+			name:         "arm64",
+			arch:         linkarb.Arm64,
+			deps:         func() link.Deps { return link.Deps{Parse: alias.ParseSourceUnit} },
+			assembleUnit: alias.AssembleUnit,
+		},
+		{
+			name:         "riscv64",
+			arch:         linkarb.Riscv,
+			deps:         func() link.Deps { return link.Deps{Parse: rpseudo.ParseSourceUnit} },
+			assembleUnit: rpseudo.AssembleUnit,
+		},
+		{
+			name:         "loong64",
+			arch:         linkarb.Loong64,
+			deps:         func() link.Deps { return link.Deps{Parse: lpseudo.ParseSourceUnit} },
+			assembleUnit: lpseudo.AssembleUnit,
+		},
+	}
+}
+
+// flatPlace - fixed bases: the laws here are layout facts.
+func flatPlace(textSize, dataSize, dataMem int) (uint64, uint64) {
+	return 0x1000, 0x8000
 }
 
 // sources adapts the bound specimen to the driver's input.

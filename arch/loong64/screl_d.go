@@ -12,13 +12,13 @@ type ScrelD struct {
 	rd, rj uint8
 }
 
-func (i ScrelD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("screl.d %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i ScrelD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["screl.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i ScrelD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("screl.d %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

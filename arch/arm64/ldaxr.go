@@ -43,10 +43,10 @@ const (
 	ldaxrWEnc uint32 = 0x885FFC00 // ldaxr wt, [xn]
 )
 
-func (i Ldaxr) ObjDump(_ disasm.ViewCtx) string {
-	return "ldaxr " + i.atText()
-}
-
 func (i Ldaxr) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldaxr")
+}
+
+func (i Ldaxr) ObjDump(_ disasm.ViewCtx) string {
+	return "ldaxr " + i.atText()
 }

@@ -24,21 +24,6 @@ func cJalr(rd, rs1 string, off int64) Jalr {
 	}
 }
 
-func (i Jalr) ObjDump(_ disasm.ViewCtx) string {
-	switch {
-	case i.rd == "zero" && i.rs1 == "ra" && i.off.val == 0:
-		return "ret"
-	case i.rd == "zero" && i.off.val == 0:
-		return "jr " + i.rs1
-	case i.rd == "zero":
-		return fmt.Sprintf("jr %s(%s)", i.off.text(), i.rs1)
-	case i.rd == "ra" && i.off.val == 0:
-		return "jalr " + i.rs1 // indirect call
-	}
-
-	return fmt.Sprintf("jalr %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Jalr) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -60,6 +45,21 @@ func (i Jalr) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Jalr) ObjDump(_ disasm.ViewCtx) string {
+	switch {
+	case i.rd == "zero" && i.rs1 == "ra" && i.off.val == 0:
+		return "ret"
+	case i.rd == "zero" && i.off.val == 0:
+		return "jr " + i.rs1
+	case i.rd == "zero":
+		return fmt.Sprintf("jr %s(%s)", i.off.text(), i.rs1)
+	case i.rd == "ra" && i.off.val == 0:
+		return "jalr " + i.rs1 // indirect call
+	}
+
+	return fmt.Sprintf("jalr %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 // newJalr - constructor from parsing: jalr rd, off(rs) | jalr rs (indirect call,

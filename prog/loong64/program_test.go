@@ -1,46 +1,14 @@
 package loong64
 
 import (
-	"github.com/okneniz/assembly/unit"
 	"os"
 	"runtime"
 	"testing"
 
 	"github.com/stretchr/testify/require"
+
+	"github.com/okneniz/assembly/unit"
 )
-
-// callerPos - a caller-based resolver for the tests: invoked inside a
-// chain method, two frames up is the code calling the chain (this file).
-func callerPos() unit.Pos {
-	_, file, line, _ := runtime.Caller(2)
-	return unit.NewPos(file, line)
-}
-
-// The Go counterpart of tests/examples/hello-asm/hello-loongarch.s: one
-// string through the 16550A UART, then an idle loop.
-func helloLoong() *Program {
-	return New(unit.New()).
-		WithPos(callerPos).
-		Label("start").
-		// $t0 = the UART data register (16550A, byte-wide at 0x1fe001e0).
-		Lu12iW(T0, 0x1fe00).
-		Ori(T0, T0, 0x1e0).
-		// $t1 = the message cursor; for (; *p; p++) *uart = *p;
-		La(T1, "msg").
-		Label("loop").
-		LdBu(T2, T1, 0).
-		Beq(T2, Zero, "idle").
-		StB(T2, T0, 0).
-		AddiW(T1, T1, 1).
-		B("loop").
-		// idle: the gate stops the machine once the line is out.
-		Label("idle").
-		B("idle").
-		Label("msg").
-		Ascii("hello world\n").
-		Bytes(0).
-		Entry("start")
-}
 
 func TestAssembleLoongGolden(t *testing.T) {
 	bin, buildErrs := helloLoong().Build()
@@ -106,4 +74,37 @@ func TestLineMap(t *testing.T) {
 		unit.NewLineEntry(4, 8, unit.NewPos("synthetic.go", 3)),
 		unit.NewLineEntry(12, 2, unit.NewPos("synthetic.go", 3)),
 	}, res.Lines)
+}
+
+// callerPos - a caller-based resolver for the tests: invoked inside a
+// chain method, two frames up is the code calling the chain (this file).
+func callerPos() unit.Pos {
+	_, file, line, _ := runtime.Caller(2)
+	return unit.NewPos(file, line)
+}
+
+// The Go counterpart of tests/examples/hello-asm/hello-loongarch.s: one
+// string through the 16550A UART, then an idle loop.
+func helloLoong() *Program {
+	return New(unit.New()).
+		WithPos(callerPos).
+		Label("start").
+		// $t0 = the UART data register (16550A, byte-wide at 0x1fe001e0).
+		Lu12iW(T0, 0x1fe00).
+		Ori(T0, T0, 0x1e0).
+		// $t1 = the message cursor; for (; *p; p++) *uart = *p;
+		La(T1, "msg").
+		Label("loop").
+		LdBu(T2, T1, 0).
+		Beq(T2, Zero, "idle").
+		StB(T2, T0, 0).
+		AddiW(T1, T1, 1).
+		B("loop").
+		// idle: the gate stops the machine once the line is out.
+		Label("idle").
+		B("idle").
+		Label("msg").
+		Ascii("hello world\n").
+		Bytes(0).
+		Entry("start")
 }

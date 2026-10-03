@@ -56,9 +56,6 @@ func (b *Backend) ApplyOption(string) error {
 	return nil
 }
 
-// ResetOptions is a no-op (see ApplyOption).
-func (b *Backend) ResetOptions() {}
-
 // armAsmInstr is an unevaluated instruction (mnemonic + operands); it
 // implements Unresolved: resolve+encodeARM with self-verify
 // (encode.go).
@@ -66,16 +63,6 @@ type armAsmInstr struct {
 	mnem  string
 	ops   []armOp
 	ctors map[string]arch.ArmCtor
-}
-
-// Resolve evaluates the expressions and encodes with self-verify.
-func (in armAsmInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
-	word, err := encodeARM(in, newCtx(c.Addr(), c.Resolve, in.ctors))
-	if err != nil {
-		return nil, err
-	}
-
-	return encodedWord{w: word}, nil
 }
 
 // encodedWord is an evaluated instruction as a ready-made word.
@@ -114,10 +101,14 @@ func (in armAsmInstr) PoolReq() (*expr.Expr, int, bool) {
 	return in.ops[1].expr, 8, true
 }
 
-// Instruction is the grammar "mnemonic comma-separated operands"; built
-// once in NewWithCtors (makeInstructionParser).
-func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
-	return b.parseInstruction
+// Resolve evaluates the expressions and encodes with self-verify.
+func (in armAsmInstr) Resolve(c unit.Ctx) (unit.Resolved, error) {
+	word, err := encodeARM(in, newCtx(c.Addr(), c.Resolve, in.ctors))
+	if err != nil {
+		return nil, err
+	}
+
+	return encodedWord{w: word}, nil
 }
 
 // Comment parses '//' to the end of the line ('#' is NOT a comment - it
@@ -126,6 +117,15 @@ func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, 
 func (b *Backend) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	return b.parseComment
 }
+
+// Instruction is the grammar "mnemonic comma-separated operands"; built
+// once in NewWithCtors (makeInstructionParser).
+func (b *Backend) Instruction() parsec.Combinator[rune, parsecstrings.Position, asm.Unresolved, parsec.Stateless] {
+	return b.parseInstruction
+}
+
+// ResetOptions is a no-op (see ApplyOption).
+func (b *Backend) ResetOptions() {}
 
 // Separator — ';' separates statements on one line (as in GAS).
 func (b *Backend) Separator() rune {
@@ -136,7 +136,10 @@ func (b *Backend) Separator() rune {
 func makeCommentParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
 	body := parsecstrings.Many(4, expr.MakeNotNewlineParser())
 	return parsecstrings.Cast(
-		parsecstrings.Skip(parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")), body),
+		parsecstrings.Skip(
+			parsecstrings.Try(parsecstrings.String[parsec.Stateless]("comment", "//")),
+			body,
+		),
 		func(rs []rune) (string, error) {
 			return string(rs), nil
 		},

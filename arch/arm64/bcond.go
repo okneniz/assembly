@@ -21,11 +21,6 @@ func newBcond(cond string, off imm) Bcond {
 	}
 }
 
-func (i Bcond) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	return fmt.Sprintf("b.%s %s", i.cond, target.textHex())
-}
-
 func (i Bcond) Encode(w io.Writer) (int64, error) {
 	c, err := condNum(i.cond)
 	if err != nil {
@@ -38,4 +33,9 @@ func (i Bcond) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, 0x54000000|c|bits<<5)
+}
+
+func (i Bcond) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("b.%s %s", i.cond, target.textHex())
 }

@@ -64,10 +64,6 @@ func newCls(rd Reg, rn Reg) (Cls, error) {
 
 const ClsX uint32 = 0xDAC01400
 
-func (i Cls) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cls %s, %s", i.rd, i.rn)
-}
-
 func (i Cls) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, ClsX, 0x5AC01400)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Cls) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Cls) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("cls %s, %s", i.rd, i.rn)
 }

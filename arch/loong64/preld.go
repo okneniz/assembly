@@ -16,13 +16,13 @@ type Preld struct {
 	off  imm
 }
 
-func (i Preld) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("preld %s, %s, %s", i.hint.text(), laRegName(i.rj), i.off.text())
-}
-
 func (i Preld) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["preld"][0] |
 		uint32(i.rj)<<5 | scatterU(i.hint.val, 0, 5) | scatterS(i.off.val, 10, 12)
 
 	return writeWord(w, word)
+}
+
+func (i Preld) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("preld %s, %s, %s", i.hint.text(), laRegName(i.rj), i.off.text())
 }

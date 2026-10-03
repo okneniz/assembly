@@ -14,10 +14,6 @@ type Auipc struct {
 	imm imm
 }
 
-func (i Auipc) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("auipc %s, %s", i.rd, i.imm.text())
-}
-
 func (i Auipc) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -27,6 +23,10 @@ func (i Auipc) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, riscvEncodings["auipc"][0]|regBits(i.rd)<<7|bits)
+}
+
+func (i Auipc) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("auipc %s, %s", i.rd, i.imm.text())
 }
 
 // newAuipc - constructor from parsing: auipc rd, imm.

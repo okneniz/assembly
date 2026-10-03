@@ -14,6 +14,14 @@ type AlslD struct {
 	shift      imm
 }
 
+func (i AlslD) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["alsl.d"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
+		scatterU(i.shift.val-1, 15, 2)
+
+	return writeWord(w, word)
+}
+
 func (i AlslD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"alsl.d %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i AlslD) ObjDump(_ disasm.ViewCtx) string {
 		laRegName(i.rk),
 		i.shift.text(),
 	)
-}
-
-func (i AlslD) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["alsl.d"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10 |
-		scatterU(i.shift.val-1, 15, 2)
-
-	return writeWord(w, word)
 }

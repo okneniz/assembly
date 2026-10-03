@@ -96,7 +96,7 @@ var directives = map[string]dirArgsKind{
 	".file": argsRestIgnore, ".loc": argsRestIgnore, ".ident": argsRestIgnore,
 	".attribute": argsRestIgnore, ".abicalls": argsRestIgnore, ".nan": argsRestIgnore,
 	".arch_extension": argsRestIgnore,
-	".module": argsRestIgnore, ".p2align_manual": argsRestIgnore,
+	".module":         argsRestIgnore, ".p2align_manual": argsRestIgnore,
 	".option": argsSymRest,
 }
 
@@ -151,11 +151,23 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 					4,
 					"label name",
 					parsecstrings.Try(
-						parsecstrings.Satisfy[parsec.Stateless]("label start", true, expr.IsIdentStart),
+						parsecstrings.Satisfy[parsec.Stateless](
+							"label start",
+							true,
+							expr.IsIdentStart,
+						),
 					),
 				),
-				parsecstrings.Many(8,
-					parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("label char", true, expr.IsIdentCont))),
+				parsecstrings.Many(
+					8,
+					parsecstrings.Try(
+						parsecstrings.Satisfy[parsec.Stateless](
+							"label char",
+							true,
+							expr.IsIdentCont,
+						),
+					),
+				),
 				parsecstrings.Count(1, "':'", colon),
 			),
 			func(rs []rune) (string, error) {
@@ -167,9 +179,14 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 	labelIdent := identColon()
 
 	numColon := parsecstrings.Cast(
-		parsecstrings.Concat(8,
+		parsecstrings.Concat(
+			8,
 			parsecstrings.Some(4, "numeric label digits", expr.MakeDigitParser()),
-			parsecstrings.Count(1, "':'", parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':'))),
+			parsecstrings.Count(
+				1,
+				"':'",
+				parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("':'", ':')),
+			),
 		),
 		func(rs []rune) (string, error) {
 			return string(rs[:len(rs)-1]), nil
@@ -186,6 +203,214 @@ func makeLineGrammar(be Syntax) *lineGrammar {
 	g.parseDirective = g.makeDirectiveParser()
 
 	return g
+}
+
+// parseSource splits the source into statements; lines with parse errors get
+// err and are skipped (all errors are returned in the slice). The Syntax
+// grammars are wrapped in Try: the parsec contract is that a failed greedy
+// combinator may leave the position advanced, restoration is explicit here.
+// .macro definitions are captured raw (see macro.go) and invocations expand
+// in place, their lines re-entering this walk.
+func parseSource(src []rune, be Syntax) []statement {
+	w := newSourceWalker(makeLineGrammar(be))
+	return w.run(parsecstrings.Buffer(src))
+}
+
+// sourceWalker is the source walk with the macro table: the plain line
+// grammar for everything, .macro/.endm capture, and macro invocations
+// expanding in place (an expansion walks its own buffer with the same
+// table, so macros may invoke macros).
+type sourceWalker struct {
+	g       *lineGrammar
+	macros  map[string]*macroDef
+	out     []statement
+	stopped bool // .end: the walk of every buffer stops
+}
+
+func newSourceWalker(g *lineGrammar) *sourceWalker {
+	return &sourceWalker{g: g, macros: map[string]*macroDef{}}
+}
+
+// errAtf records a walk-level error statement at a source position.
+func (w *sourceWalker) errAtf(pos parsecstrings.Position, format string, args ...any) {
+	err := macroParseError(pos, format, args...)
+	w.out = append(w.out, newStatement(pos, newPosErr(err)))
+}
+
+// macroCall expands an invocation: the macro name at the start of the
+// line (after spaces), the argument text up to the statement separator,
+// a comment, or the end of the line. The separator stays: the rest of
+// the line continues the walk (another invocation or the segment
+// grammar). Reports whether the buffer held an invocation (the position
+// is restored otherwise).
+func (w *sourceWalker) macroCall(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
+	save := buf.Position()
+	expr.SkipSpaces(buf)
+	name, ok := scanMacroName(buf)
+	if !ok {
+		expr.Restore(buf, save)
+		return false
+	}
+
+	if r, pok := expr.PeekRune(
+		buf,
+	); pok && r != ' ' && r != '\t' && r != '\n' && r != ',' &&
+		r != w.g.sep {
+		expr.Restore(buf, save)
+		return false
+	}
+
+	m, found := w.macros[name]
+	if !found {
+		expr.Restore(buf, save)
+		return false
+	}
+
+	rest, atSep := readMacroArgs(buf, w.g.sep)
+	text, err := macroExpansion(m, macroArgs(rest))
+	if err != nil {
+		w.errAtf(save, "%v", err)
+		return true
+	}
+
+	w.run(parsecstrings.Buffer(text))
+	if atSep && !w.stopped {
+		expr.TakeRune(buf) // the rest of the line continues the walk
+		w.run(buf)
+	}
+
+	return true
+}
+
+// macroDef captures a definition: the .macro header line, then the raw
+// body until .endm. Reports whether the buffer held one (the position
+// is restored otherwise).
+func (w *sourceWalker) macroDef(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
+	save := buf.Position()
+	expr.SkipSpaces(buf)
+	if !tryMacroWord(buf, ".macro") {
+		expr.Restore(buf, save)
+		return false
+	}
+
+	head := cutMacroLine(readRawLine(buf), w.g.sep)
+	m, err := parseMacroHeader(head)
+	if err != nil {
+		w.errAtf(save, "%v", err)
+		return true
+	}
+
+	for !buf.IsEOF() {
+		linePos := buf.Position()
+		line := readRawLine(buf)
+		switch firstMacroWord(line) {
+		case ".endm":
+			w.macros[m.name] = m
+			return true
+		case ".macro":
+			w.errAtf(linePos, "nested .macro is not supported")
+		}
+
+		m.body = append(m.body, macroLine{text: line, line: int(linePos.Line()) + 1})
+	}
+
+	w.errAtf(save, "macro %s: .endm missing", m.name)
+	return true
+}
+
+// run walks one buffer to its end (or .end), appending the statements.
+func (w *sourceWalker) run(buf parsec.Buffer[rune, parsecstrings.Position]) []statement {
+	for !buf.IsEOF() && !w.stopped {
+		if w.macroDef(buf) {
+			continue
+		}
+
+		if w.macroCall(buf) {
+			continue
+		}
+
+		sts, err := parseLine(buf, w.g)
+		if err != nil {
+			w.out = append(w.out, newStatement(err.Position(), newPosErr(err)))
+			skipToEOL(buf)
+			continue
+		}
+
+		w.out = append(w.out, sts...)
+
+		// .end is the end of the source: lines below are not read at all
+		// (as in GAS - not merely not assembled, their parse errors are not
+		// reported either)
+		for _, st := range sts {
+			if st.directive != nil && st.directive.name == ".end" {
+				w.stopped = true
+				return w.out
+			}
+		}
+	}
+
+	return w.out
+}
+
+func posErrFrom(e parsec.Error[parsecstrings.Position]) AsmError {
+	return posErr(e.Position(), e.Error())
+}
+
+// newPosErr is posErrFrom returning a pointer (the statement error slot).
+func newPosErr(e parsec.Error[parsecstrings.Position]) *AsmError {
+	err := posErrFrom(e)
+	return &err
+}
+
+// atSep — the backend's statement separator follows (0: the backend has
+// none).
+func (g *lineGrammar) atSep(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
+	if g.sep == 0 {
+		return false
+	}
+
+	r, ok := expr.PeekRune(buf)
+	return ok && r == g.sep
+}
+
+// exprList is comma-separated expressions; single - exactly one. Before each
+// expression a '#' is allowed (objdump-style immediates: ".word #0x1234").
+func (g *lineGrammar) exprList(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	single bool,
+) ([]dirArg, parsec.Error[parsecstrings.Position]) {
+	expr.SkipSpaces(buf)
+	expr.SkipHash(buf)
+	first, err := g.parseExpr(parsec.Stateless{}, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	args := []dirArg{newDirArg(first, "", false)}
+	if single {
+		return args, nil
+	}
+
+	for {
+		save := buf.Position()
+		expr.SkipSpaces(buf)
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
+			if rerr := expr.Rewind(buf, save); rerr != nil {
+				return nil, rerr
+			}
+
+			return args, nil
+		}
+
+		expr.SkipSpaces(buf)
+		expr.SkipHash(buf)
+		e, err := g.parseExpr(parsec.Stateless{}, buf)
+		if err != nil {
+			return nil, err
+		}
+
+		args = append(args, newDirArg(e, "", false))
+	}
 }
 
 // newDirective is '.' + a known directive + arguments per specification.
@@ -367,243 +592,6 @@ func (g *lineGrammar) parseArgs(
 	return nil, nil
 }
 
-// exprList is comma-separated expressions; single - exactly one. Before each
-// expression a '#' is allowed (objdump-style immediates: ".word #0x1234").
-func (g *lineGrammar) exprList(
-	buf parsec.Buffer[rune, parsecstrings.Position],
-	single bool,
-) ([]dirArg, parsec.Error[parsecstrings.Position]) {
-	expr.SkipSpaces(buf)
-	expr.SkipHash(buf)
-	first, err := g.parseExpr(parsec.Stateless{}, buf)
-	if err != nil {
-		return nil, err
-	}
-
-	args := []dirArg{newDirArg(first, "", false)}
-	if single {
-		return args, nil
-	}
-
-	for {
-		save := buf.Position()
-		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
-			if rerr := expr.Rewind(buf, save); rerr != nil {
-				return nil, rerr
-			}
-
-			return args, nil
-		}
-
-		expr.SkipSpaces(buf)
-		expr.SkipHash(buf)
-		e, err := g.parseExpr(parsec.Stateless{}, buf)
-		if err != nil {
-			return nil, err
-		}
-
-		args = append(args, newDirArg(e, "", false))
-	}
-}
-
-// strList is comma-separated string literals.
-func (g *lineGrammar) strList(
-	buf parsec.Buffer[rune, parsecstrings.Position],
-) ([]dirArg, parsec.Error[parsecstrings.Position]) {
-	expr.SkipSpaces(buf)
-	first, err := g.parseStringLit(parsec.Stateless{}, buf)
-	if err != nil {
-		return nil, err
-	}
-
-	args := []dirArg{newDirArg(nil, first, true)}
-	for {
-		save := buf.Position()
-		expr.SkipSpaces(buf)
-		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
-			if rerr := expr.Rewind(buf, save); rerr != nil {
-				return nil, rerr
-			}
-
-			return args, nil
-		}
-
-		expr.SkipSpaces(buf)
-		s, err := g.parseStringLit(parsec.Stateless{}, buf)
-		if err != nil {
-			return nil, err
-		}
-
-		args = append(args, newDirArg(nil, s, true))
-	}
-}
-
-// parseSource splits the source into statements; lines with parse errors get
-// err and are skipped (all errors are returned in the slice). The Syntax
-// grammars are wrapped in Try: the parsec contract is that a failed greedy
-// combinator may leave the position advanced, restoration is explicit here.
-// .macro definitions are captured raw (see macro.go) and invocations expand
-// in place, their lines re-entering this walk.
-func parseSource(src []rune, be Syntax) []statement {
-	w := newSourceWalker(makeLineGrammar(be))
-	return w.run(parsecstrings.Buffer(src))
-}
-
-// sourceWalker is the source walk with the macro table: the plain line
-// grammar for everything, .macro/.endm capture, and macro invocations
-// expanding in place (an expansion walks its own buffer with the same
-// table, so macros may invoke macros).
-type sourceWalker struct {
-	g       *lineGrammar
-	macros  map[string]*macroDef
-	out     []statement
-	stopped bool // .end: the walk of every buffer stops
-}
-
-func newSourceWalker(g *lineGrammar) *sourceWalker {
-	return &sourceWalker{g: g, macros: map[string]*macroDef{}}
-}
-
-// run walks one buffer to its end (or .end), appending the statements.
-func (w *sourceWalker) run(buf parsec.Buffer[rune, parsecstrings.Position]) []statement {
-	for !buf.IsEOF() && !w.stopped {
-		if w.macroDef(buf) {
-			continue
-		}
-
-		if w.macroCall(buf) {
-			continue
-		}
-
-		sts, err := parseLine(buf, w.g)
-		if err != nil {
-			w.out = append(w.out, newStatement(err.Position(), newPosErr(err)))
-			skipToEOL(buf)
-			continue
-		}
-
-		w.out = append(w.out, sts...)
-
-		// .end is the end of the source: lines below are not read at all
-		// (as in GAS - not merely not assembled, their parse errors are not
-		// reported either)
-		for _, st := range sts {
-			if st.directive != nil && st.directive.name == ".end" {
-				w.stopped = true
-				return w.out
-			}
-		}
-	}
-
-	return w.out
-}
-
-// macroDef captures a definition: the .macro header line, then the raw
-// body until .endm. Reports whether the buffer held one (the position
-// is restored otherwise).
-func (w *sourceWalker) macroDef(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
-	save := buf.Position()
-	expr.SkipSpaces(buf)
-	if !tryMacroWord(buf, ".macro") {
-		_ = expr.Rewind(buf, save)
-		return false
-	}
-
-	head := cutMacroLine(readRawLine(buf), w.g.sep)
-	m, err := parseMacroHeader(head)
-	if err != nil {
-		w.errAt(save, "%v", err)
-		return true
-	}
-
-	for !buf.IsEOF() {
-		linePos := buf.Position()
-		line := readRawLine(buf)
-		switch firstMacroWord(line) {
-		case ".endm":
-			w.macros[m.name] = m
-			return true
-		case ".macro":
-			w.errAt(linePos, "nested .macro is not supported")
-		}
-
-		m.body = append(m.body, macroLine{text: line, line: int(linePos.Line()) + 1})
-	}
-
-	w.errAt(save, "macro %s: .endm missing", m.name)
-	return true
-}
-
-// macroCall expands an invocation: the macro name at the start of the
-// line (after spaces), the argument text up to the statement separator,
-// a comment, or the end of the line. The separator stays: the rest of
-// the line continues the walk (another invocation or the segment
-// grammar). Reports whether the buffer held an invocation (the position
-// is restored otherwise).
-func (w *sourceWalker) macroCall(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
-	save := buf.Position()
-	expr.SkipSpaces(buf)
-	name, ok := scanMacroName(buf)
-	if !ok {
-		_ = expr.Rewind(buf, save)
-		return false
-	}
-
-	if r, pok := expr.PeekRune(buf); pok && r != ' ' && r != '\t' && r != '\n' && r != ',' && r != w.g.sep {
-		_ = expr.Rewind(buf, save)
-		return false
-	}
-
-	m, found := w.macros[name]
-	if !found {
-		_ = expr.Rewind(buf, save)
-		return false
-	}
-
-	rest, atSep := readMacroArgs(buf, w.g.sep)
-	text, err := macroExpansion(m, macroArgs(rest))
-	if err != nil {
-		w.errAt(save, "%v", err)
-		return true
-	}
-
-	w.run(parsecstrings.Buffer(text))
-	if atSep && !w.stopped {
-		_ = expr.ConsumeRune(buf) // the rest of the line continues the walk
-		w.run(buf)
-	}
-
-	return true
-}
-
-// errAt records a walk-level error statement at a source position.
-func (w *sourceWalker) errAt(pos parsecstrings.Position, format string, args ...any) {
-	err := macroParseError(pos, format, args...)
-	w.out = append(w.out, newStatement(pos, newPosErr(err)))
-}
-
-func posErrFrom(e parsec.Error[parsecstrings.Position]) AsmError {
-	return posErr(e.Position(), e.Error())
-}
-
-// newPosErr is posErrFrom returning a pointer (the statement error slot).
-func newPosErr(e parsec.Error[parsecstrings.Position]) *AsmError {
-	err := posErrFrom(e)
-	return &err
-}
-
-// atSep — the backend's statement separator follows (0: the backend has
-// none).
-func (g *lineGrammar) atSep(buf parsec.Buffer[rune, parsecstrings.Position]) bool {
-	if g.sep == 0 {
-		return false
-	}
-
-	r, ok := expr.PeekRune(buf)
-	return ok && r == g.sep
-}
-
 // parseLine is the grammar of one line: one or more statements separated
 // by the backend's separator (a single statement when it is 0). Consumes
 // the newline (or reaches EOF); a parse error kills the rest of the line.
@@ -652,7 +640,7 @@ func parseLine(
 
 		// a label-only (or empty) segment before the separator
 		if g.atSep(buf) {
-			_ = expr.ConsumeRune(buf)
+			expr.TakeRune(buf)
 			out = append(out, st)
 			continue
 		}
@@ -682,7 +670,7 @@ func parseLine(
 		}
 
 		if g.atSep(buf) {
-			_ = expr.ConsumeRune(buf)
+			expr.TakeRune(buf)
 			out = append(out, st)
 			continue
 		}
@@ -714,5 +702,37 @@ func (g *lineGrammar) skipStmtBody(buf parsec.Buffer[rune, parsecstrings.Positio
 		if err := expr.ConsumeRune(buf); err != nil {
 			return // the rune just peeked - unreadable only at I/O failure
 		}
+	}
+}
+
+// strList is comma-separated string literals.
+func (g *lineGrammar) strList(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+) ([]dirArg, parsec.Error[parsecstrings.Position]) {
+	expr.SkipSpaces(buf)
+	first, err := g.parseStringLit(parsec.Stateless{}, buf)
+	if err != nil {
+		return nil, err
+	}
+
+	args := []dirArg{newDirArg(nil, first, true)}
+	for {
+		save := buf.Position()
+		expr.SkipSpaces(buf)
+		if _, err := g.parseComma(parsec.Stateless{}, buf); err != nil {
+			if rerr := expr.Rewind(buf, save); rerr != nil {
+				return nil, rerr
+			}
+
+			return args, nil
+		}
+
+		expr.SkipSpaces(buf)
+		s, err := g.parseStringLit(parsec.Stateless{}, buf)
+		if err != nil {
+			return nil, err
+		}
+
+		args = append(args, newDirArg(nil, s, true))
 	}
 }

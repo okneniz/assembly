@@ -5,6 +5,19 @@ package arm64
 // instructions — the mnemonic is selected by U (bit 29) + the opcode
 // pair, each landing on its own instruction type.
 
+// simd3LogicalNames - the group's mnemonics (the exported membership
+// check lives on them).
+var simd3LogicalNames = map[string]bool{
+	"and": true, "bic": true, "orr": true, "orn": true,
+	"eor": true, "bsl": true, "bit": true, "bif": true,
+}
+
+// IsSimd3Logical - whether the mnemonic belongs to the logical
+// three-same group (bits 23:22 are its opcode, not an arrangement).
+func IsSimd3Logical(name string) bool {
+	return simd3LogicalNames[name]
+}
+
 // decodeSimd3Logical - the opcode is read FROM THE WORD (the group's
 // family schemas free the opcode bits and each covers four
 // instructions). The arrangement of the logical group depends only on
@@ -37,17 +50,4 @@ func decodeSimd3Logical(w uint32) (Instr, error) {
 	default:
 		return newBif(rd, rn, rm, arr)
 	}
-}
-
-// simd3LogicalNames - the group's mnemonics (the exported membership
-// check lives on them).
-var simd3LogicalNames = map[string]bool{
-	"and": true, "bic": true, "orr": true, "orn": true,
-	"eor": true, "bsl": true, "bit": true, "bif": true,
-}
-
-// IsSimd3Logical - whether the mnemonic belongs to the logical
-// three-same group (bits 23:22 are its opcode, not an arrangement).
-func IsSimd3Logical(name string) bool {
-	return simd3LogicalNames[name]
 }

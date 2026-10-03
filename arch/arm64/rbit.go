@@ -64,10 +64,6 @@ func newRbit(rd Reg, rn Reg) (Rbit, error) {
 
 const RbitX uint32 = 0xDAC00000
 
-func (i Rbit) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rbit %s, %s", i.rd, i.rn)
-}
-
 func (i Rbit) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, RbitX, 0x5AC00000)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Rbit) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Rbit) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rbit %s, %s", i.rd, i.rn)
 }

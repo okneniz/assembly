@@ -26,6 +26,7 @@ func NewBParams(off int64) BParams {
 func (p BParams) Instr() arm64.Instr {
 	return arm64.New().B(p.Off)
 }
+
 func (p BParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -35,13 +36,13 @@ type bGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
-func newBGen(rnd *rand.Rand) bGen {
-	return bGen{off: BrOff(rnd, 1<<27)}
-}
-
 // B — an arbitrary b.
 func B(rnd *rand.Rand) ohsnap.Arbitrary[BParams] {
 	return newBGen(rnd)
+}
+
+func newBGen(rnd *rand.Rand) bGen {
+	return bGen{off: BrOff(rnd, 1<<27)}
 }
 
 func (g bGen) Generate() iter.Seq[BParams] {
@@ -51,8 +52,9 @@ func (g bGen) Generate() iter.Seq[BParams] {
 }
 
 func (g bGen) Shrink(p BParams) iter.Seq[BParams] {
-	var out []BParams
-	for _, v := range slices.Collect(g.off.Shrink(p.Off)) {
+	shrinks := slices.Collect(g.off.Shrink(p.Off))
+	out := make([]BParams, 0, len(shrinks))
+	for _, v := range shrinks {
 		out = append(out, NewBParams(v))
 	}
 

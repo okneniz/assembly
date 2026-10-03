@@ -52,8 +52,9 @@ func (a cmeqArb) Generate() iter.Seq[CmeqParams] {
 }
 
 func (a cmeqArb) Shrink(p CmeqParams) iter.Seq[CmeqParams] {
-	var out []CmeqParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]CmeqParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewCmeqParams(s))
 	}
 

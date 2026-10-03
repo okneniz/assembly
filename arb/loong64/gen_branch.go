@@ -21,30 +21,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// branchOffset — a word-aligned byte offset in ±span (span is a
-// multiple of 4 well inside the form's reach).
-func branchOffset(rnd *rand.Rand, span int64) int64 {
-	steps := span / 4
-
-	return 4 * (rnd.Int64N(2*steps+1) - steps)
-}
-
-// branchShrunk — offset shrink candidates: the value halved toward
-// zero (sign-preserving); the halved values that lost the 4-byte
-// alignment are skipped — a misaligned offset cannot encode.
-func branchShrunk(off int64) []int64 {
-	var out []int64
-	for d := range shrink.Halving[int64](0)(off) {
-		if d%4 != 0 {
-			continue // unaligned offset — skip the candidate
-		}
-
-		out = append(out, d)
-	}
-
-	return out
-}
-
 // Branch2Ctor — a compare-and-branch constructor: rj, rd, off (the
 // manual order swaps the registers; the ctor parameter names carry it).
 type Branch2Ctor func(rj, rd arch.Reg, target int64) arch.Instr
@@ -96,10 +72,6 @@ var branch2 = []branch2Entry{
 // branch2Gen — generator over the compare-and-branch family.
 type branch2Gen struct {
 	rnd *rand.Rand
-}
-
-func newBranch2Gen(rnd *rand.Rand) branch2Gen {
-	return branch2Gen{rnd: rnd}
 }
 
 // Branch2 — an arbitrary compare-and-branch instruction.
@@ -180,10 +152,6 @@ type branch1Gen struct {
 	rnd *rand.Rand
 }
 
-func newBranch1Gen(rnd *rand.Rand) branch1Gen {
-	return branch1Gen{rnd: rnd}
-}
-
 // Branch1 — an arbitrary compare-with-zero instruction.
 func Branch1(rnd *rand.Rand) ohsnap.Arbitrary[Branch1Params] {
 	return newBranch1Gen(rnd)
@@ -256,10 +224,6 @@ type jumpGen struct {
 	rnd *rand.Rand
 }
 
-func newJumpGen(rnd *rand.Rand) jumpGen {
-	return jumpGen{rnd: rnd}
-}
-
 // Jump — an arbitrary unconditional branch (b/bl) instruction.
 func Jump(rnd *rand.Rand) ohsnap.Arbitrary[JumpParams] {
 	return newJumpGen(rnd)
@@ -294,4 +258,40 @@ var jirl = []r2RoleEntry[arch.Off16]{
 // Jirl — an arbitrary jirl instruction.
 func Jirl(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.Off16]] {
 	return newR2RoleGen(rnd, jirl, Off16(rnd))
+}
+
+// branchOffset — a word-aligned byte offset in ±span (span is a
+// multiple of 4 well inside the form's reach).
+func branchOffset(rnd *rand.Rand, span int64) int64 {
+	steps := span / 4
+
+	return 4 * (rnd.Int64N(2*steps+1) - steps)
+}
+
+// branchShrunk — offset shrink candidates: the value halved toward
+// zero (sign-preserving); the halved values that lost the 4-byte
+// alignment are skipped — a misaligned offset cannot encode.
+func branchShrunk(off int64) []int64 {
+	var out []int64
+	for d := range shrink.Halving[int64](0)(off) {
+		if d%4 != 0 {
+			continue // unaligned offset — skip the candidate
+		}
+
+		out = append(out, d)
+	}
+
+	return out
+}
+
+func newBranch2Gen(rnd *rand.Rand) branch2Gen {
+	return branch2Gen{rnd: rnd}
+}
+
+func newBranch1Gen(rnd *rand.Rand) branch1Gen {
+	return branch1Gen{rnd: rnd}
+}
+
+func newJumpGen(rnd *rand.Rand) jumpGen {
+	return jumpGen{rnd: rnd}
 }

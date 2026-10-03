@@ -52,8 +52,9 @@ func (a fmaddArb) Generate() iter.Seq[FmaddParams] {
 }
 
 func (a fmaddArb) Shrink(p FmaddParams) iter.Seq[FmaddParams] {
-	var out []FmaddParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F4Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F4Params))
+	out := make([]FmaddParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFmaddParams(s))
 	}
 

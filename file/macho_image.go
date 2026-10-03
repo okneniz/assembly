@@ -55,15 +55,6 @@ func NewMachOSection(
 	}
 }
 
-// machoSectMem - the memory size of a section: its data or its reserve.
-func machoSectMem(s MachOSection) uint64 {
-	if s.Nobits > 0 {
-		return uint64(s.Nobits)
-	}
-
-	return uint64(len(s.Data))
-}
-
 // MachOSym - one symbol: a name at an offset inside a section. Global
 // symbols are exported (external nlist + exports trie); locals stay in the
 // symbol table only.
@@ -253,6 +244,15 @@ func NewMachOImage(
 	}
 
 	return m, nil
+}
+
+// machoSectMem - the memory size of a section: its data or its reserve.
+func machoSectMem(s MachOSection) uint64 {
+	if s.Nobits > 0 {
+		return uint64(s.Nobits)
+	}
+
+	return uint64(len(s.Data))
 }
 
 // Bytes emits the whole executable: header, load commands, section data,

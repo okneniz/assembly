@@ -11,6 +11,7 @@ package asm
 // argument without a default substitutes the empty string, as in GAS.
 
 import (
+	"errors"
 	"fmt"
 
 	parsec "github.com/okneniz/parsec"
@@ -45,12 +46,12 @@ type macroDef struct {
 func parseMacroHeader(head []rune) (*macroDef, error) {
 	parts := splitMacroComma(head)
 	if len(parts) == 0 {
-		return nil, fmt.Errorf(".macro: name expected")
+		return nil, errors.New(".macro: name expected")
 	}
 
 	words := splitMacroSpaces(parts[0])
 	if len(words) == 0 || words[0] == "" {
-		return nil, fmt.Errorf(".macro: name expected")
+		return nil, errors.New(".macro: name expected")
 	}
 
 	m := &macroDef{name: words[0]}
@@ -71,10 +72,10 @@ func parseMacroHeader(head []rune) (*macroDef, error) {
 // newMacroParam is one parameter word: "name" or "name=default".
 func newMacroParam(word string) (macroParam, error) {
 	if word == "" {
-		return macroParam{}, fmt.Errorf(".macro: parameter name expected")
+		return macroParam{}, errors.New(".macro: parameter name expected")
 	}
 
-	for i := 0; i < len(word); i++ {
+	for i := range len(word) {
 		if word[i] == '=' {
 			return macroParam{
 				name:   word[:i],
@@ -130,7 +131,7 @@ func splitMacroSpaces(text []rune) []string {
 
 // splitFlat flattens the comma parts into parameter words.
 func splitFlat(parts [][]rune) []string {
-	var out []string
+	out := make([]string, 0, len(parts))
 	for _, p := range parts {
 		out = append(out, splitMacroSpaces(p)...)
 	}
@@ -174,7 +175,7 @@ func trimMacroSpaces(text []rune) string {
 // is data).
 func cutMacroLine(text []rune, sep rune) []rune {
 	inStr := false
-	for i := 0; i < len(text); i++ {
+	for i := range text {
 		switch {
 		case text[i] == '"':
 			inStr = !inStr
@@ -193,7 +194,10 @@ func cutMacroLine(text []rune, sep rune) []rune {
 // with the rest of the line), or the end of the line (its newline
 // consumed) - quote-aware, a separator inside a string is data. atSep
 // reports the separator stop.
-func readMacroArgs(buf parsec.Buffer[rune, parsecstrings.Position], sep rune) (rest []rune, atSep bool) {
+func readMacroArgs(
+	buf parsec.Buffer[rune, parsecstrings.Position],
+	sep rune,
+) (rest []rune, atSep bool) {
 	var out []rune
 	inStr := false
 	for {
@@ -204,12 +208,12 @@ func readMacroArgs(buf parsec.Buffer[rune, parsecstrings.Position], sep rune) (r
 
 		switch {
 		case r == '\n':
-			_ = expr.ConsumeRune(buf)
+			expr.TakeRune(buf)
 			return out, false
 		case !inStr && sep != 0 && r == sep:
 			return out, true
 		case !inStr && r == '/':
-			_ = expr.ConsumeRune(buf)
+			expr.TakeRune(buf)
 			next, nok := expr.PeekRune(buf)
 			if nok && next == '/' {
 				_ = readRawLine(buf) // the comment runs to the end of the line
@@ -222,7 +226,7 @@ func readMacroArgs(buf parsec.Buffer[rune, parsecstrings.Position], sep rune) (r
 			inStr = !inStr
 		}
 
-		_ = expr.ConsumeRune(buf)
+		expr.TakeRune(buf)
 		out = append(out, r)
 	}
 }
@@ -334,7 +338,7 @@ func readRawLine(buf parsec.Buffer[rune, parsecstrings.Position]) []rune {
 			return out
 		}
 
-		_ = expr.ConsumeRune(buf)
+		expr.TakeRune(buf)
 		if r == '\n' {
 			return out
 		}
@@ -360,16 +364,16 @@ func tryMacroWord(buf parsec.Buffer[rune, parsecstrings.Position], word string) 
 	for _, r := range word {
 		p, ok := expr.PeekRune(buf)
 		if !ok || p != r {
-			_ = expr.Rewind(buf, save)
+			expr.Restore(buf, save)
 			return false
 		}
 
-		_ = expr.ConsumeRune(buf)
+		expr.TakeRune(buf)
 	}
 
 	p, ok := expr.PeekRune(buf)
 	if ok && p != ' ' && p != '\t' && p != '\n' && p != ',' {
-		_ = expr.Rewind(buf, save)
+		expr.Restore(buf, save)
 		return false
 	}
 
@@ -381,16 +385,20 @@ func scanMacroName(buf parsec.Buffer[rune, parsecstrings.Position]) (string, boo
 	var out []rune
 	for {
 		r, ok := expr.PeekRune(buf)
-		if !ok || !(expr.IsIdentStart(r) || expr.IsIdentCont(r)) {
+		if !ok || (!expr.IsIdentStart(r) && !expr.IsIdentCont(r)) {
 			return string(out), len(out) > 0
 		}
 
 		out = append(out, r)
-		_ = expr.ConsumeRune(buf)
+		expr.TakeRune(buf)
 	}
 }
 
 // macroParseError is a parse error at a source position.
-func macroParseError(pos parsecstrings.Position, format string, args ...any) parsec.Error[parsecstrings.Position] {
+func macroParseError(
+	pos parsecstrings.Position,
+	format string,
+	args ...any,
+) parsec.Error[parsecstrings.Position] {
 	return parsec.NewParseError(pos, fmt.Sprintf(format, args...))
 }

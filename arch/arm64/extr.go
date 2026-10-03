@@ -71,14 +71,6 @@ const (
 	extrX uint32 = 0x93C00000 // sf=1, N=1 (N must equal sf)
 )
 
-func (i Extr) ObjDump(_ disasm.ViewCtx) string {
-	if i.rn == i.rm {
-		return fmt.Sprintf("ror %s, %s, #0x%x", i.rd, i.rn, i.lsb)
-	}
-
-	return fmt.Sprintf("extr %s, %s, %s, #0x%x", i.rd, i.rn, i.rm, i.lsb)
-}
-
 func (i Extr) Encode(w io.Writer) (int64, error) {
 	match := extrX
 	if !i.isf {
@@ -95,4 +87,12 @@ func (i Extr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.lsb<<10|rm<<16)
+}
+
+func (i Extr) ObjDump(_ disasm.ViewCtx) string {
+	if i.rn == i.rm {
+		return fmt.Sprintf("ror %s, %s, #0x%x", i.rd, i.rn, i.lsb)
+	}
+
+	return fmt.Sprintf("extr %s, %s, %s, #0x%x", i.rd, i.rn, i.rm, i.lsb)
 }

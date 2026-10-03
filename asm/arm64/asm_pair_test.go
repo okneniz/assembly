@@ -5,8 +5,8 @@ import (
 
 	"github.com/stretchr/testify/require"
 
-	asm "github.com/okneniz/assembly/asm"
 	arch "github.com/okneniz/assembly/arch/arm64"
+	asm "github.com/okneniz/assembly/asm"
 	"github.com/okneniz/assembly/disasm"
 )
 

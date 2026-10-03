@@ -16,16 +16,26 @@ type asmReg struct {
 	fp  bool
 }
 
+// asmRegNum - the name -> register table (int + FP, both notations); consumers -
+// rvc_bits (r3ok/cr3/r5), the compress branches of Encode, and rvRegNumOf.
+var asmRegNum = buildAsmRegNum()
+
+// rvCSRNum - CSR name -> address (the inverse of rvCsrNames).
+var rvCSRNum = buildRVCSRNum()
+
+// CSRNumOf - the CSR number by name (the inverse of rvCsrNames; the syntax
+// layer converts CSR names to numbers before building the instruction).
+func CSRNumOf(name string) (uint32, bool) {
+	v, ok := rvCSRNum[name]
+	return v, ok
+}
+
 func newAsmReg(num uint32, fp bool) asmReg {
 	return asmReg{
 		num: num,
 		fp:  fp,
 	}
 }
-
-// asmRegNum - the name -> register table (int + FP, both notations); consumers -
-// rvc_bits (r3ok/cr3/r5), the compress branches of Encode, and rvRegNumOf.
-var asmRegNum = buildAsmRegNum()
 
 func buildAsmRegNum() map[string]asmReg {
 	m := map[string]asmReg{}
@@ -145,9 +155,6 @@ func fits6(v int64) bool {
 	return v >= -32 && v <= 31
 }
 
-// rvCSRNum - CSR name -> address (the inverse of rvCsrNames).
-var rvCSRNum = buildRVCSRNum()
-
 func buildRVCSRNum() map[string]uint32 {
 	m := map[string]uint32{}
 	for addr, name := range rvCsrNames {
@@ -157,11 +164,4 @@ func buildRVCSRNum() map[string]uint32 {
 	}
 
 	return m
-}
-
-// CSRNumOf - the CSR number by name (the inverse of rvCsrNames; the syntax
-// layer converts CSR names to numbers before building the instruction).
-func CSRNumOf(name string) (uint32, bool) {
-	v, ok := rvCSRNum[name]
-	return v, ok
 }

@@ -28,10 +28,6 @@ func NewCnegParams(rd arm64.Reg, rn arm64.Reg, cond string) CnegParams {
 	}
 }
 
-func (p CnegParams) String() string {
-	return "cneg " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
-}
-
 func (p CnegParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -41,18 +37,22 @@ func (p CnegParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p CnegParams) String() string {
+	return "cneg " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Cond
+}
+
 // cnegGen — generator for cneg: same-width registers and a condition.
 type cnegGen struct {
 	rnd *rand.Rand
 }
 
-func newCnegGen(rnd *rand.Rand) cnegGen {
-	return cnegGen{rnd: rnd}
-}
-
 // Cneg — an arbitrary cneg.
 func Cneg(rnd *rand.Rand) ohsnap.Arbitrary[CnegParams] {
 	return newCnegGen(rnd)
+}
+
+func newCnegGen(rnd *rand.Rand) cnegGen {
+	return cnegGen{rnd: rnd}
 }
 
 func (g cnegGen) Generate() iter.Seq[CnegParams] {

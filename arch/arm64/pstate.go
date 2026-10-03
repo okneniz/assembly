@@ -31,16 +31,16 @@ var pstateFields = map[string]pstateField{
 	"daifclr": {base: 0xD50340FF, imm1: false},
 }
 
-// pstateLookup - the field spelling, case-insensitive.
-func pstateLookup(sym string) (pstateField, bool) {
-	f, ok := pstateFields[strings.ToLower(sym)]
-	return f, ok
-}
-
 // PstateBase - the word base of the PSTATE field spelling and whether
 // its immediate is a single bit (allint/pm; the rest take the CRm
 // nibble 0..15).
 func PstateBase(sym string) (base uint32, imm1 bool, ok bool) {
 	f, ok := pstateLookup(sym)
 	return f.base, f.imm1, ok
+}
+
+// pstateLookup - the field spelling, case-insensitive.
+func pstateLookup(sym string) (pstateField, bool) {
+	f, ok := pstateFields[strings.ToLower(sym)]
+	return f, ok
 }

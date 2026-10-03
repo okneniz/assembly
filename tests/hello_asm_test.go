@@ -27,72 +27,6 @@ import (
 	"github.com/okneniz/assembly/tests/cmd/objdump"
 )
 
-// instrText returns the normalized text of the first instruction of a binary
-// (for decode-equivalence comparison).
-func instrText(b []byte, addr uint64) string {
-	insts, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-	if err != nil {
-		return ""
-	}
-
-	if len(insts) == 0 {
-		return ""
-	}
-
-	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
-}
-
-// loongInstrText - the same for LoongArch.
-func loongInstrText(b []byte, addr uint64) string {
-	insts, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-	if err != nil {
-		return ""
-	}
-
-	if len(insts) == 0 {
-		return ""
-	}
-
-	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
-}
-
-// riscvInstrText - the same for RISC-V.
-func riscvInstrText(b []byte, addr uint64) string {
-	insts, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-	if err != nil {
-		return ""
-	}
-
-	if len(insts) == 0 {
-		return ""
-	}
-
-	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
-}
-
-// fileSections converts sections of an assembly result into file-package
-// sections.
-func fileSections(secs []asm.Section) []file.Section {
-	lastProgbits := -1
-	for i, s := range secs {
-		if !s.Nobits {
-			lastProgbits = i
-		}
-	}
-
-	out := make([]file.Section, len(secs))
-	for i, s := range secs {
-		data := s.Data
-		if s.Nobits && i < lastProgbits {
-			data = make([]byte, s.Size)
-		}
-
-		out[i] = *file.NewSection(s.Name, "", s.Addr, 0, uint64(s.Size), data)
-	}
-
-	return out
-}
-
 // TestHelloAsmExample - the demo patient examples/hello-asm: the source
 // assembles without errors, and its binary passes a full byte-exact
 // round-trip (decode → ObjDump text → assemble → same bytes), including the
@@ -382,6 +316,72 @@ func TestHelloVM(t *testing.T) {
 			require.Contains(t, serial.String(), helloLine)
 		})
 	}
+}
+
+// instrText returns the normalized text of the first instruction of a binary
+// (for decode-equivalence comparison).
+func instrText(b []byte, addr uint64) string {
+	insts, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+	if err != nil {
+		return ""
+	}
+
+	if len(insts) == 0 {
+		return ""
+	}
+
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
+}
+
+// loongInstrText - the same for LoongArch.
+func loongInstrText(b []byte, addr uint64) string {
+	insts, err := loong64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+	if err != nil {
+		return ""
+	}
+
+	if len(insts) == 0 {
+		return ""
+	}
+
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
+}
+
+// riscvInstrText - the same for RISC-V.
+func riscvInstrText(b []byte, addr uint64) string {
+	insts, err := riscv.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+	if err != nil {
+		return ""
+	}
+
+	if len(insts) == 0 {
+		return ""
+	}
+
+	return objdump.Normalize(insts[0].ObjDump(disasm.ViewCtxAt(addr)))
+}
+
+// fileSections converts sections of an assembly result into file-package
+// sections.
+func fileSections(secs []asm.Section) []file.Section {
+	lastProgbits := -1
+	for i, s := range secs {
+		if !s.Nobits {
+			lastProgbits = i
+		}
+	}
+
+	out := make([]file.Section, len(secs))
+	for i, s := range secs {
+		data := s.Data
+		if s.Nobits && i < lastProgbits {
+			data = make([]byte, s.Size)
+		}
+
+		out[i] = *file.NewSection(s.Name, "", s.Addr, 0, uint64(s.Size), data)
+	}
+
+	return out
 }
 
 // mustWriteELF - WriteELF for tests: a file-build error fails the test.

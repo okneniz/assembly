@@ -33,10 +33,6 @@ func newBic(rd, rn, rm VReg, arr string) (Bic, error) {
 
 const bicEnc uint32 = 241179648 // bic vd, vn, vm (Q=0 form)
 
-func (i Bic) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("bic.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Bic) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Bic) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, bicEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Bic) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("bic.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

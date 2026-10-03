@@ -30,28 +30,6 @@ import (
 	"github.com/okneniz/assembly/text"
 )
 
-// propText - normalized ObjDump text of an instruction.
-func propText(in arm64.Instr) string {
-	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.DefaultViewCtx())))
-}
-
-// propTextAt - propText in the context of an explicit base address.
-func propTextAt(in arm64.Instr, base uint64) string {
-	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(base))))
-}
-
-// bytesOf - instruction bytes (Encode encoding).
-func bytesOf(t *testing.T, in arm64.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	if _, err := in.Encode(&buf); err != nil {
-		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
-		return nil, false
-	}
-
-	return buf.Bytes(), true
-}
-
 // a64Enc - context of the "bytes" property: a fixed address.
 type a64Enc struct {
 	addr uint64
@@ -60,120 +38,6 @@ type a64Enc struct {
 // Addr - the address of the context (RoundTrip decoder).
 func (c a64Enc) Addr() uint64 {
 	return c.addr
-}
-
-// a64EncodeAll - encodes a list sequentially starting at propAddr (the address
-// of each is propAddr + bytes written; no symbols).
-func a64EncodeAll(t *testing.T, ins []arm64.Instr) ([]byte, bool) {
-	t.Helper()
-	var buf bytes.Buffer
-	addr := propAddr
-	for _, in := range ins {
-		n, err := in.Encode(&buf)
-		if err != nil {
-			t.Logf("encode: %v", err)
-			return nil, false
-		}
-
-		addr += int(n)
-	}
-
-	return buf.Bytes(), true
-}
-
-// assemblesTo - bytes from assembling the text (false on assembly error).
-func assemblesTo(t *testing.T, src string) ([]byte, bool) {
-	t.Helper()
-	res, errs := alias.Assemble(src, propAddr)
-	if len(errs) != 0 {
-		t.Logf("%q: assemble: %v", src, errs)
-		return nil, false
-	}
-
-	return res.Sections[0].Data, true
-}
-
-// assemblesToAt - assemblesTo at an explicit base: the pc-relative texts
-// carry absolute targets, so the base must match the render context.
-func assemblesToAt(t *testing.T, src string, base uint64) ([]byte, bool) {
-	t.Helper()
-	res, errs := alias.Assemble(src, base)
-	if len(errs) != 0 {
-		t.Logf("%q: assemble@%#x: %v", src, base, errs)
-		return nil, false
-	}
-
-	return res.Sections[0].Data, true
-}
-
-// propBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
-// (RoundTrip) in the encoding context propAddr without symbols - bytes are
-// stable after the round trip.
-func propBytesRoundTrip(t *testing.T, in arm64.Instr) bool {
-	t.Helper()
-	return RoundTrip[a64Enc, arm64.Instr, []byte](
-		a64Enc{addr: propAddr},
-		func(_ a64Enc, x arm64.Instr) ([]byte, bool) {
-			return bytesOf(t, x)
-		},
-		func(ctx a64Enc, b []byte) (arm64.Instr, bool) {
-			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(back) != 1 {
-				t.Logf("%#08x: decode = %d instr", binary.LittleEndian.Uint32(b), len(back))
-				return nil, false
-			}
-
-			return back[0], true
-		},
-		bytes.Equal,
-	)(in)
-}
-
-// propTextRoundTrip - the "text" property: the RoundTrip law in the
-// DefaultViewCtx context - the canonical text of an instruction assembles and
-// decodes back into the same text.
-func propTextRoundTrip(t *testing.T, in arm64.Instr) bool {
-	t.Helper()
-	return propTextRoundTripAt(t, in, 0)
-}
-
-// propTextRoundTripAt - the text law at an explicit base: the text renders
-// from ViewCtxAt(base) (pc-relative operands print absolute targets of that
-// base) and assembles back at the same base. Base 0 is the DefaultViewCtx
-// render; propAddr is the historic assembly base - both must hold.
-func propTextRoundTripAt(t *testing.T, in arm64.Instr, base uint64) bool {
-	t.Helper()
-	return RoundTrip[disasm.ViewCtx, arm64.Instr, string](
-		disasm.ViewCtxAt(base),
-		func(_ disasm.ViewCtx, x arm64.Instr) (string, bool) {
-			return propTextAt(x, base), true
-		},
-		func(_ disasm.ViewCtx, src string) (arm64.Instr, bool) {
-			data, ok := assemblesToAt(t, src, base)
-			if !ok {
-				return nil, false
-			}
-
-			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
-			if err != nil {
-				t.Logf("decode: %v", err)
-				return nil, false
-			}
-
-			if len(back) != 1 {
-				t.Logf("%q: decode = %d instr", src, len(back))
-				return nil, false
-			}
-
-			return back[0], true
-		},
-		func(a, b string) bool { return a == b },
-	)(in)
 }
 
 // instrParam - parameters of any family (arb generators return exactly these).
@@ -192,56 +56,10 @@ const textShrinkBudget = 1000
 // property run confirms being alive in the log (visible with go test -v).
 const checkProgressEvery = 10000
 
-// checkOpts - the common options of the suite's property checks: progress
-// lines and the accepted shrinking steps in the log.
-func checkOpts(budget int) ohsnap.CheckOptions {
-	return ohsnap.CheckOptions{
-		Budget:         budget,
-		ProgressEvery:  checkProgressEvery,
-		LogShrinkSteps: true,
-	}
-}
-
 // propFamilyEntry - one family in the TestPropertySingleInstrRoundTrip table.
 type propFamilyEntry struct {
 	name string
 	run  func(t *testing.T, rnd *mrnd.Rand)
-}
-
-// newPropFamily - a family entry: closes over the generic instantiation of
-// the properties. The parameter types of families differ (RetParams,
-// SvcParams, ...), while the generic ohsnap.Arbitrary interface is invariant -
-// a common Arbitrary[instrParam] cannot be assembled for the table, so the
-// closure is written here, once. Each property is a separate named subtest
-// (bytes / text); the check runs over the parameters for the sake of
-// shrinking (ohsnap.Map onto the instruction would have truncated the shrink).
-func newPropFamily[P instrParam](
-	name string,
-	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
-) propFamilyEntry {
-	return propFamilyEntry{
-		name: name,
-		run: func(t *testing.T, rnd *mrnd.Rand) {
-			t.Helper()
-
-			t.Run("bytes", func(t *testing.T) {
-				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
-					return propBytesRoundTrip(t, p.Instr())
-				}, checkOpts(0))
-			})
-
-			t.Run("text", func(t *testing.T) {
-				// both bases: 0 (the DefaultViewCtx render) and propAddr -
-				// the pc-relative texts carry absolute targets, the base
-				// shift must not break the law anywhere.
-				for _, base := range []uint64{0, propAddr} {
-					ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
-						return propTextRoundTripAt(t, p.Instr(), base)
-					}, checkOpts(textShrinkBudget))
-				}
-			})
-		},
-	}
 }
 
 // TestPropertySingleInstrRoundTrip - round trip of each family separately.
@@ -472,168 +290,6 @@ func TestPropertyAliasRoundTrip(t *testing.T) {
 	}
 }
 
-// instrOf - a sampler function over a family generator: the generator is
-// created once and closed over; each sampler call is just Generate.
-func instrOf[P instrParam](a ohsnap.Arbitrary[P]) func() arm64.Instr {
-	return func() arm64.Instr {
-		return ohsnap.First(a.Generate()).Instr()
-	}
-}
-
-// propFamilies - family generators as sources of instructions for
-// composition and the differential.
-func propFamilies(rnd *mrnd.Rand) []func() arm64.Instr {
-	return []func() arm64.Instr{
-		instrOf(a64.Ret(rnd)),
-		instrOf(a64.Svc(rnd)),
-		instrOf(a64.Brk(rnd)),
-		instrOf(a64.Movz(rnd)),
-		instrOf(a64.Movk(rnd)),
-		instrOf(a64.AddImm(rnd)),
-		instrOf(a64.SubImm(rnd)),
-		instrOf(a64.AddShift(rnd)),
-		instrOf(a64.SubShift(rnd)),
-		instrOf(a64.Ldr(rnd)),
-		instrOf(a64.Str(rnd)),
-		instrOf(a64.Nop(rnd)),
-		instrOf(a64.Isb(rnd)),
-		instrOf(a64.Dsb(rnd)),
-		instrOf(a64.Dmb(rnd)),
-		instrOf(a64.Smc(rnd)),
-		instrOf(a64.Br(rnd)),
-		instrOf(a64.Blr(rnd)),
-		instrOf(a64.Movn(rnd)),
-		instrOf(a64.Adc(rnd)),
-		instrOf(a64.Smulh(rnd)),
-		instrOf(a64.Umulh(rnd)),
-		instrOf(a64.Rev(rnd)),
-		instrOf(a64.Rev16(rnd)),
-		instrOf(a64.Rev32(rnd)),
-		instrOf(a64.Cls(rnd)),
-		instrOf(a64.Clz(rnd)),
-		instrOf(a64.Rbit(rnd)),
-		instrOf(a64.Sdiv(rnd)),
-		instrOf(a64.Udiv(rnd)),
-		instrOf(a64.LslReg(rnd)),
-		instrOf(a64.LsrReg(rnd)),
-		instrOf(a64.AsrReg(rnd)),
-		instrOf(a64.RorReg(rnd)),
-		instrOf(a64.Mrs(rnd)),
-		instrOf(a64.Msr(rnd)),
-		instrOf(a64.B(rnd)),
-		instrOf(a64.Bl(rnd)),
-		instrOf(a64.Bcond(rnd)),
-		instrOf(a64.Cbz(rnd)),
-		instrOf(a64.Cbnz(rnd)),
-		instrOf(a64.Tbz(rnd)),
-		instrOf(a64.Adr(rnd)),
-		instrOf(a64.Adrp(rnd)),
-		instrOf(a64.AddsImm(rnd)),
-		instrOf(a64.AddsShift(rnd)),
-		instrOf(a64.AddExt(rnd)),
-		instrOf(a64.AddsExt(rnd)),
-		instrOf(a64.SubExt(rnd)),
-		instrOf(a64.SubsExt(rnd)),
-		instrOf(a64.AndShift(rnd)),
-		instrOf(a64.AndsShift(rnd)),
-		instrOf(a64.OrrShift(rnd)),
-		instrOf(a64.EorShift(rnd)),
-		instrOf(a64.OrnShift(rnd)),
-		instrOf(a64.EonShift(rnd)),
-		instrOf(a64.BicShift(rnd)),
-		instrOf(a64.BicsShift(rnd)),
-		instrOf(a64.AndImm(rnd)),
-		instrOf(a64.OrrImm(rnd)),
-		instrOf(a64.EorImm(rnd)),
-		instrOf(a64.AndsImm(rnd)),
-		instrOf(a64.Bfm(rnd)),
-		instrOf(a64.Sbfm(rnd)),
-		instrOf(a64.Ubfm(rnd)),
-		instrOf(a64.Extr(rnd)),
-		instrOf(a64.Ldrb(rnd)),
-		instrOf(a64.Strb(rnd)),
-		instrOf(a64.Ldrh(rnd)),
-		instrOf(a64.Strh(rnd)),
-		instrOf(a64.Ldrsb(rnd)),
-		instrOf(a64.Ldrsh(rnd)),
-		instrOf(a64.Ldrsw(rnd)),
-		instrOf(a64.Ldur(rnd)),
-		instrOf(a64.Ldurb(rnd)),
-		instrOf(a64.Ldurh(rnd)),
-		instrOf(a64.Stur(rnd)),
-		instrOf(a64.Sturb(rnd)),
-		instrOf(a64.Sturh(rnd)),
-		instrOf(a64.LdrF(rnd)),
-		instrOf(a64.StrF(rnd)),
-		instrOf(a64.Ldp(rnd)),
-		instrOf(a64.Stp(rnd)),
-		instrOf(a64.Ldpsw(rnd)),
-		instrOf(a64.Ldar(rnd)),
-		instrOf(a64.Ldaxr(rnd)),
-		instrOf(a64.Stlr(rnd)),
-		instrOf(a64.Ldarb(rnd)),
-		instrOf(a64.Ldaxrb(rnd)),
-		instrOf(a64.Stlrb(rnd)),
-		instrOf(a64.Stlxr(rnd)),
-		instrOf(a64.Stxrb(rnd)),
-		instrOf(a64.Stlxrb(rnd)),
-		instrOf(a64.Prfm(rnd)),
-		instrOf(a64.Fadd(rnd)),
-		instrOf(a64.Fsub(rnd)),
-		instrOf(a64.Fmul(rnd)),
-		instrOf(a64.Fdiv(rnd)),
-		instrOf(a64.Fmax(rnd)),
-		instrOf(a64.Fmin(rnd)),
-		instrOf(a64.Fcmp(rnd)),
-		instrOf(a64.FcmpZero(rnd)),
-		instrOf(a64.Fneg(rnd)),
-		instrOf(a64.Fmov(rnd)),
-		instrOf(a64.Fcvt(rnd)),
-		instrOf(a64.Fmadd(rnd)),
-		instrOf(a64.Fnmsub(rnd)),
-		instrOf(a64.FmovFromGpr(rnd)),
-		instrOf(a64.FmovToGpr(rnd)),
-		instrOf(a64.Fcvtzs(rnd)),
-		instrOf(a64.Fcvtzu(rnd)),
-		instrOf(a64.Scvtf(rnd)),
-		instrOf(a64.Ucvtf(rnd)),
-		instrOf(a64.FmovImm(rnd)),
-		instrOf(a64.Add(rnd)),
-		instrOf(a64.Addp(rnd)),
-		instrOf(a64.And(rnd)),
-		instrOf(a64.Bic(rnd)),
-		instrOf(a64.Bif(rnd)),
-		instrOf(a64.Bit(rnd)),
-		instrOf(a64.Bsl(rnd)),
-		instrOf(a64.Cmeq(rnd)),
-		instrOf(a64.Cmge(rnd)),
-		instrOf(a64.Cmtst(rnd)),
-		instrOf(a64.Eor(rnd)),
-		instrOf(a64.Orn(rnd)),
-		instrOf(a64.Orr(rnd)),
-		instrOf(a64.Saddw(rnd)),
-		instrOf(a64.Ssubw(rnd)),
-		instrOf(a64.Uaddw(rnd)),
-		instrOf(a64.Usubw(rnd)),
-		instrOf(a64.Sqrshl(rnd)),
-		instrOf(a64.Abs(rnd)),
-		instrOf(a64.Cnt(rnd)),
-		instrOf(a64.Not(rnd)),
-		instrOf(a64.Rev32V(rnd)),
-		instrOf(a64.RbitV(rnd)),
-		instrOf(a64.Uaddlv(rnd)),
-		instrOf(a64.MovSimd(rnd)),
-		instrOf(a64.DupGen(rnd)),
-		instrOf(a64.Shl(rnd)),
-		instrOf(a64.Sri(rnd)),
-		instrOf(a64.Sshr(rnd)),
-		instrOf(a64.Ushr(rnd)),
-		instrOf(a64.Tbl(rnd)),
-		instrOf(a64.Aese(rnd)),
-		instrOf(a64.Aesmc(rnd)),
-	}
-}
-
 // TestPropertyBytesRoundTripList - the "bytes" property for a list of
 // instructions: the list is encoded, decoded line by line, and encoded again
 // into the same bytes (struct → bytes → struct, without loss).
@@ -837,4 +493,335 @@ func TestPropertyArm64VsObjdump(t *testing.T) {
 	}
 
 	require.GreaterOrEqual(t, pct, threshold)
+}
+
+// propTextAt - propText in the context of an explicit base address.
+func propTextAt(in arm64.Instr, base uint64) string {
+	return objdump.StripComments(objdump.Normalize(in.ObjDump(disasm.ViewCtxAt(base))))
+}
+
+// bytesOf - instruction bytes (Encode encoding).
+func bytesOf(t *testing.T, in arm64.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	if _, err := in.Encode(&buf); err != nil {
+		t.Logf("%s: Encode: %v", in.ObjDump(disasm.DefaultViewCtx()), err)
+		return nil, false
+	}
+
+	return buf.Bytes(), true
+}
+
+// a64EncodeAll - encodes a list sequentially starting at propAddr (the address
+// of each is propAddr + bytes written; no symbols).
+func a64EncodeAll(t *testing.T, ins []arm64.Instr) ([]byte, bool) {
+	t.Helper()
+	var buf bytes.Buffer
+	addr := propAddr
+	for _, in := range ins {
+		n, err := in.Encode(&buf)
+		if err != nil {
+			t.Logf("encode: %v", err)
+			return nil, false
+		}
+
+		addr += int(n)
+	}
+
+	return buf.Bytes(), true
+}
+
+// assemblesTo - bytes from assembling the text (false on assembly error).
+func assemblesTo(t *testing.T, src string) ([]byte, bool) {
+	t.Helper()
+	res, errs := alias.Assemble(src, propAddr)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble: %v", src, errs)
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
+// assemblesToAt - assemblesTo at an explicit base: the pc-relative texts
+// carry absolute targets, so the base must match the render context.
+func assemblesToAt(t *testing.T, src string, base uint64) ([]byte, bool) {
+	t.Helper()
+	res, errs := alias.Assemble(src, base)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble@%#x: %v", src, base, errs)
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
+// propBytesRoundTrip - the "bytes" property: the law enc∘dec∘enc == enc
+// (RoundTrip) in the encoding context propAddr without symbols - bytes are
+// stable after the round trip.
+func propBytesRoundTrip(t *testing.T, in arm64.Instr) bool {
+	t.Helper()
+	return RoundTrip[a64Enc, arm64.Instr, []byte](
+		a64Enc{addr: propAddr},
+		func(_ a64Enc, x arm64.Instr) ([]byte, bool) {
+			return bytesOf(t, x)
+		},
+		func(ctx a64Enc, b []byte) (arm64.Instr, bool) {
+			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(b))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(back) != 1 {
+				t.Logf("%#08x: decode = %d instr", binary.LittleEndian.Uint32(b), len(back))
+				return nil, false
+			}
+
+			return back[0], true
+		},
+		bytes.Equal,
+	)(in)
+}
+
+// propTextRoundTripAt - the text law at an explicit base: the text renders
+// from ViewCtxAt(base) (pc-relative operands print absolute targets of that
+// base) and assembles back at the same base. Base 0 is the DefaultViewCtx
+// render; propAddr is the historic assembly base - both must hold.
+func propTextRoundTripAt(t *testing.T, in arm64.Instr, base uint64) bool {
+	t.Helper()
+	return RoundTrip[disasm.ViewCtx, arm64.Instr, string](
+		disasm.ViewCtxAt(base),
+		func(_ disasm.ViewCtx, x arm64.Instr) (string, bool) {
+			return propTextAt(x, base), true
+		},
+		func(_ disasm.ViewCtx, src string) (arm64.Instr, bool) {
+			data, ok := assemblesToAt(t, src, base)
+			if !ok {
+				return nil, false
+			}
+
+			back, err := arm64.MakeDecoder()(parsec.Stateless{}, parsecbytes.Buffer(data))
+			if err != nil {
+				t.Logf("decode: %v", err)
+				return nil, false
+			}
+
+			if len(back) != 1 {
+				t.Logf("%q: decode = %d instr", src, len(back))
+				return nil, false
+			}
+
+			return back[0], true
+		},
+		func(a, b string) bool { return a == b },
+	)(in)
+}
+
+// checkOpts - the common options of the suite's property checks: progress
+// lines and the accepted shrinking steps in the log.
+func checkOpts(budget int) ohsnap.CheckOptions {
+	return ohsnap.CheckOptions{
+		Budget:         budget,
+		ProgressEvery:  checkProgressEvery,
+		LogShrinkSteps: true,
+	}
+}
+
+// newPropFamily - a family entry: closes over the generic instantiation of
+// the properties. The parameter types of families differ (RetParams,
+// SvcParams, ...), while the generic ohsnap.Arbitrary interface is invariant -
+// a common Arbitrary[instrParam] cannot be assembled for the table, so the
+// closure is written here, once. Each property is a separate named subtest
+// (bytes / text); the check runs over the parameters for the sake of
+// shrinking (ohsnap.Map onto the instruction would have truncated the shrink).
+func newPropFamily[P instrParam](
+	name string,
+	mk func(rnd *mrnd.Rand) ohsnap.Arbitrary[P],
+) propFamilyEntry {
+	return propFamilyEntry{
+		name: name,
+		run: func(t *testing.T, rnd *mrnd.Rand) {
+			t.Helper()
+
+			t.Run("bytes", func(t *testing.T) {
+				ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
+					return propBytesRoundTrip(t, p.Instr())
+				}, checkOpts(0))
+			})
+
+			t.Run("text", func(t *testing.T) {
+				// both bases: 0 (the DefaultViewCtx render) and propAddr -
+				// the pc-relative texts carry absolute targets, the base
+				// shift must not break the law anywhere.
+				for _, base := range []uint64{0, propAddr} {
+					ohsnap.CheckWith(t, 100000, mk(rnd), func(p P) bool {
+						return propTextRoundTripAt(t, p.Instr(), base)
+					}, checkOpts(textShrinkBudget))
+				}
+			})
+		},
+	}
+}
+
+// instrOf - a sampler function over a family generator: the generator is
+// created once and closed over; each sampler call is just Generate.
+func instrOf[P instrParam](a ohsnap.Arbitrary[P]) func() arm64.Instr {
+	return func() arm64.Instr {
+		return ohsnap.First(a.Generate()).Instr()
+	}
+}
+
+// propFamilies - family generators as sources of instructions for
+// composition and the differential.
+func propFamilies(rnd *mrnd.Rand) []func() arm64.Instr {
+	return []func() arm64.Instr{
+		instrOf(a64.Ret(rnd)),
+		instrOf(a64.Svc(rnd)),
+		instrOf(a64.Brk(rnd)),
+		instrOf(a64.Movz(rnd)),
+		instrOf(a64.Movk(rnd)),
+		instrOf(a64.AddImm(rnd)),
+		instrOf(a64.SubImm(rnd)),
+		instrOf(a64.AddShift(rnd)),
+		instrOf(a64.SubShift(rnd)),
+		instrOf(a64.Ldr(rnd)),
+		instrOf(a64.Str(rnd)),
+		instrOf(a64.Nop(rnd)),
+		instrOf(a64.Isb(rnd)),
+		instrOf(a64.Dsb(rnd)),
+		instrOf(a64.Dmb(rnd)),
+		instrOf(a64.Smc(rnd)),
+		instrOf(a64.Br(rnd)),
+		instrOf(a64.Blr(rnd)),
+		instrOf(a64.Movn(rnd)),
+		instrOf(a64.Adc(rnd)),
+		instrOf(a64.Smulh(rnd)),
+		instrOf(a64.Umulh(rnd)),
+		instrOf(a64.Rev(rnd)),
+		instrOf(a64.Rev16(rnd)),
+		instrOf(a64.Rev32(rnd)),
+		instrOf(a64.Cls(rnd)),
+		instrOf(a64.Clz(rnd)),
+		instrOf(a64.Rbit(rnd)),
+		instrOf(a64.Sdiv(rnd)),
+		instrOf(a64.Udiv(rnd)),
+		instrOf(a64.LslReg(rnd)),
+		instrOf(a64.LsrReg(rnd)),
+		instrOf(a64.AsrReg(rnd)),
+		instrOf(a64.RorReg(rnd)),
+		instrOf(a64.Mrs(rnd)),
+		instrOf(a64.Msr(rnd)),
+		instrOf(a64.B(rnd)),
+		instrOf(a64.Bl(rnd)),
+		instrOf(a64.Bcond(rnd)),
+		instrOf(a64.Cbz(rnd)),
+		instrOf(a64.Cbnz(rnd)),
+		instrOf(a64.Tbz(rnd)),
+		instrOf(a64.Adr(rnd)),
+		instrOf(a64.Adrp(rnd)),
+		instrOf(a64.AddsImm(rnd)),
+		instrOf(a64.AddsShift(rnd)),
+		instrOf(a64.AddExt(rnd)),
+		instrOf(a64.AddsExt(rnd)),
+		instrOf(a64.SubExt(rnd)),
+		instrOf(a64.SubsExt(rnd)),
+		instrOf(a64.AndShift(rnd)),
+		instrOf(a64.AndsShift(rnd)),
+		instrOf(a64.OrrShift(rnd)),
+		instrOf(a64.EorShift(rnd)),
+		instrOf(a64.OrnShift(rnd)),
+		instrOf(a64.EonShift(rnd)),
+		instrOf(a64.BicShift(rnd)),
+		instrOf(a64.BicsShift(rnd)),
+		instrOf(a64.AndImm(rnd)),
+		instrOf(a64.OrrImm(rnd)),
+		instrOf(a64.EorImm(rnd)),
+		instrOf(a64.AndsImm(rnd)),
+		instrOf(a64.Bfm(rnd)),
+		instrOf(a64.Sbfm(rnd)),
+		instrOf(a64.Ubfm(rnd)),
+		instrOf(a64.Extr(rnd)),
+		instrOf(a64.Ldrb(rnd)),
+		instrOf(a64.Strb(rnd)),
+		instrOf(a64.Ldrh(rnd)),
+		instrOf(a64.Strh(rnd)),
+		instrOf(a64.Ldrsb(rnd)),
+		instrOf(a64.Ldrsh(rnd)),
+		instrOf(a64.Ldrsw(rnd)),
+		instrOf(a64.Ldur(rnd)),
+		instrOf(a64.Ldurb(rnd)),
+		instrOf(a64.Ldurh(rnd)),
+		instrOf(a64.Stur(rnd)),
+		instrOf(a64.Sturb(rnd)),
+		instrOf(a64.Sturh(rnd)),
+		instrOf(a64.LdrF(rnd)),
+		instrOf(a64.StrF(rnd)),
+		instrOf(a64.Ldp(rnd)),
+		instrOf(a64.Stp(rnd)),
+		instrOf(a64.Ldpsw(rnd)),
+		instrOf(a64.Ldar(rnd)),
+		instrOf(a64.Ldaxr(rnd)),
+		instrOf(a64.Stlr(rnd)),
+		instrOf(a64.Ldarb(rnd)),
+		instrOf(a64.Ldaxrb(rnd)),
+		instrOf(a64.Stlrb(rnd)),
+		instrOf(a64.Stlxr(rnd)),
+		instrOf(a64.Stxrb(rnd)),
+		instrOf(a64.Stlxrb(rnd)),
+		instrOf(a64.Prfm(rnd)),
+		instrOf(a64.Fadd(rnd)),
+		instrOf(a64.Fsub(rnd)),
+		instrOf(a64.Fmul(rnd)),
+		instrOf(a64.Fdiv(rnd)),
+		instrOf(a64.Fmax(rnd)),
+		instrOf(a64.Fmin(rnd)),
+		instrOf(a64.Fcmp(rnd)),
+		instrOf(a64.FcmpZero(rnd)),
+		instrOf(a64.Fneg(rnd)),
+		instrOf(a64.Fmov(rnd)),
+		instrOf(a64.Fcvt(rnd)),
+		instrOf(a64.Fmadd(rnd)),
+		instrOf(a64.Fnmsub(rnd)),
+		instrOf(a64.FmovFromGpr(rnd)),
+		instrOf(a64.FmovToGpr(rnd)),
+		instrOf(a64.Fcvtzs(rnd)),
+		instrOf(a64.Fcvtzu(rnd)),
+		instrOf(a64.Scvtf(rnd)),
+		instrOf(a64.Ucvtf(rnd)),
+		instrOf(a64.FmovImm(rnd)),
+		instrOf(a64.Add(rnd)),
+		instrOf(a64.Addp(rnd)),
+		instrOf(a64.And(rnd)),
+		instrOf(a64.Bic(rnd)),
+		instrOf(a64.Bif(rnd)),
+		instrOf(a64.Bit(rnd)),
+		instrOf(a64.Bsl(rnd)),
+		instrOf(a64.Cmeq(rnd)),
+		instrOf(a64.Cmge(rnd)),
+		instrOf(a64.Cmtst(rnd)),
+		instrOf(a64.Eor(rnd)),
+		instrOf(a64.Orn(rnd)),
+		instrOf(a64.Orr(rnd)),
+		instrOf(a64.Saddw(rnd)),
+		instrOf(a64.Ssubw(rnd)),
+		instrOf(a64.Uaddw(rnd)),
+		instrOf(a64.Usubw(rnd)),
+		instrOf(a64.Sqrshl(rnd)),
+		instrOf(a64.Abs(rnd)),
+		instrOf(a64.Cnt(rnd)),
+		instrOf(a64.Not(rnd)),
+		instrOf(a64.Rev32V(rnd)),
+		instrOf(a64.RbitV(rnd)),
+		instrOf(a64.Uaddlv(rnd)),
+		instrOf(a64.MovSimd(rnd)),
+		instrOf(a64.DupGen(rnd)),
+		instrOf(a64.Shl(rnd)),
+		instrOf(a64.Sri(rnd)),
+		instrOf(a64.Sshr(rnd)),
+		instrOf(a64.Ushr(rnd)),
+		instrOf(a64.Tbl(rnd)),
+		instrOf(a64.Aese(rnd)),
+		instrOf(a64.Aesmc(rnd)),
+	}
 }

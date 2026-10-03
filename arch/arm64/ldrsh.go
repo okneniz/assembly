@@ -56,14 +56,14 @@ func newLdrsh(rt Reg, rn Reg, off Off) (Ldrsh, error) {
 
 const ldrshEnc uint32 = 0x79800000
 
+func (i Ldrsh) Encode(w io.Writer) (int64, error) {
+	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
+}
+
 func (i Ldrsh) ObjDump(_ disasm.ViewCtx) string {
 	if i.off == 0 {
 		return fmt.Sprintf("ldrsh %s, [%s]", i.rt, i.rn)
 	}
 
 	return fmt.Sprintf("ldrsh %s, [%s, #0x%x]", i.rt, i.rn, i.off)
-}
-
-func (i Ldrsh) Encode(w io.Writer) (int64, error) {
-	return lsSignedWrite(w, ldrshEnc, i.rt, i.rn, i.off, "ldrsh")
 }

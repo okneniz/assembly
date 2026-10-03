@@ -64,10 +64,6 @@ func newClz(rd Reg, rn Reg) (Clz, error) {
 
 const ClzX uint32 = 0xDAC01000
 
-func (i Clz) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("clz %s, %s", i.rd, i.rn)
-}
-
 func (i Clz) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, ClzX, 0x5AC01000)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Clz) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Clz) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("clz %s, %s", i.rd, i.rn)
 }

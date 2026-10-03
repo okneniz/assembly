@@ -52,8 +52,9 @@ func (a saddwArb) Generate() iter.Seq[SaddwParams] {
 }
 
 func (a saddwArb) Shrink(p SaddwParams) iter.Seq[SaddwParams] {
-	var out []SaddwParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]SaddwParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSaddwParams(s))
 	}
 

@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -20,7 +21,7 @@ type Sri struct {
 // calls it with values read from the word).
 func newSri(q, immh, immb uint32, rd, rn VReg) (Sri, error) {
 	if immh > 0xf || immb > 7 {
-		return Sri{}, fmt.Errorf("arm64.NewSri: imm out of range")
+		return Sri{}, errors.New("arm64.NewSri: imm out of range")
 	}
 
 	return Sri{
@@ -34,13 +35,6 @@ func newSri(q, immh, immb uint32, rd, rn VReg) (Sri, error) {
 
 const sriEnc uint32 = 0x2F004400 // sri vd, vn, #shift (Q=0 form)
 
-func (i Sri) ObjDump(_ disasm.ViewCtx) string {
-	size, shift := decodeShiftImm(i.immh, i.immb)
-	shift = uint32(8<<size) - shift
-	return fmt.Sprintf("sri.%s %s, %s, #0x%x",
-		decodeArrangement(i.q, size), i.rd, i.rn, shift)
-}
-
 func (i Sri) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -48,4 +42,11 @@ func (i Sri) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, sriEnc|i.q<<30|rd|rn<<5|i.immb<<16|i.immh<<19)
+}
+
+func (i Sri) ObjDump(_ disasm.ViewCtx) string {
+	size, shift := decodeShiftImm(i.immh, i.immb)
+	shift = uint32(8<<size) - shift
+	return fmt.Sprintf("sri.%s %s, %s, #0x%x",
+		decodeArrangement(i.q, size), i.rd, i.rn, shift)
 }

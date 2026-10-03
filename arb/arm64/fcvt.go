@@ -34,6 +34,7 @@ func (p FcvtParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p FcvtParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type fcvtGen struct {
 	rnd *rand.Rand
 }
 
-func newFcvtGen(rnd *rand.Rand) fcvtGen {
-	return fcvtGen{rnd: rnd}
-}
-
 // Fcvt — an arbitrary fcvt.
 func Fcvt(rnd *rand.Rand) ohsnap.Arbitrary[FcvtParams] {
 	return newFcvtGen(rnd)
+}
+
+func newFcvtGen(rnd *rand.Rand) fcvtGen {
+	return fcvtGen{rnd: rnd}
 }
 
 func (g fcvtGen) Generate() iter.Seq[FcvtParams] {
@@ -60,8 +61,9 @@ func (g fcvtGen) Generate() iter.Seq[FcvtParams] {
 }
 
 func (g fcvtGen) Shrink(p FcvtParams) iter.Seq[FcvtParams] {
-	var out []FcvtParams
-	for _, r := range fpShrunk(p.Rd) {
+	fps := fpShrunk(p.Rd)
+	out := make([]FcvtParams, 0, len(fps))
+	for _, r := range fps {
 		out = append(out, NewFcvtParams(r, p.Rn))
 	}
 

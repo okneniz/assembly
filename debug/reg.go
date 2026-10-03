@@ -1,6 +1,9 @@
 package debug
 
-import "fmt"
+import (
+	"errors"
+	"fmt"
+)
 
 // Reg is one register of the target description: the RSP register
 // number (the "p N" address), the display name, and the width in bits.
@@ -15,7 +18,7 @@ type Reg struct {
 // NewReg - the register constructor: the struct is assembled only here.
 func NewReg(name string, num, bits int) (Reg, error) {
 	if name == "" {
-		return Reg{}, fmt.Errorf("debug.NewReg: empty register name")
+		return Reg{}, errors.New("debug.NewReg: empty register name")
 	}
 
 	if num < 0 {

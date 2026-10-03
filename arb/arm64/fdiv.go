@@ -52,8 +52,9 @@ func (a fdivArb) Generate() iter.Seq[FdivParams] {
 }
 
 func (a fdivArb) Shrink(p FdivParams) iter.Seq[FdivParams] {
-	var out []FdivParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F3Params))
+	out := make([]FdivParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFdivParams(s))
 	}
 

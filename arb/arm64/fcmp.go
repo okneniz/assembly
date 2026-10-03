@@ -34,6 +34,7 @@ func (p FcmpParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p FcmpParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -43,13 +44,13 @@ type fcmpGen struct {
 	rnd *rand.Rand
 }
 
-func newFcmpGen(rnd *rand.Rand) fcmpGen {
-	return fcmpGen{rnd: rnd}
-}
-
 // Fcmp — an arbitrary fcmp.
 func Fcmp(rnd *rand.Rand) ohsnap.Arbitrary[FcmpParams] {
 	return newFcmpGen(rnd)
+}
+
+func newFcmpGen(rnd *rand.Rand) fcmpGen {
+	return fcmpGen{rnd: rnd}
 }
 
 func (g fcmpGen) Generate() iter.Seq[FcmpParams] {
@@ -60,8 +61,9 @@ func (g fcmpGen) Generate() iter.Seq[FcmpParams] {
 }
 
 func (g fcmpGen) Shrink(p FcmpParams) iter.Seq[FcmpParams] {
-	var out []FcmpParams
-	for _, r := range fpShrunk(p.Rn) {
+	fps := fpShrunk(p.Rn)
+	out := make([]FcmpParams, 0, len(fps))
+	for _, r := range fps {
 		out = append(out, NewFcmpParams(r, p.Rm))
 	}
 

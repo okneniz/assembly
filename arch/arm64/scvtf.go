@@ -35,10 +35,6 @@ const (
 	scvtfSW uint32 = 0x1E220000 // scvtf sd, wn
 )
 
-func (i Scvtf) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("scvtf %s, %s", i.rd, i.rn)
-}
-
 func (i Scvtf) Encode(w io.Writer) (int64, error) {
 	match := fpGprMatch(i.rd, i.rn, scvtfDX, scvtfDW, scvtfSX, scvtfSW)
 	rd, rn, err := regNums2(i.rd, i.rn)
@@ -47,6 +43,10 @@ func (i Scvtf) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Scvtf) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("scvtf %s, %s", i.rd, i.rn)
 }
 
 // Ucvtf — ucvtf fd, wn|xn (unsigned integer to FP).
@@ -76,10 +76,6 @@ const (
 	ucvtfSW uint32 = 0x1E230000 // ucvtf sd, wn
 )
 
-func (i Ucvtf) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ucvtf %s, %s", i.rd, i.rn)
-}
-
 func (i Ucvtf) Encode(w io.Writer) (int64, error) {
 	match := fpGprMatch(i.rd, i.rn, ucvtfDX, ucvtfDW, ucvtfSX, ucvtfSW)
 	rd, rn, err := regNums2(i.rd, i.rn)
@@ -88,4 +84,8 @@ func (i Ucvtf) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Ucvtf) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ucvtf %s, %s", i.rd, i.rn)
 }

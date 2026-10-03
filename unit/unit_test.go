@@ -20,10 +20,6 @@ type wordRes struct {
 	w uint32
 }
 
-func newWordRes(w uint32) wordRes {
-	return wordRes{w: w}
-}
-
 func (r wordRes) Encode(w io.Writer) (int64, error) {
 	n, err := w.Write(binary.LittleEndian.AppendUint32(nil, r.w))
 	return int64(n), err
@@ -37,18 +33,6 @@ type stubSym struct {
 	err  error
 }
 
-func newStubSym(size int, mark byte) stubSym {
-	return stubSym{size: size, mark: mark}
-}
-
-func newFailingSym(size int) stubSym {
-	return stubSym{size: size, err: errStub}
-}
-
-func (s stubSym) Size() int {
-	return s.size
-}
-
 func (s stubSym) Resolve(Ctx) ([]Resolved, error) {
 	if s.err != nil {
 		return nil, s.err
@@ -57,32 +41,17 @@ func (s stubSym) Resolve(Ctx) ([]Resolved, error) {
 	return []Resolved{blob(bytes.Repeat([]byte{s.mark}, s.size))}, nil
 }
 
-// errStub - the stand-in resolve failure.
-var errStub = errStubType{}
-
-type errStubType struct{}
-
-func (errStubType) Error() string {
-	return "stub"
+func (s stubSym) Size() int {
+	return s.size
 }
 
-// streamsUnit - a program reading a data static through a branch-like
-// deferred record: 8 deferred bytes plus seven instructions of text, 8
-// bytes of data, a 16-byte bss tail.
-func streamsUnit() *Unit {
-	u := New().Entry("start")
+// errStub - the stand-in resolve failure.
+var errStub = errStubError{}
 
-	u.Label("start")
-	u.Sym(Pos{}, newStubSym(8, 0xEE))
-	for _, w := range []uint32{1, 2, 3, 4, 5, 6, 7} {
-		u.Instr(Pos{}, newWordRes(w), nil)
-	}
+type errStubError struct{}
 
-	u.Data()
-	u.Label("counter").Quad(Pos{}, 7)
-	u.Label("buf").Bss(Pos{}, 16)
-
-	return u
+func (errStubError) Error() string {
+	return "stub"
 }
 
 func TestUnitStreamsLayout(t *testing.T) {
@@ -230,12 +199,12 @@ type lyingSym struct {
 	encoded  int
 }
 
-func (s lyingSym) Size() int {
-	return s.declared
-}
-
 func (s lyingSym) Resolve(Ctx) ([]Resolved, error) {
 	return []Resolved{blob(make([]byte, s.encoded))}, nil
+}
+
+func (s lyingSym) Size() int {
+	return s.declared
 }
 
 func TestUnitPositions(t *testing.T) {
@@ -248,11 +217,6 @@ func TestUnitPositions(t *testing.T) {
 	require.Len(t, f.Lines, 2)
 	require.Equal(t, NewPos("t.c", 1), f.Lines[0].Pos)
 	require.Equal(t, NewPos("t.c", 2), f.Lines[1].Pos)
-}
-
-// nopPlace is a policy that does not care.
-func nopPlace(text, data, dataMem int) (uint64, uint64) {
-	return 0x1000, 0x8000
 }
 
 func TestUnitRecords(t *testing.T) {
@@ -294,4 +258,40 @@ func TestUnitRecords(t *testing.T) {
 		Resolve(nopPlace)
 	require.Len(t, f.Errs, 1)
 	require.ErrorContains(t, f.Errs[0], "tbz: stub")
+}
+
+func newWordRes(w uint32) wordRes {
+	return wordRes{w: w}
+}
+
+func newStubSym(size int, mark byte) stubSym {
+	return stubSym{size: size, mark: mark}
+}
+
+func newFailingSym(size int) stubSym {
+	return stubSym{size: size, err: errStub}
+}
+
+// streamsUnit - a program reading a data static through a branch-like
+// deferred record: 8 deferred bytes plus seven instructions of text, 8
+// bytes of data, a 16-byte bss tail.
+func streamsUnit() *Unit {
+	u := New().Entry("start")
+
+	u.Label("start")
+	u.Sym(Pos{}, newStubSym(8, 0xEE))
+	for _, w := range []uint32{1, 2, 3, 4, 5, 6, 7} {
+		u.Instr(Pos{}, newWordRes(w), nil)
+	}
+
+	u.Data()
+	u.Label("counter").Quad(Pos{}, 7)
+	u.Label("buf").Bss(Pos{}, 16)
+
+	return u
+}
+
+// nopPlace is a policy that does not care.
+func nopPlace(text, data, dataMem int) (uint64, uint64) {
+	return 0x1000, 0x8000
 }

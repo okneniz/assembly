@@ -36,6 +36,7 @@ func (p RorRegParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p RorRegParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -45,13 +46,13 @@ type rorRegGen struct {
 	rnd *rand.Rand
 }
 
-func newRorRegGen(rnd *rand.Rand) rorRegGen {
-	return rorRegGen{rnd: rnd}
-}
-
 // RorReg — an arbitrary ror (register).
 func RorReg(rnd *rand.Rand) ohsnap.Arbitrary[RorRegParams] {
 	return newRorRegGen(rnd)
+}
+
+func newRorRegGen(rnd *rand.Rand) rorRegGen {
+	return rorRegGen{rnd: rnd}
 }
 
 func (g rorRegGen) Generate() iter.Seq[RorRegParams] {
@@ -66,8 +67,9 @@ func (g rorRegGen) Generate() iter.Seq[RorRegParams] {
 }
 
 func (g rorRegGen) Shrink(p RorRegParams) iter.Seq[RorRegParams] {
-	var out []RorRegParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]RorRegParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewRorRegParams(r, p.Rn, p.Rm))
 	}
 

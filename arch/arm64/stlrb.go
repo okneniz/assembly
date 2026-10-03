@@ -56,10 +56,10 @@ func newStlrb(rt, rn Reg) (Stlrb, error) {
 
 const stlrbEnc uint32 = 0x089FFC00 // stlrb wt, [xn]
 
-func (i Stlrb) ObjDump(_ disasm.ViewCtx) string {
-	return "stlrb " + i.atText()
-}
-
 func (i Stlrb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "stlrb")
+}
+
+func (i Stlrb) ObjDump(_ disasm.ViewCtx) string {
+	return "stlrb " + i.atText()
 }

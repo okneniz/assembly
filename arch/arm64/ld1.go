@@ -56,19 +56,6 @@ func ldElemDecode(w, q, rt uint32) (name, arr, list string, size uint32) {
 	return "ld1", "b", "", 0 // unreachable
 }
 
-func (i Ld1) ObjDump(_ disasm.ViewCtx) string {
-	s := fmt.Sprintf("%s.%s %s, [%s]", i.name, i.arr, i.regList, i.rn)
-	if i.hasPost {
-		if i.postReg != "" {
-			s += ", " + i.postReg
-		} else {
-			s += fmt.Sprintf(", #%d", i.postImm)
-		}
-	}
-
-	return s
-}
-
 func (i Ld1) Encode(w io.Writer) (int64, error) {
 	rn, err := armRegNum(i.rn)
 	if err != nil {
@@ -84,4 +71,17 @@ func (i Ld1) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, i.enc|i.rtNum|rn<<5|rm<<16)
+}
+
+func (i Ld1) ObjDump(_ disasm.ViewCtx) string {
+	s := fmt.Sprintf("%s.%s %s, [%s]", i.name, i.arr, i.regList, i.rn)
+	if i.hasPost {
+		if i.postReg != "" {
+			s += ", " + i.postReg
+		} else {
+			s += fmt.Sprintf(", #%d", i.postImm)
+		}
+	}
+
+	return s
 }

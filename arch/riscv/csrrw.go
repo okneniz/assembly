@@ -15,6 +15,12 @@ type Csrrw struct {
 	rs1 string
 }
 
+func (i Csrrw) Encode(w io.Writer, o EncOpts) (int64, error) {
+	csr := i.csrBits()
+
+	return writeWord(w, riscvEncodings["csrrw"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|csr<<20)
+}
+
 func (i Csrrw) ObjDump(_ disasm.ViewCtx) string {
 	if i.rd == "zero" { // write forms (rd == x0)
 		switch i.text() {
@@ -30,12 +36,6 @@ func (i Csrrw) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("csrrw %s, %s, %s", i.rd, i.text(), i.rs1)
-}
-
-func (i Csrrw) Encode(w io.Writer, o EncOpts) (int64, error) {
-	csr := i.csrBits()
-
-	return writeWord(w, riscvEncodings["csrrw"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|csr<<20)
 }
 
 func newCsrrw(ops []Op) (Instr, error) {

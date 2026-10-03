@@ -22,11 +22,6 @@ func newB(off imm) (B, error) { //nolint:unparam // uniform (Instr, error) decod
 
 const bMatch = 0x14000000
 
-func (i B) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	return "b " + target.textHex()
-}
-
 func (i B) Encode(w io.Writer) (int64, error) {
 	bits, err := offBits(i.off.val, 26)
 	if err != nil {
@@ -34,4 +29,9 @@ func (i B) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, bMatch|bits)
+}
+
+func (i B) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return "b " + target.textHex()
 }

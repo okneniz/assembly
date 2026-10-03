@@ -27,6 +27,7 @@ func NewSvcParams(imm arm64.Imm16) SvcParams {
 func (p SvcParams) Instr() arm64.Instr {
 	return arm64.New().Svc(p.Imm)
 }
+
 func (p SvcParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -36,13 +37,13 @@ type svcGen struct {
 	rnd *rand.Rand
 }
 
-func newSvcGen(rnd *rand.Rand) svcGen {
-	return svcGen{rnd: rnd}
-}
-
 // Svc — an arbitrary svc.
 func Svc(rnd *rand.Rand) ohsnap.Arbitrary[SvcParams] {
 	return newSvcGen(rnd)
+}
+
+func newSvcGen(rnd *rand.Rand) svcGen {
+	return svcGen{rnd: rnd}
 }
 
 func (g svcGen) Generate() iter.Seq[SvcParams] {

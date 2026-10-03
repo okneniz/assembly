@@ -52,8 +52,9 @@ func (a cntArb) Generate() iter.Seq[CntParams] {
 }
 
 func (a cntArb) Shrink(p CntParams) iter.Seq[CntParams] {
-	var out []CntParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]CntParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewCntParams(s))
 	}
 

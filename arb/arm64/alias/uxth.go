@@ -27,10 +27,6 @@ func NewUxthParams(rd arm64.Reg, rn arm64.Reg) UxthParams {
 	}
 }
 
-func (p UxthParams) String() string {
-	return "uxth " + p.Rd.String() + ", " + p.Rn.String()
-}
-
 func (p UxthParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,18 +36,22 @@ func (p UxthParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p UxthParams) String() string {
+	return "uxth " + p.Rd.String() + ", " + p.Rn.String()
+}
+
 // uxthGen — generator for uxth: both registers are w-registers.
 type uxthGen struct {
 	rnd *rand.Rand
 }
 
-func newUxthGen(rnd *rand.Rand) uxthGen {
-	return uxthGen{rnd: rnd}
-}
-
 // Uxth — an arbitrary uxth.
 func Uxth(rnd *rand.Rand) ohsnap.Arbitrary[UxthParams] {
 	return newUxthGen(rnd)
+}
+
+func newUxthGen(rnd *rand.Rand) uxthGen {
+	return uxthGen{rnd: rnd}
 }
 
 func (g uxthGen) Generate() iter.Seq[UxthParams] {
@@ -64,8 +64,9 @@ func (g uxthGen) Generate() iter.Seq[UxthParams] {
 }
 
 func (g uxthGen) Shrink(p UxthParams) iter.Seq[UxthParams] {
-	var out []UxthParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]UxthParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewUxthParams(r, p.Rn))
 	}
 

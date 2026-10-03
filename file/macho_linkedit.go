@@ -51,7 +51,6 @@ func newMachOLinkedit(
 	}
 
 	// the exports trie: __mh_execute_header plus the globals, sorted
-	names := []string{"__mh_execute_header"}
 	globalAt := make(map[string]uint64, len(syms))
 	for i := range syms {
 		if syms[i].Global {
@@ -59,9 +58,13 @@ func newMachOLinkedit(
 		}
 	}
 
+	names := make([]string, 0, 1+len(globalAt))
+	names = append(names, "__mh_execute_header")
+
 	for name := range globalAt {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
 
 	trie := machoNewTrie(names, func(name string) uint64 {
@@ -81,15 +84,18 @@ func newMachOLinkedit(
 			starts = append(starts, addrs[i])
 		}
 	}
+
 	slices.Sort(starts)
 	starts = slices.Compact(starts)
 
-	fstarts := []byte{}
+	// each delta is at most 10 uleb bytes (uint64), plus the terminator
+	fstarts := make([]byte, 0, 10*len(starts)+1)
 	prev := uint64(machoVMAddr)
 	for _, a := range starts {
 		fstarts = append(fstarts, uleb(a-prev)...)
 		prev = a
 	}
+
 	fstarts = append(fstarts, 0)
 
 	// the symbol table: __mh_execute_header first (dyld looks it up),

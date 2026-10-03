@@ -52,8 +52,9 @@ func (a sbfmArb) Generate() iter.Seq[SbfmParams] {
 }
 
 func (a sbfmArb) Shrink(p SbfmParams) iter.Seq[SbfmParams] {
-	var out []SbfmParams
-	for _, s := range slices.Collect(a.base.Shrink(p.BfmParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.BfmParams))
+	out := make([]SbfmParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSbfmParams(s))
 	}
 

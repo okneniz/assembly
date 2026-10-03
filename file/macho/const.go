@@ -305,31 +305,6 @@ const (
 	CPU_SUBTYPE_ARM64_PTR_AUTH_MASK uint32 = 0x0f000000
 )
 
-func cpuName(t int32) string {
-	switch t {
-	case CPU_TYPE_X86:
-		return "CPU_TYPE_X86"
-	case CPU_TYPE_X86_64:
-		return "CPU_TYPE_X86_64"
-	case CPU_TYPE_ARM:
-		return "CPU_TYPE_ARM"
-	case CPU_TYPE_ARM64:
-		return "CPU_TYPE_ARM64"
-	case CPU_TYPE_ARM64_32:
-		return "CPU_TYPE_ARM64_32"
-	case CPU_TYPE_POWERPC:
-		return "CPU_TYPE_POWERPC"
-	case CPU_TYPE_POWERPC64:
-		return "CPU_TYPE_POWERPC64"
-	case CPU_TYPE_SPARC:
-		return "CPU_TYPE_SPARC"
-	}
-
-	return "CPU_TYPE_<" + strconv.FormatInt(int64(t), 10) + ">"
-}
-
-// --- Load commands ---
-
 // Cmd is the cmd field of a load command. The LC_REQ_DYLD bit (0x80000000)
 // is part of the number: dyld needs to know the commands with this bit.
 type Cmd uint32
@@ -677,6 +652,31 @@ func LibraryOrdinal(desc uint16) int {
 }
 
 // --- Relocations ---
+
+func cpuName(t int32) string {
+	switch t {
+	case CPU_TYPE_X86:
+		return "CPU_TYPE_X86"
+	case CPU_TYPE_X86_64:
+		return "CPU_TYPE_X86_64"
+	case CPU_TYPE_ARM:
+		return "CPU_TYPE_ARM"
+	case CPU_TYPE_ARM64:
+		return "CPU_TYPE_ARM64"
+	case CPU_TYPE_ARM64_32:
+		return "CPU_TYPE_ARM64_32"
+	case CPU_TYPE_POWERPC:
+		return "CPU_TYPE_POWERPC"
+	case CPU_TYPE_POWERPC64:
+		return "CPU_TYPE_POWERPC64"
+	case CPU_TYPE_SPARC:
+		return "CPU_TYPE_SPARC"
+	}
+
+	return "CPU_TYPE_<" + strconv.FormatInt(int64(t), 10) + ">"
+}
+
+// --- Load commands ---
 
 // RelocType is a relocation type (the architecture-dependent part of r_info).
 type RelocType uint32

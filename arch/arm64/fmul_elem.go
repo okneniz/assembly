@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,7 +20,7 @@ type FmulElem struct {
 // calls it with values read from the word).
 func newFmulElem(q, size, idx uint32, rd, rn, rm VReg) (FmulElem, error) {
 	if size != 2 && size != 3 {
-		return FmulElem{}, fmt.Errorf(
+		return FmulElem{}, errors.New(
 			"arm64.NewFmulElem: only the fp32 (.2s/.4s) and fp64 (.2d) lanes exist",
 		)
 	}
@@ -45,15 +46,6 @@ const (
 	fmulElemOpc uint32 = 9
 )
 
-func (i FmulElem) ObjDump(_ disasm.ViewCtx) string {
-	arr := decodeArrangement(i.q, 2) // .2s/.4s
-	if i.size == 3 {
-		arr = "2d"
-	}
-
-	return fmt.Sprintf("fmul.%s %s, %s, %s[%d]", arr, i.rd, i.rn, i.rm, i.idx)
-}
-
 func (i FmulElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -61,4 +53,13 @@ func (i FmulElem) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, byElemBits(i.q, fmulElemU, i.size, rm, fmulElemOpc, i.idx, rn, rd))
+}
+
+func (i FmulElem) ObjDump(_ disasm.ViewCtx) string {
+	arr := decodeArrangement(i.q, 2) // .2s/.4s
+	if i.size == 3 {
+		arr = "2d"
+	}
+
+	return fmt.Sprintf("fmul.%s %s, %s, %s[%d]", arr, i.rd, i.rn, i.rm, i.idx)
 }

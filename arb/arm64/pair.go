@@ -9,8 +9,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/okneniz/assembly/arch/arm64"
 	ohsnap "github.com/okneniz/oh-snap"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // PairParams — the parameters of the pair forms.
@@ -56,26 +57,6 @@ func pairX(rnd *rand.Rand) pairGen {
 	return newPairGen(rnd, &x, &s)
 }
 
-func (g pairGen) is64() bool {
-	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
-	}
-
-	return *g.rt64
-}
-
-func (g pairGen) curScale(is64 bool) uint32 {
-	if g.scale != nil {
-		return *g.scale
-	}
-
-	if is64 {
-		return 3
-	}
-
-	return 2
-}
-
 func (g pairGen) Generate() iter.Seq[PairParams] {
 	return arbStream(func() PairParams {
 		is64 := g.is64()
@@ -93,8 +74,9 @@ func (g pairGen) Generate() iter.Seq[PairParams] {
 func (g pairGen) Shrink(p PairParams) iter.Seq[PairParams] {
 	scale := g.curScale(p.Rt.Is64())
 
-	var out []PairParams
-	for _, r := range regShrunk(p.Rt) {
+	regs := regShrunk(p.Rt)
+	out := make([]PairParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewPairParams(r, p.Rt2, p.Rn, p.Off))
 	}
 
@@ -111,4 +93,24 @@ func (g pairGen) Shrink(p PairParams) iter.Seq[PairParams] {
 	}
 
 	return slices.Values(out)
+}
+
+func (g pairGen) curScale(is64 bool) uint32 {
+	if g.scale != nil {
+		return *g.scale
+	}
+
+	if is64 {
+		return 3
+	}
+
+	return 2
+}
+
+func (g pairGen) is64() bool {
+	if g.rt64 == nil {
+		return g.rnd.IntN(2) == 1
+	}
+
+	return *g.rt64
 }

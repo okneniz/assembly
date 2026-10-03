@@ -22,10 +22,6 @@ func cSrai(rd, rs1 string, shamt int64) Srai {
 	}
 }
 
-func (i Srai) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("srai %s, %s, %s", i.rd, i.rs1, i.shamt.text())
-}
-
 func (i Srai) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
@@ -47,6 +43,10 @@ func (i Srai) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Srai) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("srai %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
 func newSrai(ops []Op) (Instr, error) {

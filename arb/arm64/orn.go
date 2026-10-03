@@ -52,8 +52,9 @@ func (a ornArb) Generate() iter.Seq[OrnVParams] {
 }
 
 func (a ornArb) Shrink(p OrnVParams) iter.Seq[OrnVParams] {
-	var out []OrnVParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]OrnVParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewOrnVParams(s))
 	}
 

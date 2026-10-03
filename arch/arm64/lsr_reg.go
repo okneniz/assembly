@@ -81,10 +81,6 @@ func newLsrReg(rd Reg, rn Reg, rm Reg) (LsrReg, error) {
 
 const LsrRegX uint32 = 0x9AC02400
 
-func (i LsrReg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lsr %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i LsrReg) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, LsrRegX, 0x1AC02400)
 	if err != nil {
@@ -97,4 +93,8 @@ func (i LsrReg) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i LsrReg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lsr %s, %s, %s", i.rd, i.rn, i.rm)
 }

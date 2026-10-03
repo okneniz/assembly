@@ -13,13 +13,13 @@ type AmominuW struct {
 	rd, rs1, rs2 string
 }
 
-func (i AmominuW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amominu.w %s, %s, (%s)", i.rd, i.rs2, i.rs1)
-}
-
 func (i AmominuW) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["amominu_w"][0]|
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
+}
+
+func (i AmominuW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amominu.w %s, %s, (%s)", i.rd, i.rs2, i.rs1)
 }
 
 func newAmominuW(ops []Op) (Instr, error) {

@@ -52,8 +52,9 @@ func (a fcvtzsArb) Generate() iter.Seq[FcvtzsParams] {
 }
 
 func (a fcvtzsArb) Shrink(p FcvtzsParams) iter.Seq[FcvtzsParams] {
-	var out []FcvtzsParams
-	for _, s := range slices.Collect(a.base.Shrink(p.FGprParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.FGprParams))
+	out := make([]FcvtzsParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFcvtzsParams(s))
 	}
 

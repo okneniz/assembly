@@ -13,10 +13,6 @@ type Sb struct {
 	off      imm
 }
 
-func (i Sb) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sb %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
-}
-
 func (i Sb) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -27,6 +23,10 @@ func (i Sb) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	word := riscvEncodings["sb"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
 	return writeWord(w, word)
+}
+
+func (i Sb) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sb %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
 func newSb(ops []Op) (Instr, error) {

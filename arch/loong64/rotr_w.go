@@ -12,13 +12,13 @@ type RotrW struct {
 	rd, rj, rk uint8
 }
 
-func (i RotrW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rotr.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
-}
-
 func (i RotrW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["rotr.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 
 	return writeWord(w, word)
+}
+
+func (i RotrW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rotr.w %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

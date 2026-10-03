@@ -33,10 +33,6 @@ func newCmtst(rd, rn, rm VReg, arr string) (Cmtst, error) {
 
 const cmtstEnc uint32 = 237014016 // cmtst vd, vn, vm (Q=0, size=0 form)
 
-func (i Cmtst) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cmtst.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Cmtst) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Cmtst) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, cmtstEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
+}
+
+func (i Cmtst) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("cmtst.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

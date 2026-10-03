@@ -20,11 +20,6 @@ func newLogImm(rd string, rn string, immr uint32, imms uint32, n bool, is64 bool
 	}
 }
 
-// mask — the reconstructed mask value (decodeBitMasks — ARM ARM).
-func (l logImm) mask() uint64 {
-	return decodeBitMasks(l.n, l.immr, l.imms, l.is64)
-}
-
 // bits — the rd/rn register numbers for word assembly (immr/imms/N are
 // already in the entry's match constant).
 func (l logImm) bits() (uint32, uint32, error) {
@@ -34,4 +29,9 @@ func (l logImm) bits() (uint32, uint32, error) {
 	}
 
 	return rd, rn, nil
+}
+
+// mask — the reconstructed mask value (decodeBitMasks — ARM ARM).
+func (l logImm) mask() uint64 {
+	return decodeBitMasks(l.n, l.immr, l.imms, l.is64)
 }

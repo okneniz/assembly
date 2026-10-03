@@ -14,14 +14,6 @@ import (
 	"github.com/okneniz/assembly/tests/cmd/objdump"
 )
 
-func assembleOne(t *testing.T, src string, addr uint64) []byte {
-	t.Helper()
-	res, errs := asm.Assemble(src, addr, New())
-	require.Empty(t, errs, "assemble %q: %v", src, errs)
-	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
-	return res.Sections[0].Data
-}
-
 func TestAssembleWords(t *testing.T) {
 	// Exact words (verified manually/against the specification).
 	words := []struct {
@@ -167,14 +159,6 @@ func TestAssembleWords(t *testing.T) {
 	}
 }
 
-func wordOf(b []byte) uint32 {
-	if len(b) != 4 {
-		return 0
-	}
-
-	return binary.LittleEndian.Uint32(b)
-}
-
 func TestAssembleBranch(t *testing.T) {
 	// beq a0, a1, 0x1008 @ 0x1000 → off=8: imm[4:1]=0100
 	got := assembleOne(t, "beq a0, a1, 0x1008", 0x1000)
@@ -288,6 +272,22 @@ func TestRVCCompression(t *testing.T) {
 			c.twoLen,
 		)
 	}
+}
+
+func assembleOne(t *testing.T, src string, addr uint64) []byte {
+	t.Helper()
+	res, errs := asm.Assemble(src, addr, New())
+	require.Empty(t, errs, "assemble %q: %v", src, errs)
+	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
+	return res.Sections[0].Data
+}
+
+func wordOf(b []byte) uint32 {
+	if len(b) != 4 {
+		return 0
+	}
+
+	return binary.LittleEndian.Uint32(b)
 }
 
 // instrTextSource returns the instruction's mnemonic+operands - its

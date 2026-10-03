@@ -14,6 +14,14 @@ type BstrpickD struct {
 	lsb    imm
 }
 
+func (i BstrpickD) Encode(w io.Writer) (int64, error) {
+	word := loongEncodings["bstrpick.d"][0] |
+		uint32(i.rd) | uint32(i.rj)<<5 |
+		scatterU(i.msb.val, 16, 6) | scatterU(i.lsb.val, 10, 6)
+
+	return writeWord(w, word)
+}
+
 func (i BstrpickD) ObjDump(_ disasm.ViewCtx) string {
 	return fmt.Sprintf(
 		"bstrpick.d %s, %s, %s, %s",
@@ -22,12 +30,4 @@ func (i BstrpickD) ObjDump(_ disasm.ViewCtx) string {
 		i.msb.text(),
 		i.lsb.text(),
 	)
-}
-
-func (i BstrpickD) Encode(w io.Writer) (int64, error) {
-	word := loongEncodings["bstrpick.d"][0] |
-		uint32(i.rd) | uint32(i.rj)<<5 |
-		scatterU(i.msb.val, 16, 6) | scatterU(i.lsb.val, 10, 6)
-
-	return writeWord(w, word)
 }

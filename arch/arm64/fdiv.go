@@ -33,15 +33,8 @@ const (
 	fdivS uint32 = 0x1E201800 // fdiv sd, sn, sm
 )
 
-func (i Fdiv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fdiv %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Fdiv) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fdivD, fdivS)
-	if err != nil {
-		return 0, fmt.Errorf("fdiv: %w", err)
-	}
+	match := fpMatch(i.rd, fdivD, fdivS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +42,8 @@ func (i Fdiv) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Fdiv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fdiv %s, %s, %s", i.rd, i.rn, i.rm)
 }

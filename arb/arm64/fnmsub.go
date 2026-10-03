@@ -52,8 +52,9 @@ func (a fnmsubArb) Generate() iter.Seq[FnmsubParams] {
 }
 
 func (a fnmsubArb) Shrink(p FnmsubParams) iter.Seq[FnmsubParams] {
-	var out []FnmsubParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F4Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F4Params))
+	out := make([]FnmsubParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFnmsubParams(s))
 	}
 

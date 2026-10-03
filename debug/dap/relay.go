@@ -12,78 +12,12 @@ import (
 	"strings"
 )
 
-// commandDirs are the executable prefixes outside the minimal launchd
-// PATH a GUI-launched editor hands its children: the Go toolchain and
-// homebrew.
-func commandDirs() []string {
-	return []string{"/usr/local/go/bin", "/opt/homebrew/bin", "/usr/local/bin"}
-}
-
 // LookCommand resolves a command word the way the executor resolves
 // qemu: PATH first, then the well-known prefixes (a dock-launched
 // editor never sees /usr/local/go/bin, and `go run ...` commands need
 // it).
 func LookCommand(bin string) (string, error) {
 	return lookCommand(bin, commandDirs())
-}
-
-func lookCommand(bin string, dirs []string) (string, error) {
-	if path, err := exec.LookPath(bin); err == nil {
-		return path, nil
-	}
-
-	for _, dir := range dirs {
-		at := dir + "/" + bin
-		if _, err := exec.LookPath(at); err == nil {
-			return at, nil
-		}
-	}
-
-	return "", fmt.Errorf("assembly/dap: %q: executable not found in PATH or %v", bin, dirs)
-}
-
-// envelope is the wire form of one body: the deterministic framing
-// around it.
-func envelope(body []byte) []byte {
-	var buf bytes.Buffer
-	fmt.Fprintf(&buf, "Content-Length: %d\r\n\r\n", len(body))
-	buf.Write(body)
-	return buf.Bytes()
-}
-
-// goRunDir is the working directory for a `go run DIR` command: the
-// package's own directory when the argument is absolute. The editor
-// spawns the adapter wherever it pleases (not the repository), and go
-// resolves the module from the working directory - outside it even an
-// absolute package path dies with "go.mod file not found". Commands of
-// any other shape inherit the adapter's directory.
-func goRunDir(fields []string) string {
-	if len(fields) < 3 || filepath.Base(fields[0]) != "go" || fields[1] != "run" {
-		return ""
-	}
-
-	for _, arg := range fields[2:] {
-		if strings.HasPrefix(arg, "-") {
-			continue
-		}
-
-		if !filepath.IsAbs(arg) {
-			return ""
-		}
-
-		info, err := os.Stat(arg)
-		if err != nil {
-			return ""
-		}
-
-		if info.IsDir() {
-			return arg
-		}
-
-		return filepath.Dir(arg)
-	}
-
-	return ""
 }
 
 // Relay hands the conversation to a program serving DAP itself (a prog
@@ -150,4 +84,70 @@ func Relay(
 	}
 
 	return nil
+}
+
+// commandDirs are the executable prefixes outside the minimal launchd
+// PATH a GUI-launched editor hands its children: the Go toolchain and
+// homebrew.
+func commandDirs() []string {
+	return []string{"/usr/local/go/bin", "/opt/homebrew/bin", "/usr/local/bin"}
+}
+
+func lookCommand(bin string, dirs []string) (string, error) {
+	if path, err := exec.LookPath(bin); err == nil {
+		return path, nil
+	}
+
+	for _, dir := range dirs {
+		at := dir + "/" + bin
+		if _, err := exec.LookPath(at); err == nil {
+			return at, nil
+		}
+	}
+
+	return "", fmt.Errorf("assembly/dap: %q: executable not found in PATH or %v", bin, dirs)
+}
+
+// envelope is the wire form of one body: the deterministic framing
+// around it.
+func envelope(body []byte) []byte {
+	var buf bytes.Buffer
+	fmt.Fprintf(&buf, "Content-Length: %d\r\n\r\n", len(body))
+	buf.Write(body)
+	return buf.Bytes()
+}
+
+// goRunDir is the working directory for a `go run DIR` command: the
+// package's own directory when the argument is absolute. The editor
+// spawns the adapter wherever it pleases (not the repository), and go
+// resolves the module from the working directory - outside it even an
+// absolute package path dies with "go.mod file not found". Commands of
+// any other shape inherit the adapter's directory.
+func goRunDir(fields []string) string {
+	if len(fields) < 3 || filepath.Base(fields[0]) != "go" || fields[1] != "run" {
+		return ""
+	}
+
+	for _, arg := range fields[2:] {
+		if strings.HasPrefix(arg, "-") {
+			continue
+		}
+
+		if !filepath.IsAbs(arg) {
+			return ""
+		}
+
+		info, err := os.Stat(arg)
+		if err != nil {
+			return ""
+		}
+
+		if info.IsDir() {
+			return arg
+		}
+
+		return filepath.Dir(arg)
+	}
+
+	return ""
 }

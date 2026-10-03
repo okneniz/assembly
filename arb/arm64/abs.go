@@ -52,8 +52,9 @@ func (a absArb) Generate() iter.Seq[AbsParams] {
 }
 
 func (a absArb) Shrink(p AbsParams) iter.Seq[AbsParams] {
-	var out []AbsParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]AbsParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAbsParams(s))
 	}
 

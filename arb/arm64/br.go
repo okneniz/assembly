@@ -31,6 +31,7 @@ func (p BrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p BrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type brGen struct {
 	rnd *rand.Rand
 }
 
-func newBrGen(rnd *rand.Rand) brGen {
-	return brGen{rnd: rnd}
-}
-
 // Br — an arbitrary br.
 func Br(rnd *rand.Rand) ohsnap.Arbitrary[BrParams] {
 	return newBrGen(rnd)
+}
+
+func newBrGen(rnd *rand.Rand) brGen {
+	return brGen{rnd: rnd}
 }
 
 func (g brGen) Generate() iter.Seq[BrParams] {

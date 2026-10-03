@@ -18,11 +18,6 @@ type Machine struct {
 	console *os.File // the write end of the console pipe (qemu's side)
 }
 
-// Conn is the gdbstub connection: the transport of the rsp session.
-func (m *Machine) Conn() net.Conn {
-	return m.conn
-}
-
 // Close tears the machine down and removes its temp image. A second
 // Close is an error - the session owns the lifecycle. A machine that
 // powered itself off closed the connection from the far side and left
@@ -56,6 +51,11 @@ func (m *Machine) Close() error {
 	}
 
 	return errors.Join(errs...)
+}
+
+// Conn is the gdbstub connection: the transport of the rsp session.
+func (m *Machine) Conn() net.Conn {
+	return m.conn
 }
 
 // isKillExit reports whether the Wait error is the exit of a process

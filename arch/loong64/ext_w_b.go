@@ -12,13 +12,13 @@ type ExtWB struct {
 	rd, rj uint8
 }
 
-func (i ExtWB) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ext.w.b %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i ExtWB) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ext.w.b"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i ExtWB) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ext.w.b %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

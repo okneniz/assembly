@@ -8,16 +8,6 @@ import (
 	"github.com/okneniz/assembly/disasm"
 )
 
-// code15v - a validated ui15 code; a validation error fails the test.
-func code15v(t *testing.T, v int64) Code15 {
-	t.Helper()
-
-	c, err := New().Code15(v)
-	require.NoError(t, err)
-
-	return c
-}
-
 // TestBranchScaledOffsetErrors - the encPs2 error branch of every
 // word-scaled offset instruction (alignment, range).
 func TestBranchScaledOffsetErrors(t *testing.T) {
@@ -99,4 +89,14 @@ func TestLateFilesEncodeError(t *testing.T) {
 		_, err := tc.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", tc.mnem)
 	}
+}
+
+// code15v - a validated ui15 code; a validation error fails the test.
+func code15v(t *testing.T, v int64) Code15 {
+	t.Helper()
+
+	c, err := New().Code15(v)
+	require.NoError(t, err)
+
+	return c
 }

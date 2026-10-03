@@ -31,6 +31,7 @@ func (p BlrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p BlrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type blrGen struct {
 	rnd *rand.Rand
 }
 
-func newBlrGen(rnd *rand.Rand) blrGen {
-	return blrGen{rnd: rnd}
-}
-
 // Blr — an arbitrary blr.
 func Blr(rnd *rand.Rand) ohsnap.Arbitrary[BlrParams] {
 	return newBlrGen(rnd)
+}
+
+func newBlrGen(rnd *rand.Rand) blrGen {
+	return blrGen{rnd: rnd}
 }
 
 func (g blrGen) Generate() iter.Seq[BlrParams] {

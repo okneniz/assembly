@@ -35,6 +35,11 @@ func (s Symbol) Bind() SymbolBind {
 	return SymbolBind(s.Info >> 4)
 }
 
+// SectionIndexName describes a special section index; "" for a regular one.
+func (s Symbol) SectionIndexName() string {
+	return shndxName(s.Shndx)
+}
+
 // Type returns the symbol type (the low nibble of st_info).
 func (s Symbol) Type() SymbolType {
 	return SymbolType(s.Info & 0xf)
@@ -43,11 +48,6 @@ func (s Symbol) Type() SymbolType {
 // Visibility returns the symbol visibility (the low 2 bits of st_other).
 func (s Symbol) Visibility() SymbolVisibility {
 	return SymbolVisibility(s.Other & 3)
-}
-
-// SectionIndexName describes a special section index; "" for a regular one.
-func (s Symbol) SectionIndexName() string {
-	return shndxName(s.Shndx)
 }
 
 const (
@@ -201,9 +201,11 @@ func (f *File) parseSymbols(typ SectionType) ([]Symbol, error) {
 func u16(b []byte, order binary.ByteOrder) uint16 {
 	return order.Uint16(b)
 }
+
 func u32(b []byte, order binary.ByteOrder) uint32 {
 	return order.Uint32(b)
 }
+
 func u64(b []byte, order binary.ByteOrder) uint64 {
 	return order.Uint64(b)
 }

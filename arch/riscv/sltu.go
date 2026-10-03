@@ -12,18 +12,18 @@ type Sltu struct {
 	rd, rs1, rs2 string
 }
 
+func (i Sltu) Encode(w io.Writer, o EncOpts) (int64, error) {
+	word := riscvEncodings["sltu"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
+
+	return writeWord(w, word)
+}
+
 func (i Sltu) ObjDump(_ disasm.ViewCtx) string {
 	if i.rs1 == "zero" {
 		return fmt.Sprintf("snez %s, %s", i.rd, i.rs2)
 	}
 
 	return fmt.Sprintf("sltu %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
-func (i Sltu) Encode(w io.Writer, o EncOpts) (int64, error) {
-	word := riscvEncodings["sltu"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
-
-	return writeWord(w, word)
 }
 
 func newSltu(ops []Op) (Instr, error) {

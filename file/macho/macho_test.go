@@ -23,85 +23,12 @@ import (
 	"github.com/okneniz/assembly/file/macho"
 )
 
-func corpus(t *testing.T) []string {
-	t.Helper()
-	entries, err := os.ReadDir("testdata")
-	if err != nil {
-		t.Skipf("no testdata: %v", err)
-	}
-
-	var out []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			out = append(out, filepath.Join("testdata", e.Name()))
-		}
-	}
-
-	if len(out) == 0 {
-		t.Skip("testdata is empty")
-	}
-
-	return out
-}
-
 // sysCorpus is system binaries (not committed; skipped if unavailable or
 // not Mach-O - on a non-macOS host /bin/ls exists but is an ELF).
 var sysCorpus = []string{
 	"/bin/ls",
 	"/usr/bin/otool",
 	"/usr/lib/dyld",
-}
-
-// isMacho - whether the file starts with a Mach-O or FAT magic (both byte
-// orders are accepted, so the CIGAM forms are covered too).
-func isMacho(t *testing.T, path string) bool {
-	t.Helper()
-	var buf [4]byte
-	f, err := os.Open(path)
-	if err != nil {
-		return false
-	}
-
-	defer func() {
-		require.NoError(t, f.Close())
-	}()
-
-	if _, err := io.ReadFull(f, buf[:]); err != nil {
-		return false
-	}
-
-	le := binary.LittleEndian.Uint32(buf[:])
-	be := binary.BigEndian.Uint32(buf[:])
-	for _, m := range []uint32{macho.MH_MAGIC, macho.MH_MAGIC_64, macho.FAT_MAGIC, macho.FAT_MAGIC_64} {
-		if le == m || be == m {
-			return true
-		}
-	}
-
-	return false
-}
-
-// stdOpen opens the file via stdlib; for FAT archives it takes the arm64
-// slice (stdlib Open does not read fats - only NewFatFile).
-func stdOpen(t *testing.T, path string) *stdmacho.File {
-	t.Helper()
-	f, err := stdmacho.Open(path)
-	if err == nil {
-		return f
-	}
-
-	r, oerr := os.Open(path)
-	require.NoError(t, oerr, "stdlib: %v", err)
-	fat, ferr := stdmacho.NewFatFile(r)
-	require.NoError(t, ferr, "stdlib: %v", err)
-	for i := range fat.Arches {
-		if fat.Arches[i].Cpu == stdmacho.CpuArm64 {
-			return fat.Arches[i].File
-		}
-	}
-
-	require.Fail(t, "stdlib: no arm64 slice in FAT")
-	return nil
 }
 
 // TestDiffHeader compares headers.
@@ -481,90 +408,11 @@ func TestDiffRelocs(t *testing.T) {
 	}
 }
 
-// systemArm64 - a thin arm64e slice of a real system binary (modern macOS
-// binaries use chained fixups - the only easy access to real
-// LC_DYLD_CHAINED_FIXUPS in the corpus). Committed to testdata; regenerated
-// by the file-fixtures make target on a Mac.
-func systemArm64(t *testing.T) string {
-	t.Helper()
-	path := filepath.Join("testdata", "ls-arm64e")
-	if _, err := os.Stat(path); err != nil {
-		t.Skip("no ls-arm64e fixture - regenerate on macOS (see file-fixtures)")
-	}
-
-	return path
-}
-
-// llvmObjdumpMacho runs llvm-objdump --macho with option opt; skips when
-// the tool is missing.
-func llvmObjdumpMacho(t *testing.T, opt, path string) string {
-	t.Helper()
-	tool, err := exec.LookPath("llvm-objdump")
-	if err != nil {
-		tool = "/opt/homebrew/opt/llvm/bin/llvm-objdump"
-		if _, serr := os.Stat(tool); serr != nil {
-			t.Skip("llvm-objdump unavailable")
-		}
-	}
-
-	out, err := exec.CommandContext(context.Background(), tool, "--macho", opt, path).Output()
-	if err != nil {
-		t.Skipf("llvm-objdump %s: %v", opt, err)
-	}
-
-	return string(out)
-}
-
 // bindLine is a row of the llvm-objdump bind table.
 type bindLine struct {
 	addr uint64
 	sym  string
 	add  int64
-}
-
-func newBindLine(addr uint64, sym string, add int64) bindLine {
-	return bindLine{
-		addr: addr,
-		sym:  sym,
-		add:  add,
-	}
-}
-
-// parseBindLines parses the output of --bind/--lazy-bind/--weak-bind:
-// "segment section address type addend dylib symbol".
-func parseBindLines(out string) []bindLine {
-	var res []bindLine
-	for line := range strings.SplitSeq(out, "\n") {
-		f := strings.Fields(line)
-		if len(f) < 6 || !strings.HasPrefix(f[2], "0x") {
-			continue
-		}
-
-		addr, err := strconv.ParseUint(strings.TrimPrefix(f[2], "0x"), 16, 64)
-		if err != nil {
-			continue
-		}
-
-		// A non-numeric addend field is treated as zero.
-		add := int64(0)
-		if v, err := strconv.ParseInt(f[4], 10, 64); err == nil {
-			add = v
-		}
-
-		res = append(res, newBindLine(addr, f[len(f)-1], add))
-	}
-
-	return res
-}
-
-func diffBinds(t *testing.T, ours []macho.Bind, llvmOut string, what string) {
-	t.Helper()
-	want := parseBindLines(llvmOut)
-	require.Len(t, ours, len(want), "%s: number of entries", what)
-	for i := range want {
-		require.Equal(t, want[i].addr, ours[i].Addr, "%s[%d]: addr", what, i)
-		require.Equal(t, want[i].sym, ours[i].SymName, "%s[%d] (%#x)", what, i, ours[i].Addr)
-	}
 }
 
 // TestDyldStreamsOnSystemBin - dyld_info streams on a modern system binary
@@ -891,6 +739,158 @@ func TestMutationSweep(t *testing.T) {
 				}
 			}()
 		}
+	}
+}
+
+func corpus(t *testing.T) []string {
+	t.Helper()
+	entries, err := os.ReadDir("testdata")
+	if err != nil {
+		t.Skipf("no testdata: %v", err)
+	}
+
+	var out []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			out = append(out, filepath.Join("testdata", e.Name()))
+		}
+	}
+
+	if len(out) == 0 {
+		t.Skip("testdata is empty")
+	}
+
+	return out
+}
+
+// isMacho - whether the file starts with a Mach-O or FAT magic (both byte
+// orders are accepted, so the CIGAM forms are covered too).
+func isMacho(t *testing.T, path string) bool {
+	t.Helper()
+	var buf [4]byte
+	f, err := os.Open(path)
+	if err != nil {
+		return false
+	}
+
+	defer func() {
+		require.NoError(t, f.Close())
+	}()
+
+	if _, err := io.ReadFull(f, buf[:]); err != nil {
+		return false
+	}
+
+	le := binary.LittleEndian.Uint32(buf[:])
+	be := binary.BigEndian.Uint32(buf[:])
+	for _, m := range []uint32{macho.MH_MAGIC, macho.MH_MAGIC_64, macho.FAT_MAGIC, macho.FAT_MAGIC_64} {
+		if le == m || be == m {
+			return true
+		}
+	}
+
+	return false
+}
+
+// stdOpen opens the file via stdlib; for FAT archives it takes the arm64
+// slice (stdlib Open does not read fats - only NewFatFile).
+func stdOpen(t *testing.T, path string) *stdmacho.File {
+	t.Helper()
+	f, err := stdmacho.Open(path)
+	if err == nil {
+		return f
+	}
+
+	r, oerr := os.Open(path)
+	require.NoError(t, oerr, "stdlib: %v", err)
+	fat, ferr := stdmacho.NewFatFile(r)
+	require.NoError(t, ferr, "stdlib: %v", err)
+	for i := range fat.Arches {
+		if fat.Arches[i].Cpu == stdmacho.CpuArm64 {
+			return fat.Arches[i].File
+		}
+	}
+
+	require.Fail(t, "stdlib: no arm64 slice in FAT")
+	return nil
+}
+
+// systemArm64 - a thin arm64e slice of a real system binary (modern macOS
+// binaries use chained fixups - the only easy access to real
+// LC_DYLD_CHAINED_FIXUPS in the corpus). Committed to testdata; regenerated
+// by the file-fixtures make target on a Mac.
+func systemArm64(t *testing.T) string {
+	t.Helper()
+	path := filepath.Join("testdata", "ls-arm64e")
+	if _, err := os.Stat(path); err != nil {
+		t.Skip("no ls-arm64e fixture - regenerate on macOS (see file-fixtures)")
+	}
+
+	return path
+}
+
+// llvmObjdumpMacho runs llvm-objdump --macho with option opt; skips when
+// the tool is missing.
+func llvmObjdumpMacho(t *testing.T, opt, path string) string {
+	t.Helper()
+	tool, err := exec.LookPath("llvm-objdump")
+	if err != nil {
+		tool = "/opt/homebrew/opt/llvm/bin/llvm-objdump"
+		if _, serr := os.Stat(tool); serr != nil {
+			t.Skip("llvm-objdump unavailable")
+		}
+	}
+
+	out, err := exec.CommandContext(context.Background(), tool, "--macho", opt, path).Output()
+	if err != nil {
+		t.Skipf("llvm-objdump %s: %v", opt, err)
+	}
+
+	return string(out)
+}
+
+func newBindLine(addr uint64, sym string, add int64) bindLine {
+	return bindLine{
+		addr: addr,
+		sym:  sym,
+		add:  add,
+	}
+}
+
+// parseBindLines parses the output of --bind/--lazy-bind/--weak-bind:
+// "segment section address type addend dylib symbol".
+func parseBindLines(out string) []bindLine {
+	var res []bindLine
+	for line := range strings.SplitSeq(out, "\n") {
+		f := strings.Fields(line)
+		if len(f) < 6 || !strings.HasPrefix(f[2], "0x") {
+			continue
+		}
+
+		addr, err := strconv.ParseUint(strings.TrimPrefix(f[2], "0x"), 16, 64)
+		if err != nil {
+			continue
+		}
+
+		// A non-numeric addend field is treated as zero.
+		add := int64(0)
+		if v, err := strconv.ParseInt(f[4], 10, 64); err == nil {
+			add = v
+		}
+
+		res = append(res, newBindLine(addr, f[len(f)-1], add))
+	}
+
+	return res
+}
+
+func diffBinds(t *testing.T, ours []macho.Bind, llvmOut string, what string) {
+	t.Helper()
+	want := parseBindLines(llvmOut)
+	require.Len(t, ours, len(want), "%s: number of entries", what)
+	for i := range want {
+		require.Equal(t, want[i].addr, ours[i].Addr, "%s[%d]: addr", what, i)
+		require.Equal(t, want[i].sym, ours[i].SymName, "%s[%d] (%#x)", what, i, ours[i].Addr)
 	}
 }
 

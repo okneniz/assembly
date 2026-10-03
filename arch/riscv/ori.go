@@ -13,10 +13,6 @@ type Ori struct {
 	imm     imm
 }
 
-func (i Ori) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ori %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Ori) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -26,6 +22,10 @@ func (i Ori) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, riscvEncodings["ori"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|bits)
+}
+
+func (i Ori) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ori %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 func newOri(ops []Op) (Instr, error) {

@@ -22,10 +22,6 @@ func cSd(rs1, rs2 string, off int64) Sd {
 	}
 }
 
-func (i Sd) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
-}
-
 func (i Sd) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -51,6 +47,10 @@ func (i Sd) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Sd) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sd %s, %s(%s)", i.rs2, i.off.text(), i.rs1)
 }
 
 func newSd(ops []Op) (Instr, error) {

@@ -21,6 +21,30 @@ type benchCtor struct {
 	text string
 }
 
+// BenchmarkParse decodes the whole buffer per iteration (combinator
+// assembly included - that is how the consumer calls Parse). The instr/s
+// metric is the decoder throughput; the reference point is 1M instr/s.
+func BenchmarkParse(b *testing.B) {
+	const repeats = 8
+
+	words := benchWordsAll(b)
+	data := benchData(words, repeats)
+
+	b.ReportAllocs()
+	b.ResetTimer()
+
+	start := time.Now()
+	for range b.N {
+		if _, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data)); err != nil {
+			b.Fatal(err)
+		}
+	}
+
+	elapsed := time.Since(start).Seconds()
+
+	b.ReportMetric(float64(len(data)/4)*float64(b.N)/elapsed, "instr/s")
+}
+
 func benchCtorOf(in Instr) benchCtor {
 	return benchCtor{
 		kind: reflect.TypeOf(in),
@@ -158,28 +182,4 @@ func benchData(words []uint32, repeats int) []byte {
 	}
 
 	return data
-}
-
-// BenchmarkParse decodes the whole buffer per iteration (combinator
-// assembly included - that is how the consumer calls Parse). The instr/s
-// metric is the decoder throughput; the reference point is 1M instr/s.
-func BenchmarkParse(b *testing.B) {
-	const repeats = 8
-
-	words := benchWordsAll(b)
-	data := benchData(words, repeats)
-
-	b.ReportAllocs()
-	b.ResetTimer()
-
-	start := time.Now()
-	for range b.N {
-		if _, err := MakeDecoder()(parsec.Stateless{}, bytes.Buffer(data)); err != nil {
-			b.Fatal(err)
-		}
-	}
-
-	elapsed := time.Since(start).Seconds()
-
-	b.ReportMetric(float64(len(data)/4)*float64(b.N)/elapsed, "instr/s")
 }

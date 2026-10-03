@@ -12,53 +12,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// assemble - Build+Assemble with the checks every twin test needs.
-func assemble(t *testing.T, p *Program) *prog.Result {
-	t.Helper()
-
-	bin, buildErrs := p.Build()
-	require.Empty(t, buildErrs)
-
-	res := bin.Assemble(0)
-	require.Empty(t, res.Errs)
-
-	return res
-}
-
-// words - assembled code as little-endian words.
-func words(b []byte) []uint32 {
-	out := make([]uint32, len(b)/4)
-	for i := range out {
-		out[i] = binary.LittleEndian.Uint32(b[i*4:])
-	}
-
-	return out
-}
-
-// enc - the word of a directly built instruction (the NoRVC form the
-// chain programs encode in): the oracle the twins are byte-compared
-// against. Panics on an encode error - the oracle operands are valid
-// by construction (the pre-minted-reg pattern of regs.go).
-func enc(i arch.Instr) uint32 {
-	var buf bytes.Buffer
-	if _, err := i.Encode(&buf, arch.EncOpts{NoRVC: true}); err != nil {
-		panic(err)
-	}
-
-	return binary.LittleEndian.Uint32(buf.Bytes())
-}
-
-// offv - a validated load/store offset for the oracle side. Panics on
-// a range error - the values below are valid by construction.
-func offv(v int64) arch.Off {
-	o, err := arch.New().Off(v)
-	if err != nil {
-		panic(err)
-	}
-
-	return o
-}
-
 func TestTwinsArithmetic(t *testing.T) {
 	res := assemble(t, New(unit.New()).
 		Add(T0, T1, T2).
@@ -394,4 +347,51 @@ func TestTwinsErrors(t *testing.T) {
 	errs := bin.Assemble(0).Errs
 	require.Len(t, errs, 1)
 	require.Contains(t, errs[0].Error(), "nowhere")
+}
+
+// assemble - Build+Assemble with the checks every twin test needs.
+func assemble(t *testing.T, p *Program) *prog.Result {
+	t.Helper()
+
+	bin, buildErrs := p.Build()
+	require.Empty(t, buildErrs)
+
+	res := bin.Assemble(0)
+	require.Empty(t, res.Errs)
+
+	return res
+}
+
+// words - assembled code as little-endian words.
+func words(b []byte) []uint32 {
+	out := make([]uint32, len(b)/4)
+	for i := range out {
+		out[i] = binary.LittleEndian.Uint32(b[i*4:])
+	}
+
+	return out
+}
+
+// enc - the word of a directly built instruction (the NoRVC form the
+// chain programs encode in): the oracle the twins are byte-compared
+// against. Panics on an encode error - the oracle operands are valid
+// by construction (the pre-minted-reg pattern of regs.go).
+func enc(i arch.Instr) uint32 {
+	var buf bytes.Buffer
+	if _, err := i.Encode(&buf, arch.EncOpts{NoRVC: true}); err != nil {
+		panic(err)
+	}
+
+	return binary.LittleEndian.Uint32(buf.Bytes())
+}
+
+// offv - a validated load/store offset for the oracle side. Panics on
+// a range error - the values below are valid by construction.
+func offv(v int64) arch.Off {
+	o, err := arch.New().Off(v)
+	if err != nil {
+		panic(err)
+	}
+
+	return o
 }

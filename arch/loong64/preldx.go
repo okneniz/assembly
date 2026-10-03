@@ -14,13 +14,13 @@ type Preldx struct {
 	hint   imm
 }
 
-func (i Preldx) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("preldx %s, %s, %s", i.hint.text(), laRegName(i.rj), laRegName(i.rk))
-}
-
 func (i Preldx) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["preldx"][0] |
 		uint32(i.rj)<<5 | uint32(i.rk)<<10 | scatterU(i.hint.val, 0, 5)
 
 	return writeWord(w, word)
+}
+
+func (i Preldx) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("preldx %s, %s, %s", i.hint.text(), laRegName(i.rj), laRegName(i.rk))
 }

@@ -32,6 +32,15 @@ func NewCmnParams(rn arm64.Reg, rm arm64.Reg, imm int64, sh bool, isImm bool) Cm
 	}
 }
 
+func (p CmnParams) Instr() arm64.Instr {
+	in, err := instrOfText(p.String())
+	if err != nil {
+		return nil // unreachable: fields are produced by a valid generator/shrink
+	}
+
+	return in
+}
+
 func (p CmnParams) String() string {
 	if !p.IsImm {
 		return "cmn " + p.Rn.String() + ", " + p.Rm.String()
@@ -44,27 +53,18 @@ func (p CmnParams) String() string {
 	return "cmn " + p.Rn.String() + ", #" + itoa(p.Imm)
 }
 
-func (p CmnParams) Instr() arm64.Instr {
-	in, err := instrOfText(p.String())
-	if err != nil {
-		return nil // unreachable: fields are produced by a valid generator/shrink
-	}
-
-	return in
-}
-
 // cmnGen — generator for cmn: same-width registers, immediate 0..4095.
 type cmnGen struct {
 	rnd *rand.Rand
 }
 
-func newCmnGen(rnd *rand.Rand) cmnGen {
-	return cmnGen{rnd: rnd}
-}
-
 // Cmn — an arbitrary cmn.
 func Cmn(rnd *rand.Rand) ohsnap.Arbitrary[CmnParams] {
 	return newCmnGen(rnd)
+}
+
+func newCmnGen(rnd *rand.Rand) cmnGen {
+	return cmnGen{rnd: rnd}
 }
 
 func (g cmnGen) Generate() iter.Seq[CmnParams] {

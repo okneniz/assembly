@@ -36,6 +36,7 @@ func (p LslRegParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p LslRegParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -45,13 +46,13 @@ type lslRegGen struct {
 	rnd *rand.Rand
 }
 
-func newLslRegGen(rnd *rand.Rand) lslRegGen {
-	return lslRegGen{rnd: rnd}
-}
-
 // LslReg — an arbitrary lsl (register).
 func LslReg(rnd *rand.Rand) ohsnap.Arbitrary[LslRegParams] {
 	return newLslRegGen(rnd)
+}
+
+func newLslRegGen(rnd *rand.Rand) lslRegGen {
+	return lslRegGen{rnd: rnd}
 }
 
 func (g lslRegGen) Generate() iter.Seq[LslRegParams] {
@@ -66,8 +67,9 @@ func (g lslRegGen) Generate() iter.Seq[LslRegParams] {
 }
 
 func (g lslRegGen) Shrink(p LslRegParams) iter.Seq[LslRegParams] {
-	var out []LslRegParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]LslRegParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewLslRegParams(r, p.Rn, p.Rm))
 	}
 

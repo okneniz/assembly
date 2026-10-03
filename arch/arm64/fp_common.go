@@ -10,30 +10,16 @@ const (
 	kX               // x0
 )
 
-// fpReg — the register name by fpKind.
-func fpReg(n uint32, k fpKind) string {
-	switch k {
-	case kS:
-		return fpRegNameS(n)
-	case kD:
-		return fpRegNameD(n)
-	case kW:
-		return regNameW(n)
-	default:
-		return regNameX(n)
-	}
-}
-
 // fpMatch — the encoding of an FP form by the kind of the stored
 // register name (d/s), the FP twin of sfMatch. The s form is 0 only in
 // families without one (there are none today, but the shape stays
 // symmetric with sfMatch).
-func fpMatch(rd string, matchD, matchS uint32) (uint32, error) {
+func fpMatch(rd string, matchD, matchS uint32) uint32 {
 	if rd[0] == 'd' {
-		return matchD, nil
+		return matchD
 	}
 
-	return matchS, nil
+	return matchS
 }
 
 // fpGprMatch — the encoding of an int↔FP conversion by the kinds of

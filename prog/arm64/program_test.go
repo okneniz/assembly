@@ -1,7 +1,6 @@
 package arm64
 
 import (
-	"github.com/okneniz/assembly/unit"
 	"os"
 	"runtime"
 	"testing"
@@ -9,35 +8,8 @@ import (
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/unit"
 )
-
-// callerPos - a caller-based resolver for the tests: invoked inside a
-// chain method, two frames up is the code calling the chain (this file).
-func callerPos() unit.Pos {
-	_, file, line, _ := runtime.Caller(2)
-	return unit.NewPos(file, line)
-}
-
-// hello-macos written on the chain: the Go counterpart of
-// tests/examples/hello-asm/hello-macos.s, byte-identical when assembled.
-func helloMacOS() *Program {
-	return New(unit.New()).
-		WithPos(callerPos).
-		Label("start").
-		Movz(X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
-		Adr(X1, "msg").                        // ... buf - the string address
-		Movz(X2, int64(len(msg)), arch.Hw0).   // ... len
-		Movz(X16, sysClassUnix>>16, arch.Hw1). // x16 = 0x2000000 | ...
-		Movk(X16, sysWrite, arch.Hw0).         // ... 0x4 = write
-		Svc(trapMach).
-		Movz(X0, 0, arch.Hw0). // exit(return code = 0)
-		Movz(X16, sysClassUnix>>16, arch.Hw1).
-		Movk(X16, sysExit, arch.Hw0).
-		Svc(trapMach).
-		Label("msg").
-		Ascii(msg).
-		Entry("start")
-}
 
 const (
 	msg          = "hello world\n"
@@ -154,6 +126,34 @@ func TestWithPosSwap(t *testing.T) {
 	require.Equal(t, unit.NewPos("macro.go", 1), res.Lines[0].Pos)
 	require.Contains(t, res.Lines[1].Pos.File, "prog/arm64/program_test.go")
 	require.Positive(t, res.Lines[1].Pos.Line)
+}
+
+// callerPos - a caller-based resolver for the tests: invoked inside a
+// chain method, two frames up is the code calling the chain (this file).
+func callerPos() unit.Pos {
+	_, file, line, _ := runtime.Caller(2)
+	return unit.NewPos(file, line)
+}
+
+// hello-macos written on the chain: the Go counterpart of
+// tests/examples/hello-asm/hello-macos.s, byte-identical when assembled.
+func helloMacOS() *Program {
+	return New(unit.New()).
+		WithPos(callerPos).
+		Label("start").
+		Movz(X0, fdStdout, arch.Hw0).          // write(fd=stdout, ...)
+		Adr(X1, "msg").                        // ... buf - the string address
+		Movz(X2, int64(len(msg)), arch.Hw0).   // ... len
+		Movz(X16, sysClassUnix>>16, arch.Hw1). // x16 = 0x2000000 | ...
+		Movk(X16, sysWrite, arch.Hw0).         // ... 0x4 = write
+		Svc(trapMach).
+		Movz(X0, 0, arch.Hw0). // exit(return code = 0)
+		Movz(X16, sysClassUnix>>16, arch.Hw1).
+		Movk(X16, sysExit, arch.Hw0).
+		Svc(trapMach).
+		Label("msg").
+		Ascii(msg).
+		Entry("start")
 }
 
 func le32(b []byte) uint32 {

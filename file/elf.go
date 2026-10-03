@@ -13,10 +13,6 @@ type elfFormat struct {
 	f *elf.File
 }
 
-func (x elfFormat) Name() string {
-	return "ELF"
-}
-
 func (x elfFormat) ArchKind() ArchKind {
 	switch x.f.Header().Machine {
 	case elf.EM_AARCH64:
@@ -30,14 +26,13 @@ func (x elfFormat) ArchKind() ArchKind {
 	}
 }
 
-func (x elfFormat) Sections() ([]Section, error) {
-	src := x.f.Sections()
-	out := make([]Section, 0, len(src))
-	for _, s := range src {
-		out = append(out, *NewSection(s.Name, "", s.Addr, s.Off, s.Size, nil))
-	}
+// CodeSection returns the code section (.text).
+func (x elfFormat) CodeSection() (*Section, error) {
+	return x.Section(".text")
+}
 
-	return out, nil
+func (x elfFormat) Name() string {
+	return "ELF"
 }
 
 func (x elfFormat) Section(name string) (*Section, error) {
@@ -54,7 +49,12 @@ func (x elfFormat) Section(name string) (*Section, error) {
 	return NewSection(s.Name, "", s.Addr, s.Off, s.Size, data), nil
 }
 
-// CodeSection returns the code section (.text).
-func (x elfFormat) CodeSection() (*Section, error) {
-	return x.Section(".text")
+func (x elfFormat) Sections() ([]Section, error) {
+	src := x.f.Sections()
+	out := make([]Section, 0, len(src))
+	for _, s := range src {
+		out = append(out, *NewSection(s.Name, "", s.Addr, s.Off, s.Size, nil))
+	}
+
+	return out, nil
 }

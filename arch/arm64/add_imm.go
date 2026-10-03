@@ -74,23 +74,6 @@ const (
 	AddImmW uint32 = 0x11000000
 )
 
-func (i AddImm) ObjDump(_ disasm.ViewCtx) string {
-	rd := addSubRegName(i.rdNum, i.isf, false)
-	rn := addSubRegName(i.rnNum, i.isf, false)
-	imm := fmt.Sprintf("#0x%x", i.imm12)
-	// LLVM alias: imm=0 and (rd≠rn or an sp/wsp pair — mov sp, sp);
-	// 32-bit sp-sp stays add
-	if !i.shift && i.imm12 == 0 && (i.rdNum != i.rnNum || (i.rdNum == 31 && i.isf)) {
-		return fmt.Sprintf("mov %s, %s", rd, rn)
-	}
-
-	if i.shift {
-		return fmt.Sprintf("add %s, %s, %s, lsl #12", rd, rn, imm)
-	}
-
-	return fmt.Sprintf("add %s, %s, %s", rd, rn, imm)
-}
-
 func (i AddImm) Encode(w io.Writer) (int64, error) {
 	match := AddImmX
 	if !i.isf {
@@ -107,4 +90,21 @@ func (i AddImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
+}
+
+func (i AddImm) ObjDump(_ disasm.ViewCtx) string {
+	rd := addSubRegName(i.rdNum, i.isf, false)
+	rn := addSubRegName(i.rnNum, i.isf, false)
+	imm := fmt.Sprintf("#0x%x", i.imm12)
+	// LLVM alias: imm=0 and (rd≠rn or an sp/wsp pair — mov sp, sp);
+	// 32-bit sp-sp stays add
+	if !i.shift && i.imm12 == 0 && (i.rdNum != i.rnNum || (i.rdNum == 31 && i.isf)) {
+		return fmt.Sprintf("mov %s, %s", rd, rn)
+	}
+
+	if i.shift {
+		return fmt.Sprintf("add %s, %s, %s, lsl #12", rd, rn, imm)
+	}
+
+	return fmt.Sprintf("add %s, %s, %s", rd, rn, imm)
 }

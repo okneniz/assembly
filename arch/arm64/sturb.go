@@ -61,10 +61,10 @@ func newSturb(rt, rn Reg, off Off) (Sturb, error) {
 
 const sturbEnc uint32 = 0x38000000 // sturb wt, [xn, #±imm9]
 
-func (i Sturb) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("sturb %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Sturb) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "sturb")
+}
+
+func (i Sturb) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("sturb %s, %s", i.rt, i.lsText(ctx))
 }

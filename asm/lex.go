@@ -28,13 +28,21 @@ func makeIdentParser() parsec.Combinator[rune, parsecstrings.Position, string, p
 				4,
 				"identifier start",
 				parsecstrings.Try(
-					parsecstrings.Satisfy[parsec.Stateless]("identifier start", true, expr.IsIdentStart),
+					parsecstrings.Satisfy[parsec.Stateless](
+						"identifier start",
+						true,
+						expr.IsIdentStart,
+					),
 				),
 			),
 			parsecstrings.Many(
 				8,
 				parsecstrings.Try(
-					parsecstrings.Satisfy[parsec.Stateless]("identifier char", true, expr.IsIdentCont),
+					parsecstrings.Satisfy[parsec.Stateless](
+						"identifier char",
+						true,
+						expr.IsIdentCont,
+					),
 				),
 			),
 		),

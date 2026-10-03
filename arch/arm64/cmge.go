@@ -33,10 +33,6 @@ func newCmge(rd, rn, rm VReg, arr string) (Cmge, error) {
 
 const cmgeEnc uint32 = 236993536 // cmge vd, vn, vm (Q=0, size=0 form)
 
-func (i Cmge) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("cmge.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Cmge) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Cmge) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, cmgeEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
+}
+
+func (i Cmge) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("cmge.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

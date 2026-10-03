@@ -52,8 +52,9 @@ func (a shlArb) Generate() iter.Seq[ShlParams] {
 }
 
 func (a shlArb) Shrink(p ShlParams) iter.Seq[ShlParams] {
-	var out []ShlParams
-	for _, s := range slices.Collect(a.base.Shrink(p.VShiftParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.VShiftParams))
+	out := make([]ShlParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewShlParams(s))
 	}
 

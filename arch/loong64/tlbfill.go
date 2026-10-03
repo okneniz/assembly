@@ -11,10 +11,10 @@ import (
 type Tlbfill struct {
 }
 
-func (i Tlbfill) ObjDump(_ disasm.ViewCtx) string {
-	return "tlbfill"
-}
-
 func (i Tlbfill) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, loongEncodings["tlbfill"][0])
+}
+
+func (i Tlbfill) ObjDump(_ disasm.ViewCtx) string {
+	return "tlbfill"
 }

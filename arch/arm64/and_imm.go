@@ -73,10 +73,6 @@ const andImmX uint32 = 0x92000000
 
 const andImmW uint32 = 0x12000000
 
-func (i AndImm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("and %s, %s, #0x%x", i.rd, i.rn, i.mask())
-}
-
 func (i AndImm) Encode(w io.Writer) (int64, error) {
 	match := andImmX
 	if !i.is64 {
@@ -93,4 +89,8 @@ func (i AndImm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imms<<10|i.immr<<16)
+}
+
+func (i AndImm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("and %s, %s, #0x%x", i.rd, i.rn, i.mask())
 }

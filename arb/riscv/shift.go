@@ -55,16 +55,6 @@ func (p ShiftParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
 
-// shiftMax — the shamt bound of a family: the X forms shift 64-bit
-// registers (0..63), the W forms 32-bit ones (0..31).
-func (p ShiftParams) shiftMax() uint32 {
-	if p.Op == ShiftSlliw || p.Op == ShiftSrliw || p.Op == ShiftSraiw {
-		return 31
-	}
-
-	return 63
-}
-
 // shiftImm — the shamt as the checked Imm12 the Builder takes.
 func (p ShiftParams) shiftImm() riscv.Imm12 {
 	v, err := riscv.New().Imm12(int64(p.Shamt))
@@ -73,6 +63,16 @@ func (p ShiftParams) shiftImm() riscv.Imm12 {
 	}
 
 	return v
+}
+
+// shiftMax — the shamt bound of a family: the X forms shift 64-bit
+// registers (0..63), the W forms 32-bit ones (0..31).
+func (p ShiftParams) shiftMax() uint32 {
+	if p.Op == ShiftSlliw || p.Op == ShiftSrliw || p.Op == ShiftSraiw {
+		return 31
+	}
+
+	return 63
 }
 
 var shiftCalls = [shiftOpCount]func(riscv.Builder, ShiftParams) riscv.Instr{

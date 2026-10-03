@@ -52,8 +52,9 @@ func (a sqrshlArb) Generate() iter.Seq[SqrshlParams] {
 }
 
 func (a sqrshlArb) Shrink(p SqrshlParams) iter.Seq[SqrshlParams] {
-	var out []SqrshlParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]SqrshlParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSqrshlParams(s))
 	}
 

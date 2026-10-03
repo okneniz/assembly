@@ -14,13 +14,13 @@ type LdB struct {
 	imm    imm
 }
 
-func (i LdB) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ld.b %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
-}
-
 func (i LdB) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ld.b"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterS(i.imm.val, 10, 12)
 
 	return writeWord(w, word)
+}
+
+func (i LdB) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ld.b %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

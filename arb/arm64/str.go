@@ -37,6 +37,7 @@ func (p StrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p StrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,13 +49,13 @@ type strGen struct {
 	rnd *rand.Rand
 }
 
-func newStrGen(rnd *rand.Rand) strGen {
-	return strGen{rnd: rnd}
-}
-
 // Str — an arbitrary str (unsigned offset).
 func Str(rnd *rand.Rand) ohsnap.Arbitrary[StrParams] {
 	return newStrGen(rnd)
+}
+
+func newStrGen(rnd *rand.Rand) strGen {
+	return strGen{rnd: rnd}
 }
 
 func (g strGen) Generate() iter.Seq[StrParams] {

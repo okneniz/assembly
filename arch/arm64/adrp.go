@@ -44,11 +44,11 @@ func newAdrp(rd Reg, off int64) (Adrp, error) {
 	}, nil
 }
 
+func (i Adrp) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, 0x90000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
+}
+
 func (i Adrp) ObjDump(ctx disasm.ViewCtx) string {
 	page := int64(ctx.Addr())&^int64(0xFFF) + i.off<<12
 	return fmt.Sprintf("adrp %s, %d ; 0x%x", i.rd, i.off, page)
-}
-
-func (i Adrp) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, 0x90000000|regBitsX(i.rd)|uint32(i.off&3)<<29|uint32(i.off>>2&0x7ffff)<<5)
 }

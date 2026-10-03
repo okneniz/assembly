@@ -52,8 +52,9 @@ func (a fmaxArb) Generate() iter.Seq[FmaxParams] {
 }
 
 func (a fmaxArb) Shrink(p FmaxParams) iter.Seq[FmaxParams] {
-	var out []FmaxParams
-	for _, s := range slices.Collect(a.base.Shrink(p.F3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.F3Params))
+	out := make([]FmaxParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFmaxParams(s))
 	}
 

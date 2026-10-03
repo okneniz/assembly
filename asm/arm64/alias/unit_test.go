@@ -11,13 +11,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// flatPlace places the text at textBase and the data at dataBase.
-func flatPlace(textBase, dataBase uint64) unit.Place {
-	return func(textSize, dataSize, dataMem int) (uint64, uint64) {
-		return textBase, dataBase
-	}
-}
-
 // TestUnitMatchesBytes is the unit-mode oracle: a source without
 // external names assembles to the same bytes as the byte mode (labels,
 // numeric locals, the literal pool, data words, alignment - the whole
@@ -45,7 +38,7 @@ done:
 	errs = AssembleUnit(u, "t.s", src)
 	require.Empty(t, errs, "unit mode")
 
-	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x1000))
 	require.Empty(t, fixed.Errs)
 
 	text, err := fixed.EncodeText()
@@ -84,7 +77,7 @@ _start:
 	u.Bytes(unit.NewPos("c.c", 3), 0, 0, 0, 0, 0, 0, 0, 0)
 	u.Label("kernel_stack")
 
-	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x1000))
 	require.Empty(t, fixed.Errs, "errs: %v", fixed.Errs)
 
 	text, err := fixed.EncodeText()
@@ -105,15 +98,25 @@ _start:
 	require.Equal(t, uint32(0x17FFFFFE), words[2], "b _start")
 
 	require.Equal(t, []byte{0, 0, 0, 0}, text[12:16], "the alignment pad word")
-	require.Equal(t, uint64(0x80000018), binary.LittleEndian.Uint64(text[16:24]), "the pool slot value")
-	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[24:]), "the C nop before kernel_init")
+	require.Equal(
+		t,
+		uint64(0x80000018),
+		binary.LittleEndian.Uint64(text[16:24]),
+		"the pool slot value",
+	)
+	require.Equal(
+		t,
+		uint32(0xD503201F),
+		binary.LittleEndian.Uint32(text[24:]),
+		"the C nop before kernel_init",
+	)
 	require.Equal(t, uint64(0x1018), fixed.Syms["kernel_init"])
 	require.Equal(t, uint64(0x1000), fixed.Syms["_start"])
 
 	// without the C side the externals stay undefined at resolve
 	bare := unit.New()
 	require.Empty(t, AssembleUnit(bare, "head.S", src))
-	bfixed := bare.Resolve(flatPlace(0x1000, 0x80000000))
+	bfixed := bare.Resolve(flatPlace(0x1000))
 	require.NotEmpty(t, bfixed.Errs)
 	require.Contains(t, strings.Join(errStrings(bfixed.Errs), "; "), "kernel_init")
 }
@@ -137,7 +140,7 @@ main:
 	u := unit.New()
 	require.Empty(t, AssembleUnit(u, "t.s", src))
 
-	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x1000))
 	require.Empty(t, fixed.Errs)
 
 	text, err := fixed.EncodeText()
@@ -176,7 +179,7 @@ func TestUnitPoolAlignment(t *testing.T) {
 	errs = AssembleUnit(u, "head.S", src)
 	require.Empty(t, errs, "unit mode")
 
-	fixed := u.Resolve(flatPlace(0x41000000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x41000000))
 	require.Empty(t, fixed.Errs)
 
 	text, err := fixed.EncodeText()
@@ -186,19 +189,19 @@ func TestUnitPoolAlignment(t *testing.T) {
 	require.Len(t, text, 12+4+8, "code + the pad word + the slot")
 	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[0:]))
 	require.Equal(t, uint32(0xD503201F), binary.LittleEndian.Uint32(text[4:]))
-	require.Equal(t, uint32(0x58000053), binary.LittleEndian.Uint32(text[8:]), "ldr x19 -> the slot @+8")
+	require.Equal(
+		t,
+		uint32(0x58000053),
+		binary.LittleEndian.Uint32(text[8:]),
+		"ldr x19 -> the slot @+8",
+	)
 	require.Equal(t, []byte{0, 0, 0, 0}, text[12:16], "the udf #0 pad word")
-	require.Equal(t, uint64(0x1122334455667788), binary.LittleEndian.Uint64(text[16:]), "the slot (LE64)")
-}
-
-// errStrings flattens the errors (resolve or assemble) for matching.
-func errStrings[E interface{ Error() string }](errs []E) []string {
-	out := make([]string, 0, len(errs))
-	for _, e := range errs {
-		out = append(out, e.Error())
-	}
-
-	return out
+	require.Equal(
+		t,
+		uint64(0x1122334455667788),
+		binary.LittleEndian.Uint64(text[16:]),
+		"the slot (LE64)",
+	)
 }
 
 // TestUnitSysOps - the machine.h system-operation idiom in the unit
@@ -226,11 +229,28 @@ func TestUnitSysOps(t *testing.T) {
 	errs = AssembleUnit(u, "t.s", src)
 	require.Empty(t, errs, "unit mode")
 
-	fixed := u.Resolve(flatPlace(0x1000, 0x80000000))
+	fixed := u.Resolve(flatPlace(0x1000))
 	require.Empty(t, fixed.Errs)
 
 	text, err := fixed.EncodeText()
 	require.NoError(t, err)
 	require.Equal(t, res.Sections[0].Data, text, "unit bytes == byte-mode bytes")
 	require.Len(t, text, 44, "eleven words")
+}
+
+// flatPlace places the text at textBase and the data at the 2GB mark.
+func flatPlace(textBase uint64) unit.Place {
+	return func(textSize, dataSize, dataMem int) (uint64, uint64) {
+		return textBase, 0x80000000
+	}
+}
+
+// errStrings flattens the errors (resolve or assemble) for matching.
+func errStrings[E interface{ Error() string }](errs []E) []string {
+	out := make([]string, 0, len(errs))
+	for _, e := range errs {
+		out = append(out, e.Error())
+	}
+
+	return out
 }

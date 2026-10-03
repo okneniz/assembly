@@ -52,8 +52,9 @@ func (a bicArb) Generate() iter.Seq[BicVParams] {
 }
 
 func (a bicArb) Shrink(p BicVParams) iter.Seq[BicVParams] {
-	var out []BicVParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]BicVParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewBicVParams(s))
 	}
 

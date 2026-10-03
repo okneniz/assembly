@@ -20,13 +20,6 @@ type Tail struct {
 	pc     uint64
 }
 
-func (i Tail) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("tail %#x", i.target)
-}
-
-func (i Tail) Len() int {
-	return 4
-}
 func (i Tail) Addr() uint64 {
 	return 0
 } // assembly side: there is no decode address
@@ -38,6 +31,14 @@ func (i Tail) Encode(w io.Writer) (int64, error) {
 	}
 
 	return arch.WriteWord(w, arch.EncodingWord("jal")|bits)
+}
+
+func (i Tail) Len() int {
+	return 4
+}
+
+func (i Tail) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("tail %#x", i.target)
 }
 
 // resolveTail is the evaluator wired to parsing: tail sym.

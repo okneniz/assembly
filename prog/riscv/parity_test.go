@@ -9,38 +9,6 @@ import (
 	arch "github.com/okneniz/assembly/arch/riscv"
 )
 
-// builderInstrs - the instruction methods of the arch Builder (the ones
-// returning arch.Instr; the operand roles Imm12/Imm20/Off drop out by
-// signature) mapped to their operand count - the set the chain twins
-// mirror.
-func builderInstrs() map[string]int {
-	instr := reflect.TypeFor[arch.Instr]()
-	out := map[string]int{}
-
-	builder := reflect.TypeFor[arch.Builder]()
-	for m := range builder.Methods() {
-		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
-			out[m.Name] = m.Type.NumIn() - 1
-		}
-	}
-
-	return out
-}
-
-// untwinable - Builder instruction methods with no chain twin, each for
-// a structural reason: both are arch-side pseudos that predate the
-// no-alias rule.
-// Mv - the c.mv HALFWORD: a 2-byte encoder cannot ride the fixed
-// 4-byte line layout (and mv is a pseudo of addi anyway);
-// JalrReg - the "jalr rs" pseudo (jalr ra, 0(rs)): the real form is
-// Jalr(Ra, rs, 0).
-func untwinable() map[string]bool {
-	return map[string]bool{
-		"Mv":      true,
-		"JalrReg": true,
-	}
-}
-
 func TestBuilderParity(t *testing.T) {
 	// every twin-able instruction method of the Builder has a
 	// same-named chain twin on *Program with the same operand count
@@ -96,5 +64,37 @@ func TestChainMethodsAreTwinsOrDirectives(t *testing.T) {
 				"%s: not a directive, sanctioned macro, or Builder twin (no aliases)", m.Name,
 			)
 		}
+	}
+}
+
+// builderInstrs - the instruction methods of the arch Builder (the ones
+// returning arch.Instr; the operand roles Imm12/Imm20/Off drop out by
+// signature) mapped to their operand count - the set the chain twins
+// mirror.
+func builderInstrs() map[string]int {
+	instr := reflect.TypeFor[arch.Instr]()
+	out := map[string]int{}
+
+	builder := reflect.TypeFor[arch.Builder]()
+	for m := range builder.Methods() {
+		if m.Type.NumOut() >= 1 && m.Type.Out(0) == instr {
+			out[m.Name] = m.Type.NumIn() - 1
+		}
+	}
+
+	return out
+}
+
+// untwinable - Builder instruction methods with no chain twin, each for
+// a structural reason: both are arch-side pseudos that predate the
+// no-alias rule.
+// Mv - the c.mv HALFWORD: a 2-byte encoder cannot ride the fixed
+// 4-byte line layout (and mv is a pseudo of addi anyway);
+// JalrReg - the "jalr rs" pseudo (jalr ra, 0(rs)): the real form is
+// Jalr(Ra, rs, 0).
+func untwinable() map[string]bool {
+	return map[string]bool{
+		"Mv":      true,
+		"JalrReg": true,
 	}
 }

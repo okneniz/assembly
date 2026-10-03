@@ -12,13 +12,13 @@ type CloW struct {
 	rd, rj uint8
 }
 
-func (i CloW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("clo.w %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i CloW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["clo.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i CloW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("clo.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

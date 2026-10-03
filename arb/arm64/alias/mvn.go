@@ -30,10 +30,6 @@ func NewMvnParams(rd arm64.Reg, rm arm64.Reg, sh string, amt int64) MvnParams {
 	}
 }
 
-func (p MvnParams) String() string {
-	return "mvn " + p.Rd.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
-}
-
 func (p MvnParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -43,19 +39,23 @@ func (p MvnParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p MvnParams) String() string {
+	return "mvn " + p.Rd.String() + ", " + p.Rm.String() + shiftSuffix(p.Sh, p.Amt)
+}
+
 // mvnGen — generator for mvn: same-width registers, the shift amount
 // below the register width.
 type mvnGen struct {
 	rnd *rand.Rand
 }
 
-func newMvnGen(rnd *rand.Rand) mvnGen {
-	return mvnGen{rnd: rnd}
-}
-
 // Mvn — an arbitrary mvn.
 func Mvn(rnd *rand.Rand) ohsnap.Arbitrary[MvnParams] {
 	return newMvnGen(rnd)
+}
+
+func newMvnGen(rnd *rand.Rand) mvnGen {
+	return mvnGen{rnd: rnd}
 }
 
 func (g mvnGen) Generate() iter.Seq[MvnParams] {

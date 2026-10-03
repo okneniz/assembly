@@ -38,11 +38,6 @@ func newCbnz(rt Reg, off int64) (Cbnz, error) {
 	}, nil
 }
 
-func (i Cbnz) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	return fmt.Sprintf("cbnz %s, %s", i.rt, target.textHex())
-}
-
 func (i Cbnz) Encode(w io.Writer) (int64, error) {
 	bits, err := offBits(i.off.val, 19)
 	if err != nil {
@@ -60,4 +55,9 @@ func (i Cbnz) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|bits<<5|num)
+}
+
+func (i Cbnz) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("cbnz %s, %s", i.rt, target.textHex())
 }

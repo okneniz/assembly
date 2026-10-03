@@ -23,13 +23,6 @@ type scaledOffArb struct {
 	scale uint32
 }
 
-func newScaledOffArb(rnd *rand.Rand, scale uint32) scaledOffArb {
-	return scaledOffArb{
-		rnd:   rnd,
-		scale: scale,
-	}
-}
-
 // ScaledOff — an arbitrary aligned load/store offset (0..0xfff << scale).
 func ScaledOff(rnd *rand.Rand, scale uint32) ohsnap.Arbitrary[arm64.Off] {
 	return newScaledOffArb(rnd, scale)
@@ -48,10 +41,6 @@ func (a scaledOffArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {
 // unscaledOffArb — an imm9 offset (-256..255), no alignment.
 type unscaledOffArb struct {
 	rnd *rand.Rand
-}
-
-func newUnscaledOffArb(rnd *rand.Rand) unscaledOffArb {
-	return unscaledOffArb{rnd: rnd}
 }
 
 // UnscaledOff — an arbitrary unscaled load/store offset (-256..255).
@@ -85,16 +74,27 @@ type pairOffArb struct {
 	scale uint32
 }
 
-func newPairOffArb(rnd *rand.Rand, scale uint32) pairOffArb {
-	return pairOffArb{
+// PairOff — an arbitrary pair load/store offset (-64..63 << scale).
+func PairOff(rnd *rand.Rand, scale uint32) ohsnap.Arbitrary[arm64.Off] {
+	return newPairOffArb(rnd, scale)
+}
+
+func newScaledOffArb(rnd *rand.Rand, scale uint32) scaledOffArb {
+	return scaledOffArb{
 		rnd:   rnd,
 		scale: scale,
 	}
 }
 
-// PairOff — an arbitrary pair load/store offset (-64..63 << scale).
-func PairOff(rnd *rand.Rand, scale uint32) ohsnap.Arbitrary[arm64.Off] {
-	return newPairOffArb(rnd, scale)
+func newUnscaledOffArb(rnd *rand.Rand) unscaledOffArb {
+	return unscaledOffArb{rnd: rnd}
+}
+
+func newPairOffArb(rnd *rand.Rand, scale uint32) pairOffArb {
+	return pairOffArb{
+		rnd:   rnd,
+		scale: scale,
+	}
 }
 
 func (a pairOffArb) Generate() iter.Seq[arm64.Off] {

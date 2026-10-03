@@ -52,8 +52,9 @@ func (a ushrArb) Generate() iter.Seq[UshrParams] {
 }
 
 func (a ushrArb) Shrink(p UshrParams) iter.Seq[UshrParams] {
-	var out []UshrParams
-	for _, s := range slices.Collect(a.base.Shrink(p.VShiftParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.VShiftParams))
+	out := make([]UshrParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewUshrParams(s))
 	}
 

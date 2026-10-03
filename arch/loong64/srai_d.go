@@ -13,13 +13,13 @@ type SraiD struct {
 	imm    imm
 }
 
-func (i SraiD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("srai.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
-}
-
 func (i SraiD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["srai.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.imm.val, 10, 6)
 
 	return writeWord(w, word)
+}
+
+func (i SraiD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("srai.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.imm.text())
 }

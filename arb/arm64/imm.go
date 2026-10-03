@@ -34,10 +34,6 @@ type offArb struct {
 	rnd *rand.Rand
 }
 
-func newOffArb(rnd *rand.Rand) offArb {
-	return offArb{rnd: rnd}
-}
-
 // Imm12 — an arbitrary imm12 (0..4095).
 func Imm12(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Imm12] {
 	return immArb[arm64.Imm12]{
@@ -86,6 +82,10 @@ func Sh12(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Sh12] {
 // constructors).
 func Off(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Off] {
 	return newOffArb(rnd)
+}
+
+func newOffArb(rnd *rand.Rand) offArb {
+	return offArb{rnd: rnd}
 }
 
 func (a immArb[T]) Generate() iter.Seq[T] {

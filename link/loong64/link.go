@@ -14,11 +14,6 @@ import (
 	"github.com/okneniz/assembly/link"
 )
 
-// deps is the LoongArch64 injection of the link driver.
-func deps() link.Deps {
-	return link.Deps{Parse: pseudo.ParseSourceUnit}
-}
-
 // ELF links the sources into an executable ELF64 at base: a flat image
 // - the text at base, the data past it (the emitter lays the sections
 // back to back, so the data base is base+len(text), no gap), the bss as
@@ -55,4 +50,9 @@ func ELF(sources []link.Source, entry string, base uint64) ([]byte, error) {
 	}
 
 	return file.WriteELF(file.EM_LOONGARCH, 0x43, base, f.Syms[name], sections)
+}
+
+// deps is the LoongArch64 injection of the link driver.
+func deps() link.Deps {
+	return link.Deps{Parse: pseudo.ParseSourceUnit}
 }

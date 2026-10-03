@@ -33,15 +33,8 @@ const (
 	fmaxS uint32 = 0x1E204800 // fmax sd, sn, sm
 )
 
-func (i Fmax) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmax %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Fmax) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fmaxD, fmaxS)
-	if err != nil {
-		return 0, fmt.Errorf("fmax: %w", err)
-	}
+	match := fpMatch(i.rd, fmaxD, fmaxS)
 
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +42,8 @@ func (i Fmax) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Fmax) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmax %s, %s, %s", i.rd, i.rn, i.rm)
 }

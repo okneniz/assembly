@@ -12,13 +12,13 @@ type ExtWH struct {
 	rd, rj uint8
 }
 
-func (i ExtWH) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ext.w.h %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i ExtWH) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["ext.w.h"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i ExtWH) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ext.w.h %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

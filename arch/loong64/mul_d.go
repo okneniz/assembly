@@ -12,13 +12,13 @@ type MulD struct {
 	rd, rj, rk uint8
 }
 
-func (i MulD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mul.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
-}
-
 func (i MulD) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["mul.d"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | uint32(i.rk)<<10
 
 	return writeWord(w, word)
+}
+
+func (i MulD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mul.d %s, %s, %s", laRegName(i.rd), laRegName(i.rj), laRegName(i.rk))
 }

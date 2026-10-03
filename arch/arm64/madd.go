@@ -101,6 +101,15 @@ const (
 	maddW uint32 = 0x1B000000
 )
 
+func (i Madd) Encode(w io.Writer) (int64, error) {
+	match, err := sfMatch(i.rd, maddX, maddW)
+	if err != nil {
+		return 0, fmt.Errorf("madd: %w", err)
+	}
+
+	return msubWrite(w, match, i)
+}
+
 func (i Madd) ObjDump(_ disasm.ViewCtx) string {
 	zr := "xzr"
 	if i.rd[0] == 'w' {
@@ -112,15 +121,6 @@ func (i Madd) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("madd %s, %s, %s, %s", i.rd, i.rn, i.rm, i.ra)
-}
-
-func (i Madd) Encode(w io.Writer) (int64, error) {
-	match, err := sfMatch(i.rd, maddX, maddW)
-	if err != nil {
-		return 0, fmt.Errorf("madd: %w", err)
-	}
-
-	return msubWrite(w, match, i)
 }
 
 // msubWrite - the shared word of the madd/msub family (msub = Madd with the opcode bit).

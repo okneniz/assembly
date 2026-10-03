@@ -36,6 +36,7 @@ func (p AdrpParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AdrpParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -47,16 +48,16 @@ type adrpGen struct {
 	pages ohsnap.Arbitrary[int64]
 }
 
+// Adrp — an arbitrary adrp.
+func Adrp(rnd *rand.Rand) ohsnap.Arbitrary[AdrpParams] {
+	return newAdrpGen(rnd)
+}
+
 func newAdrpGen(rnd *rand.Rand) adrpGen {
 	return adrpGen{
 		rnd:   rnd,
 		pages: BrOff(rnd, 1<<20),
 	}
-}
-
-// Adrp — an arbitrary adrp.
-func Adrp(rnd *rand.Rand) ohsnap.Arbitrary[AdrpParams] {
-	return newAdrpGen(rnd)
 }
 
 func (g adrpGen) Generate() iter.Seq[AdrpParams] {
@@ -66,8 +67,9 @@ func (g adrpGen) Generate() iter.Seq[AdrpParams] {
 }
 
 func (g adrpGen) Shrink(p AdrpParams) iter.Seq[AdrpParams] {
-	var out []AdrpParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]AdrpParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewAdrpParams(r, p.Pages))
 	}
 

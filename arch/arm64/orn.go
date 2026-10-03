@@ -33,10 +33,6 @@ func newOrn(rd, rn, rm VReg, arr string) (Orn, error) {
 
 const ornEnc uint32 = 249568256 // orn vd, vn, vm (Q=0 form)
 
-func (i Orn) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("orn.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Orn) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Orn) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, ornEnc|q<<30|rd|rn<<5|rm<<16)
+}
+
+func (i Orn) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("orn.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

@@ -12,10 +12,6 @@ type B struct {
 	off imm
 }
 
-func (i B) ObjDump(_ disasm.ViewCtx) string {
-	return "b " + i.off.text()
-}
-
 func (i B) Encode(w io.Writer) (int64, error) {
 	off, err := encPs2(i.off.val, 26, "b offset")
 	if err != nil {
@@ -25,4 +21,8 @@ func (i B) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["b"][0] | scatterD10k16(off)
 
 	return writeWord(w, word)
+}
+
+func (i B) ObjDump(_ disasm.ViewCtx) string {
+	return "b " + i.off.text()
 }

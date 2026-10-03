@@ -26,12 +26,18 @@ type BitmaskParams struct {
 	Rot    uint32    // the rotation of the run, 0..Esz-1
 }
 
-func NewBitmaskParams(rd arm64.Reg, rn arm64.Reg, esz uint32, len uint32, rot uint32) BitmaskParams {
+func NewBitmaskParams(
+	rd arm64.Reg,
+	rn arm64.Reg,
+	esz uint32,
+	length uint32,
+	rot uint32,
+) BitmaskParams {
 	return BitmaskParams{
 		Rd:  rd,
 		Rn:  rn,
 		Esz: esz,
-		Len: len,
+		Len: length,
 		Rot: rot,
 	}
 }
@@ -59,31 +65,18 @@ type bitmaskGen struct {
 	rnd *rand.Rand
 }
 
-func newBitmaskGen(rnd *rand.Rand) bitmaskGen {
-	return bitmaskGen{rnd: rnd}
-}
-
-// bitmask — the shared Generate/Shrink core of the four logical-imm families.
-func bitmask(rnd *rand.Rand) bitmaskGen {
-	return newBitmaskGen(rnd)
-}
-
-// eszChoices — the element sizes of the register width, ascending.
-func eszChoices(is64 bool) []uint32 {
-	if is64 {
-		return []uint32{2, 4, 8, 16, 32, 64}
-	}
-
-	return []uint32{2, 4, 8, 16, 32}
-}
-
 func (g bitmaskGen) Generate() iter.Seq[BitmaskParams] {
 	return arbStream(func() BitmaskParams {
 		is64 := g.rnd.IntN(2) == 1
 		choices := eszChoices(is64)
 		esz := choices[g.rnd.IntN(len(choices))]
 		return NewBitmaskParams(
-			genReg(g.rnd, is64, false, false), // clang refuses a zr destination (the encoding is fine)
+			genReg(
+				g.rnd,
+				is64,
+				false,
+				false,
+			), // clang refuses a zr destination (the encoding is fine)
 			genReg(g.rnd, is64, false, true),
 			esz,
 			uint32(g.rnd.IntN(int(esz)-1))+1, // 1..esz-1
@@ -122,6 +115,30 @@ func (g bitmaskGen) Shrink(p BitmaskParams) iter.Seq[BitmaskParams] {
 	return slices.Values(out)
 }
 
+// Bitmask — the exported face of the structural generator (the alias
+// package builds its immediate forms on top of the same axes).
+func Bitmask(rnd *rand.Rand) ohsnap.Arbitrary[BitmaskParams] {
+	return newBitmaskGen(rnd)
+}
+
+func newBitmaskGen(rnd *rand.Rand) bitmaskGen {
+	return bitmaskGen{rnd: rnd}
+}
+
+// bitmask — the shared Generate/Shrink core of the four logical-imm families.
+func bitmask(rnd *rand.Rand) bitmaskGen {
+	return newBitmaskGen(rnd)
+}
+
+// eszChoices — the element sizes of the register width, ascending.
+func eszChoices(is64 bool) []uint32 {
+	if is64 {
+		return []uint32{2, 4, 8, 16, 32, 64}
+	}
+
+	return []uint32{2, 4, 8, 16, 32}
+}
+
 // u32Halved — the halving-toward-zero candidates of a uint32 axis.
 func u32Halved(v uint32) []uint32 {
 	if v == 0 {
@@ -137,10 +154,4 @@ func u32Halved(v uint32) []uint32 {
 	}
 
 	return out
-}
-
-// Bitmask — the exported face of the structural generator (the alias
-// package builds its immediate forms on top of the same axes).
-func Bitmask(rnd *rand.Rand) ohsnap.Arbitrary[BitmaskParams] {
-	return newBitmaskGen(rnd)
 }

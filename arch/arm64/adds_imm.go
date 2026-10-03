@@ -74,6 +74,24 @@ const (
 	AddsImmW uint32 = 0x31000000
 )
 
+func (i AddsImm) Encode(w io.Writer) (int64, error) {
+	match := AddsImmX
+	if !i.isf {
+		match = AddsImmW
+	}
+
+	if i.imm12 > 0xfff {
+		return 0, errors.New("adds: imm12 out of range")
+	}
+
+	sh := uint32(0)
+	if i.shift {
+		sh = 1
+	}
+
+	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
+}
+
 func (i AddsImm) ObjDump(_ disasm.ViewCtx) string {
 	rd := addSubRegName(i.rdNum, i.isf, true)
 	rn := addSubRegName(i.rnNum, i.isf, false)
@@ -92,22 +110,4 @@ func (i AddsImm) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("adds %s, %s, %s", rd, rn, imm)
-}
-
-func (i AddsImm) Encode(w io.Writer) (int64, error) {
-	match := AddsImmX
-	if !i.isf {
-		match = AddsImmW
-	}
-
-	if i.imm12 > 0xfff {
-		return 0, errors.New("adds: imm12 out of range")
-	}
-
-	sh := uint32(0)
-	if i.shift {
-		sh = 1
-	}
-
-	return writeWord(w, match|i.rdNum|i.rnNum<<5|i.imm12<<10|sh<<22)
 }

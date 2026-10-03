@@ -30,6 +30,7 @@ func (p FcmpZeroParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p FcmpZeroParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -39,13 +40,13 @@ type fcmpZeroGen struct {
 	rnd *rand.Rand
 }
 
-func newFcmpZeroGen(rnd *rand.Rand) fcmpZeroGen {
-	return fcmpZeroGen{rnd: rnd}
-}
-
 // FcmpZero — an arbitrary fcmp #0.0.
 func FcmpZero(rnd *rand.Rand) ohsnap.Arbitrary[FcmpZeroParams] {
 	return newFcmpZeroGen(rnd)
+}
+
+func newFcmpZeroGen(rnd *rand.Rand) fcmpZeroGen {
+	return fcmpZeroGen{rnd: rnd}
 }
 
 func (g fcmpZeroGen) Generate() iter.Seq[FcmpZeroParams] {
@@ -55,8 +56,9 @@ func (g fcmpZeroGen) Generate() iter.Seq[FcmpZeroParams] {
 }
 
 func (g fcmpZeroGen) Shrink(p FcmpZeroParams) iter.Seq[FcmpZeroParams] {
-	var out []FcmpZeroParams
-	for _, r := range fpShrunk(p.Rn) {
+	fps := fpShrunk(p.Rn)
+	out := make([]FcmpZeroParams, 0, len(fps))
+	for _, r := range fps {
 		out = append(out, NewFcmpZeroParams(r))
 	}
 

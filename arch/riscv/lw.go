@@ -22,10 +22,6 @@ func cLw(rd, rs1 string, off int64) Lw {
 	}
 }
 
-func (i Lw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
-}
-
 func (i Lw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	off := i.off.val
 
@@ -51,6 +47,10 @@ func (i Lw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Lw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lw %s, %s(%s)", i.rd, i.off.text(), i.rs1)
 }
 
 func newLw(ops []Op) (Instr, error) {

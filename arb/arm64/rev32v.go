@@ -52,8 +52,9 @@ func (a rev32vArb) Generate() iter.Seq[Rev32VParams] {
 }
 
 func (a rev32vArb) Shrink(p Rev32VParams) iter.Seq[Rev32VParams] {
-	var out []Rev32VParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2Params))
+	out := make([]Rev32VParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewRev32VParams(s))
 	}
 

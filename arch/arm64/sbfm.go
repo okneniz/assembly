@@ -90,6 +90,10 @@ const (
 	sbfmW uint32 = 0x13000000
 )
 
+func (i Sbfm) Encode(w io.Writer) (int64, error) {
+	return bfmWrite(w, sbfmX, sbfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+}
+
 func (i Sbfm) ObjDump(_ disasm.ViewCtx) string {
 	regsize := bfmRegsize(i.rd, i.immr, i.imms)
 	// LSL is a UBFM alias, not SBFM: LLVM/GNU print SBFM encodings with
@@ -119,8 +123,4 @@ func (i Sbfm) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("sbfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
-}
-
-func (i Sbfm) Encode(w io.Writer) (int64, error) {
-	return bfmWrite(w, sbfmX, sbfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }

@@ -22,15 +22,6 @@ func cBeq(rs1, rs2 string, off int64) Beq {
 	}
 }
 
-func (i Beq) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	if i.rs2 == "zero" {
-		return fmt.Sprintf("beqz %s, %s", i.rs1, target.text())
-	}
-
-	return fmt.Sprintf("beq %s, %s, %s", i.rs1, i.rs2, target.text())
-}
-
 func (i Beq) Encode(w io.Writer, o EncOpts) (int64, error) {
 	bits, err := encB(i.off.val)
 	if err != nil {
@@ -45,6 +36,15 @@ func (i Beq) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Beq) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	if i.rs2 == "zero" {
+		return fmt.Sprintf("beqz %s, %s", i.rs1, target.text())
+	}
+
+	return fmt.Sprintf("beq %s, %s, %s", i.rs1, i.rs2, target.text())
 }
 
 func newBeq(ops []Op) (Instr, error) {

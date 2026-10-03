@@ -1,4 +1,4 @@
-.PHONY: fmt fmt-check vet lint tests build cli vscode tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data prop-a64 prop-a64-1 prop-a64-2 prop-a64-rest
+.PHONY: fmt autofix fmt-check vet lint tests build cli vscode tidy clean gen-sysregs generate update-sysreg-data gen-riscv-csr update-riscv-csr-data gen-riscv-instr gen-arm-instr update-arm-instr-data gen-loongarch-instr update-loong-data prop-a64 prop-a64-1 prop-a64-2 prop-a64-rest
 
 # GOLANGCI_LINT_VERSION pins the project-local linter (see bin/golangci-lint).
 GOLANGCI_LINT_VERSION ?= v2.13.2
@@ -119,6 +119,15 @@ bin/golangci-lint:
 # The linters enabled are controlled by .golangci.yml.
 lint: fmt-check vet bin/golangci-lint
 	./bin/golangci-lint run
+
+# autofix applies every automatic fix available: the formatters (gofmt -s,
+# goimports, gci, golines) and the auto-fix linters (modernize, intrange,
+# copyloopvar, misspell, godot, whitespace, wsl_v5/after-block, ...).
+# It does NOT clear issues from fixer-less linters (funcorder, prealloc,
+# errcheck, unused, unparam, ...) — those are manual work; `make lint`
+# lists what remains after an autofix.
+autofix: bin/golangci-lint
+	./bin/golangci-lint run --fix
 
 # update-sysreg-data re-downloads the vendored ARM XML and m1n1 apple_regs.json.
 # Run gen-sysregs afterwards to regenerate the Go name table. Override pinned

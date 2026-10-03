@@ -52,8 +52,9 @@ func (a eorArb) Generate() iter.Seq[EorVParams] {
 }
 
 func (a eorArb) Shrink(p EorVParams) iter.Seq[EorVParams] {
-	var out []EorVParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]EorVParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewEorVParams(s))
 	}
 

@@ -12,13 +12,13 @@ type ClzW struct {
 	rd, rj uint8
 }
 
-func (i ClzW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("clz.w %s, %s", laRegName(i.rd), laRegName(i.rj))
-}
-
 func (i ClzW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["clz.w"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i ClzW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("clz.w %s, %s", laRegName(i.rd), laRegName(i.rj))
 }

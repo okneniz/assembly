@@ -60,18 +60,6 @@ type r2RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func newR2RoleGen[T immRole](
-	rnd *rand.Rand,
-	ctors []r2RoleEntry[T],
-	role ohsnap.Arbitrary[T],
-) r2RoleGen[T] {
-	return r2RoleGen[T]{
-		rnd:   rnd,
-		ctors: ctors,
-		role:  role,
-	}
-}
-
 func (g r2RoleGen[T]) Generate() iter.Seq[R2RoleParams[T]] {
 	return arb.Stream(func() R2RoleParams[T] {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -138,18 +126,6 @@ type r1RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func newR1RoleGen[T immRole](
-	rnd *rand.Rand,
-	ctors []r1RoleEntry[T],
-	role ohsnap.Arbitrary[T],
-) r1RoleGen[T] {
-	return r1RoleGen[T]{
-		rnd:   rnd,
-		ctors: ctors,
-		role:  role,
-	}
-}
-
 func (g r1RoleGen[T]) Generate() iter.Seq[R1RoleParams[T]] {
 	return arb.Stream(func() R1RoleParams[T] {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -208,14 +184,6 @@ type codeGen struct {
 	rnd   *rand.Rand
 	ctors []codeEntry
 	code  ohsnap.Arbitrary[arch.Code15]
-}
-
-func newCodeGen(rnd *rand.Rand, ctors []codeEntry) codeGen {
-	return codeGen{
-		rnd:   rnd,
-		ctors: ctors,
-		code:  Code15(rnd),
-	}
 }
 
 func (g codeGen) Generate() iter.Seq[CodeParams] {
@@ -303,4 +271,36 @@ var code15 = []codeEntry{
 // clash with the Code15 role generator of operand.go.
 func Code15Instr(rnd *rand.Rand) ohsnap.Arbitrary[CodeParams] {
 	return newCodeGen(rnd, code15)
+}
+
+func newR2RoleGen[T immRole](
+	rnd *rand.Rand,
+	ctors []r2RoleEntry[T],
+	role ohsnap.Arbitrary[T],
+) r2RoleGen[T] {
+	return r2RoleGen[T]{
+		rnd:   rnd,
+		ctors: ctors,
+		role:  role,
+	}
+}
+
+func newR1RoleGen[T immRole](
+	rnd *rand.Rand,
+	ctors []r1RoleEntry[T],
+	role ohsnap.Arbitrary[T],
+) r1RoleGen[T] {
+	return r1RoleGen[T]{
+		rnd:   rnd,
+		ctors: ctors,
+		role:  role,
+	}
+}
+
+func newCodeGen(rnd *rand.Rand, ctors []codeEntry) codeGen {
+	return codeGen{
+		rnd:   rnd,
+		ctors: ctors,
+		code:  Code15(rnd),
+	}
 }

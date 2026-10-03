@@ -62,10 +62,6 @@ func newCcmp(rn Reg, rm Reg, nzcv uint32, cond string) (Ccmp, error) {
 
 const ccmpX uint32 = 0xFA400000
 
-func (i Ccmp) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("ccmp %s, %s, #0x%x, %s", i.rn, i.rm, i.immVal, i.cond)
-}
-
 func (i Ccmp) Encode(w io.Writer) (int64, error) {
 	rn, rm, err := regNums2(i.rn, i.rm)
 	if err != nil {
@@ -82,4 +78,8 @@ func (i Ccmp) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, ccmpX|i.immVal|rn<<5|c<<12|rm<<16)
+}
+
+func (i Ccmp) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("ccmp %s, %s, #0x%x, %s", i.rn, i.rm, i.immVal, i.cond)
 }

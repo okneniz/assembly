@@ -48,10 +48,10 @@ const (
 	ldurWEnc uint32 = 0xB8400000 // ldur wt, [xn, #±imm9]
 )
 
-func (i Ldur) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("ldur %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Ldur) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "ldur")
+}
+
+func (i Ldur) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("ldur %s, %s", i.rt, i.lsText(ctx))
 }

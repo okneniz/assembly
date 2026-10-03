@@ -56,10 +56,10 @@ func newLdaxrb(rt, rn Reg) (Ldaxrb, error) {
 
 const ldaxrbEnc uint32 = 0x085FFC00 // ldaxrb wt, [xn]
 
-func (i Ldaxrb) ObjDump(_ disasm.ViewCtx) string {
-	return "ldaxrb " + i.atText()
-}
-
 func (i Ldaxrb) Encode(w io.Writer) (int64, error) {
 	return i.atWrite(w, i.enc, "ldaxrb")
+}
+
+func (i Ldaxrb) ObjDump(_ disasm.ViewCtx) string {
+	return "ldaxrb " + i.atText()
 }

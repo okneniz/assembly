@@ -41,6 +41,52 @@ func (c *Conn) Interrupt() error {
 	return nil
 }
 
+// readByte is the next stream byte; the 0x03 of a concurrent interrupt
+// is skipped (it is our own byte echoed by a line discipline or a
+// target artifact - never part of a reply). A read error sticks in
+// rerr and reads as zero.
+func (c *Conn) readByte() byte {
+	for {
+		b, err := c.r.ReadByte()
+		if err != nil {
+			c.rerr = err
+			return 0
+		}
+
+		if b != 0x03 {
+			return b
+		}
+	}
+}
+
+// readPacket is one received packet: the bytes from '$' to '#cs' with
+// the checksum verified. ok is false on framing or checksum damage.
+func (c *Conn) readPacket() (string, bool) {
+	if b := c.readByte(); b != '$' {
+		return "", false
+	}
+
+	pkt := []byte{'$'}
+	for {
+		b := c.readByte()
+		if b == 0 || b == '$' {
+			return "", false // framing lost mid-packet
+		}
+
+		pkt = append(pkt, b)
+		if b == '#' {
+			// the two checksum digits complete the packet
+			hi := c.readByte()
+			lo := c.readByte()
+			if hi == 0 || lo == 0 {
+				return "", false
+			}
+
+			return parsePacket(append(pkt, hi, lo))
+		}
+	}
+}
+
 // roundTrip sends one command and returns the payload of the reply.
 // It consumes the target's ack of the request, validates the reply's
 // checksum (acking it with "+" on success), and resends the request on
@@ -88,24 +134,6 @@ func (c *Conn) roundTrip(cmd string) (string, error) {
 	return "", fmt.Errorf("assembly/rsp: no valid reply after %d retransmits", maxRetransmits)
 }
 
-// readByte is the next stream byte; the 0x03 of a concurrent interrupt
-// is skipped (it is our own byte echoed by a line discipline or a
-// target artifact - never part of a reply). A read error sticks in
-// rerr and reads as zero.
-func (c *Conn) readByte() byte {
-	for {
-		b, err := c.r.ReadByte()
-		if err != nil {
-			c.rerr = err
-			return 0
-		}
-
-		if b != 0x03 {
-			return b
-		}
-	}
-}
-
 // transportError is a message with the sticky transport failure
 // attached (a closed connection reads as an empty stream otherwise).
 func (c *Conn) transportError(msg string) error {
@@ -114,32 +142,4 @@ func (c *Conn) transportError(msg string) error {
 	}
 
 	return fmt.Errorf("assembly/rsp: %s", msg)
-}
-
-// readPacket is one received packet: the bytes from '$' to '#cs' with
-// the checksum verified. ok is false on framing or checksum damage.
-func (c *Conn) readPacket() (string, bool) {
-	if b := c.readByte(); b != '$' {
-		return "", false
-	}
-
-	pkt := []byte{'$'}
-	for {
-		b := c.readByte()
-		if b == 0 || b == '$' {
-			return "", false // framing lost mid-packet
-		}
-
-		pkt = append(pkt, b)
-		if b == '#' {
-			// the two checksum digits complete the packet
-			hi := c.readByte()
-			lo := c.readByte()
-			if hi == 0 || lo == 0 {
-				return "", false
-			}
-
-			return parsePacket(append(pkt, hi, lo))
-		}
-	}
 }

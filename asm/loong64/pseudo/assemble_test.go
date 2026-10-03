@@ -9,24 +9,6 @@ import (
 	asm "github.com/okneniz/assembly/asm"
 )
 
-func assembleOne(t *testing.T, src string, addr uint64) []byte {
-	t.Helper()
-
-	res, errs := Assemble(src, addr)
-	require.Empty(t, errs, "assemble %q: %v", src, errs)
-	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
-
-	return res.Sections[0].Data
-}
-
-func word(t *testing.T, b []byte, i int) uint32 {
-	t.Helper()
-
-	require.Greater(t, len(b), i*4, "word %d", i)
-
-	return binary.LittleEndian.Uint32(b[i*4:])
-}
-
 func TestPseudoSingleWord(t *testing.T) {
 	for _, tc := range []struct {
 		src  string
@@ -222,6 +204,24 @@ func TestPseudoRemainingBranches(t *testing.T) {
 
 	// exprNumeric: nil and the unreachable fallthrough.
 	require.True(t, exprNumeric(nil))
+}
+
+func assembleOne(t *testing.T, src string, addr uint64) []byte {
+	t.Helper()
+
+	res, errs := Assemble(src, addr)
+	require.Empty(t, errs, "assemble %q: %v", src, errs)
+	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
+
+	return res.Sections[0].Data
+}
+
+func word(t *testing.T, b []byte, i int) uint32 {
+	t.Helper()
+
+	require.Greater(t, len(b), i*4, "word %d", i)
+
+	return binary.LittleEndian.Uint32(b[i*4:])
 }
 
 // testCtxP is an empty evaluation environment for direct calls.

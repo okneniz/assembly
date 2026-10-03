@@ -13,10 +13,6 @@ type FsubS struct {
 	rm           imm // rounding mode (not shown in text)
 }
 
-func (i FsubS) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fsub.s %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i FsubS) Encode(w io.Writer, o EncOpts) (int64, error) {
 	rm := i.rm.val
 
@@ -26,6 +22,10 @@ func (i FsubS) Encode(w io.Writer, o EncOpts) (int64, error) {
 
 	return writeWord(w, riscvEncodings["fsub_s"][0]|uint32(rm)<<12|
 		fregBits(i.rd)<<7|fregBits(i.rs1)<<15|fregBits(i.rs2)<<20)
+}
+
+func (i FsubS) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fsub.s %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newFsubS(ops []Op) (Instr, error) {

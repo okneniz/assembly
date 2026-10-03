@@ -25,10 +25,10 @@ func cMv(h uint32, rd, rs2 string) Mv {
 	}
 }
 
-func (i Mv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mv %s, %s", i.rd, i.rs2)
-}
-
 func (i Mv) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeHalf(w, uint16(i.half))
+}
+
+func (i Mv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mv %s, %s", i.rd, i.rs2)
 }

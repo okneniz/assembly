@@ -36,10 +36,6 @@ func newBlr(rn Reg) (Blr, error) {
 
 const blrMatch = 0xD63F0000
 
-func (i Blr) ObjDump(_ disasm.ViewCtx) string {
-	return "blr " + i.rn
-}
-
 func (i Blr) Encode(w io.Writer) (int64, error) {
 	num, err := armRegNum(i.rn)
 	if err != nil {
@@ -47,4 +43,8 @@ func (i Blr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, blrMatch|num<<5)
+}
+
+func (i Blr) ObjDump(_ disasm.ViewCtx) string {
+	return "blr " + i.rn
 }

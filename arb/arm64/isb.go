@@ -28,6 +28,7 @@ func (p IsbParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p IsbParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -37,19 +38,17 @@ type isbGen struct {
 	rnd *rand.Rand
 }
 
-func newIsbGen(rnd *rand.Rand) isbGen {
-	return isbGen{rnd: rnd}
-}
-
 // Isb — an arbitrary isb.
 func Isb(rnd *rand.Rand) ohsnap.Arbitrary[IsbParams] {
 	return newIsbGen(rnd)
 }
 
+func newIsbGen(rnd *rand.Rand) isbGen {
+	return isbGen{rnd: rnd}
+}
+
 func (g isbGen) Generate() iter.Seq[IsbParams] {
-	return arb.Stream(func() IsbParams {
-		return NewIsbParams()
-	})
+	return arb.Stream(NewIsbParams)
 }
 
 func (g isbGen) Shrink(p IsbParams) iter.Seq[IsbParams] {

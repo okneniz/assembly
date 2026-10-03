@@ -58,17 +58,33 @@ func New() *Unit {
 	return &Unit{defined: map[string]bool{}}
 }
 
-// Entry - the label the program starts at.
-func (u *Unit) Entry(name string) *Unit {
-	u.entry = name
+// Ascii - string data appended verbatim (no terminating zero), into the
+// current stream.
+func (u *Unit) Ascii(at Pos, s string) *Unit {
+	return u.ready(at, blob(s))
+}
+
+// Bss - a zero-fill reserve of the data stream: memory the kernel zeroes,
+// no file bytes. Labels after it resolve past the reserved range.
+func (u *Unit) Bss(at Pos, reserve int) *Unit {
+	if u.cur != 1 {
+		return u.fail(errors.New(
+			"a bss reserve belongs to the data stream",
+		))
+	}
+
+	if reserve <= 0 {
+		return u.fail(fmt.Errorf("reserve %d is not positive", reserve))
+	}
+
+	u.slots = append(u.slots, slot{nobits: reserve, stream: 1, size: reserve, pos: at})
+	u.mem[1] += reserve
 	return u
 }
 
-// Text - deposit into the text stream: the instructions and any read-only
-// data placed before the first Data() call live here.
-func (u *Unit) Text() *Unit {
-	u.cur = 0
-	return u
+// Bytes - raw data bytes, into the current stream.
+func (u *Unit) Bytes(at Pos, b ...byte) *Unit {
+	return u.ready(at, blob(b))
 }
 
 // Data - deposit into the data stream: the writable statics of the
@@ -76,6 +92,34 @@ func (u *Unit) Text() *Unit {
 func (u *Unit) Data() *Unit {
 	u.cur = 1
 	return u
+}
+
+// Entry - the label the program starts at.
+func (u *Unit) Entry(name string) *Unit {
+	u.entry = name
+	return u
+}
+
+// Half - 16-bit little-endian values, into the current stream.
+func (u *Unit) Half(at Pos, vs ...uint16) *Unit {
+	b := make([]byte, 2*len(vs))
+	for i, v := range vs {
+		binary.LittleEndian.PutUint16(b[2*i:], v)
+	}
+
+	return u.ready(at, blob(b))
+}
+
+// Instr - deposit a built instruction (a Builder product: arch
+// instructions are resolved records by shape). err is the construction
+// error, when the builder refused the operands: it is recorded and
+// surfaces at Resolve - nothing is deposited.
+func (u *Unit) Instr(at Pos, r Resolved, err error) *Unit {
+	if err != nil {
+		return u.fail(err)
+	}
+
+	return u.ready(at, r)
 }
 
 // Label - define a label at the current position of the current stream.
@@ -91,68 +135,6 @@ func (u *Unit) Label(name string) *Unit {
 	u.defined[name] = true
 	u.labels = append(u.labels, labelAt{name: name, stream: u.cur, off: u.mem[u.cur]})
 	return u
-}
-
-// Instr - deposit a built instruction (a Builder product: arch
-// instructions are resolved records by shape). err is the construction
-// error, when the builder refused the operands: it is recorded and
-// surfaces at Resolve - nothing is deposited.
-func (u *Unit) Instr(at Pos, r Resolved, err error) *Unit {
-	if err != nil {
-		return u.fail(err)
-	}
-
-	return u.ready(at, r)
-}
-
-// Sym - deposit a deferred record of the current stream: its bytes
-// appear at Resolve, when its address and the program symbols are known.
-// This is the add-instruction of the unresolved side - everything with a
-// hole (a branch to a label, an address pair, an asm fragment, a
-// symbolic data word) enters the stream through here.
-func (u *Unit) Sym(at Pos, s Sym) *Unit {
-	u.slots = append(u.slots, slot{sym: s, stream: u.cur, size: s.Size(), pos: at})
-	u.mem[u.cur] += s.Size()
-	u.file[u.cur] += s.Size()
-	return u
-}
-
-// fail records a producer-side error (a refused instruction, a guard);
-// it surfaces in the errors of Resolve, like every other one.
-func (u *Unit) fail(err error) *Unit {
-	u.errs = append(u.errs, err)
-	return u
-}
-
-// Ascii - string data appended verbatim (no terminating zero), into the
-// current stream.
-func (u *Unit) Ascii(at Pos, s string) *Unit {
-	return u.ready(at, blob(s))
-}
-
-// Bytes - raw data bytes, into the current stream.
-func (u *Unit) Bytes(at Pos, b ...byte) *Unit {
-	return u.ready(at, blob(b))
-}
-
-// Half - 16-bit little-endian values, into the current stream.
-func (u *Unit) Half(at Pos, vs ...uint16) *Unit {
-	b := make([]byte, 2*len(vs))
-	for i, v := range vs {
-		binary.LittleEndian.PutUint16(b[2*i:], v)
-	}
-
-	return u.ready(at, blob(b))
-}
-
-// Word - 32-bit little-endian values, into the current stream.
-func (u *Unit) Word(at Pos, vs ...uint32) *Unit {
-	b := make([]byte, 4*len(vs))
-	for i, v := range vs {
-		binary.LittleEndian.PutUint32(b[4*i:], v)
-	}
-
-	return u.ready(at, blob(b))
 }
 
 // Quad - 64-bit little-endian values, into the current stream.
@@ -177,21 +159,39 @@ func (u *Unit) QuadSym(at Pos, labels ...string) *Unit {
 	return u
 }
 
-// Bss - a zero-fill reserve of the data stream: memory the kernel zeroes,
-// no file bytes. Labels after it resolve past the reserved range.
-func (u *Unit) Bss(at Pos, reserve int) *Unit {
-	if u.cur != 1 {
-		return u.fail(errors.New(
-			"a bss reserve belongs to the data stream",
-		))
+// Sym - deposit a deferred record of the current stream: its bytes
+// appear at Resolve, when its address and the program symbols are known.
+// This is the add-instruction of the unresolved side - everything with a
+// hole (a branch to a label, an address pair, an asm fragment, a
+// symbolic data word) enters the stream through here.
+func (u *Unit) Sym(at Pos, s Sym) *Unit {
+	u.slots = append(u.slots, slot{sym: s, stream: u.cur, size: s.Size(), pos: at})
+	u.mem[u.cur] += s.Size()
+	u.file[u.cur] += s.Size()
+	return u
+}
+
+// Text - deposit into the text stream: the instructions and any read-only
+// data placed before the first Data() call live here.
+func (u *Unit) Text() *Unit {
+	u.cur = 0
+	return u
+}
+
+// Word - 32-bit little-endian values, into the current stream.
+func (u *Unit) Word(at Pos, vs ...uint32) *Unit {
+	b := make([]byte, 4*len(vs))
+	for i, v := range vs {
+		binary.LittleEndian.PutUint32(b[4*i:], v)
 	}
 
-	if reserve <= 0 {
-		return u.fail(fmt.Errorf("reserve %d is not positive", reserve))
-	}
+	return u.ready(at, blob(b))
+}
 
-	u.slots = append(u.slots, slot{nobits: reserve, stream: 1, size: reserve, pos: at})
-	u.mem[1] += reserve
+// fail records a producer-side error (a refused instruction, a guard);
+// it surfaces in the errors of Resolve, like every other one.
+func (u *Unit) fail(err error) *Unit {
+	u.errs = append(u.errs, err)
 	return u
 }
 

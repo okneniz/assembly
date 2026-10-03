@@ -35,6 +35,7 @@ func (p UmulhParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p UmulhParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -44,13 +45,13 @@ type umulhGen struct {
 	rnd *rand.Rand
 }
 
-func newUmulhGen(rnd *rand.Rand) umulhGen {
-	return umulhGen{rnd: rnd}
-}
-
 // Umulh — an arbitrary umulh.
 func Umulh(rnd *rand.Rand) ohsnap.Arbitrary[UmulhParams] {
 	return newUmulhGen(rnd)
+}
+
+func newUmulhGen(rnd *rand.Rand) umulhGen {
+	return umulhGen{rnd: rnd}
 }
 
 func (g umulhGen) Generate() iter.Seq[UmulhParams] {
@@ -64,8 +65,9 @@ func (g umulhGen) Generate() iter.Seq[UmulhParams] {
 }
 
 func (g umulhGen) Shrink(p UmulhParams) iter.Seq[UmulhParams] {
-	var out []UmulhParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]UmulhParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewUmulhParams(r, p.Rn, p.Rm))
 	}
 

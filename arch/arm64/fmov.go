@@ -34,15 +34,8 @@ const (
 	fmovS uint32 = 0x1E204000 // fmov sd, sn
 )
 
-func (i Fmov) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
-}
-
 func (i Fmov) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fmovD, fmovS)
-	if err != nil {
-		return 0, fmt.Errorf("fmov: %w", err)
-	}
+	match := fpMatch(i.rd, fmovD, fmovS)
 
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -50,4 +43,8 @@ func (i Fmov) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i Fmov) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
 }

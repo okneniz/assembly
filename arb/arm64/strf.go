@@ -52,8 +52,9 @@ func (a strFArb) Generate() iter.Seq[StrFParams] {
 }
 
 func (a strFArb) Shrink(p StrFParams) iter.Seq[StrFParams] {
-	var out []StrFParams
-	for _, s := range slices.Collect(a.base.Shrink(p.FParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.FParams))
+	out := make([]StrFParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewStrFParams(s))
 	}
 

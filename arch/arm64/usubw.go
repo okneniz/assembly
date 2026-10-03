@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -20,7 +21,7 @@ type Usubw struct {
 // calls it with values read from the word).
 func newUsubw(q, size uint32, rd, rn, rm VReg) (Usubw, error) {
 	if size > 2 {
-		return Usubw{}, fmt.Errorf(
+		return Usubw{}, errors.New(
 			"arm64.NewUsubw: the source arrangement is too narrow for .2d results",
 		)
 	}
@@ -36,6 +37,15 @@ func newUsubw(q, size uint32, rd, rn, rm VReg) (Usubw, error) {
 
 const usubwEnc uint32 = 773861376 // usubw vd, vn, vm (Q=0 form)
 
+func (i Usubw) Encode(w io.Writer) (int64, error) {
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("usubw: %w", err)
+	}
+
+	return writeWord(w, usubwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
+}
+
 func (i Usubw) ObjDump(_ disasm.ViewCtx) string {
 	name := "usubw"
 	if i.q == 1 {
@@ -44,13 +54,4 @@ func (i Usubw) ObjDump(_ disasm.ViewCtx) string {
 
 	return fmt.Sprintf("%s.%s %s, %s, %s",
 		name, decodeArrangement(i.q, i.size+1), i.rd, i.rn, i.rm)
-}
-
-func (i Usubw) Encode(w io.Writer) (int64, error) {
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("usubw: %w", err)
-	}
-
-	return writeWord(w, usubwEnc|i.q<<30|i.size<<22|rd|rn<<5|rm<<16)
 }

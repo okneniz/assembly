@@ -51,8 +51,9 @@ func (a stpArb) Generate() iter.Seq[StpParams] {
 }
 
 func (a stpArb) Shrink(p StpParams) iter.Seq[StpParams] {
-	var out []StpParams
-	for _, s := range slices.Collect(a.base.Shrink(p.PairParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.PairParams))
+	out := make([]StpParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewStpParams(s))
 	}
 

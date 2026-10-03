@@ -52,8 +52,9 @@ func (a fmov_from_gprArb) Generate() iter.Seq[FmovFromGprParams] {
 }
 
 func (a fmov_from_gprArb) Shrink(p FmovFromGprParams) iter.Seq[FmovFromGprParams] {
-	var out []FmovFromGprParams
-	for _, s := range slices.Collect(a.base.Shrink(p.FGprParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.FGprParams))
+	out := make([]FmovFromGprParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewFmovFromGprParams(s))
 	}
 

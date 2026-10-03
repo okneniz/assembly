@@ -7,35 +7,13 @@ package arm64
 
 import (
 	"encoding/binary"
-	"github.com/okneniz/assembly/unit"
 	"testing"
 
 	"github.com/stretchr/testify/require"
 
 	arch "github.com/okneniz/assembly/arch/arm64"
+	"github.com/okneniz/assembly/unit"
 )
-
-// streamsProg - a program reading and writing a data static and a bss
-// one through an La pair, exiting with the data value it re-read.
-func streamsProg() *Program {
-	p := New(unit.New()).Entry("start")
-
-	p.Label("start")
-	p.La(X0, "counter")
-	p.Ldr(X1, X0, 0)
-	p.AddImm(X1, X1, 1, arch.NoSh12)
-	p.Str(X1, X0, 0)
-	p.Ldr(X0, X0, 0)
-	p.Movz(X16, 0x200, arch.Hw1)
-	p.Movk(X16, 1, arch.Hw0)
-	p.Svc(0x80)
-
-	p.Data()
-	p.Label("counter").Quad(7)
-	p.Label("buf").Bss(16)
-
-	return p
-}
 
 func TestStreamsLayout(t *testing.T) {
 	bin, errs := streamsProg().Build()
@@ -137,6 +115,28 @@ func TestStreamsLaFlat(t *testing.T) {
 	// adrp x0, #0 (same page); add x0, x0, #8 (the label right after)
 	require.Equal(t, uint32(0x90000000), binary.LittleEndian.Uint32(res.Code[0:4]))
 	require.Equal(t, uint32(0x91002000), binary.LittleEndian.Uint32(res.Code[4:8]))
+}
+
+// streamsProg - a program reading and writing a data static and a bss
+// one through an La pair, exiting with the data value it re-read.
+func streamsProg() *Program {
+	p := New(unit.New()).Entry("start")
+
+	p.Label("start")
+	p.La(X0, "counter")
+	p.Ldr(X1, X0, 0)
+	p.AddImm(X1, X1, 1, arch.NoSh12)
+	p.Str(X1, X0, 0)
+	p.Ldr(X0, X0, 0)
+	p.Movz(X16, 0x200, arch.Hw1)
+	p.Movk(X16, 1, arch.Hw0)
+	p.Svc(0x80)
+
+	p.Data()
+	p.Label("counter").Quad(7)
+	p.Label("buf").Bss(16)
+
+	return p
 }
 
 // nopPlace - a policy that does not care.

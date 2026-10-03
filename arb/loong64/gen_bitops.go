@@ -62,18 +62,6 @@ type r3RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func newR3RoleGen[T immRole](
-	rnd *rand.Rand,
-	ctors []r3RoleEntry[T],
-	role ohsnap.Arbitrary[T],
-) r3RoleGen[T] {
-	return r3RoleGen[T]{
-		rnd:   rnd,
-		ctors: ctors,
-		role:  role,
-	}
-}
-
 func (g r3RoleGen[T]) Generate() iter.Seq[R3RoleParams[T]] {
 	return arb.Stream(func() R3RoleParams[T] {
 		e := g.ctors[g.rnd.IntN(len(g.ctors))]
@@ -149,10 +137,6 @@ func (p FieldWParams) String() string {
 // [lsb, 31] so the pair always satisfies the cross-check.
 type fieldWGen struct {
 	rnd *rand.Rand
-}
-
-func newFieldWGen(rnd *rand.Rand) fieldWGen {
-	return fieldWGen{rnd: rnd}
 }
 
 // fieldW — the .w bit-field family (2 ctors).
@@ -246,10 +230,6 @@ type fieldDGen struct {
 	rnd *rand.Rand
 }
 
-func newFieldDGen(rnd *rand.Rand) fieldDGen {
-	return fieldDGen{rnd: rnd}
-}
-
 // fieldD — the .d bit-field family (2 ctors).
 var fieldD = []fieldDEntry{
 	{name: "bstrins.d", ctor: arch.New().BstrinsD},
@@ -333,4 +313,24 @@ var bytepickD = []r3RoleEntry[arch.UImm3]{
 // BytepickD — an arbitrary bytepick.d instruction.
 func BytepickD(rnd *rand.Rand) ohsnap.Arbitrary[R3RoleParams[arch.UImm3]] {
 	return newR3RoleGen(rnd, bytepickD, UImm3(rnd))
+}
+
+func newR3RoleGen[T immRole](
+	rnd *rand.Rand,
+	ctors []r3RoleEntry[T],
+	role ohsnap.Arbitrary[T],
+) r3RoleGen[T] {
+	return r3RoleGen[T]{
+		rnd:   rnd,
+		ctors: ctors,
+		role:  role,
+	}
+}
+
+func newFieldWGen(rnd *rand.Rand) fieldWGen {
+	return fieldWGen{rnd: rnd}
+}
+
+func newFieldDGen(rnd *rand.Rand) fieldDGen {
+	return fieldDGen{rnd: rnd}
 }

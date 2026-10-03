@@ -52,8 +52,9 @@ func (a aesmcArb) Generate() iter.Seq[AesmcParams] {
 }
 
 func (a aesmcArb) Shrink(p AesmcParams) iter.Seq[AesmcParams] {
-	var out []AesmcParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2PlainParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2PlainParams))
+	out := make([]AesmcParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAesmcParams(s))
 	}
 

@@ -13,13 +13,13 @@ type AmoorD struct {
 	rd, rs1, rs2 string
 }
 
-func (i AmoorD) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amoor.d %s, %s, (%s)", i.rd, i.rs2, i.rs1)
-}
-
 func (i AmoorD) Encode(w io.Writer, o EncOpts) (int64, error) {
 	return writeWord(w, riscvEncodings["amoor_d"][0]|
 		regBits(i.rd)<<7|regBits(i.rs1)<<15|regBits(i.rs2)<<20)
+}
+
+func (i AmoorD) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amoor.d %s, %s, (%s)", i.rd, i.rs2, i.rs1)
 }
 
 func newAmoorD(ops []Op) (Instr, error) {

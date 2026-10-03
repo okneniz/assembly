@@ -31,15 +31,6 @@ func BuildInstr(mnem string, ops []Op) (Instr, error) {
 // (as the decoder prints them) and the $rN numbering.
 var asmRegNum = buildAsmRegNum()
 
-func buildAsmRegNum() map[string]uint8 {
-	m := make(map[string]uint8, 64)
-	for i, n := range laRegNames {
-		m["$"+n] = uint8(i)
-	}
-
-	return m
-}
-
 // RegNumOf - the register number by name ($zero, $t0, $r21, ...).
 func RegNumOf(name string) (uint32, error) {
 	n, ok := asmRegNum[name]
@@ -95,4 +86,13 @@ func RegNames() [32]string {
 // WriteWord - writing an encoded instruction (pseudo pairs).
 func WriteWord(w io.Writer, word uint32) (int64, error) {
 	return writeWord(w, word)
+}
+
+func buildAsmRegNum() map[string]uint8 {
+	m := make(map[string]uint8, 64)
+	for i, n := range laRegNames {
+		m["$"+n] = uint8(i)
+	}
+
+	return m
 }

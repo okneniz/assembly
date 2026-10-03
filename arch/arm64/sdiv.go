@@ -81,10 +81,6 @@ func newSdiv(rd Reg, rn Reg, rm Reg) (Sdiv, error) {
 
 const SdivX uint32 = 0x9AC00C00
 
-func (i Sdiv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sdiv %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Sdiv) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, SdivX, 0x1AC00C00)
 	if err != nil {
@@ -97,4 +93,8 @@ func (i Sdiv) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Sdiv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sdiv %s, %s, %s", i.rd, i.rn, i.rm)
 }

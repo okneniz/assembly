@@ -12,14 +12,14 @@ type Remw struct {
 	rd, rs1, rs2 string
 }
 
-func (i Remw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("remw %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Remw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["remw"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 
 	return writeWord(w, word)
+}
+
+func (i Remw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("remw %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newRemw(ops []Op) (Instr, error) {

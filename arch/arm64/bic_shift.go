@@ -91,14 +91,6 @@ const (
 	BicShiftW uint32 = 0x0A200000
 )
 
-func (i BicShift) ObjDump(_ disasm.ViewCtx) string {
-	if i.imm6 != 0 {
-		return fmt.Sprintf("bic %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
-	}
-
-	return fmt.Sprintf("bic %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i BicShift) Encode(w io.Writer) (int64, error) {
 	match := BicShiftX
 	if !i.isf {
@@ -120,4 +112,12 @@ func (i BicShift) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|i.imm6<<10|rm<<16|sh<<22)
+}
+
+func (i BicShift) ObjDump(_ disasm.ViewCtx) string {
+	if i.imm6 != 0 {
+		return fmt.Sprintf("bic %s, %s, %s, %s #%d", i.rd, i.rn, i.rm, i.shift, i.imm6)
+	}
+
+	return fmt.Sprintf("bic %s, %s, %s", i.rd, i.rn, i.rm)
 }

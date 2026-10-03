@@ -32,10 +32,6 @@ func newRbitV(rd, rn VReg, arr string) (RbitV, error) {
 
 const rbitVEnc uint32 = 0x2E605800 // rbit vd, vn (Q=0 form; bit 22 is the fixed 01 of the class)
 
-func (i RbitV) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("rbit.%s %s, %s", i.arr, i.rd, i.rn)
-}
-
 func (i RbitV) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -48,4 +44,8 @@ func (i RbitV) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, rbitVEnc|q<<30|size<<22|rd|rn<<5)
+}
+
+func (i RbitV) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("rbit.%s %s, %s", i.arr, i.rd, i.rn)
 }

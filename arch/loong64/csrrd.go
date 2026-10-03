@@ -13,13 +13,13 @@ type Csrrd struct {
 	csr imm
 }
 
-func (i Csrrd) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("csrrd %s, %s", laRegName(i.rd), i.csr.text())
-}
-
 func (i Csrrd) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["csrrd"][0] |
 		uint32(i.rd) | scatterU(i.csr.val, 10, 14)
 
 	return writeWord(w, word)
+}
+
+func (i Csrrd) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("csrrd %s, %s", laRegName(i.rd), i.csr.text())
 }

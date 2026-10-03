@@ -58,12 +58,13 @@ func (g movSimdGen) Generate() iter.Seq[MovSimdParams] {
 }
 
 func (g movSimdGen) Shrink(p MovSimdParams) iter.Seq[MovSimdParams] {
-	var out []MovSimdParams
-	for _, s := range slices.Collect(g.base.Shrink(V2Params{
+	shrinks := slices.Collect(g.base.Shrink(V2Params{
 		Rd:  p.Rd,
 		Rn:  p.Rm,
 		Arr: p.Arr,
-	})) {
+	}))
+	out := make([]MovSimdParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewMovSimdParams(s.Rd, s.Rn, s.Arr))
 	}
 

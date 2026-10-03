@@ -22,7 +22,13 @@ type AddsShiftParams struct {
 	Sh         arm64.Shift
 }
 
-func NewAddsShiftParams(rd arm64.Reg, rn arm64.Reg, rm arm64.Reg, imm arm64.Imm6, sh arm64.Shift) AddsShiftParams {
+func NewAddsShiftParams(
+	rd arm64.Reg,
+	rn arm64.Reg,
+	rm arm64.Reg,
+	imm arm64.Imm6,
+	sh arm64.Shift,
+) AddsShiftParams {
 	return AddsShiftParams{
 		Rd:  rd,
 		Rn:  rn,
@@ -61,8 +67,9 @@ func (a addsShiftArb) Generate() iter.Seq[AddsShiftParams] {
 }
 
 func (a addsShiftArb) Shrink(p AddsShiftParams) iter.Seq[AddsShiftParams] {
-	var out []AddsShiftParams
-	for _, s := range slices.Collect(a.base.Shrink(AddShiftParams(p))) {
+	shrinks := slices.Collect(a.base.Shrink(AddShiftParams(p)))
+	out := make([]AddsShiftParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, AddsShiftParams(s))
 	}
 

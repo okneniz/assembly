@@ -33,6 +33,56 @@ func InstrLen(_ []byte) int {
 	return 4
 }
 
+// imm — an immediate operand value: a concrete number. Symbolic slots are
+// computed before the struct is built (resolve in encodeARM) — the computed
+// instruction contains no holes.
+type imm struct {
+	val int64
+}
+
+// textHex — the absolute address as hex (for ObjDump of branch targets);
+// unsigned: the address is a two's complement 64-bit value (a negative
+// offset over base 0 prints as 0xffff...c0, the spelling the text layer
+// parses back).
+func (m imm) textHex() string {
+	return fmt.Sprintf("0x%x", uint64(m.val))
+}
+
+// Schema — a decode-table entry: mask/value for selecting the encoding plus
+// the formatting config (Fields/Formatter/FullFormat/Meta). An ARM-specific
+// type (RISC-V uses its own decodeTable).
+type Schema struct {
+	Mask       uint32
+	Value      uint32
+	Fields     []Field
+	Meta       Meta
+	Formatter  string
+	FullFormat bool
+	// ctor — the constructor of the per-instruction struct: the decoding
+	// contract (all table entries carry it).
+	ctor func(word uint32) (Instr, error)
+}
+
+func NewSchema(
+	mask uint32,
+	value uint32,
+	fields []Field,
+	meta Meta,
+	formatter string,
+	fullFormat bool,
+	ctor func(word uint32) (Instr, error),
+) Schema {
+	return Schema{
+		Mask:       mask,
+		Value:      value,
+		Fields:     fields,
+		Meta:       meta,
+		Formatter:  formatter,
+		FullFormat: fullFormat,
+		ctor:       ctor,
+	}
+}
+
 // armRegName — the x/w register name by number and width.
 func armRegName(n uint32, is64 bool) string {
 	if is64 {
@@ -101,59 +151,9 @@ func condNum(c string) (uint32, error) {
 	return 0, fmt.Errorf("unknown condition %q", c)
 }
 
-// imm — an immediate operand value: a concrete number. Symbolic slots are
-// computed before the struct is built (resolve in encodeARM) — the computed
-// instruction contains no holes.
-type imm struct {
-	val int64
-}
-
 // immNum — a concrete value (decoding and construction).
 func immNum(v int64) imm {
 	return imm{val: v}
-}
-
-// textHex — the absolute address as hex (for ObjDump of branch targets);
-// unsigned: the address is a two's complement 64-bit value (a negative
-// offset over base 0 prints as 0xffff...c0, the spelling the text layer
-// parses back).
-func (m imm) textHex() string {
-	return fmt.Sprintf("0x%x", uint64(m.val))
-}
-
-// Schema — a decode-table entry: mask/value for selecting the encoding plus
-// the formatting config (Fields/Formatter/FullFormat/Meta). An ARM-specific
-// type (RISC-V uses its own decodeTable).
-type Schema struct {
-	Mask       uint32
-	Value      uint32
-	Fields     []Field
-	Meta       Meta
-	Formatter  string
-	FullFormat bool
-	// ctor — the constructor of the per-instruction struct: the decoding
-	// contract (all table entries carry it).
-	ctor func(word uint32) (Instr, error)
-}
-
-func NewSchema(
-	mask uint32,
-	value uint32,
-	fields []Field,
-	meta Meta,
-	formatter string,
-	fullFormat bool,
-	ctor func(word uint32) (Instr, error),
-) Schema {
-	return Schema{
-		Mask:       mask,
-		Value:      value,
-		Fields:     fields,
-		Meta:       meta,
-		Formatter:  formatter,
-		FullFormat: fullFormat,
-		ctor:       ctor,
-	}
 }
 
 // Unknown — a word matching no encoding (the ".word" fallback): displayed
@@ -172,12 +172,12 @@ func newUnknown(
 	}, nil
 }
 
-func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf(".word #0x%x", i.word)
-}
-
 func (i Unknown) Encode(w io.Writer) (int64, error) {
 	return writeWord(w, i.word)
+}
+
+func (i Unknown) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf(".word #0x%x", i.word)
 }
 
 // shiftNumByName — the shift-kind number (inverse of shiftNames).

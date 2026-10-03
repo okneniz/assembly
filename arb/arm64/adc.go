@@ -35,6 +35,7 @@ func (p AdcParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AdcParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -44,13 +45,13 @@ type adcGen struct {
 	rnd *rand.Rand
 }
 
-func newAdcGen(rnd *rand.Rand) adcGen {
-	return adcGen{rnd: rnd}
-}
-
 // Adc — an arbitrary adc.
 func Adc(rnd *rand.Rand) ohsnap.Arbitrary[AdcParams] {
 	return newAdcGen(rnd)
+}
+
+func newAdcGen(rnd *rand.Rand) adcGen {
+	return adcGen{rnd: rnd}
 }
 
 func (g adcGen) Generate() iter.Seq[AdcParams] {
@@ -64,8 +65,9 @@ func (g adcGen) Generate() iter.Seq[AdcParams] {
 }
 
 func (g adcGen) Shrink(p AdcParams) iter.Seq[AdcParams] {
-	var out []AdcParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]AdcParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewAdcParams(r, p.Rn, p.Rm))
 	}
 

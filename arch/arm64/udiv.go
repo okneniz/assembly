@@ -81,10 +81,6 @@ func newUdiv(rd Reg, rn Reg, rm Reg) (Udiv, error) {
 
 const UdivX uint32 = 0x9AC00800
 
-func (i Udiv) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("udiv %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Udiv) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, UdivX, 0x1AC00800)
 	if err != nil {
@@ -97,4 +93,8 @@ func (i Udiv) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Udiv) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("udiv %s, %s, %s", i.rd, i.rn, i.rm)
 }

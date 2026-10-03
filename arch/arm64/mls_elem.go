@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,9 +20,7 @@ type MlsElem struct {
 // calls it with values read from the word).
 func newMlsElem(q, size, idx uint32, rd, rn, rm VReg) (MlsElem, error) {
 	if size == 0 || size == 3 {
-		return MlsElem{}, fmt.Errorf(
-			"arm64.NewMlsElem: only the .h and .s integer lanes exist",
-		)
+		return MlsElem{}, errors.New("arm64.NewMlsElem: only the .h and .s integer lanes exist")
 	}
 
 	err := requireByElemLane("MlsElem", size, idx, rm)
@@ -45,11 +44,6 @@ const (
 	mlsElemOpc uint32 = 4
 )
 
-func (i MlsElem) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mls.%s %s, %s, %s[%d]",
-		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
-}
-
 func (i MlsElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -57,4 +51,9 @@ func (i MlsElem) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, byElemBits(i.q, mlsElemU, i.size, rm, mlsElemOpc, i.idx, rn, rd))
+}
+
+func (i MlsElem) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mls.%s %s, %s, %s[%d]",
+		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
 }

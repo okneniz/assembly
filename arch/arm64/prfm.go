@@ -36,10 +36,6 @@ func newPrfm(rn Reg) (Prfm, error) {
 	}, nil
 }
 
-func (i Prfm) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("prfm pldl1keep, [%s]", i.rn)
-}
-
 func (i Prfm) Encode(w io.Writer) (int64, error) {
 	n, err := armRegNum(i.rn)
 	if err != nil {
@@ -47,6 +43,10 @@ func (i Prfm) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, 0xF9800000|n<<5)
+}
+
+func (i Prfm) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("prfm pldl1keep, [%s]", i.rn)
 }
 
 // SkipVerify — pldl1keep is a keyword, not an address.

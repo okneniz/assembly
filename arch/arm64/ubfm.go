@@ -88,6 +88,10 @@ const (
 	ubfmW uint32 = 0x53000000
 )
 
+func (i Ubfm) Encode(w io.Writer) (int64, error) {
+	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
+}
+
 func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 	regsize := bfmRegsize(i.rd, i.immr, i.imms)
 	if i.imms != regsize-1 && i.imms+1 == i.immr { // LSL alias
@@ -113,8 +117,4 @@ func (i Ubfm) ObjDump(_ disasm.ViewCtx) string {
 	}
 
 	return fmt.Sprintf("ubfx %s, %s, #%d, #%d", i.rd, i.rn, i.immr, i.imms-i.immr+1)
-}
-
-func (i Ubfm) Encode(w io.Writer) (int64, error) {
-	return bfmWrite(w, ubfmX, ubfmW, i.isf, i.rd, i.rn, i.immr, i.imms)
 }

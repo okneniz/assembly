@@ -12,13 +12,13 @@ type AmaddDbB struct {
 	rd, rk, rj uint8
 }
 
-func (i AmaddDbB) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amadd_db.b %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
-}
-
 func (i AmaddDbB) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["amadd_db.b"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i AmaddDbB) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amadd_db.b %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

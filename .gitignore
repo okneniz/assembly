@@ -5,6 +5,10 @@
 # project-local tools (golangci-lint via make lint/bin/golangci-lint)
 /bin/
 
+# local development tooling (funcfix — the funcorder decl reorderer; not
+# part of the module, lives only on the dev machine)
+/dev
+
 # editor debug configs (launch.json drives the assembly-debug DAP adapter
 # over the test fixtures — local convenience, not repo content)
 .vscode/

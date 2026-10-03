@@ -52,8 +52,9 @@ func (a cmtstArb) Generate() iter.Seq[CmtstParams] {
 }
 
 func (a cmtstArb) Shrink(p CmtstParams) iter.Seq[CmtstParams] {
-	var out []CmtstParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]CmtstParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewCmtstParams(s))
 	}
 

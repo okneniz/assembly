@@ -10,16 +10,6 @@ import (
 	asm "github.com/okneniz/assembly/asm"
 )
 
-func assembleOne(t *testing.T, src string, addr uint64) []byte {
-	t.Helper()
-
-	res, errs := asm.Assemble(src, addr, New())
-	require.Empty(t, errs, "assemble %q: %v", src, errs)
-	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
-
-	return res.Sections[0].Data
-}
-
 func TestAssembleWords(t *testing.T) {
 	for _, tc := range []struct {
 		src  string
@@ -165,6 +155,16 @@ func TestGrammarEdges(t *testing.T) {
 	require.Equal(t, int64(4), n)
 	// add.w at pc 0x90000000: pc-independent.
 	require.Equal(t, uint32(0x001001ac), binary.LittleEndian.Uint32(buf.Bytes()))
+}
+
+func assembleOne(t *testing.T, src string, addr uint64) []byte {
+	t.Helper()
+
+	res, errs := asm.Assemble(src, addr, New())
+	require.Empty(t, errs, "assemble %q: %v", src, errs)
+	require.NotEmpty(t, res.Sections, "assemble %q: no sections", src)
+
+	return res.Sections[0].Data
 }
 
 // testCtx is a fixed evaluation environment for ResolveForm.

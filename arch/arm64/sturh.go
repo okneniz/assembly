@@ -61,10 +61,10 @@ func newSturh(rt, rn Reg, off Off) (Sturh, error) {
 
 const sturhEnc uint32 = 0x78000000 // sturh wt, [xn, #±imm9]
 
-func (i Sturh) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("sturh %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Sturh) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "sturh")
+}
+
+func (i Sturh) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("sturh %s, %s", i.rt, i.lsText(ctx))
 }

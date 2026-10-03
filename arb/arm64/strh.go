@@ -53,8 +53,9 @@ func (a strhArb) Generate() iter.Seq[StrhParams] {
 }
 
 func (a strhArb) Shrink(p StrhParams) iter.Seq[StrhParams] {
-	var out []StrhParams
-	for _, s := range slices.Collect(a.base.Shrink(p.LsParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.LsParams))
+	out := make([]StrhParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewStrhParams(s))
 	}
 

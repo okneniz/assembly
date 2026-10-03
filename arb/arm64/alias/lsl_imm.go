@@ -32,10 +32,6 @@ func NewLslImmParams(rd arm64.Reg, rn arm64.Reg, sh uint32) LslImmParams {
 	}
 }
 
-func (p LslImmParams) String() string {
-	return fmt.Sprintf("lsl %s, %s, #%d", p.Rd, p.Rn, p.Sh)
-}
-
 func (p LslImmParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -45,19 +41,23 @@ func (p LslImmParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p LslImmParams) String() string {
+	return fmt.Sprintf("lsl %s, %s, #%d", p.Rd, p.Rn, p.Sh)
+}
+
 // lslImmGen — generator for lsl #imm: registers of the same width, the
 // amount 1..regsize-1.
 type lslImmGen struct {
 	rnd *rand.Rand
 }
 
-func newLslImmGen(rnd *rand.Rand) lslImmGen {
-	return lslImmGen{rnd: rnd}
-}
-
 // LslImm — an arbitrary lsl #imm.
 func LslImm(rnd *rand.Rand) ohsnap.Arbitrary[LslImmParams] {
 	return newLslImmGen(rnd)
+}
+
+func newLslImmGen(rnd *rand.Rand) lslImmGen {
+	return lslImmGen{rnd: rnd}
 }
 
 func (g lslImmGen) Generate() iter.Seq[LslImmParams] {

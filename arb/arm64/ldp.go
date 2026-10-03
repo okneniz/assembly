@@ -51,8 +51,9 @@ func (a ldpArb) Generate() iter.Seq[LdpParams] {
 }
 
 func (a ldpArb) Shrink(p LdpParams) iter.Seq[LdpParams] {
-	var out []LdpParams
-	for _, s := range slices.Collect(a.base.Shrink(p.PairParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.PairParams))
+	out := make([]LdpParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewLdpParams(s))
 	}
 

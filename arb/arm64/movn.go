@@ -38,6 +38,7 @@ func (p MovnParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p MovnParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,13 +49,13 @@ type movnGen struct {
 	rnd *rand.Rand
 }
 
-func newMovnGen(rnd *rand.Rand) movnGen {
-	return movnGen{rnd: rnd}
-}
-
 // Movn — an arbitrary movn.
 func Movn(rnd *rand.Rand) ohsnap.Arbitrary[MovnParams] {
 	return newMovnGen(rnd)
+}
+
+func newMovnGen(rnd *rand.Rand) movnGen {
+	return movnGen{rnd: rnd}
 }
 
 func (g movnGen) Generate() iter.Seq[MovnParams] {

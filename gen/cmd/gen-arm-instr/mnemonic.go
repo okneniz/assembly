@@ -22,9 +22,11 @@ func isLatin(r rune) bool {
 // run; if there are no letters at all - an empty string. A constructor:
 // the combinators are values built once per call.
 func makeMnemonicParser() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
-	notAlpha := parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("non-letter", true, func(r rune) bool {
-		return !isLatin(r)
-	}))
+	notAlpha := parsecstrings.Try(
+		parsecstrings.Satisfy[parsec.Stateless]("non-letter", true, func(r rune) bool {
+			return !isLatin(r)
+		}),
+	)
 	alphaRun := parsecstrings.Cast(
 		parsecstrings.Some(8, "mnemonic letters",
 			parsecstrings.Try(parsecstrings.Satisfy[parsec.Stateless]("letter", true, isLatin))),

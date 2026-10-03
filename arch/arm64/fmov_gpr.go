@@ -38,15 +38,8 @@ const (
 	fmovFromGprS uint32 = 0x1E270000 // fmov sn, wn
 )
 
-func (i FmovFromGpr) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
-}
-
 func (i FmovFromGpr) Encode(w io.Writer) (int64, error) {
-	match, err := fpMatch(i.rd, fmovFromGprD, fmovFromGprS)
-	if err != nil {
-		return 0, fmt.Errorf("fmov: %w", err)
-	}
+	match := fpMatch(i.rd, fmovFromGprD, fmovFromGprS)
 
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -54,6 +47,10 @@ func (i FmovFromGpr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i FmovFromGpr) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
 }
 
 // FmovToGpr — fmov xn, fd | fmov wn, sn (register bits moved to the
@@ -87,10 +84,6 @@ const (
 	fmovToGprW uint32 = 0x1E260000 // fmov wn, sn
 )
 
-func (i FmovToGpr) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
-}
-
 func (i FmovToGpr) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, fmovToGprX, fmovToGprW)
 	if err != nil {
@@ -103,4 +96,8 @@ func (i FmovToGpr) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5)
+}
+
+func (i FmovToGpr) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("fmov %s, %s", i.rd, i.rn)
 }

@@ -18,29 +18,6 @@ import (
 	"github.com/okneniz/assembly/file/elf"
 )
 
-// corpus returns the testdata files (skipping missing ones - e.g., with a
-// partial checkout).
-func corpus(t *testing.T) []string {
-	t.Helper()
-	entries, err := os.ReadDir("testdata")
-	if err != nil {
-		t.Skipf("no testdata: %v", err)
-	}
-
-	var out []string
-	for _, e := range entries {
-		if !e.IsDir() {
-			out = append(out, filepath.Join("testdata", e.Name()))
-		}
-	}
-
-	if len(out) == 0 {
-		t.Skip("testdata is empty")
-	}
-
-	return out
-}
-
 // TestDiffHeader compares headers.
 func TestDiffHeader(t *testing.T) {
 	for _, path := range corpus(t) {
@@ -191,26 +168,6 @@ func TestDiffSymbols(t *testing.T) {
 	}
 }
 
-// llvmReadelf - the path of llvm-readelf (the oracle for the diff tests
-// below); the test is skipped when the tool is unavailable.
-func llvmReadelf(t *testing.T) string {
-	t.Helper()
-	for _, c := range []string{
-		"/opt/homebrew/opt/llvm/bin/llvm-readelf",
-		"/opt/homebrew/bin/llvm-readelf",
-		"/usr/local/opt/llvm/bin/llvm-readelf",
-		"/usr/local/bin/llvm-readelf",
-		"llvm-readelf",
-	} {
-		if _, err := exec.LookPath(c); err == nil {
-			return c
-		}
-	}
-
-	t.Skip("llvm-readelf is unavailable")
-	return ""
-}
-
 // TestDiffRelocs compares the relocations with the output of llvm-readelf
 // -rW: offset and the full r_info layout (symbol index + type).
 func TestDiffRelocs(t *testing.T) {
@@ -273,16 +230,6 @@ func TestDiffRelocs(t *testing.T) {
 			}
 		})
 	}
-}
-
-func isHex(s string) bool {
-	for _, c := range s {
-		if !strings.ContainsRune("0123456789abcdefABCDEF", c) {
-			return false
-		}
-	}
-
-	return len(s) > 0
 }
 
 // TestRelocNames checks the type names against the expected ones (the numbers
@@ -557,6 +504,59 @@ func TestGnuHashSynthetic(t *testing.T) {
 	_ = dynOff
 }
 
+// corpus returns the testdata files (skipping missing ones - e.g., with a
+// partial checkout).
+func corpus(t *testing.T) []string {
+	t.Helper()
+	entries, err := os.ReadDir("testdata")
+	if err != nil {
+		t.Skipf("no testdata: %v", err)
+	}
+
+	var out []string
+	for _, e := range entries {
+		if !e.IsDir() {
+			out = append(out, filepath.Join("testdata", e.Name()))
+		}
+	}
+
+	if len(out) == 0 {
+		t.Skip("testdata is empty")
+	}
+
+	return out
+}
+
+// llvmReadelf - the path of llvm-readelf (the oracle for the diff tests
+// below); the test is skipped when the tool is unavailable.
+func llvmReadelf(t *testing.T) string {
+	t.Helper()
+	for _, c := range []string{
+		"/opt/homebrew/opt/llvm/bin/llvm-readelf",
+		"/opt/homebrew/bin/llvm-readelf",
+		"/usr/local/opt/llvm/bin/llvm-readelf",
+		"/usr/local/bin/llvm-readelf",
+		"llvm-readelf",
+	} {
+		if _, err := exec.LookPath(c); err == nil {
+			return c
+		}
+	}
+
+	t.Skip("llvm-readelf is unavailable")
+	return ""
+}
+
+func isHex(s string) bool {
+	for _, c := range s {
+		if !strings.ContainsRune("0123456789abcdefABCDEF", c) {
+			return false
+		}
+	}
+
+	return len(s) > 0
+}
+
 // buildSyntheticDynamic builds a minimal ELF64 LE ET_DYN: a PT_LOAD with an
 // identity mapping vaddr == offset, PT_DYNAMIC, .dynstr, .gnu.hash,
 // .gnu.version, .gnu.version_r, .gnu.version_d, and sections for them.
@@ -815,9 +815,11 @@ func indexOf(hay, needle []byte) int {
 func le16(v uint16) []byte {
 	return []byte{byte(v), byte(v >> 8)}
 }
+
 func le32(v uint32) []byte {
 	return []byte{byte(v), byte(v >> 8), byte(v >> 16), byte(v >> 24)}
 }
+
 func le64(v uint64) []byte {
 	return append(le32(uint32(v)), le32(uint32(v>>32))...)
 }
@@ -826,9 +828,11 @@ func put16(b []byte, off int, v uint16) {
 	b[off] = byte(v)
 	b[off+1] = byte(v >> 8)
 }
+
 func put32(b []byte, off int, v uint32) {
 	copy(b[off:], le32(v))
 }
+
 func put64(b []byte, off int, v uint64) {
 	copy(b[off:], le64(v))
 }

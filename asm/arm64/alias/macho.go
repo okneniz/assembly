@@ -66,6 +66,7 @@ func MachOFromResult(res *asm.Result, entry string) (*file.MachOImage, error) {
 	for name := range res.Symbols {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
 
 	syms := make([]file.MachOSym, 0, len(names))

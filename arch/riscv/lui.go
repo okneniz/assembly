@@ -22,10 +22,6 @@ func cLui(rd string, imm int64) Lui {
 	}
 }
 
-func (i Lui) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("lui %s, %s", i.rd, i.imm.text())
-}
-
 func (i Lui) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -42,6 +38,10 @@ func (i Lui) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Lui) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("lui %s, %s", i.rd, i.imm.text())
 }
 
 // compressLui — c.lui: nzimm6 ≠ 0, rd ∉ {x0, sp}. The immediate is the

@@ -49,10 +49,6 @@ func newDup(vd VReg, gpr Reg, arr string) (Dup, error) {
 
 const dupEnc uint32 = 0x0E000000 // dup vd, wn (family base; op bits 0)
 
-func (i Dup) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("dup.%s %s, %s", i.arr, i.vd, i.gpr)
-}
-
 func (i Dup) Encode(w io.Writer) (int64, error) {
 	vd, err := armRegNum(i.vd)
 	if err != nil {
@@ -70,4 +66,8 @@ func (i Dup) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, dupEnc|q<<30|0xC00|1<<size<<16|gpr<<5|vd)
+}
+
+func (i Dup) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("dup.%s %s, %s", i.arr, i.vd, i.gpr)
 }

@@ -93,54 +93,6 @@ func (p ByElemParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
 
-// the per-kind arrangement sets.
-func byElemIntArrs() []string {
-	return []string{"4h", "8h", "2s", "4s"}
-}
-
-func byElemFpArrs() []string {
-	return []string{"2s", "4s", "2d"}
-}
-
-func byElemLongArrs() []string {
-	return []string{"4s", "2d"}
-}
-
-func fcmlaArrs() []string {
-	return []string{"4h", "8h", "4s"}
-}
-
-// arrLaneWidth — the lane width number of an arrangement (h:1 s:2 d:3).
-func arrLaneWidth(arr string) uint32 {
-	switch arr[len(arr)-1] {
-	case 'h':
-		return 1
-	case 's':
-		return 2
-	case 'd':
-		return 3
-	default:
-		return 0
-	}
-}
-
-// stdIdxMax — the lane-index bound of the standard by-element layout by
-// the lane width (.h carries a 3-bit index with a 4-bit Vm, .s/.d
-// shrink by one bit each).
-func stdIdxMax(width uint32) uint32 {
-	return 8 >> (width - 1)
-}
-
-// longSrcWidth — the source lane width of a long family (the result
-// arrangement .4s reads .h sources, .2d reads .s).
-func longSrcWidth(arr string) uint32 {
-	if arr == "4s" {
-		return 1
-	}
-
-	return 2
-}
-
 // byElemSpec — one mnemonic's laws and Builder call.
 type byElemSpec struct {
 	set    []string
@@ -150,40 +102,6 @@ type byElemSpec struct {
 	two    bool                    // generate the upper-half flag
 	rot    bool                    // generate the fcmla rotation
 	mk     func(arm64.Builder, ByElemParams) (arm64.Instr, error)
-}
-
-// stdSpec — the standard layout over an arrangement set.
-func stdSpec(set []string, mk func(arm64.Builder, ByElemParams) (arm64.Instr, error)) byElemSpec {
-	return byElemSpec{
-		set:    set,
-		sizeOf: arrLaneWidth,
-		idxOf:  func(arr string) uint32 { return stdIdxMax(arrLaneWidth(arr)) },
-		mk:     mk,
-	}
-}
-
-// longMk — the Builder call adapter of the long families (the two flag
-// sits before the index in their signatures).
-func longMk(
-	call func(arm64.Builder, arm64.VReg, arm64.VReg, arm64.VReg, string, bool, uint32) (arm64.Instr, error),
-) func(arm64.Builder, ByElemParams) (arm64.Instr, error) {
-	return func(b arm64.Builder, p ByElemParams) (arm64.Instr, error) {
-		return call(b, p.Rd, p.Rn, p.Rm, p.Arr, p.Two, p.Idx)
-	}
-}
-
-// longSpec — the long families: the arrangement names the result, the
-// index and the Vm width follow the source width.
-func longSpec(
-	call func(arm64.Builder, arm64.VReg, arm64.VReg, arm64.VReg, string, bool, uint32) (arm64.Instr, error),
-) byElemSpec {
-	return byElemSpec{
-		set:    byElemLongArrs(),
-		sizeOf: longSrcWidth,
-		idxOf:  func(arr string) uint32 { return stdIdxMax(longSrcWidth(arr)) },
-		two:    true,
-		mk:     longMk(call),
-	}
 }
 
 var byElemSpecs = [byElemOpCount]byElemSpec{
@@ -260,21 +178,6 @@ var byElemSpecs = [byElemOpCount]byElemSpec{
 			return b.FcmlaElem(p.Rd, p.Rn, p.Rm, p.Arr, p.Idx, p.Rot)
 		},
 	},
-}
-
-// byElemValid — the params fit the family's lane laws (a .h source
-// stays inside the 4-bit Vm field unless the family carries a 5-bit Vm).
-func byElemValid(spec byElemSpec, p ByElemParams) bool {
-	if !slices.Contains(spec.set, p.Arr) {
-		return false
-	}
-
-	rmMax := 32
-	if !spec.rmAny && spec.sizeOf(p.Arr) == 1 {
-		rmMax = 16
-	}
-
-	return p.Idx < spec.idxOf(p.Arr) && int(p.Rm.Num()) < rmMax
 }
 
 // byElemArb — the shared arbitrary of the group: every generated or
@@ -368,6 +271,103 @@ func SqdmullElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
 
 func FcmlaElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
 	return byElemArb{rnd: rnd, op: ByElemFcmla}
+}
+
+// the per-kind arrangement sets.
+func byElemIntArrs() []string {
+	return []string{"4h", "8h", "2s", "4s"}
+}
+
+func byElemFpArrs() []string {
+	return []string{"2s", "4s", "2d"}
+}
+
+func byElemLongArrs() []string {
+	return []string{"4s", "2d"}
+}
+
+func fcmlaArrs() []string {
+	return []string{"4h", "8h", "4s"}
+}
+
+// arrLaneWidth — the lane width number of an arrangement (h:1 s:2 d:3).
+func arrLaneWidth(arr string) uint32 {
+	switch arr[len(arr)-1] {
+	case 'h':
+		return 1
+	case 's':
+		return 2
+	case 'd':
+		return 3
+	default:
+		return 0
+	}
+}
+
+// stdIdxMax — the lane-index bound of the standard by-element layout by
+// the lane width (.h carries a 3-bit index with a 4-bit Vm, .s/.d
+// shrink by one bit each).
+func stdIdxMax(width uint32) uint32 {
+	return 8 >> (width - 1)
+}
+
+// longSrcWidth — the source lane width of a long family (the result
+// arrangement .4s reads .h sources, .2d reads .s).
+func longSrcWidth(arr string) uint32 {
+	if arr == "4s" {
+		return 1
+	}
+
+	return 2
+}
+
+// stdSpec — the standard layout over an arrangement set.
+func stdSpec(set []string, mk func(arm64.Builder, ByElemParams) (arm64.Instr, error)) byElemSpec {
+	return byElemSpec{
+		set:    set,
+		sizeOf: arrLaneWidth,
+		idxOf:  func(arr string) uint32 { return stdIdxMax(arrLaneWidth(arr)) },
+		mk:     mk,
+	}
+}
+
+// longMk — the Builder call adapter of the long families (the two flag
+// sits before the index in their signatures).
+func longMk(
+	call func(arm64.Builder, arm64.VReg, arm64.VReg, arm64.VReg, string, bool, uint32) (arm64.Instr, error),
+) func(arm64.Builder, ByElemParams) (arm64.Instr, error) {
+	return func(b arm64.Builder, p ByElemParams) (arm64.Instr, error) {
+		return call(b, p.Rd, p.Rn, p.Rm, p.Arr, p.Two, p.Idx)
+	}
+}
+
+// longSpec — the long families: the arrangement names the result, the
+// index and the Vm width follow the source width.
+func longSpec(
+	call func(arm64.Builder, arm64.VReg, arm64.VReg, arm64.VReg, string, bool, uint32) (arm64.Instr, error),
+) byElemSpec {
+	return byElemSpec{
+		set:    byElemLongArrs(),
+		sizeOf: longSrcWidth,
+		idxOf:  func(arr string) uint32 { return stdIdxMax(longSrcWidth(arr)) },
+		two:    true,
+		mk:     longMk(call),
+	}
+}
+
+// byElemValid — the params fit the family's lane laws (a .h source
+// stays inside the 4-bit Vm field unless the family carries a 5-bit Vm).
+func byElemValid(spec byElemSpec, p ByElemParams) bool {
+	if !slices.Contains(spec.set, p.Arr) {
+		return false
+	}
+
+	rmMax := 32
+	if !spec.rmAny && spec.sizeOf(p.Arr) == 1 {
+		rmMax = 16
+	}
+
+	return p.Idx < spec.idxOf(p.Arr) && int(p.Rm.Num()) < rmMax
 }
 
 func (a byElemArb) Generate() iter.Seq[ByElemParams] {

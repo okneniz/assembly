@@ -15,12 +15,12 @@ type Pcalau12i struct {
 	imm imm
 }
 
-func (i Pcalau12i) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("pcalau12i %s, %s", laRegName(i.rd), i.imm.text())
-}
-
 func (i Pcalau12i) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["pcalau12i"][0] | uint32(i.rd) | scatterS(i.imm.val, 5, 20)
 
 	return writeWord(w, word)
+}
+
+func (i Pcalau12i) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("pcalau12i %s, %s", laRegName(i.rd), i.imm.text())
 }

@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,7 +20,7 @@ type SmullElem struct {
 // calls it with values read from the word).
 func newSmullElem(q, size, idx uint32, rd, rn, rm VReg) (SmullElem, error) {
 	if size == 0 || size > 2 {
-		return SmullElem{}, fmt.Errorf(
+		return SmullElem{}, errors.New(
 			"arm64.NewSmullElem: only the .h and .s source lanes exist (the .8h-result class is unallocated)",
 		)
 	}
@@ -45,6 +46,15 @@ const (
 	smullElemOpc uint32 = 10
 )
 
+func (i SmullElem) Encode(w io.Writer) (int64, error) {
+	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
+	if err != nil {
+		return 0, fmt.Errorf("smull: %w", err)
+	}
+
+	return writeWord(w, byElemBits(i.q, smullElemU, i.size, rm, smullElemOpc, i.idx, rn, rd))
+}
+
 func (i SmullElem) ObjDump(_ disasm.ViewCtx) string {
 	name := "smull"
 	if i.q == 1 {
@@ -53,13 +63,4 @@ func (i SmullElem) ObjDump(_ disasm.ViewCtx) string {
 
 	return fmt.Sprintf("%s.%s %s, %s, %s[%d]",
 		name, decodeArrangement(1, i.size+1), i.rd, i.rn, i.rm, i.idx)
-}
-
-func (i SmullElem) Encode(w io.Writer) (int64, error) {
-	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
-	if err != nil {
-		return 0, fmt.Errorf("smull: %w", err)
-	}
-
-	return writeWord(w, byElemBits(i.q, smullElemU, i.size, rm, smullElemOpc, i.idx, rn, rd))
 }

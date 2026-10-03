@@ -17,25 +17,6 @@ import (
 	"github.com/okneniz/assembly/unit"
 )
 
-// fragBytes resolves the fragment at base and encodes it.
-func fragBytes(t *testing.T, src string, base uint64, resolve func(string) (uint64, bool)) []byte {
-	t.Helper()
-
-	f, errs := Fragment(src)
-	require.Empty(t, errs, src)
-
-	rs, err := f.Resolve(unit.NewCtx(base, resolve))
-	require.NoError(t, err, src)
-
-	var buf bytes.Buffer
-	for _, r := range rs {
-		_, err := r.Encode(&buf)
-		require.NoError(t, err, src)
-	}
-
-	return buf.Bytes()
-}
-
 func TestFragmentOracle(t *testing.T) {
 	// data-only: the fragment text (aliases and numeric locals included);
 	// the oracle is the full alias.Assemble of the same text
@@ -59,9 +40,9 @@ func TestFragmentOracle(t *testing.T) {
 		// the fpu.h save idiom: the inline-asm body opens with the fp
 		// extension and closes with its restoration
 		".arch_extension fp\nstp q0, q1, [sp, #-32]!\nstp q2, q3, [sp, #-32]!\n.arch_extension nofp",
-		"1: nop\nb 1b", // a numeric backward branch
-		"b 1f\nnop\n1:",             // a numeric forward branch
-		"adr x0, .",                 // the fragment's own address
+		"1: nop\nb 1b",  // a numeric backward branch
+		"b 1f\nnop\n1:", // a numeric forward branch
+		"adr x0, .",     // the fragment's own address
 		"1: ldaxr w8, [x0]\nadd w8, w8, w1\nstlxr w9, w8, [x0]\ncbnz w9, 1b", // the atomic idiom
 	}
 
@@ -131,6 +112,25 @@ func TestFragmentRejectsReal(t *testing.T) {
 		require.NotEmpty(t, errs, tt.src)
 		require.ErrorContains(t, errs[0], tt.msg, tt.src)
 	}
+}
+
+// fragBytes resolves the fragment at base and encodes it.
+func fragBytes(t *testing.T, src string, base uint64, resolve func(string) (uint64, bool)) []byte {
+	t.Helper()
+
+	f, errs := Fragment(src)
+	require.Empty(t, errs, src)
+
+	rs, err := f.Resolve(unit.NewCtx(base, resolve))
+	require.NoError(t, err, src)
+
+	var buf bytes.Buffer
+	for _, r := range rs {
+		_, err := r.Encode(&buf)
+		require.NoError(t, err, src)
+	}
+
+	return buf.Bytes()
 }
 
 // textOf is the .text section data of a full assembly (the oracle bytes).

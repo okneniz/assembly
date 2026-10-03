@@ -12,13 +12,13 @@ type AmxorDbW struct {
 	rd, rk, rj uint8
 }
 
-func (i AmxorDbW) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("amxor_db.w %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
-}
-
 func (i AmxorDbW) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["amxor_db.w"][0] |
 		uint32(i.rd) | uint32(i.rk)<<10 | uint32(i.rj)<<5
 
 	return writeWord(w, word)
+}
+
+func (i AmxorDbW) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("amxor_db.w %s, %s, %s", laRegName(i.rd), laRegName(i.rk), laRegName(i.rj))
 }

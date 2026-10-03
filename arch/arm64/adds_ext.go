@@ -102,6 +102,10 @@ const (
 	AddsExtW uint32 = 0x2B200000
 )
 
+func (i AddsExt) Encode(w io.Writer) (int64, error) {
+	return i.extWrite(w, AddsExtX, AddsExtW, "adds")
+}
+
 func (i AddsExt) ObjDump(_ disasm.ViewCtx) string {
 	if i.rdNum == 31 {
 		rnz := addSubRegName(i.rnNum, i.isf, false)
@@ -115,8 +119,4 @@ func (i AddsExt) ObjDump(_ disasm.ViewCtx) string {
 
 	return fmt.Sprintf("adds %s, %s, %s%s", addSubRegName(i.rdNum, i.isf, false),
 		addSubRegName(i.rnNum, i.isf, false), addSubRegName(i.rmNum, i.isf, false), i.extMod(false))
-}
-
-func (i AddsExt) Encode(w io.Writer) (int64, error) {
-	return i.extWrite(w, AddsExtX, AddsExtW, "adds")
 }

@@ -67,16 +67,6 @@ const (
 	fcmlaElemOpcBase uint32 = 1
 )
 
-func (i FcmlaElem) ObjDump(_ disasm.ViewCtx) string {
-	arr := decodeArrangement(i.q, i.size)
-	if i.size == 3 {
-		arr = "2d"
-	}
-
-	return fmt.Sprintf("fcmla.%s %s, %s, %s[%d], #%d",
-		arr, i.rd, i.rn, i.rm, i.idx, i.rot)
-}
-
 func (i FcmlaElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -96,4 +86,14 @@ func (i FcmlaElem) Encode(w io.Writer) (int64, error) {
 	opc := fcmlaElemOpcBase + i.rot/90*2
 	return writeWord(w, i.q<<30|fcmlaElemU<<29|0x0F<<24|i.size<<22|
 		rm<<16|opc<<12|idxBits|rn<<5|rd)
+}
+
+func (i FcmlaElem) ObjDump(_ disasm.ViewCtx) string {
+	arr := decodeArrangement(i.q, i.size)
+	if i.size == 3 {
+		arr = "2d"
+	}
+
+	return fmt.Sprintf("fcmla.%s %s, %s, %s[%d], #%d",
+		arr, i.rd, i.rn, i.rm, i.idx, i.rot)
 }

@@ -35,6 +35,7 @@ func (p SdivParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p SdivParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -44,13 +45,13 @@ type sdivGen struct {
 	rnd *rand.Rand
 }
 
-func newSdivGen(rnd *rand.Rand) sdivGen {
-	return sdivGen{rnd: rnd}
-}
-
 // Sdiv — an arbitrary sdiv.
 func Sdiv(rnd *rand.Rand) ohsnap.Arbitrary[SdivParams] {
 	return newSdivGen(rnd)
+}
+
+func newSdivGen(rnd *rand.Rand) sdivGen {
+	return sdivGen{rnd: rnd}
 }
 
 func (g sdivGen) Generate() iter.Seq[SdivParams] {
@@ -65,8 +66,9 @@ func (g sdivGen) Generate() iter.Seq[SdivParams] {
 }
 
 func (g sdivGen) Shrink(p SdivParams) iter.Seq[SdivParams] {
-	var out []SdivParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]SdivParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewSdivParams(r, p.Rn, p.Rm))
 	}
 

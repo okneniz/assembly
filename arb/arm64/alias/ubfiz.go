@@ -30,11 +30,6 @@ func NewUbfizParams(rd arm64.Reg, rn arm64.Reg, lsb uint32, width uint32) UbfizP
 	}
 }
 
-func (p UbfizParams) String() string {
-	return "ubfiz " + p.Rd.String() + ", " + p.Rn.String() +
-		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
-}
-
 func (p UbfizParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -44,19 +39,24 @@ func (p UbfizParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p UbfizParams) String() string {
+	return "ubfiz " + p.Rd.String() + ", " + p.Rn.String() +
+		", #" + utoa(p.Lsb) + ", #" + utoa(p.Width)
+}
+
 // ubfizGen — generator for ubfiz: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type ubfizGen struct {
 	rnd *rand.Rand
 }
 
-func newUbfizGen(rnd *rand.Rand) ubfizGen {
-	return ubfizGen{rnd: rnd}
-}
-
 // Ubfiz — an arbitrary ubfiz.
 func Ubfiz(rnd *rand.Rand) ohsnap.Arbitrary[UbfizParams] {
 	return newUbfizGen(rnd)
+}
+
+func newUbfizGen(rnd *rand.Rand) ubfizGen {
+	return ubfizGen{rnd: rnd}
 }
 
 func (g ubfizGen) Generate() iter.Seq[UbfizParams] {

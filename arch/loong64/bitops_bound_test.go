@@ -6,56 +6,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-// uimm2v - a validated ui2; a validation error fails the test.
-func uimm2v(t *testing.T, v int64) UImm2 {
-	t.Helper()
-
-	i, err := New().UImm2(v)
-	require.NoError(t, err)
-
-	return i
-}
-
-// uimm3v - a validated ui3; a validation error fails the test.
-func uimm3v(t *testing.T, v int64) UImm3 {
-	t.Helper()
-
-	i, err := New().UImm3(v)
-	require.NoError(t, err)
-
-	return i
-}
-
-// uimm5v - a validated ui5; a validation error fails the test.
-func uimm5v(t *testing.T, v int64) UImm5 {
-	t.Helper()
-
-	i, err := New().UImm5(v)
-	require.NoError(t, err)
-
-	return i
-}
-
-// uimm6v - a validated ui6; a validation error fails the test.
-func uimm6v(t *testing.T, v int64) UImm6 {
-	t.Helper()
-
-	i, err := New().UImm6(v)
-	require.NoError(t, err)
-
-	return i
-}
-
-// shift3v - a validated alsl shift amount (1..4); an error fails the test.
-func shift3v(t *testing.T, v int64) Shift3 {
-	t.Helper()
-
-	s, err := New().Shift3(v)
-	require.NoError(t, err)
-
-	return s
-}
-
 // TestBitopsBoundJSONEncodeError - the marshal and write-error paths of
 // every bit-field, alsl, bytepick, crc, assert and bounds-check
 // instruction (the rest is covered by the per-file tests).
@@ -105,4 +55,54 @@ func TestBitopsBoundJSONEncodeError(t *testing.T) {
 		_, err := f.in.Encode(errWriter{})
 		require.ErrorContains(t, err, "write failed", f.mnem)
 	}
+}
+
+// uimm2v - a validated ui2; a validation error fails the test.
+func uimm2v(t *testing.T, v int64) UImm2 {
+	t.Helper()
+
+	i, err := New().UImm2(v)
+	require.NoError(t, err)
+
+	return i
+}
+
+// uimm3v - a validated ui3; a validation error fails the test.
+func uimm3v(t *testing.T, v int64) UImm3 {
+	t.Helper()
+
+	i, err := New().UImm3(v)
+	require.NoError(t, err)
+
+	return i
+}
+
+// uimm5v - a validated ui5; a validation error fails the test.
+func uimm5v(t *testing.T, v int64) UImm5 {
+	t.Helper()
+
+	i, err := New().UImm5(v)
+	require.NoError(t, err)
+
+	return i
+}
+
+// uimm6v - a validated ui6; a validation error fails the test.
+func uimm6v(t *testing.T, v int64) UImm6 {
+	t.Helper()
+
+	i, err := New().UImm6(v)
+	require.NoError(t, err)
+
+	return i
+}
+
+// shift3v - a validated alsl shift amount (1..4); an error fails the test.
+func shift3v(t *testing.T, v int64) Shift3 {
+	t.Helper()
+
+	s, err := New().Shift3(v)
+	require.NoError(t, err)
+
+	return s
 }

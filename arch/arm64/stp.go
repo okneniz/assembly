@@ -96,10 +96,10 @@ const (
 	stpWEnc uint32 = 0x29000000 // stp wt, wt2, [xn, #imm7<<2]
 )
 
-func (i Stp) ObjDump(_ disasm.ViewCtx) string {
-	return "stp " + i.pairText()
-}
-
 func (i Stp) Encode(w io.Writer) (int64, error) {
 	return i.pairWrite(w, "stp")
+}
+
+func (i Stp) ObjDump(_ disasm.ViewCtx) string {
+	return "stp " + i.pairText()
 }

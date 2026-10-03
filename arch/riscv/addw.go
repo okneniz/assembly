@@ -21,10 +21,6 @@ func cAddw(rd, rs1, rs2 string) Addw {
 	}
 }
 
-func (i Addw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("addw %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Addw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["addw"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 	if half, ok := cR3(i.rd, i.rs1, i.rs2, 0x9C01, 1); ok && !o.NoRVC {
@@ -32,6 +28,10 @@ func (i Addw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, word)
+}
+
+func (i Addw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("addw %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newAddw(ops []Op) (Instr, error) {

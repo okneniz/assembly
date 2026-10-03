@@ -17,15 +17,6 @@ import (
 	"github.com/okneniz/assembly/tests/cmd/objdump"
 )
 
-func armAssembleOne(t *testing.T, src string, addr uint64) uint32 {
-	t.Helper()
-	res, errs := asm.Assemble(src, addr, New())
-	require.Empty(t, errs, "assemble %q", src)
-	require.NotEmpty(t, res.Sections, "assemble %q", src)
-	require.Len(t, res.Sections[0].Data, 4, "assemble %q: bad output", src)
-	return binary.LittleEndian.Uint32(res.Sections[0].Data)
-}
-
 func TestBitMasksRoundTrip(t *testing.T) {
 	err := arch.VerifyBitMasks()
 	require.NoError(t, err)
@@ -416,18 +407,6 @@ func TestArm64NumericLabels(t *testing.T) {
 	require.NotContains(t, res.Symbols, "1", "numeric label must not be a symbol")
 }
 
-// schemaMaskFor returns the mask of the schema matching the word (for
-// the don't-care comparison: bits outside the Mask may differ).
-func schemaMaskFor(w uint32) uint32 {
-	for _, sc := range arch.Schemas() {
-		if (w & sc.Mask) == sc.Value {
-			return sc.Mask
-		}
-	}
-
-	return 0
-}
-
 // TestLdrLiteralPool tests ldr xN, =literal: literal pool slots at the
 // end of the subsection, dedup of identical literals, a symbolic
 // literal, and the pool never getting into Symbols. Always ldr-literal
@@ -743,4 +722,25 @@ func TestZeroShiftSpellings(t *testing.T) {
 		got := armAssembleOne(t, c.src, 0)
 		require.Equal(t, c.word, got, "case %q", c.src)
 	}
+}
+
+func armAssembleOne(t *testing.T, src string, addr uint64) uint32 {
+	t.Helper()
+	res, errs := asm.Assemble(src, addr, New())
+	require.Empty(t, errs, "assemble %q", src)
+	require.NotEmpty(t, res.Sections, "assemble %q", src)
+	require.Len(t, res.Sections[0].Data, 4, "assemble %q: bad output", src)
+	return binary.LittleEndian.Uint32(res.Sections[0].Data)
+}
+
+// schemaMaskFor returns the mask of the schema matching the word (for
+// the don't-care comparison: bits outside the Mask may differ).
+func schemaMaskFor(w uint32) uint32 {
+	for _, sc := range arch.Schemas() {
+		if (w & sc.Mask) == sc.Value {
+			return sc.Mask
+		}
+	}
+
+	return 0
 }

@@ -12,14 +12,14 @@ type Mulhsu struct {
 	rd, rs1, rs2 string
 }
 
-func (i Mulhsu) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("mulhsu %s, %s, %s", i.rd, i.rs1, i.rs2)
-}
-
 func (i Mulhsu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["mulhsu"][0] | regBits(i.rd)<<7 | regBits(i.rs1)<<15 | regBits(i.rs2)<<20
 
 	return writeWord(w, word)
+}
+
+func (i Mulhsu) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("mulhsu %s, %s, %s", i.rd, i.rs1, i.rs2)
 }
 
 func newMulhsu(ops []Op) (Instr, error) {

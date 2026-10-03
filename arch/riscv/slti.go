@@ -13,10 +13,6 @@ type Slti struct {
 	imm     imm
 }
 
-func (i Slti) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("slti %s, %s, %s", i.rd, i.rs1, i.imm.text())
-}
-
 func (i Slti) Encode(w io.Writer, o EncOpts) (int64, error) {
 	v := i.imm.val
 
@@ -26,6 +22,10 @@ func (i Slti) Encode(w io.Writer, o EncOpts) (int64, error) {
 	}
 
 	return writeWord(w, riscvEncodings["slti"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|bits)
+}
+
+func (i Slti) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("slti %s, %s, %s", i.rd, i.rs1, i.imm.text())
 }
 
 func newSlti(ops []Op) (Instr, error) {

@@ -56,10 +56,10 @@ const (
 	stlxrWEnc uint32 = 0x8800FC00 // stlxr ws, wt, [xn]
 )
 
-func (i Stlxr) ObjDump(_ disasm.ViewCtx) string {
-	return "stlxr " + i.exText()
-}
-
 func (i Stlxr) Encode(w io.Writer) (int64, error) {
 	return i.exWrite(w, i.enc, "stlxr")
+}
+
+func (i Stlxr) ObjDump(_ disasm.ViewCtx) string {
+	return "stlxr " + i.exText()
 }

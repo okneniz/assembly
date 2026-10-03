@@ -14,16 +14,16 @@ type sysFixed struct {
 	enc   uint32
 }
 
+func (i sysFixed) Encode(w io.Writer) (int64, error) {
+	return writeWord(w, i.enc)
+}
+
 func (i sysFixed) ObjDump(_ disasm.ViewCtx) string {
 	if i.ops == "" {
 		return i.name
 	}
 
 	return i.name + " " + i.ops
-}
-
-func (i sysFixed) Encode(w io.Writer) (int64, error) {
-	return writeWord(w, i.enc)
 }
 
 // SysFixedOf — the fixed system instruction (dmb/dsb/yield/...).

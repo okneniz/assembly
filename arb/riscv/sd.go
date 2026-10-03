@@ -32,6 +32,7 @@ func NewSdParams(rs2 riscv.Reg, rs1 riscv.Reg, off riscv.Off) SdParams {
 func (p SdParams) Instr() riscv.Instr {
 	return riscv.New().Sd(p.Rs2, p.Rs1, p.Off)
 }
+
 func (p SdParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -41,13 +42,13 @@ type sdGen struct {
 	rnd *rand.Rand
 }
 
-func newSdGen(rnd *rand.Rand) sdGen {
-	return sdGen{rnd: rnd}
-}
-
 // Sd — an arbitrary sd.
 func Sd(rnd *rand.Rand) ohsnap.Arbitrary[SdParams] {
 	return newSdGen(rnd)
+}
+
+func newSdGen(rnd *rand.Rand) sdGen {
+	return sdGen{rnd: rnd}
 }
 
 func (g sdGen) Generate() iter.Seq[SdParams] {

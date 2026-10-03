@@ -13,11 +13,6 @@ type Bltu struct {
 	off      imm // pc-relative byte offset
 }
 
-func (i Bltu) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	return fmt.Sprintf("bltu %s, %s, %s", i.rs1, i.rs2, target.text())
-}
-
 func (i Bltu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	bits, err := encB(i.off.val)
 	if err != nil {
@@ -27,6 +22,11 @@ func (i Bltu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["bltu"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
 
 	return writeWord(w, word)
+}
+
+func (i Bltu) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("bltu %s, %s, %s", i.rs1, i.rs2, target.text())
 }
 
 func newBltu(ops []Op) (Instr, error) {

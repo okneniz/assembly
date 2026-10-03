@@ -17,6 +17,16 @@ type Symbol struct {
 	Value uint64
 }
 
+// IsAltEntry: an alternate entry point of a function.
+func (s Symbol) IsAltEntry() bool {
+	return s.Desc&N_ALT_ENTRY != 0
+}
+
+// IsDebug: this is a stab symbol (N_STAB set - N_SO/N_FUN/...).
+func (s Symbol) IsDebug() bool {
+	return s.Type&N_STAB != 0
+}
+
 // IsExternal: the N_EXT bit is set.
 func (s Symbol) IsExternal() bool {
 	return s.Type&N_EXT != 0
@@ -27,14 +37,18 @@ func (s Symbol) IsPrivateExternal() bool {
 	return s.Type&N_PEXT != 0
 }
 
-// IsDebug: this is a stab symbol (N_STAB set - N_SO/N_FUN/...).
-func (s Symbol) IsDebug() bool {
-	return s.Type&N_STAB != 0
+// IsThumbDef: a Thumb function definition (32-bit ARM).
+func (s Symbol) IsThumbDef() bool {
+	return s.Desc&N_ARM_THUMB_DEF != 0
 }
 
-// Stab returns the stab symbol type (meaningful when IsDebug).
-func (s Symbol) Stab() Stab {
-	return Stab(s.Type)
+func (s Symbol) IsWeakDef() bool {
+	return s.Desc&N_WEAK_DEF != 0
+}
+
+// IsWeakRef / IsWeakDef: weak reference/definition.
+func (s Symbol) IsWeakRef() bool {
+	return s.Desc&N_WEAK_REF != 0
 }
 
 // Ntype returns the raw N_TYPE value (masking the bits).
@@ -47,24 +61,6 @@ func (s Symbol) Ordinal() int {
 	return LibraryOrdinal(s.Desc)
 }
 
-// IsWeakRef / IsWeakDef: weak reference/definition.
-func (s Symbol) IsWeakRef() bool {
-	return s.Desc&N_WEAK_REF != 0
-}
-func (s Symbol) IsWeakDef() bool {
-	return s.Desc&N_WEAK_DEF != 0
-}
-
-// IsAltEntry: an alternate entry point of a function.
-func (s Symbol) IsAltEntry() bool {
-	return s.Desc&N_ALT_ENTRY != 0
-}
-
-// IsThumbDef: a Thumb function definition (32-bit ARM).
-func (s Symbol) IsThumbDef() bool {
-	return s.Desc&N_ARM_THUMB_DEF != 0
-}
-
 // SectionName returns the symbol's section name (for N_SECT) or "".
 func (s Symbol) SectionName(f *File) string {
 	if s.Ntype() != N_SECT || s.Sect == 0 || int(s.Sect) > len(f.sections) {
@@ -72,6 +68,11 @@ func (s Symbol) SectionName(f *File) string {
 	}
 
 	return f.sections[s.Sect-1].SectName
+}
+
+// Stab returns the stab symbol type (meaningful when IsDebug).
+func (s Symbol) Stab() Stab {
+	return Stab(s.Type)
 }
 
 const (

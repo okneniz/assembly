@@ -52,8 +52,9 @@ func (a eorShiftArb) Generate() iter.Seq[EorShiftParams] {
 }
 
 func (a eorShiftArb) Shrink(p EorShiftParams) iter.Seq[EorShiftParams] {
-	var out []EorShiftParams
-	for _, s := range slices.Collect(a.base.Shrink(p.ShiftedParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.ShiftedParams))
+	out := make([]EorShiftParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewEorShiftParams(s))
 	}
 

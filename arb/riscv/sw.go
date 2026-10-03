@@ -32,6 +32,7 @@ func NewSwParams(rs2 riscv.Reg, rs1 riscv.Reg, off riscv.Off) SwParams {
 func (p SwParams) Instr() riscv.Instr {
 	return riscv.New().Sw(p.Rs2, p.Rs1, p.Off)
 }
+
 func (p SwParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -41,13 +42,13 @@ type swGen struct {
 	rnd *rand.Rand
 }
 
-func newSwGen(rnd *rand.Rand) swGen {
-	return swGen{rnd: rnd}
-}
-
 // Sw — an arbitrary sw.
 func Sw(rnd *rand.Rand) ohsnap.Arbitrary[SwParams] {
 	return newSwGen(rnd)
+}
+
+func newSwGen(rnd *rand.Rand) swGen {
+	return swGen{rnd: rnd}
 }
 
 func (g swGen) Generate() iter.Seq[SwParams] {

@@ -389,8 +389,8 @@ func looseNormalize(s string) string {
 	// would refuse a word clang accepts
 	out := b.String()
 	for _, suf := range []string{"lsl#0", "lsr#0", "asr#0", "ror#0"} {
-		if strings.HasSuffix(out, suf) {
-			out = strings.TrimSuffix(out, suf)
+		if before, ok := strings.CutSuffix(out, suf); ok {
+			out = before
 		}
 	}
 

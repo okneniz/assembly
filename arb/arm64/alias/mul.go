@@ -27,10 +27,6 @@ func NewMulParams(rd arm64.Reg, rn arm64.Reg, rm arm64.Reg) MulParams {
 	}
 }
 
-func (p MulParams) String() string {
-	return "mul " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Rm.String()
-}
-
 func (p MulParams) Instr() arm64.Instr {
 	in, err := instrOfText(p.String())
 	if err != nil {
@@ -40,18 +36,22 @@ func (p MulParams) Instr() arm64.Instr {
 	return in
 }
 
+func (p MulParams) String() string {
+	return "mul " + p.Rd.String() + ", " + p.Rn.String() + ", " + p.Rm.String()
+}
+
 // mulGen — generator for mul: same-width registers, 31st is zr.
 type mulGen struct {
 	rnd *rand.Rand
 }
 
-func newMulGen(rnd *rand.Rand) mulGen {
-	return mulGen{rnd: rnd}
-}
-
 // Mul — an arbitrary mul.
 func Mul(rnd *rand.Rand) ohsnap.Arbitrary[MulParams] {
 	return newMulGen(rnd)
+}
+
+func newMulGen(rnd *rand.Rand) mulGen {
+	return mulGen{rnd: rnd}
 }
 
 func (g mulGen) Generate() iter.Seq[MulParams] {
@@ -66,8 +66,9 @@ func (g mulGen) Generate() iter.Seq[MulParams] {
 }
 
 func (g mulGen) Shrink(p MulParams) iter.Seq[MulParams] {
-	var out []MulParams
-	for _, r := range a64.RegShrunk(p.Rd) {
+	regs := a64.RegShrunk(p.Rd)
+	out := make([]MulParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewMulParams(r, p.Rn, p.Rm))
 	}
 

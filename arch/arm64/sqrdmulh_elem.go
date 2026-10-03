@@ -1,6 +1,7 @@
 package arm64
 
 import (
+	"errors"
 	"fmt"
 	"io"
 
@@ -19,7 +20,7 @@ type SqrdmulhElem struct {
 // calls it with values read from the word).
 func newSqrdmulhElem(q, size, idx uint32, rd, rn, rm VReg) (SqrdmulhElem, error) {
 	if size == 0 || size == 3 {
-		return SqrdmulhElem{}, fmt.Errorf(
+		return SqrdmulhElem{}, errors.New(
 			"arm64.NewSqrdmulhElem: only the .h and .s integer lanes exist",
 		)
 	}
@@ -45,11 +46,6 @@ const (
 	sqrdmulhElemOpc uint32 = 13
 )
 
-func (i SqrdmulhElem) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sqrdmulh.%s %s, %s, %s[%d]",
-		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
-}
-
 func (i SqrdmulhElem) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -57,4 +53,9 @@ func (i SqrdmulhElem) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, byElemBits(i.q, sqrdmulhElemU, i.size, rm, sqrdmulhElemOpc, i.idx, rn, rd))
+}
+
+func (i SqrdmulhElem) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sqrdmulh.%s %s, %s, %s[%d]",
+		decodeArrangement(i.q, i.size), i.rd, i.rn, i.rm, i.idx)
 }

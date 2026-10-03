@@ -48,10 +48,10 @@ const (
 	sturWEnc uint32 = 0xB8000000 // stur wt, [xn, #±imm9]
 )
 
-func (i Stur) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("stur %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Stur) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "stur")
+}
+
+func (i Stur) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("stur %s, %s", i.rt, i.lsText(ctx))
 }

@@ -23,39 +23,6 @@ import (
 	"github.com/okneniz/assembly/file"
 )
 
-// rvMcAssemble - bytes of the .text llvm-mc assembles from src (riscv64,
-// compressed). The object's .text starts at 0, so the snippets use only
-// label-relative targets: the offsets are base-independent.
-func rvMcAssemble(t *testing.T, src string) []byte {
-	t.Helper()
-	mc := llvmMcPath()
-	path := t.TempDir() + "/mc.o"
-	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
-	defer cancel()
-
-	cmd := exec.CommandContext(ctx, mc,
-		"-assemble", "--triple=riscv64", "-mattr=+c", "-filetype=obj", "-o", path)
-	cmd.Stdin = strings.NewReader(src)
-	if out, err := cmd.CombinedOutput(); err != nil {
-		t.Fatalf("llvm-mc %q: %v: %s", src, err, out)
-		return nil
-	}
-
-	f, err := file.Detect(path)
-	if err != nil {
-		t.Fatalf("detect %s: %v", path, err)
-		return nil
-	}
-
-	sec, err := f.CodeSection()
-	if err != nil {
-		t.Fatalf(".text of %s: %v", path, err)
-		return nil
-	}
-
-	return sec.Data
-}
-
 // rvKnownLiDeviations - the llvm-mc li-ladder deviations, pinned per
 // value so that any NEW deviation fails the differential while the known
 // one stays visible (the larch convention, see knownLiDeviations):
@@ -163,4 +130,37 @@ func TestRiscvVsLlvmMc(t *testing.T) {
 			"our bytes ≠ llvm-mc bytes\n  ours % x\n  llvm % x",
 			res.Sections[0].Data, want)
 	})
+}
+
+// rvMcAssemble - bytes of the .text llvm-mc assembles from src (riscv64,
+// compressed). The object's .text starts at 0, so the snippets use only
+// label-relative targets: the offsets are base-independent.
+func rvMcAssemble(t *testing.T, src string) []byte {
+	t.Helper()
+	mc := llvmMcPath()
+	path := t.TempDir() + "/mc.o"
+	ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, mc,
+		"-assemble", "--triple=riscv64", "-mattr=+c", "-filetype=obj", "-o", path)
+	cmd.Stdin = strings.NewReader(src)
+	if out, err := cmd.CombinedOutput(); err != nil {
+		t.Fatalf("llvm-mc %q: %v: %s", src, err, out)
+		return nil
+	}
+
+	f, err := file.Detect(path)
+	if err != nil {
+		t.Fatalf("detect %s: %v", path, err)
+		return nil
+	}
+
+	sec, err := f.CodeSection()
+	if err != nil {
+		t.Fatalf(".text of %s: %v", path, err)
+		return nil
+	}
+
+	return sec.Data
 }

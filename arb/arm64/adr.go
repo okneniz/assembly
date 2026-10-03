@@ -36,6 +36,7 @@ func (p AdrParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p AdrParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -48,16 +49,16 @@ type adrGen struct {
 	off ohsnap.Arbitrary[int64]
 }
 
+// Adr — an arbitrary adr.
+func Adr(rnd *rand.Rand) ohsnap.Arbitrary[AdrParams] {
+	return newAdrGen(rnd)
+}
+
 func newAdrGen(rnd *rand.Rand) adrGen {
 	return adrGen{
 		rnd: rnd,
 		off: BrOff(rnd, 1<<20),
 	}
-}
-
-// Adr — an arbitrary adr.
-func Adr(rnd *rand.Rand) ohsnap.Arbitrary[AdrParams] {
-	return newAdrGen(rnd)
 }
 
 func (g adrGen) Generate() iter.Seq[AdrParams] {
@@ -67,8 +68,9 @@ func (g adrGen) Generate() iter.Seq[AdrParams] {
 }
 
 func (g adrGen) Shrink(p AdrParams) iter.Seq[AdrParams] {
-	var out []AdrParams
-	for _, r := range regShrunk(p.Rd) {
+	regs := regShrunk(p.Rd)
+	out := make([]AdrParams, 0, len(regs))
+	for _, r := range regs {
 		out = append(out, NewAdrParams(r, p.Off))
 	}
 

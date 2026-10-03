@@ -10,10 +10,6 @@ type Reg struct {
 	num uint8
 }
 
-func newReg(num uint8) Reg {
-	return Reg{num: num}
-}
-
 // X - a register by number x0..x31.
 func X(n int) (Reg, error) {
 	if n < 0 || n > 31 {
@@ -21,6 +17,10 @@ func X(n int) (Reg, error) {
 	}
 
 	return newReg(uint8(n)), nil
+}
+
+func newReg(num uint8) Reg {
+	return Reg{num: num}
 }
 
 // Named ABI registers (others are available via X(n): t0 = X(5), a0 = X(10)...).

@@ -31,6 +31,7 @@ func (p DsbParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p DsbParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -40,13 +41,13 @@ type dsbGen struct {
 	domains ohsnap.Arbitrary[arm64.BarrierDomain]
 }
 
-func newDsbGen(rnd *rand.Rand) dsbGen {
-	return dsbGen{domains: BarrierDomain(rnd)}
-}
-
 // Dsb — an arbitrary dsb.
 func Dsb(rnd *rand.Rand) ohsnap.Arbitrary[DsbParams] {
 	return newDsbGen(rnd)
+}
+
+func newDsbGen(rnd *rand.Rand) dsbGen {
+	return dsbGen{domains: BarrierDomain(rnd)}
 }
 
 func (g dsbGen) Generate() iter.Seq[DsbParams] {
@@ -56,8 +57,9 @@ func (g dsbGen) Generate() iter.Seq[DsbParams] {
 }
 
 func (g dsbGen) Shrink(p DsbParams) iter.Seq[DsbParams] {
-	var out []DsbParams
-	for _, d := range slices.Collect(g.domains.Shrink(p.Domain)) {
+	shrinks := slices.Collect(g.domains.Shrink(p.Domain))
+	out := make([]DsbParams, 0, len(shrinks))
+	for _, d := range shrinks {
 		out = append(out, NewDsbParams(d))
 	}
 

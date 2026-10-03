@@ -49,12 +49,12 @@ const (
 	strWEnc uint32 = 0xB9000000 // str wt, [xn, #imm12<<2]
 )
 
-func (i Str) ObjDump(ctx disasm.ViewCtx) string {
-	return fmt.Sprintf("str %s, %s", i.rt, i.lsText(ctx))
-}
-
 func (i Str) Encode(w io.Writer) (int64, error) {
 	return i.lsWrite(w, "str")
+}
+
+func (i Str) ObjDump(ctx disasm.ViewCtx) string {
+	return fmt.Sprintf("str %s, %s", i.rt, i.lsText(ctx))
 }
 
 // The FP unsigned-offset encodings: the access size is set by the rt

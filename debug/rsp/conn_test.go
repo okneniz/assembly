@@ -19,6 +19,88 @@ type fakeStep struct {
 	nacks  int
 }
 
+func TestRoundTrip(t *testing.T) {
+	cases := []struct {
+		name  string
+		steps []fakeStep
+		cmd   string
+		want  string
+	}{
+		{
+			name:  "halt reason",
+			steps: []fakeStep{{expect: "?", reply: "T05thread:p1.1;"}},
+			cmd:   "?",
+			want:  "T05thread:p1.1;",
+		},
+		{
+			name:  "retransmit after nack",
+			steps: []fakeStep{{expect: "g", reply: "1122334455667788", nacks: 1}},
+			cmd:   "g",
+			want:  "1122334455667788",
+		},
+		{
+			name:  "double nack",
+			steps: []fakeStep{{expect: "m0,4", reply: "deadbeef", nacks: 2}},
+			cmd:   "m0,4",
+			want:  "deadbeef",
+		},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			conn, wait := dialFake(t, c.steps)
+			got, err := conn.roundTrip(c.cmd)
+			require.NoError(t, err)
+			require.Equal(t, c.want, got)
+			require.NoError(t, wait())
+		})
+	}
+}
+
+func TestRoundTripRequestMismatch(t *testing.T) {
+	// the fake expects another request: the fake errors, the client
+	// sees a broken conversation
+	conn, wait := dialFake(t, []fakeStep{{expect: "?", reply: "S05"}})
+	_, err := conn.roundTrip("c")
+	require.Error(t, err)
+	require.Error(t, wait())
+}
+
+func TestRoundTripErrorReply(t *testing.T) {
+	conn, wait := dialFake(t, []fakeStep{{expect: "mdeadbeef,4", reply: "E14"}})
+	_, err := conn.roundTrip("mdeadbeef,4")
+	require.ErrorContains(t, err, "target error 14")
+	require.NoError(t, wait())
+}
+
+func TestInterruptByte(t *testing.T) {
+	// the interrupt is one raw byte on the wire, outside any framing;
+	// the pipe is synchronous, so the reader runs while Interrupt writes
+	client, server := net.Pipe()
+	t.Cleanup(func() {
+		require.NoError(t, client.Close())
+		require.NoError(t, server.Close())
+	})
+
+	type readByte struct {
+		b   byte
+		err error
+	}
+
+	got := make(chan readByte, 1)
+	go func() {
+		b := make([]byte, 1)
+		_, err := server.Read(b)
+		got <- readByte{b: b[0], err: err}
+	}()
+
+	conn := NewConn(client)
+	require.NoError(t, conn.Interrupt())
+
+	r := <-got
+	require.NoError(t, r.err)
+	require.Equal(t, byte(0x03), r.b)
+}
+
 // runFakeTarget speaks the server side of the protocol over conn. Per
 // step: it reads the request packet, answers each expected "-" with a
 // re-read of the resent packet (the retransmit handshake), then "+" and
@@ -126,86 +208,4 @@ func dialFake(t *testing.T, steps []fakeStep) (*Conn, func() error) {
 		require.NoError(t, client.Close())
 		return <-done
 	}
-}
-
-func TestRoundTrip(t *testing.T) {
-	cases := []struct {
-		name  string
-		steps []fakeStep
-		cmd   string
-		want  string
-	}{
-		{
-			name:  "halt reason",
-			steps: []fakeStep{{expect: "?", reply: "T05thread:p1.1;"}},
-			cmd:   "?",
-			want:  "T05thread:p1.1;",
-		},
-		{
-			name:  "retransmit after nack",
-			steps: []fakeStep{{expect: "g", reply: "1122334455667788", nacks: 1}},
-			cmd:   "g",
-			want:  "1122334455667788",
-		},
-		{
-			name:  "double nack",
-			steps: []fakeStep{{expect: "m0,4", reply: "deadbeef", nacks: 2}},
-			cmd:   "m0,4",
-			want:  "deadbeef",
-		},
-	}
-	for _, c := range cases {
-		t.Run(c.name, func(t *testing.T) {
-			conn, wait := dialFake(t, c.steps)
-			got, err := conn.roundTrip(c.cmd)
-			require.NoError(t, err)
-			require.Equal(t, c.want, got)
-			require.NoError(t, wait())
-		})
-	}
-}
-
-func TestRoundTripRequestMismatch(t *testing.T) {
-	// the fake expects another request: the fake errors, the client
-	// sees a broken conversation
-	conn, wait := dialFake(t, []fakeStep{{expect: "?", reply: "S05"}})
-	_, err := conn.roundTrip("c")
-	require.Error(t, err)
-	require.Error(t, wait())
-}
-
-func TestRoundTripErrorReply(t *testing.T) {
-	conn, wait := dialFake(t, []fakeStep{{expect: "mdeadbeef,4", reply: "E14"}})
-	_, err := conn.roundTrip("mdeadbeef,4")
-	require.ErrorContains(t, err, "target error 14")
-	require.NoError(t, wait())
-}
-
-func TestInterruptByte(t *testing.T) {
-	// the interrupt is one raw byte on the wire, outside any framing;
-	// the pipe is synchronous, so the reader runs while Interrupt writes
-	client, server := net.Pipe()
-	t.Cleanup(func() {
-		require.NoError(t, client.Close())
-		require.NoError(t, server.Close())
-	})
-
-	type readByte struct {
-		b   byte
-		err error
-	}
-
-	got := make(chan readByte, 1)
-	go func() {
-		b := make([]byte, 1)
-		_, err := server.Read(b)
-		got <- readByte{b: b[0], err: err}
-	}()
-
-	conn := NewConn(client)
-	require.NoError(t, conn.Interrupt())
-
-	r := <-got
-	require.NoError(t, r.err)
-	require.Equal(t, byte(0x03), r.b)
 }

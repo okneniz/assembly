@@ -36,14 +36,6 @@ func newRet(rn Reg) (Ret, error) {
 
 const retMatch = 0xD65F0000
 
-func (i Ret) ObjDump(_ disasm.ViewCtx) string {
-	if i.rn == "x30" {
-		return "ret"
-	}
-
-	return "ret " + i.rn
-}
-
 func (i Ret) Encode(w io.Writer) (int64, error) {
 	num, err := armRegNum(i.rn)
 	if err != nil {
@@ -51,4 +43,12 @@ func (i Ret) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, retMatch|num<<5)
+}
+
+func (i Ret) ObjDump(_ disasm.ViewCtx) string {
+	if i.rn == "x30" {
+		return "ret"
+	}
+
+	return "ret " + i.rn
 }

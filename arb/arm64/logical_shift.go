@@ -7,12 +7,12 @@ package arm64
 
 import (
 	"iter"
-
-	"github.com/okneniz/assembly/arch/arm64"
 	"math/rand/v2"
 	"slices"
 
 	"github.com/okneniz/oh-snap/shrink"
+
+	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // ShiftedParams — parameters of the shifted-register logical forms.
@@ -22,7 +22,13 @@ type ShiftedParams struct {
 	Sh         arm64.Shift
 }
 
-func NewShiftedParams(rd arm64.Reg, rn arm64.Reg, rm arm64.Reg, imm6 arm64.Imm6, sh arm64.Shift) ShiftedParams {
+func NewShiftedParams(
+	rd arm64.Reg,
+	rn arm64.Reg,
+	rm arm64.Reg,
+	imm6 arm64.Imm6,
+	sh arm64.Shift,
+) ShiftedParams {
 	return ShiftedParams{
 		Rd:   rd,
 		Rn:   rn,

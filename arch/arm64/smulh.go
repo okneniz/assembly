@@ -64,10 +64,6 @@ func newSmulh(rd Reg, rn Reg, rm Reg) (Smulh, error) {
 
 const SmulhX uint32 = 0x9B407C00
 
-func (i Smulh) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("smulh %s, %s, %s", i.rd, i.rn, i.rm)
-}
-
 func (i Smulh) Encode(w io.Writer) (int64, error) {
 	match, err := sfMatch(i.rd, SmulhX, 0)
 	if err != nil {
@@ -80,4 +76,8 @@ func (i Smulh) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, match|rd|rn<<5|rm<<16)
+}
+
+func (i Smulh) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("smulh %s, %s, %s", i.rd, i.rn, i.rm)
 }

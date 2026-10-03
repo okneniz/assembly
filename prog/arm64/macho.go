@@ -50,6 +50,7 @@ func (b *Binary) MachO(entry string) (*file.MachOImage, error) {
 	for name := range res.Syms {
 		names = append(names, name)
 	}
+
 	slices.Sort(names)
 
 	syms := make([]file.MachOSym, 0, len(names))

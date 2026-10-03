@@ -92,18 +92,6 @@ func TestELF(t *testing.T) {
 	require.Equal(t, uint64(0x10000), binaryLE(blob[0x18:0x20]))
 }
 
-func binaryLE(b []byte) uint64 {
-	var v uint64
-	for _, x := range slices.Backward(b) {
-		v = v<<8 | uint64(x)
-	}
-
-	return v
-}
-
-// --- the link law: linking separately-assembled sources is the same
-// program as assembling their concatenation ------------------------------
-
 // linkPair - the bodies of two sources with disjoint label namespaces
 // (the globals ga*/gb*, the locals .LA*/.LB*) that reference each
 // other's globals: the shape the law is proved on. The skeletons are
@@ -250,6 +238,18 @@ func TestLinkMatchesMonolithic(t *testing.T) {
 		return bytes.Equal(lt, mt) && bytes.Equal(ld, md) && linked.DataMem == mono.DataMem
 	})
 }
+
+func binaryLE(b []byte) uint64 {
+	var v uint64
+	for _, x := range slices.Backward(b) {
+		v = v<<8 | uint64(x)
+	}
+
+	return v
+}
+
+// --- the link law: linking separately-assembled sources is the same
+// program as assembling their concatenation ------------------------------
 
 // seedRnd - the deterministic seed of the property suite (ASSEMBLY_SEED,
 // default 42), logged so a failure can be reproduced.

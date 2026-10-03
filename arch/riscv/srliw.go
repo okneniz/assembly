@@ -13,10 +13,6 @@ type Srliw struct {
 	shamt   imm
 }
 
-func (i Srliw) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("srliw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
-}
-
 func (i Srliw) Encode(w io.Writer, o EncOpts) (int64, error) {
 	sh := i.shamt.val
 
@@ -28,6 +24,10 @@ func (i Srliw) Encode(w io.Writer, o EncOpts) (int64, error) {
 		w,
 		riscvEncodings["srliw"][0]|regBits(i.rd)<<7|regBits(i.rs1)<<15|uint32(sh)<<20,
 	)
+}
+
+func (i Srliw) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("srliw %s, %s, %s", i.rd, i.rs1, i.shamt.text())
 }
 
 func newSrliw(ops []Op) (Instr, error) {

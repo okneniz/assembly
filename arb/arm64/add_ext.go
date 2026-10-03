@@ -52,8 +52,9 @@ func (a addExtArb) Generate() iter.Seq[AddExtParams] {
 }
 
 func (a addExtArb) Shrink(p AddExtParams) iter.Seq[AddExtParams] {
-	var out []AddExtParams
-	for _, s := range slices.Collect(a.base.Shrink(p.ExtParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.ExtParams))
+	out := make([]AddExtParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAddExtParams(s))
 	}
 

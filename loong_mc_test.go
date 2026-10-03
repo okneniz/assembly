@@ -31,6 +31,106 @@ import (
 	"github.com/okneniz/assembly/asm/loong64/pseudo"
 )
 
+// TestLoongVsLlvmMcText - reloc-free sources: direct .text byte parity
+// with the llvm-mc object (branches and alu resolve at assembly).
+func TestLoongVsLlvmMcText(t *testing.T) {
+	mc := llvmMcPath()
+	if mc == "" {
+		t.Skip("no llvm-mc found on this host")
+	}
+
+	for _, tc := range []struct {
+		name string
+		src  string
+	}{
+		{
+			"alu",
+			"\n\taddi.w $t1, $t1, 1\n\txori $t2, $t1, 0xff\n\tslli.w $t3, $t2, 4\n",
+		},
+		{
+			"uart-loop",
+			"\n1:\n\tld.bu $t2, $t1, 0\n\tbeq $t2, $zero, 2f\n\tst.b $t2, $t0, 0\n\taddi.w $t1, $t1, 1\n\tb 1b\n2:\n\tb 2b\n",
+		},
+		{
+			"lu12i-ori",
+			"\n\tlu12i.w $t0, 0x1fe00\n\tori $t0, $t0, 0x1e0\n",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			want := mcAssemble(t, mc, tc.src)
+			require.Equal(t, want, loOursText(t, tc.src),
+				"our .text ≠ llvm-mc .text for %q\n  ours % x\n  llvm % x",
+				tc.src, loOursText(t, tc.src), want)
+		})
+	}
+}
+
+// TestLoongVsLlvmLink - the linked-image parity: llvm-mc leaves
+// la.pcrel/la.abs as relocations, ld.lld resolves them (with .data
+// pinned to our flat-layout address), and the image must equal our raw
+// output byte for byte.
+func TestLoongVsLlvmLink(t *testing.T) {
+	if llvmMcPath() == "" {
+		t.Skip("no llvm-mc found on this host")
+	}
+
+	if ldLldPath() == "" || llvmObjcopyPath() == "" {
+		t.Skip("no ld.lld/llvm-objcopy found on this host")
+	}
+
+	parity := func(t *testing.T, src string) {
+		t.Helper()
+		ours := loOursImage(t, src)
+		res, errs := pseudo.Assemble(src, 0)
+		require.Empty(t, errs, "re-assemble %q", src)
+
+		var dataAddr uint64
+		for _, s := range res.Sections {
+			if s.Name == ".data" {
+				dataAddr = s.Addr
+			}
+		}
+
+		loRequireImageEqual(t, src, ours, loLinkedImage(t, src, dataAddr))
+	}
+
+	for _, tc := range []struct {
+		name string
+		src  string
+	}{
+		{
+			"la-pcrel",
+			"\n1:\n\tld.bu $t2, $t1, 0\n\tbne $t2, $zero, 1b\n\tla.pcrel $t1, msg\n\tb 1b\n\n\t.data\nmsg:\n\t.ascii \"hi\"\n\t.byte 0\n",
+		},
+		{
+			"la-abs",
+			"\n\tla.abs $t1, msg\n\tb 1f\n1:\n\tb 1b\n\n\t.data\nmsg:\n\t.ascii \"lo\"\n\t.byte 0\n",
+		},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			parity(t, tc.src)
+		})
+	}
+
+	t.Run("hello-loongarch", func(t *testing.T) {
+		src, err := os.ReadFile("tests/examples/hello-asm/hello-loongarch.s")
+		if err != nil {
+			t.Skipf("example not available: %v", err)
+		}
+
+		// label-relative code + constants: base 0 matches -Ttext=0
+		parity(t, string(src))
+	})
+}
+
+// TestLaGotRejected - la.got is the one la form this assembler must not
+// silently mangle: the GOT slot does not exist without a linker.
+func TestLaGotRejected(t *testing.T) {
+	_, errs := pseudo.Assemble("\n\tla.got $t1, msg\n\n\t.data\nmsg:\n\t.byte 0\n", 0)
+	require.NotEmpty(t, errs, "la.got must be rejected")
+	require.Contains(t, fmt.Sprint(errs), "la.got", "the error must name la.got")
+}
+
 // toolPath - a tool from fixed candidates then PATH ("" when absent),
 // the llvmMcPath way.
 func toolPath(candidates []string) string {
@@ -157,104 +257,4 @@ func loOursImage(t *testing.T, src string) []byte {
 	}
 
 	return out
-}
-
-// TestLoongVsLlvmMcText - reloc-free sources: direct .text byte parity
-// with the llvm-mc object (branches and alu resolve at assembly).
-func TestLoongVsLlvmMcText(t *testing.T) {
-	mc := llvmMcPath()
-	if mc == "" {
-		t.Skip("no llvm-mc found on this host")
-	}
-
-	for _, tc := range []struct {
-		name string
-		src  string
-	}{
-		{
-			"alu",
-			"\n\taddi.w $t1, $t1, 1\n\txori $t2, $t1, 0xff\n\tslli.w $t3, $t2, 4\n",
-		},
-		{
-			"uart-loop",
-			"\n1:\n\tld.bu $t2, $t1, 0\n\tbeq $t2, $zero, 2f\n\tst.b $t2, $t0, 0\n\taddi.w $t1, $t1, 1\n\tb 1b\n2:\n\tb 2b\n",
-		},
-		{
-			"lu12i-ori",
-			"\n\tlu12i.w $t0, 0x1fe00\n\tori $t0, $t0, 0x1e0\n",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			want := mcAssemble(t, mc, tc.src)
-			require.Equal(t, want, loOursText(t, tc.src),
-				"our .text ≠ llvm-mc .text for %q\n  ours % x\n  llvm % x",
-				tc.src, loOursText(t, tc.src), want)
-		})
-	}
-}
-
-// TestLoongVsLlvmLink - the linked-image parity: llvm-mc leaves
-// la.pcrel/la.abs as relocations, ld.lld resolves them (with .data
-// pinned to our flat-layout address), and the image must equal our raw
-// output byte for byte.
-func TestLoongVsLlvmLink(t *testing.T) {
-	if llvmMcPath() == "" {
-		t.Skip("no llvm-mc found on this host")
-	}
-
-	if ldLldPath() == "" || llvmObjcopyPath() == "" {
-		t.Skip("no ld.lld/llvm-objcopy found on this host")
-	}
-
-	parity := func(t *testing.T, src string) {
-		t.Helper()
-		ours := loOursImage(t, src)
-		res, errs := pseudo.Assemble(src, 0)
-		require.Empty(t, errs, "re-assemble %q", src)
-
-		var dataAddr uint64
-		for _, s := range res.Sections {
-			if s.Name == ".data" {
-				dataAddr = s.Addr
-			}
-		}
-
-		loRequireImageEqual(t, src, ours, loLinkedImage(t, src, dataAddr))
-	}
-
-	for _, tc := range []struct {
-		name string
-		src  string
-	}{
-		{
-			"la-pcrel",
-			"\n1:\n\tld.bu $t2, $t1, 0\n\tbne $t2, $zero, 1b\n\tla.pcrel $t1, msg\n\tb 1b\n\n\t.data\nmsg:\n\t.ascii \"hi\"\n\t.byte 0\n",
-		},
-		{
-			"la-abs",
-			"\n\tla.abs $t1, msg\n\tb 1f\n1:\n\tb 1b\n\n\t.data\nmsg:\n\t.ascii \"lo\"\n\t.byte 0\n",
-		},
-	} {
-		t.Run(tc.name, func(t *testing.T) {
-			parity(t, tc.src)
-		})
-	}
-
-	t.Run("hello-loongarch", func(t *testing.T) {
-		src, err := os.ReadFile("tests/examples/hello-asm/hello-loongarch.s")
-		if err != nil {
-			t.Skipf("example not available: %v", err)
-		}
-
-		// label-relative code + constants: base 0 matches -Ttext=0
-		parity(t, string(src))
-	})
-}
-
-// TestLaGotRejected - la.got is the one la form this assembler must not
-// silently mangle: the GOT slot does not exist without a linker.
-func TestLaGotRejected(t *testing.T) {
-	_, errs := pseudo.Assemble("\n\tla.got $t1, msg\n\n\t.data\nmsg:\n\t.byte 0\n", 0)
-	require.NotEmpty(t, errs, "la.got must be rejected")
-	require.Contains(t, fmt.Sprint(errs), "la.got", "the error must name la.got")
 }

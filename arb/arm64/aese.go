@@ -52,8 +52,9 @@ func (a aeseArb) Generate() iter.Seq[AeseParams] {
 }
 
 func (a aeseArb) Shrink(p AeseParams) iter.Seq[AeseParams] {
-	var out []AeseParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V2PlainParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V2PlainParams))
+	out := make([]AeseParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAeseParams(s))
 	}
 

@@ -32,6 +32,7 @@ func NewLwParams(rd riscv.Reg, rs1 riscv.Reg, off riscv.Off) LwParams {
 func (p LwParams) Instr() riscv.Instr {
 	return riscv.New().Lw(p.Rd, p.Rs1, p.Off)
 }
+
 func (p LwParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -41,13 +42,13 @@ type lwGen struct {
 	rnd *rand.Rand
 }
 
-func newLwGen(rnd *rand.Rand) lwGen {
-	return lwGen{rnd: rnd}
-}
-
 // Lw — an arbitrary lw.
 func Lw(rnd *rand.Rand) ohsnap.Arbitrary[LwParams] {
 	return newLwGen(rnd)
+}
+
+func newLwGen(rnd *rand.Rand) lwGen {
+	return lwGen{rnd: rnd}
 }
 
 func (g lwGen) Generate() iter.Seq[LwParams] {

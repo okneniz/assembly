@@ -13,11 +13,6 @@ type Bgeu struct {
 	off      imm // pc-relative byte offset
 }
 
-func (i Bgeu) ObjDump(ctx disasm.ViewCtx) string {
-	target := immNum(int64(ctx.Addr()) + i.off.val)
-	return fmt.Sprintf("bgeu %s, %s, %s", i.rs1, i.rs2, target.text())
-}
-
 func (i Bgeu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	bits, err := encB(i.off.val)
 	if err != nil {
@@ -27,6 +22,11 @@ func (i Bgeu) Encode(w io.Writer, o EncOpts) (int64, error) {
 	word := riscvEncodings["bgeu"][0] | regBits(i.rs1)<<15 | regBits(i.rs2)<<20 | bits
 
 	return writeWord(w, word)
+}
+
+func (i Bgeu) ObjDump(ctx disasm.ViewCtx) string {
+	target := immNum(int64(ctx.Addr()) + i.off.val)
+	return fmt.Sprintf("bgeu %s, %s, %s", i.rs1, i.rs2, target.text())
 }
 
 func newBgeu(ops []Op) (Instr, error) {

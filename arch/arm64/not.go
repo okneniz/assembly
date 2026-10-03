@@ -31,10 +31,6 @@ func newNot(rd, rn VReg, arr string) (Not, error) {
 
 const notEnc uint32 = 0x2E205800 // not vd, vn (Q=0 form)
 
-func (i Not) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("not.%s %s, %s", i.arr, i.rd, i.rn)
-}
-
 func (i Not) Encode(w io.Writer) (int64, error) {
 	rd, rn, err := regNums2(i.rd, i.rn)
 	if err != nil {
@@ -47,4 +43,8 @@ func (i Not) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, notEnc|q<<30|size<<22|rd|rn<<5)
+}
+
+func (i Not) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("not.%s %s, %s", i.arr, i.rd, i.rn)
 }

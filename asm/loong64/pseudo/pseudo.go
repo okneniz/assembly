@@ -33,8 +33,11 @@ func NewASMBackend() asm.Syntax {
 	be := loong64.New()
 
 	return source{
-		be:                  be,
-		parsePseudoMnemonic: parsecstrings.MapStrings[string, parsec.Stateless]("mnemonic", buildPseudoMnemonics()),
+		be: be,
+		parsePseudoMnemonic: parsecstrings.MapStrings[string, parsec.Stateless](
+			"mnemonic",
+			buildPseudoMnemonics(),
+		),
 	}
 }
 
@@ -102,6 +105,17 @@ func buildPseudoMnemonics() map[string]string {
 	return m
 }
 
+// ApplyOption is delegated to the syntax layer.
+func (s source) ApplyOption(name string) error {
+	return s.be.ApplyOption(name)
+}
+
+// Comment parses a comment ('#' and '//' to the end of the line), as
+// in the syntax layer.
+func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
+	return s.be.Comment()
+}
+
 // Instruction is the grammar "mnemonic operands": a pseudo-mnemonic
 // from its own trie (with the same boundary check), otherwise the
 // syntax layer's inner grammar.
@@ -130,25 +144,14 @@ func (s source) Instruction() parsec.Combinator[rune, parsecstrings.Position, as
 	}
 }
 
-// Comment parses a comment ('#' and '//' to the end of the line), as
-// in the syntax layer.
-func (s source) Comment() parsec.Combinator[rune, parsecstrings.Position, string, parsec.Stateless] {
-	return s.be.Comment()
+// ResetOptions is delegated to the syntax layer.
+func (s source) ResetOptions() {
+	s.be.ResetOptions()
 }
 
 // Separator is delegated to the syntax layer.
 func (s source) Separator() rune {
 	return s.be.Separator()
-}
-
-// ApplyOption is delegated to the syntax layer.
-func (s source) ApplyOption(name string) error {
-	return s.be.ApplyOption(name)
-}
-
-// ResetOptions is delegated to the syntax layer.
-func (s source) ResetOptions() {
-	s.be.ResetOptions()
 }
 
 // Resolve evaluates the pseudo-instruction (with expansion): the

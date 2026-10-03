@@ -47,6 +47,7 @@ func (p SubShiftParams) Instr() arm64.Instr {
 
 	return in
 }
+
 func (p SubShiftParams) String() string {
 	return p.Instr().ObjDump(disasm.DefaultViewCtx())
 }
@@ -58,13 +59,13 @@ type subShiftGen struct {
 	rnd *rand.Rand
 }
 
-func newSubShiftGen(rnd *rand.Rand) subShiftGen {
-	return subShiftGen{rnd: rnd}
-}
-
 // SubShift — an arbitrary sub (shifted register).
 func SubShift(rnd *rand.Rand) ohsnap.Arbitrary[SubShiftParams] {
 	return newSubShiftGen(rnd)
+}
+
+func newSubShiftGen(rnd *rand.Rand) subShiftGen {
+	return subShiftGen{rnd: rnd}
 }
 
 func (g subShiftGen) Generate() iter.Seq[SubShiftParams] {

@@ -52,8 +52,9 @@ func (a andShiftArb) Generate() iter.Seq[AndShiftParams] {
 }
 
 func (a andShiftArb) Shrink(p AndShiftParams) iter.Seq[AndShiftParams] {
-	var out []AndShiftParams
-	for _, s := range slices.Collect(a.base.Shrink(p.ShiftedParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.ShiftedParams))
+	out := make([]AndShiftParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAndShiftParams(s))
 	}
 

@@ -52,8 +52,9 @@ func (a addArb) Generate() iter.Seq[AddVParams] {
 }
 
 func (a addArb) Shrink(p AddVParams) iter.Seq[AddVParams] {
-	var out []AddVParams
-	for _, s := range slices.Collect(a.base.Shrink(p.V3Params)) {
+	shrinks := slices.Collect(a.base.Shrink(p.V3Params))
+	out := make([]AddVParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewAddVParams(s))
 	}
 

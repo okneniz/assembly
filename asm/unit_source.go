@@ -47,10 +47,6 @@ type srcRec struct {
 	line    int
 }
 
-func newSrcRec() srcRec {
-	return srcRec{poolIdx: -1}
-}
-
 // srcLabel is a named label at its insertion point (the index of the
 // next record; past the end after the last one).
 type srcLabel struct {
@@ -86,15 +82,6 @@ type srcSection struct {
 	size   int
 }
 
-func newSrcSection(name string, stream int, nobits bool) *srcSection {
-	return &srcSection{
-		name:   name,
-		stream: stream,
-		nobits: nobits,
-		defs:   map[string][]srcDef{},
-	}
-}
-
 // srcBytes is ready data of the unit mode (the local mirror of the
 // unit's own data blob).
 type srcBytes []byte
@@ -115,11 +102,6 @@ type srcRun struct {
 	from  int // the section record index of the first record (the locals coordinate)
 	off   int // the run's section offset
 	size  int
-}
-
-// Size is the run's byte count (the placeholder sizing of the build).
-func (r *srcRun) Size() int {
-	return r.size
 }
 
 // Resolve encodes the run at its final address: each record at its own
@@ -163,6 +145,11 @@ func (r *srcRun) Resolve(ctx unit.Ctx) ([]unit.Resolved, error) {
 	return out, nil
 }
 
+// Size is the run's byte count (the placeholder sizing of the build).
+func (r *srcRun) Size() int {
+	return r.size
+}
+
 // nameScope is the file-scoped name environment of a source: the .set
 // expressions, the .global-promoted names, and the file key that
 // isolates the .L locals of different sources linked into one unit.
@@ -182,78 +169,6 @@ func (n nameScope) linkName(name string) string {
 	}
 
 	return name
-}
-
-// resolveNames is the name resolver of one record: numeric locals
-// against the section, "." the record itself, PoolSelf the record's pool
-// slot, .set names the source's expressions (cycle-guarded), the rest
-// the unit (through the source's name scope - the .L locals behind
-// their file key).
-func (s *srcSection) resolveNames(
-	ctx unit.Ctx,
-	base uint64,
-	rec int,
-	addr uint64,
-	poolIdx int,
-	scope nameScope,
-) func(string) (uint64, bool) {
-	visiting := map[string]bool{}
-
-	var resolve func(string) (uint64, bool)
-	resolve = func(name string) (uint64, bool) {
-		switch {
-		case isLocalRef(name):
-			return s.localAddr(name, rec, base)
-		case name == ".":
-			return addr, true
-		case name == PoolSelf && poolIdx >= 0:
-			return base + uint64(s.pool[poolIdx].off), true
-		}
-
-		if e, ok := scope.sets[name]; ok {
-			if visiting[name] {
-				return 0, false
-			}
-
-			visiting[name] = true
-			defer delete(visiting, name)
-
-			v, err := e.Eval(resolve)
-			if err != nil {
-				return 0, false
-			}
-
-			return uint64(v), true
-		}
-
-		return ctx.Resolve(scope.linkName(name))
-	}
-
-	return resolve
-}
-
-// localAddr is "Nb"/"Nf": the nearest definition by record order - b at
-// the record itself or earlier (a label on the same line precedes the
-// instruction), f strictly later.
-func (s *srcSection) localAddr(name string, rec int, base uint64) (uint64, bool) {
-	defs := s.defs[name[:len(name)-1]]
-	if name[len(name)-1] == 'b' {
-		for _, d := range slices.Backward(defs) {
-			if d.rec <= rec {
-				return base + uint64(d.off), true
-			}
-		}
-
-		return 0, false
-	}
-
-	for _, d := range defs {
-		if d.rec > rec {
-			return base + uint64(d.off), true
-		}
-	}
-
-	return 0, false
 }
 
 // unitSource is the interpreted source: the sections in first-appearance
@@ -290,6 +205,69 @@ func (s *unitSource) sectionFor(name string) *srcSection {
 	return sec
 }
 
+// appendRec appends a laid-out record at the section end.
+func (s *srcSection) appendRec(rec srcRec) {
+	rec.off = s.size
+	s.size += rec.size
+	s.recs = append(s.recs, rec)
+}
+
+// appendReserve appends n zero bytes - file zeros of a regular section,
+// a NOBITS reserve otherwise.
+func (s *srcSection) appendReserve(n int, pos parsecstrings.Position) {
+	if n == 0 {
+		return
+	}
+
+	if s.nobits {
+		s.appendRec(srcRec{
+			reserve: n,
+			size:    n,
+			off:     s.size,
+			line:    int(pos.Line()) + 1,
+		})
+		return
+	}
+
+	s.appendRec(srcRec{
+		fixed: make([]byte, n),
+		size:  n,
+		off:   s.size,
+		line:  int(pos.Line()) + 1,
+	})
+}
+
+// AssembleUnit assembles a whole .S source into the unit: the named
+// labels join the unit's namespace (the .L locals behind the file key),
+// the sections deposit as deferred runs - a name the source does not
+// define (a C function called by bl) waits for the program's resolve
+// phase, like every other deferred record. file names the origin in the
+// unit's line map. It is the single-source shorthand of ParseSourceUnit
+// + Deposit + DepositBss (see source_unit.go).
+func AssembleUnit(u *unit.Unit, file, src string, be Syntax) []AsmError {
+	su, errs := ParseSourceUnit(file, src, be)
+	if len(errs) > 0 {
+		return errs
+	}
+
+	su.Deposit(u)
+	su.DepositBss(u)
+	return nil
+}
+
+func newSrcRec() srcRec {
+	return srcRec{poolIdx: -1}
+}
+
+func newSrcSection(name string, stream int, nobits bool) *srcSection {
+	return &srcSection{
+		name:   name,
+		stream: stream,
+		nobits: nobits,
+		defs:   map[string][]srcDef{},
+	}
+}
+
 // unitStreamOf is the v1 section rule: a name ending in ".text" is the
 // text stream, ".bss" a zero-fill reserve, everything else data.
 func unitStreamOf(name string) (stream int, nobits bool) {
@@ -317,7 +295,7 @@ func buildUnitSource(stmts []statement, be Syntax) (*unitSource, []AsmError) {
 
 	var sec *srcSection
 	fail := func(pos parsecstrings.Position, format string, args ...any) {
-		errs = append(errs, NewAsmError(uint(pos.Line())+1, 0, fmt.Sprintf(format, args...)))
+		errs = append(errs, NewAsmError(pos.Line()+1, 0, fmt.Sprintf(format, args...)))
 	}
 
 	for i := range stmts {
@@ -431,20 +409,6 @@ func defineLabels(sec *srcSection, labels []string) {
 
 		sec.labels = append(sec.labels, srcLabel{name: lbl, rec: point})
 	}
-}
-
-// poolAdd registers a literal slot of the section (dedup by the pool
-// name, as the byte mode) and returns its index.
-func (s *srcSection) poolAdd(e *expr.Expr, slot int, line int) int {
-	name := poolName(slot, expr.ExprKey(e))
-	for i := range s.pool {
-		if poolName(s.pool[i].size, expr.ExprKey(s.pool[i].expr)) == name {
-			return i
-		}
-	}
-
-	s.pool = append(s.pool, srcPool{expr: e, size: slot, line: line})
-	return len(s.pool) - 1
 }
 
 // doUnitDirective interprets one directive of the unit mode (the byte
@@ -570,38 +534,6 @@ func doUnitDirective(
 	return sec
 }
 
-// appendRec appends a laid-out record at the section end.
-func (s *srcSection) appendRec(rec srcRec) {
-	rec.off = s.size
-	s.size += rec.size
-	s.recs = append(s.recs, rec)
-}
-
-// appendReserve appends n zero bytes - file zeros of a regular section,
-// a NOBITS reserve otherwise.
-func (s *srcSection) appendReserve(n int, pos parsecstrings.Position) {
-	if n == 0 {
-		return
-	}
-
-	if s.nobits {
-		s.appendRec(srcRec{
-			reserve: n,
-			size:    n,
-			off:     s.size,
-			line:    int(pos.Line()) + 1,
-		})
-		return
-	}
-
-	s.appendRec(srcRec{
-		fixed: make([]byte, n),
-		size:  n,
-		off:   s.size,
-		line:  int(pos.Line()) + 1,
-	})
-}
-
 // dirExprs is the expression list of an argsExprs directive.
 func dirExprs(d *directive) []*expr.Expr {
 	out := make([]*expr.Expr, 0, len(d.args))
@@ -630,24 +562,6 @@ func appendIntLE(b []byte, width int, v int64) []byte {
 		binary.LittleEndian.PutUint64(t[:], uint64(v))
 		return append(b, t[:]...)
 	}
-}
-
-// AssembleUnit assembles a whole .S source into the unit: the named
-// labels join the unit's namespace (the .L locals behind the file key),
-// the sections deposit as deferred runs - a name the source does not
-// define (a C function called by bl) waits for the program's resolve
-// phase, like every other deferred record. file names the origin in the
-// unit's line map. It is the single-source shorthand of ParseSourceUnit
-// + Deposit + DepositBss (see source_unit.go).
-func AssembleUnit(u *unit.Unit, file, src string, be Syntax) []AsmError {
-	su, errs := ParseSourceUnit(file, src, be)
-	if len(errs) > 0 {
-		return errs
-	}
-
-	su.Deposit(u)
-	su.DepositBss(u)
-	return nil
 }
 
 // depositUnit lays the source into the unit, one section class at a
@@ -718,6 +632,92 @@ func (s *srcSection) depositSpan(
 		off:   recs[0].off,
 		size:  recs[len(recs)-1].off + recs[len(recs)-1].size - recs[0].off,
 	})
+}
+
+// localAddr is "Nb"/"Nf": the nearest definition by record order - b at
+// the record itself or earlier (a label on the same line precedes the
+// instruction), f strictly later.
+func (s *srcSection) localAddr(name string, rec int, base uint64) (uint64, bool) {
+	defs := s.defs[name[:len(name)-1]]
+	if name[len(name)-1] == 'b' {
+		for _, d := range slices.Backward(defs) {
+			if d.rec <= rec {
+				return base + uint64(d.off), true
+			}
+		}
+
+		return 0, false
+	}
+
+	for _, d := range defs {
+		if d.rec > rec {
+			return base + uint64(d.off), true
+		}
+	}
+
+	return 0, false
+}
+
+// poolAdd registers a literal slot of the section (dedup by the pool
+// name, as the byte mode) and returns its index.
+func (s *srcSection) poolAdd(e *expr.Expr, slot int, line int) int {
+	name := poolName(slot, expr.ExprKey(e))
+	for i := range s.pool {
+		if poolName(s.pool[i].size, expr.ExprKey(s.pool[i].expr)) == name {
+			return i
+		}
+	}
+
+	s.pool = append(s.pool, srcPool{expr: e, size: slot, line: line})
+	return len(s.pool) - 1
+}
+
+// resolveNames is the name resolver of one record: numeric locals
+// against the section, "." the record itself, PoolSelf the record's pool
+// slot, .set names the source's expressions (cycle-guarded), the rest
+// the unit (through the source's name scope - the .L locals behind
+// their file key).
+func (s *srcSection) resolveNames(
+	ctx unit.Ctx,
+	base uint64,
+	rec int,
+	addr uint64,
+	poolIdx int,
+	scope nameScope,
+) func(string) (uint64, bool) {
+	visiting := map[string]bool{}
+
+	var resolve func(string) (uint64, bool)
+	resolve = func(name string) (uint64, bool) {
+		switch {
+		case isLocalRef(name):
+			return s.localAddr(name, rec, base)
+		case name == ".":
+			return addr, true
+		case name == PoolSelf && poolIdx >= 0:
+			return base + uint64(s.pool[poolIdx].off), true
+		}
+
+		if e, ok := scope.sets[name]; ok {
+			if visiting[name] {
+				return 0, false
+			}
+
+			visiting[name] = true
+			defer delete(visiting, name)
+
+			v, err := e.Eval(resolve)
+			if err != nil {
+				return 0, false
+			}
+
+			return uint64(v), true
+		}
+
+		return ctx.Resolve(scope.linkName(name))
+	}
+
+	return resolve
 }
 
 // compile-time: a section run is a deferred record of the unit output.

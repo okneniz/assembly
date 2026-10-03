@@ -33,10 +33,6 @@ func newSqrshl(rd, rn, rm VReg, arr string) (Sqrshl, error) {
 
 const sqrshlEnc uint32 = 237001728 // sqrshl vd, vn, vm (Q=0, size=0 form)
 
-func (i Sqrshl) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("sqrshl.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
-}
-
 func (i Sqrshl) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
 	if err != nil {
@@ -49,4 +45,8 @@ func (i Sqrshl) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, sqrshlEnc|q<<30|size<<22|rd|rn<<5|rm<<16)
+}
+
+func (i Sqrshl) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("sqrshl.%s %s, %s, %s", i.arr, i.rd, i.rn, i.rm)
 }

@@ -14,19 +14,15 @@ type Tbl struct {
 
 // newTbl - the Tbl constructor: the struct is assembled only
 // here (the Builder method and the decoder call it).
-func newTbl(rd, rn, rm VReg) (Tbl, error) {
+func newTbl(rd, rn, rm VReg) Tbl {
 	return Tbl{
 		rd: rd.name(),
 		rn: rn.name(),
 		rm: rm.name(),
-	}, nil
+	}
 }
 
 const tblEnc uint32 = 0x4E000000
-
-func (i Tbl) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("tbl.16b %s, { %s }, %s", i.rd, i.rn, i.rm)
-}
 
 func (i Tbl) Encode(w io.Writer) (int64, error) {
 	rd, rn, rm, err := regNums3(i.rd, i.rn, i.rm)
@@ -35,4 +31,8 @@ func (i Tbl) Encode(w io.Writer) (int64, error) {
 	}
 
 	return writeWord(w, tblEnc|rd|rn<<5|rm<<16)
+}
+
+func (i Tbl) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("tbl.16b %s, { %s }, %s", i.rd, i.rn, i.rm)
 }

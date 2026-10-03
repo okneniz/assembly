@@ -13,12 +13,6 @@ import (
 	"github.com/okneniz/assembly/file/elf"
 )
 
-func phdrOf(t *testing.T, out []byte) (filesz, memsz uint64) {
-	t.Helper()
-	phOff := binary.LittleEndian.Uint64(out[0x20:])
-	return binary.LittleEndian.Uint64(out[phOff+32:]), binary.LittleEndian.Uint64(out[phOff+40:])
-}
-
 func TestWriteFlags(t *testing.T) {
 	blob := elf.NewNobitsBlob(0x1000, []byte{1, 2, 3, 4}, 4)
 	out, err := elf.Write(elf.EM_LOONGARCH, 0x43, 0x1000, 0x1000, []elf.Blob{blob})
@@ -56,4 +50,10 @@ func TestWriteMemszTooSmall(t *testing.T) {
 	b1 := elf.NewNobitsBlob(0x1000, []byte{1, 2, 3}, 2) // memory smaller than the file
 	_, err := elf.Write(elf.EM_RISCV, 0, 0x1000, 0x1000, []elf.Blob{b1})
 	require.ErrorContains(t, err, "MemSize", "memory smaller than the file must be an error")
+}
+
+func phdrOf(t *testing.T, out []byte) (filesz, memsz uint64) {
+	t.Helper()
+	phOff := binary.LittleEndian.Uint64(out[0x20:])
+	return binary.LittleEndian.Uint64(out[phOff+32:]), binary.LittleEndian.Uint64(out[phOff+40:])
 }

@@ -14,13 +14,13 @@ type Csrxchg struct {
 	csr    imm
 }
 
-func (i Csrxchg) ObjDump(_ disasm.ViewCtx) string {
-	return fmt.Sprintf("csrxchg %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.csr.text())
-}
-
 func (i Csrxchg) Encode(w io.Writer) (int64, error) {
 	word := loongEncodings["csrxchg"][0] |
 		uint32(i.rd) | uint32(i.rj)<<5 | scatterU(i.csr.val, 10, 14)
 
 	return writeWord(w, word)
+}
+
+func (i Csrxchg) ObjDump(_ disasm.ViewCtx) string {
+	return fmt.Sprintf("csrxchg %s, %s, %s", laRegName(i.rd), laRegName(i.rj), i.csr.text())
 }

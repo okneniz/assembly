@@ -52,8 +52,9 @@ func (a sshrArb) Generate() iter.Seq[SshrParams] {
 }
 
 func (a sshrArb) Shrink(p SshrParams) iter.Seq[SshrParams] {
-	var out []SshrParams
-	for _, s := range slices.Collect(a.base.Shrink(p.VShiftParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.VShiftParams))
+	out := make([]SshrParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewSshrParams(s))
 	}
 

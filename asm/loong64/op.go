@@ -34,11 +34,6 @@ func OpNum(v int64) Op {
 	return Op{e: expr.Num(v)}
 }
 
-// Reg returns the register name ("" if the operand is not a register).
-func (o Op) Reg() string {
-	return o.reg
-}
-
 // Expr returns the operand expression (nil if not an expression).
 func (o Op) Expr() *expr.Expr {
 	return o.e
@@ -47,6 +42,11 @@ func (o Op) Expr() *expr.Expr {
 // IsReg reports whether the operand is a register.
 func (o Op) IsReg() bool {
 	return o.reg != ""
+}
+
+// Reg returns the register name ("" if the operand is not a register).
+func (o Op) Reg() string {
+	return o.reg
 }
 
 // WantReg validates a register operand; the name is checked against the

@@ -52,8 +52,9 @@ func (a ucvtfArb) Generate() iter.Seq[UcvtfParams] {
 }
 
 func (a ucvtfArb) Shrink(p UcvtfParams) iter.Seq[UcvtfParams] {
-	var out []UcvtfParams
-	for _, s := range slices.Collect(a.base.Shrink(p.FGprParams)) {
+	shrinks := slices.Collect(a.base.Shrink(p.FGprParams))
+	out := make([]UcvtfParams, 0, len(shrinks))
+	for _, s := range shrinks {
 		out = append(out, NewUcvtfParams(s))
 	}
 
