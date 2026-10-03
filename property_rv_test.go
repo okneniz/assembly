@@ -12,6 +12,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	mrnd "math/rand/v2"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -517,6 +518,230 @@ const (
 	riscvCSRtime    uint16 = 0xc01
 	riscvCSRinstret uint16 = 0xc02
 )
+
+// TestPropertyRiscvSymbolPseudoRoundTrip - the resolve-level pseudo
+// forms: li (the decoded ladder must compute the value - the signed
+// 32-bit domain of the expansion) and la/call/tail (the decoded pair
+// must land exactly on the target, at the property base).
+func TestPropertyRiscvSymbolPseudoRoundTrip(t *testing.T) {
+	t.Run("Li", func(t *testing.T) {
+		ohsnap.Check(t, 300, rv.Li(seedRnd(t)), func(p rv.LiParams) bool {
+			res, errs := pseudo.Assemble(p.String(), propAddr)
+			if len(errs) != 0 {
+				t.Logf("%q: assemble: %v", p, errs[0])
+				return false
+			}
+
+			got, ok := rvLiComputes(res.Sections[0].Data)
+			if !ok {
+				t.Logf("%q: unexpected ladder shape", p)
+				return false
+			}
+
+			return got == p.Val
+		})
+	})
+
+	t.Run("La", func(t *testing.T) {
+		ohsnap.Check(t, 300, rv.La(seedRnd(t)), func(p rv.LaParams) bool {
+			src := fmt.Sprintf("la %s, %#x", p.Rd, uint64(int64(propAddr)+p.Off))
+			return rvPcrelLands(t, src, p.Off)
+		})
+	})
+
+	t.Run("Call", func(t *testing.T) {
+		ohsnap.Check(t, 300, rv.Call(seedRnd(t)), func(p rv.CallParams) bool {
+			src := fmt.Sprintf("call %#x", uint64(int64(propAddr)+p.Off))
+			return rvPcrelLands(t, src, p.Off)
+		})
+	})
+
+	t.Run("Tail", func(t *testing.T) {
+		ohsnap.Check(t, 300, rv.Tail(seedRnd(t)), func(p rv.TailParams) bool {
+			src := fmt.Sprintf("tail %#x", uint64(int64(propAddr)+p.Off))
+			return rvPcrelLands(t, src, p.Off)
+		})
+	})
+}
+
+// rvSymText - the assembled bytes of a pseudo text at the property
+// base, with the absolute target substituted for the offset.
+func rvSymText(t *testing.T, src string) ([]byte, bool) {
+	t.Helper()
+	res, errs := pseudo.Assemble(src, propAddr)
+	if len(errs) != 0 {
+		t.Logf("%q: assemble: %v", src, errs[0])
+		return nil, false
+	}
+
+	return res.Sections[0].Data, true
+}
+
+// rvDecodeAt - the decoded instructions of bytes at the property base.
+func rvDecodeAt(t *testing.T, data []byte) []riscv.Instr {
+	t.Helper()
+	ins, err := riscv.MakeDecoder()(
+		parsec.Stateless{},
+		parsecbytes.Buffer(data),
+	)
+	if err != nil {
+		t.Logf("decode: %v", err)
+		return nil
+	}
+
+	return ins
+}
+
+// rvPcrelLands - the text's decoded sequence lands exactly on
+// base+off: tail is the printed absolute target, la and call are the
+// auipc+addi/jalr pair arithmetic.
+func rvPcrelLands(t *testing.T, src string, off int64) bool {
+	t.Helper()
+	target := int64(propAddr) + off
+	data, ok := rvSymText(t, src)
+	if !ok {
+		return false
+	}
+
+	ins := rvDecodeAt(t, data)
+	if len(ins) == 0 {
+		return false
+	}
+
+	texts := make([]string, 0, len(ins))
+	for _, in := range ins {
+		texts = append(texts, rvTextAt(in, propAddr))
+	}
+
+	if strings.HasPrefix(texts[0], "j ") { // tail: the absolute target
+		if len(ins) != 1 {
+			t.Logf("%q: %d instructions: %v", src, len(ins), texts)
+			return false
+		}
+
+		v, ok := rvFieldImm(texts[0], "j")
+		return ok && v == target
+	}
+
+	// la/call: auipc rd, hi + addi/jalr rd, lo(rd)
+	if len(ins) != 2 {
+		t.Logf("%q: %d instructions: %v", src, len(ins), texts)
+		return false
+	}
+
+	hi, ok := rvFieldImm(texts[0], "auipc")
+	if !ok {
+		t.Logf("%q: %q is not an auipc pair head", src, texts[0])
+		return false
+	}
+
+	if hi >= 1<<19 {
+		hi -= 1 << 20 // the 20-bit field reads signed
+	}
+
+	lo, ok := rvPairLo(texts[1])
+	if !ok {
+		t.Logf("%q: %q is not a pair tail", src, texts[1])
+		return false
+	}
+
+	return int64(propAddr)+hi<<12+lo == target
+}
+
+// rvPairLo - the low half of a pcrel pair from its canonical text: the
+// addi shape prints as addi/mv/nop/li depending on the operands, the
+// jalr shape keeps the mem form (bare "jalr rd" is the lo=0 shape).
+func rvPairLo(text string) (int64, bool) {
+	switch {
+	case text == "nop":
+		return 0, true
+	case strings.HasPrefix(text, "mv "):
+		return 0, true // mv rd, rs is the addi rd, rs, 0 shape
+	case strings.HasPrefix(text, "jalr ") && !strings.Contains(text, ","):
+		return 0, true // bare "jalr rd" = jalr rd, 0(rd)
+	}
+
+	for _, mnem := range []string{"li", "addi", "jalr"} {
+		if v, ok := rvFieldImm(text, mnem); ok {
+			return v, true
+		}
+	}
+
+	return 0, false
+}
+
+// rvFieldImm - the immediate of a canonical one-operand text
+// ("auipc a0, 0x12344", "addi a0, a0, 0x678", "jalr ra, 0x234(ra)"):
+// a mem operand keeps only the part before the paren.
+func rvFieldImm(text, mnem string) (int64, bool) {
+	if !strings.HasPrefix(text, mnem+" ") {
+		return 0, false
+	}
+
+	f := strings.FieldsFunc(text, func(r rune) bool {
+		return r == ' ' || r == ','
+	})
+
+	last := f[len(f)-1]
+	last, _, _ = strings.Cut(last, "(")
+
+	v, err := strconv.ParseInt(last, 0, 64)
+	if err != nil {
+		return 0, false
+	}
+
+	return v, true
+}
+
+// rvLiComputes - the value the decoded li ladder computes (the arch
+// operand fields are not exported - the law reads the canonical
+// texts: lui sext32(imm20<<12), li/addi the imm, addiw the
+// sign-extending sum, slli the shift).
+func rvLiComputes(data []byte) (int64, bool) {
+	ins, err := riscv.MakeDecoder()(
+		parsec.Stateless{},
+		parsecbytes.Buffer(data),
+	)
+	if err != nil {
+		return 0, false
+	}
+
+	sext32 := func(x int64) int64 { return int64(int32(x)) }
+
+	val := int64(0)
+	for _, in := range ins {
+		text := rvTextAt(in, propAddr)
+		f := strings.FieldsFunc(text, func(r rune) bool {
+			return r == ' ' || r == ','
+		})
+
+		v, err := strconv.ParseInt(f[len(f)-1], 0, 64)
+		if err != nil {
+			return 0, false
+		}
+
+		switch {
+		case strings.HasPrefix(text, "lui "):
+			val = sext32(v << 12)
+		case strings.HasPrefix(text, "li "):
+			val = v
+		case strings.HasPrefix(text, "addiw "):
+			val = sext32(val + v)
+		case strings.HasPrefix(text, "addi "):
+			if len(f) >= 3 && f[2] == "zero" {
+				val = v // the li form: addi rd, zero, imm
+			} else {
+				val += v // a ladder step: addi rd, rd, imm
+			}
+		case strings.HasPrefix(text, "slli "):
+			val <<= uint(v)
+		default:
+			return 0, false
+		}
+	}
+
+	return val, true
+}
 
 // csrRead - the pin of the read pseudo-forms (csrrs with rs1 = x0).
 func csrRead(csr uint16) func(rv.CsrParams) rv.CsrParams {

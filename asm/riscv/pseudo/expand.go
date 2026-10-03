@@ -253,7 +253,10 @@ func csrRw(mnem string, rd, csr, src riscv.Op) []form {
 }
 
 // expandLi expands li rd, imm: the shortest sequence.
-// imm must be numeric (for symbolic targets use la).
+// imm must be numeric (for symbolic targets use la). The domain is the
+// signed 32-bit range — the addi/lui/lui+addiw ladder; wider values
+// need the slli ladder, which the expansion does not build (refused,
+// not silently truncated).
 func expandLi(p pInstr) ([]form, error) {
 	if len(p.ops) != 2 || p.ops[1].Expr() == nil {
 		return nil, errors.New("li expects rd, imm")
@@ -262,6 +265,10 @@ func expandLi(p pInstr) ([]form, error) {
 	v, err := p.ops[1].Expr().Eval(nil)
 	if err != nil {
 		return nil, fmt.Errorf("li immediate must be a constant (use la for symbols): %w", err)
+	}
+
+	if v < -(1<<31) || v > 1<<31-1 {
+		return nil, fmt.Errorf("li: %d needs the slli ladder (outside the signed 32-bit domain)", v)
 	}
 
 	rd := p.ops[0]

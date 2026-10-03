@@ -34,9 +34,15 @@ func (i La) Addr() uint64 {
 
 // Encode writes the pcrel auipc+addi pair without compression: the
 // length is fixed in both passes regardless of symbol values (the
-// placeholder yields rel=0).
+// placeholder yields rel=0). The delta must fit the signed 20-bit hi
+// of the pair (the ±2GB pcrel window) — an unreachable target is
+// refused, not silently truncated.
 func (i La) Encode(w io.Writer) (int64, error) {
 	hi, lo := arch.PcrelHiLo(i.target - int64(i.pc))
+	if hi < -(1<<19) || hi > 1<<19-1 {
+		return 0, fmt.Errorf("la: target out of the pcrel window")
+	}
+
 	hiBits, err := arch.EncU(hi & 0xfffff)
 	if err != nil {
 		return 0, fmt.Errorf("la: %w", err)

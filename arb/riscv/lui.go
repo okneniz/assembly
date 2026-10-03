@@ -51,6 +51,20 @@ func Lui(rnd *rand.Rand) ohsnap.Arbitrary[LuiParams] {
 
 func (g luiGen) Generate() iter.Seq[LuiParams] {
 	return arb.Stream(func() LuiParams {
+		// the c.lui compression window (imm20 the 6-bit form reaches:
+		// 1..31 and the sext-negative tail) is sampled head-on - the
+		// uniform 0..0xfffff draw almost never lands there
+		if g.rnd.IntN(4) == 0 {
+			imm := uint32(1 + g.rnd.IntN(31))
+			if g.rnd.IntN(2) == 1 {
+				imm = 0x100000 - imm // 0xfffff..0xffff0
+			}
+
+			if v, err := riscv.New().Imm20(int64(imm)); err == nil {
+				return NewLuiParams(reg(g.rnd), v)
+			}
+		}
+
 		return NewLuiParams(reg(g.rnd), imm20(g.rnd))
 	})
 }

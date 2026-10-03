@@ -307,7 +307,10 @@ func decodeQ1(h uint32) Instr {
 		case 0:
 			return newUnknown(h)
 		default:
-			return cLui(rd, luiImm(h))
+			// the Lui imm slot holds the RAW UNSIGNED imm20 field
+			// (encU/compressLui read it that way; luiImm returns the
+			// signed nzimm) - mask it back into 0..0xfffff
+			return cLui(rd, luiImm(h)>>12&0xfffff)
 		}
 
 	case 4: // c.srli / c.srai / c.andi / c.sub / c.xor / c.or / c.and

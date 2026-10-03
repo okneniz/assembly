@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+	"strings"
 	"testing"
 
 	"github.com/okneniz/parsec"
@@ -664,4 +665,69 @@ func TestRoundTripSynthetic(t *testing.T) {
 	require.NotZero(t, matched, "nothing generated")
 	t.Logf("synthetic round-trip: %d/%d byte-exact", matched, matched+mismatched)
 	require.Empty(t, failures, "mismatches (%d)", mismatched)
+}
+
+// TestSymbolPseudoWords - the numeric-target forms of the resolve-level
+// pseudo (la/call/tail at a base) and the li ladder classes, bytes
+// pinned; the out-of-window refusals (the pcrel pair hi is a SIGNED
+// 20-bit field, li's ladder covers the signed 32-bit domain only).
+func TestSymbolPseudoWords(t *testing.T) {
+	cases := []struct {
+		src  string
+		base uint64
+		want string
+	}{
+		{"la a0, 0x2000", 0x1000, "17 15 00 00 13 05 05 00"},
+		{"la a0, 0x12345678", 0x1000, "17 45 34 12 13 05 85 67"},
+		{"la a0, 0x0", 0x1000, "17 f5 ff ff 13 05 05 00"},
+		{"call 0x2000", 0x1000, "97 10 00 00 e7 80 00 00"},
+		{"call 0x1000", 0x1000, "97 00 00 00 e7 80 00 00"},
+		{"tail 0x2000", 0x1000, "6f 10 00 00"},
+		{"tail 0x0", 0x1000, "6f f0 0f 80"},
+		{"li a0, 5", 0x1000, "15 45"},
+		{"li a0, -2048", 0x1000, "13 05 00 80"},
+		{"li a0, 4096", 0x1000, "05 65"},
+		{"li a0, 0x12345678", 0x1000, "37 55 34 12 1b 05 85 67"},
+		{"li a0, -0x12345678", 0x1000, "37 b5 cb ed 1b 05 85 98"},
+	}
+	for _, c := range cases {
+		require.Equal(
+			t,
+			c.want,
+			hexOf(assembleOne(t, c.src, c.base)),
+			"case %q",
+			c.src,
+		)
+	}
+
+	for _, c := range []struct {
+		src  string
+		base uint64
+	}{
+		{"la a0, 0x80001000", 0x1000},         // delta +2GB: hi does not fit
+		{"la a0, 0xffffffff7ffff000", 0x1000}, // delta -2GB-4K
+		{"call 0x80001000", 0x1000},
+		{"li a0, 0x80000000", 0x1000}, // +2^31: needs the slli ladder
+		{"li a0, -0x80000001", 0x1000},
+		{"li a0, 0x123456789a", 0x1000}, // 64-bit: the slli ladder
+		{"tail 0x2001", 0x1000},         // odd target
+	} {
+		res, errs := asm.Assemble(c.src, c.base, NewASMBackend())
+		require.NotEmpty(t, errs, "case %q must not assemble", c.src)
+		require.Empty(t, res.Sections, "case %q", c.src)
+	}
+}
+
+// hexOf - the byte slice as a hex string (the pin table face).
+func hexOf(b []byte) string {
+	return strings.Join(fieldsOf(b), " ")
+}
+
+func fieldsOf(b []byte) []string {
+	out := make([]string, len(b))
+	for i, v := range b {
+		out[i] = fmt.Sprintf("%02x", v)
+	}
+
+	return out
 }

@@ -33,6 +33,9 @@ func (i Call) Addr() uint64 {
 
 func (i Call) Encode(w io.Writer) (int64, error) {
 	hi, lo := arch.PcrelHiLo(i.target - int64(i.pc))
+	if hi < -(1<<19) || hi > 1<<19-1 {
+		return 0, fmt.Errorf("call: target out of the pcrel window")
+	}
 	hiBits, err := arch.EncU(hi & 0xfffff)
 	if err != nil {
 		return 0, fmt.Errorf("call: %w", err)
