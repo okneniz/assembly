@@ -5,11 +5,16 @@
 // seed produces the sources and their passport, so a property checks
 // the program's meaning, not its bytes.
 //
-// The mini-ABI: w0 is the accumulator (in and out of every call), each
-// function adds its constant (and its loop count) into it, the entry
-// seeds w0, calls a sequence of functions and exits. Everything else -
-// nops, branch dances, .word padding, data words, quad pointers, bss
-// reserves - changes sizes and layout only, never the value.
+// The mini-ABI: one accumulator register per dialect (w0/a0/$a0) is the
+// in-out argument of every call, each function adds its constant (and
+// its loop count) into it, the entry seeds the accumulator, calls a
+// sequence of functions and exits. Everything else - nops, branch
+// dances, .word padding, data words, quad pointers, bss reserves -
+// changes sizes and layout only, never the value.
+//
+// The specimen structure and its value are dialect-free; the spelling
+// is one of three (Arch): arm64, riscv64, LoongArch64 - the accumulator
+// and the exit idiom follow the dialect, the arithmetic does not.
 package arb
 
 import (
@@ -17,11 +22,101 @@ import (
 	"strings"
 )
 
+// Arch is the instruction dialect a program renders in.
+type Arch int
+
+const (
+	// Arm64 - macOS (svc #0x80) and Linux (svc #0) exits.
+	Arm64 Arch = iota
+	// Riscv - Linux (li a7, 93; ecall).
+	Riscv
+	// Loong64 - Linux ($ registers, syscall 0).
+	Loong64
+)
+
+// dialect is the spelling of the mini-ABI verbs of one arch.
+type dialect struct {
+	init   func(v uint32) string // seed the accumulator
+	loop   func(n int) string    // the whole countdown block (acc += n)
+	call   func(name string) string
+	add    func(c uint32) string // acc += c
+	ret    string
+	exit   string // the Linux exit idiom
+	exitMX string // the macOS one (arm64 alone)
+	jump   string // the noise branch over one line
+}
+
+func dialectOf(a Arch) dialect {
+	switch a {
+	case Riscv:
+		return dialect{
+			init: func(v uint32) string { return fmt.Sprintf("    li a0, %d\n", v) },
+			loop: func(n int) string {
+				return fmt.Sprintf(
+					"    li t0, %d\n.Lloop:\n"+
+						"    addi a0, a0, 1\n"+ //nolint:dupword // the instruction spells its operands
+						"    addi t0, t0, -1\n"+ //nolint:dupword // the instruction spells its operands
+						"    bne t0, zero, .Lloop\n",
+					n,
+				)
+			},
+			call: func(name string) string { return fmt.Sprintf("    call %s\n", name) },
+			add: func(c uint32) string {
+				//nolint:dupword // the instruction spells its operands
+				return fmt.Sprintf("    addi a0, a0, %d\n", c)
+			},
+			ret:  "    ret\n",
+			exit: "    li a7, 93\n    ecall\n",
+			jump: "    j 1f\n",
+		}
+	case Loong64:
+		return dialect{
+			init: func(v uint32) string { return fmt.Sprintf("    li.d $a0, %d\n", v) },
+			loop: func(n int) string {
+				return fmt.Sprintf(
+					"    addi.w $t0, $zero, %d\n.Lloop:\n"+
+						"    addi.d $a0, $a0, 1\n"+
+						"    addi.w $t0, $t0, -1\n"+
+						"    bne $t0, $zero, .Lloop\n",
+					n,
+				)
+			},
+			call: func(name string) string { return fmt.Sprintf("    bl %s\n", name) },
+			add:  func(c uint32) string { return fmt.Sprintf("    addi.d $a0, $a0, %d\n", c) },
+			ret:  "    jirl $zero, $ra, 0\n",
+			exit: "    addi.d $a7, $zero, 93\n    syscall 0\n",
+			jump: "    b 1f\n",
+		}
+	default:
+		return dialect{
+			init: func(v uint32) string { return fmt.Sprintf("    movz w0, #%d\n", v) },
+			loop: func(n int) string {
+				return fmt.Sprintf(
+					"    movz w9, #%d\n.Lloop:\n"+
+						"    add w0, w0, #1\n"+ //nolint:dupword // the instruction spells its operands
+						"    subs w9, w9, #1\n"+ //nolint:dupword // the instruction spells its operands
+						"    b.ne .Lloop\n",
+					n,
+				)
+			},
+			call: func(name string) string { return fmt.Sprintf("    bl %s\n", name) },
+			add: func(c uint32) string {
+				//nolint:dupword // the instruction spells its operands
+				return fmt.Sprintf("    add w0, w0, #%d\n", c)
+			},
+			ret:    "    ret\n",
+			exit:   "    movz x8, #93\n    svc #0\n",
+			exitMX: "    movz x16, #0x200, lsl #16\n    movk x16, #0x1\n    svc #0x80\n",
+			jump:   "    b 1f\n",
+		}
+	}
+}
+
 // Program is one generated link specimen.
 type Program struct {
-	// ExitLinux selects the exit idiom of the entry epilogue: macOS
-	// (svc #0x80, x16 = 1<<16|1) or Linux (svc #0, x8 = 93). The exit
-	// value is the same w0 either way.
+	// ExitLinux selects the exit idiom of the entry epilogue on arm64
+	// (macOS svc #0x80 vs Linux svc #0); the other dialects are
+	// Linux-only and ignore the flag. The exit value never changes.
 	ExitLinux bool
 
 	entry int        // the file holding _start
@@ -37,8 +132,8 @@ type FileSpec struct {
 	bss   int
 }
 
-// FuncSpec is one global function: it adds Add into w0 (plus one w0++
-// per loop round) and returns.
+// FuncSpec is one global function: it adds Add into the accumulator
+// (plus one per loop round) and returns.
 type FuncSpec struct {
 	name  string
 	add   uint32
@@ -46,8 +141,8 @@ type FuncSpec struct {
 	noise []string
 }
 
-// EntrySpec is the _start of the program: it seeds w0 with Init, runs
-// its own loop rounds, calls the sequence and exits with w0.
+// EntrySpec is the _start of the program: it seeds the accumulator,
+// runs its own loop rounds, calls the sequence and exits.
 type EntrySpec struct {
 	init  uint32
 	loop  int
@@ -70,21 +165,21 @@ type Source struct {
 	Src  string
 }
 
-// Sources renders every file of the program.
-func (p Program) Sources() []Source {
+// Sources renders every file of the program in the dialect.
+func (p Program) Sources(arch Arch) []Source {
 	out := make([]Source, len(p.files))
 	for i := range p.files {
 		out[i] = Source{
 			Name: fmt.Sprintf("t%d.s", i),
-			Src:  p.files[i].render(i, p.ExitLinux),
+			Src:  p.files[i].render(i, arch, p.ExitLinux),
 		}
 	}
 
 	return out
 }
 
-// Value is the w0 the program exits with (32-bit wrapping arithmetic,
-// as in the registers).
+// Value is the accumulator value the program exits with (32-bit
+// wrapping arithmetic, as in the registers).
 func (p Program) Value() uint32 {
 	e := p.files[p.entry].entry
 	v := e.init + uint32(e.loop)
@@ -97,21 +192,9 @@ func (p Program) Value() uint32 {
 }
 
 // Exit is the process exit code of the program (the kernel keeps the
-// low byte of w0).
+// low byte of the accumulator).
 func (p Program) Exit() int {
 	return int(p.Value() & 0xFF)
-}
-
-// String renders the specimen for a failure report: the expected exit,
-// the expected data size, every source.
-func (p Program) String() string {
-	var b strings.Builder
-	fmt.Fprintf(&b, "exit=%d datamem=%d\n", p.Exit(), p.DataMem())
-	for _, s := range p.Sources() {
-		fmt.Fprintf(&b, "--- %s\n%s", s.Name, s.Src)
-	}
-
-	return b.String()
 }
 
 // DataMem is the expected memory size of the linked data stream: the
@@ -138,24 +221,12 @@ func (p Program) DataMem() int {
 	return n
 }
 
-// find locates a function by its global name.
-func (p Program) find(name string) FuncSpec {
-	for i := range p.files {
-		for _, f := range p.files[i].funcs {
-			if f.name == name {
-				return f
-			}
-		}
-	}
-
-	return FuncSpec{name: name}
-}
-
 // render writes one file: .global for the entry and every function
 // (the GAS link interface - a bare label is a LOCAL object symbol,
 // invisible to a real linker), then the functions in order (the entry
 // first among them), then the data items and the bss reserve.
-func (s FileSpec) render(idx int, exitLinux bool) string {
+func (s FileSpec) render(idx int, arch Arch, exitLinux bool) string {
+	d := dialectOf(arch)
 	var b strings.Builder
 
 	if s.entry != nil {
@@ -169,24 +240,24 @@ func (s FileSpec) render(idx int, exitLinux bool) string {
 	b.WriteString(".text\n")
 
 	if s.entry != nil {
-		s.entry.render(&b, exitLinux)
+		s.entry.render(&b, d, exitLinux)
 	}
 
 	for i := range s.funcs {
-		s.funcs[i].render(&b)
+		s.funcs[i].render(&b, d)
 	}
 
 	if len(s.data) > 0 {
 		b.WriteString(".data\n")
-		for i, d := range s.data {
+		for i, dm := range s.data {
 			fmt.Fprintf(&b, "d%d_%d:\n", idx, i)
-			if d.quad {
+			if dm.quad {
 				// the pointer 8-aligned (as any real source has it -
 				// ld's chained fixups refuse an unaligned pointer)
 				b.WriteString("    .align 3\n")
-				fmt.Fprintf(&b, "    .quad %s\n", d.name)
+				fmt.Fprintf(&b, "    .quad %s\n", dm.name)
 			} else {
-				fmt.Fprintf(&b, "    .word %d\n", d.value)
+				fmt.Fprintf(&b, "    .word %d\n", dm.value)
 			}
 		}
 	}
@@ -199,69 +270,102 @@ func (s FileSpec) render(idx int, exitLinux bool) string {
 }
 
 // render writes the entry: the seed, the loop, the calls, the
-// epilogue. The noise rides AFTER the svc - off the execution path
+// epilogue. The noise rides AFTER the exit - off the execution path
 // (size and resolution coverage without executing it).
-func (e EntrySpec) render(b *strings.Builder, exitLinux bool) {
+func (e EntrySpec) render(b *strings.Builder, d dialect, exitLinux bool) {
 	b.WriteString("_start:\n")
-	fmt.Fprintf(b, "    movz w0, #%d\n", e.init)
-	e.renderLoop(b)
+	b.WriteString(d.init(e.init))
+	renderLoopInto(b, d, e.loop)
 
 	for _, name := range e.calls {
-		fmt.Fprintf(b, "    bl %s\n", name)
+		b.WriteString(d.call(name))
 	}
 
-	if exitLinux {
-		b.WriteString("    movz x8, #93\n    svc #0\n")
+	if d.exitMX != "" && !exitLinux {
+		b.WriteString(d.exitMX)
 	} else {
-		b.WriteString(
-			"    movz x16, #0x200, lsl #16\n    movk x16, #0x1\n    svc #0x80\n",
-		)
+		b.WriteString(d.exit)
 	}
 
-	e.renderNoise(b)
+	renderNoiseInto(b, e.noise)
 }
 
 // render writes one function: the loop, the add, the return, then the
 // noise past the ret (never executed: the fall-through ends at ret).
-func (f FuncSpec) render(b *strings.Builder) {
+func (f FuncSpec) render(b *strings.Builder, d dialect) {
 	fmt.Fprintf(b, "%s:\n", f.name)
-	f.renderLoop(b)
-	//nolint:dupword // the instruction spells its operands
-	fmt.Fprintf(b, "    add w0, w0, #%d\n", f.add)
-	b.WriteString("    ret\n")
-	f.renderNoise(b)
+	renderLoopInto(b, d, f.loop)
+	b.WriteString(d.add(f.add))
+	b.WriteString(d.ret)
+	renderNoiseInto(b, f.noise)
 }
 
-// renderLoop writes the countdown loop (w0 += loop) - the local label
-// is the same .Lloop in every file of every program: the isolation
-// axis.
-func renderLoopInto(b *strings.Builder, rounds int) {
-	fmt.Fprintf(b, "    movz w9, #%d\n", rounds)
-	b.WriteString(".Lloop:\n")
-	b.WriteString("    add w0, w0, #1\n")  //nolint:dupword // the instruction spells its operands
-	b.WriteString("    subs w9, w9, #1\n") //nolint:dupword // the instruction spells its operands
-	b.WriteString("    b.ne .Lloop\n")
-}
-
-func (e EntrySpec) renderLoop(b *strings.Builder) {
-	if e.loop > 0 {
-		renderLoopInto(b, e.loop)
+// renderLoopInto writes the countdown loop (acc += loop) - the local
+// label is the same .Lloop in every file of every program: the
+// isolation axis.
+func renderLoopInto(b *strings.Builder, d dialect, rounds int) {
+	if rounds <= 0 {
+		return
 	}
+
+	b.WriteString(d.loop(rounds))
 }
 
-func (f FuncSpec) renderLoop(b *strings.Builder) {
-	if f.loop > 0 {
-		renderLoopInto(b, f.loop)
-	}
-}
-
-// renderNoise writes the size-only lines (never touched by execution:
-// every function ends in ret/svc before the next one begins).
+// renderNoiseInto writes the size-only lines (never touched by
+// execution: every function ends in ret/exit before the next one
+// begins).
 func renderNoiseInto(b *strings.Builder, noise []string) {
 	for _, n := range noise {
 		b.WriteString(n)
 	}
 }
 
-func (e EntrySpec) renderNoise(b *strings.Builder) { renderNoiseInto(b, e.noise) }
-func (f FuncSpec) renderNoise(b *strings.Builder)  { renderNoiseInto(b, f.noise) }
+// HasQuad - the specimen carries a .quad pointer (an .align rides with
+// it; the monolithic law's domain excludes it, see its note).
+func (p Program) HasQuad() bool {
+	for i := range p.files {
+		for _, d := range p.files[i].data {
+			if d.quad {
+				return true
+			}
+		}
+	}
+
+	return false
+}
+
+// LoopingFiles counts the files owning a .Lloop (the label is shared
+// across files BY DESIGN - a monolith of several looping files would
+// define it twice, so the monolithic law's domain keeps at most one).
+func (p Program) LoopingFiles() int {
+	n := 0
+	for i := range p.files {
+		fs := &p.files[i]
+		if fs.entry != nil && fs.entry.loop > 0 {
+			n++
+			continue
+		}
+
+		for _, f := range fs.funcs {
+			if f.loop > 0 {
+				n++
+				break
+			}
+		}
+	}
+
+	return n
+}
+
+// find locates a function by its global name.
+func (p Program) find(name string) FuncSpec {
+	for i := range p.files {
+		for _, f := range p.files[i].funcs {
+			if f.name == name {
+				return f
+			}
+		}
+	}
+
+	return FuncSpec{name: name}
+}

@@ -44,6 +44,18 @@ func Assemble(src string, base uint64) (*asm.Result, []asm.AsmError) {
 	return asm.Assemble(src, base, NewASMBackend())
 }
 
+// ParseSourceUnit parses a whole .S source short of depositing it: the
+// link driver's entry (see asm.ParseSourceUnit).
+func ParseSourceUnit(file, src string) (*asm.SourceUnit, []asm.AsmError) {
+	return asm.ParseSourceUnit(file, src, NewASMBackend())
+}
+
+// AssembleUnit assembles a whole .S source into the unit (see
+// asm.AssembleUnit).
+func AssembleUnit(u *unit.Unit, file, src string) []asm.AsmError {
+	return asm.AssembleUnit(u, file, src, NewASMBackend())
+}
+
 // source is an asm.Syntax decorator: it parses pseudo-mnemonics
 // itself and delegates the rest to the syntax layer's inner grammar.
 // The pseudo-mnemonic trie is built once (NewASMBackend).

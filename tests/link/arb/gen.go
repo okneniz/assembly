@@ -14,6 +14,7 @@ import (
 	"iter"
 	mrnd "math/rand/v2"
 	"slices"
+	"strings"
 
 	ohsnap "github.com/okneniz/oh-snap"
 )
@@ -28,19 +29,27 @@ func NewGen(rnd *mrnd.Rand) *Gen {
 	return &Gen{rnd: rnd}
 }
 
-// Program builds one specimen.
-func (g *Gen) Program() Program {
+// Program builds one specimen in the dialect (the structure and the
+// value are dialect-free; the spelling and the size-only noise follow
+// it).
+func (g *Gen) Program(arch Arch) Program {
+	d := dialectOf(arch)
 	n := 1 + g.rnd.IntN(6)
 	files := make([]FileSpec, n)
 	names := make([]string, 0, 2*n)
 
 	for i := range files {
 		for j := range g.rnd.IntN(3) {
-			name := fmt.Sprintf("f%d_%d", i, j)
+			// fn* dodges the exact register names of the dialects (f1
+			// is an FP register even in GAS - an operand cannot mean
+			// the symbol then)
+			name := fmt.Sprintf("fn%d_%d", i, j)
+			// the add constant fits the signed imm12 of every dialect
+			// (the arm64 unsigned imm12 takes it too)
 			files[i].funcs = append(files[i].funcs, FuncSpec{
 				name:  name,
-				add:   uint32(g.rnd.IntN(4096)),
-				noise: g.noise(),
+				add:   uint32(1 + g.rnd.IntN(2047)),
+				noise: g.noise(d),
 			})
 			names = append(names, name)
 		}
@@ -65,7 +74,7 @@ func (g *Gen) Program() Program {
 		init:  uint32(g.rnd.IntN(65536)),
 		loop:  entryLoop,
 		calls: calls,
-		noise: g.noise(),
+		noise: g.noise(d),
 	}
 
 	// the loop axis: the same .Lloop name in many files (the isolation
@@ -105,16 +114,16 @@ func (g *Gen) Program() Program {
 	return Program{entry: entry, files: files}
 }
 
-// noise is 0..3 size-only lines (nops, a numeric-local branch dance,
-// .word padding).
-func (g *Gen) noise() []string {
+// noise is 0..3 size-only lines (a nop, a numeric-local branch
+// dance, .word padding) - the branch verb follows the dialect.
+func (g *Gen) noise(d dialect) []string {
 	out := make([]string, 0, 3)
 	for range g.rnd.IntN(4) {
 		switch g.rnd.IntN(3) {
 		case 0:
 			out = append(out, "    nop\n")
 		case 1:
-			out = append(out, "    b 1f\n    nop\n1:\n")
+			out = append(out, d.jump+"    nop\n1:\n")
 		default:
 			out = append(out, fmt.Sprintf("    .word %d\n", g.rnd.IntN(65536)))
 		}
@@ -147,30 +156,61 @@ func (p Program) clone() Program {
 	return c
 }
 
-// ProgramArb adapts the generator to oh-snap: every check draws a fresh
-// specimen; shrink drops noise lines, data items and calls, and counts
-// loop rounds down - a failing specimen shrinks to a minimal lying
-// program.
-type ProgramArb struct {
-	gen *Gen
+// ArchProgram binds a specimen to its instruction dialect: the value
+// oh-snap holds and prints on failure carries the sources of THAT
+// dialect (structure, exit and data bookkeeping are dialect-free).
+type ArchProgram struct {
+	Arch Arch
+	Prog Program
 }
 
-// NewProgramArb is the arbitrary over the generator.
-func NewProgramArb(rnd *mrnd.Rand) ohsnap.Arbitrary[Program] {
-	return ProgramArb{gen: NewGen(rnd)}
+// String renders the bound specimen for a failure report: the dialect,
+// the expected exit, the expected data size, every source.
+func (a ArchProgram) String() string {
+	var b strings.Builder
+	fmt.Fprintf(&b, "arch=%d exit=%d datamem=%d\n", a.Arch, a.Prog.Exit(), a.Prog.DataMem())
+	for _, s := range a.Prog.Sources(a.Arch) {
+		fmt.Fprintf(&b, "--- %s\n%s", s.Name, s.Src)
+	}
+
+	return b.String()
 }
 
-func (a ProgramArb) Generate() iter.Seq[Program] {
-	return iter.Seq[Program](func(yield func(Program) bool) {
+// archArb adapts the generator to oh-snap, one dialect at a time.
+type archArb struct {
+	gen  *Gen
+	arch Arch
+}
+
+// NewArchProgramArb is the arbitrary of specimens in one dialect.
+func NewArchProgramArb(rnd *mrnd.Rand, arch Arch) ohsnap.Arbitrary[ArchProgram] {
+	return archArb{gen: NewGen(rnd), arch: arch}
+}
+
+func (a archArb) Generate() iter.Seq[ArchProgram] {
+	return iter.Seq[ArchProgram](func(yield func(ArchProgram) bool) {
 		for {
-			if !yield(a.gen.Program()) {
+			if !yield(ArchProgram{Arch: a.arch, Prog: a.gen.Program(a.arch)}) {
 				return
 			}
 		}
 	})
 }
 
-func (a ProgramArb) Shrink(p Program) iter.Seq[Program] {
+func (a archArb) Shrink(v ArchProgram) iter.Seq[ArchProgram] {
+	candidates := a.gen.shrink(v.Prog)
+	out := make([]ArchProgram, len(candidates))
+	for i, p := range candidates {
+		out[i] = ArchProgram{Arch: v.Arch, Prog: p}
+	}
+
+	return slices.Values(out)
+}
+
+// shrink builds the candidates of one specimen: drop a noise line, drop
+// a data item, drop a call, count a loop down - a failing specimen
+// shrinks to a minimal lying program.
+func (g *Gen) shrink(p Program) []Program {
 	var out []Program
 
 	add := func(edit func(*Program)) {
@@ -224,5 +264,5 @@ func (a ProgramArb) Shrink(p Program) iter.Seq[Program] {
 		}
 	}
 
-	return slices.Values(out)
+	return out
 }

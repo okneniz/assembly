@@ -33,8 +33,9 @@ func TestLinkClangDifferential(t *testing.T) {
 		t.Skip("no clang on the host")
 	}
 
-	ohsnap.Check(t, 40, linkarb.NewProgramArb(seedRnd(t)), func(p linkarb.Program) bool {
-		srcs := sources(p)
+	arb := linkarb.NewArchProgramArb(seedRnd(t), linkarb.Arm64)
+	ohsnap.Check(t, 40, arb, func(a linkarb.ArchProgram) bool {
+		srcs := sources(a)
 
 		ours := filepath.Join(t.TempDir(), "ours")
 		img, err := arm64.Macho(srcs, "")
@@ -54,8 +55,8 @@ func TestLinkClangDifferential(t *testing.T) {
 		}
 
 		got, want := runExit(t, ours), runExit(t, ref)
-		if got != p.Exit() || want != p.Exit() {
-			t.Logf("ours %d, clang %d, want %d", got, want, p.Exit())
+		if got != a.Prog.Exit() || want != a.Prog.Exit() {
+			t.Logf("ours %d, clang %d, want %d", got, want, a.Prog.Exit())
 			return false
 		}
 

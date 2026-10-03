@@ -94,12 +94,40 @@ func makeGrammar() *grammar {
 		parseExpr:     expr.MakeExprParser(),
 	}
 
-	g.parseRegOperand = parsecstrings.Cast(
+	regOperand := parsecstrings.Cast(
 		parsecstrings.MapStrings[asmReg, parsec.Stateless]("register", buildAsmRegNum()),
 		func(r asmReg) (Op, error) {
 			return OpReg(regName(r)), nil
 		},
 	)
+
+	// a register never continues into an identifier (f3_1, spare): the
+	// token goes back to the expression lexer, as the arm64 grammar
+	// does - the operand choice would otherwise eat f3 and choke on the
+	// tail
+	g.parseRegOperand = func(
+		state parsec.Stateless,
+		buf parsec.Buffer[rune, parsecstrings.Position],
+	) (Op, parsec.Error[parsecstrings.Position]) {
+		save := buf.Position()
+		op, err := regOperand(state, buf)
+		if err != nil {
+			return op, err
+		}
+
+		if r, ok := expr.PeekRune(buf); ok && expr.IsIdentCont(r) {
+			if rerr := expr.Rewind(buf, save); rerr != nil {
+				return Op{}, rerr
+			}
+
+			return Op{}, parsec.NewParseError(
+				buf.Position(),
+				"not a register: an identifier continues",
+			)
+		}
+
+		return op, nil
+	}
 
 	lparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("'('", '('))
 	rparen := parsecstrings.Try(parsecstrings.Eq[parsec.Stateless]("')'", ')'))
