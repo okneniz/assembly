@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+	mr "math/rand/v2"
 	"strings"
 	"testing"
 
@@ -730,4 +731,53 @@ func fieldsOf(b []byte) []string {
 	}
 
 	return out
+}
+
+// TestSignChainOperands - the leading '+' and sign chains are unary
+// operators of the expression grammar, never a crash: every chain
+// assembles to the value it denotes. A stack overflow once surfaced on
+// the offset texts of the symbol-pseudo property (10-03); it did not
+// reproduce on this code through ParseExpr, the operand grammar and
+// the assembler (70k+ adversarial inputs) - this pins the class and
+// keeps a fuzz loop over it.
+func TestSignChainOperands(t *testing.T) {
+	cases := []struct {
+		src  string
+		base uint64
+		want string
+	}{
+		{"li a0, +5", 0, "15 45"},
+		{"li a0, ++5", 0, "15 45"},
+		{"li a0, +-5", 0, "6d 55"},
+		{"li a0, -+5", 0, "6d 55"},
+		{"li a0, --5", 0, "15 45"},
+		{"li a0, + -5", 0, "6d 55"},
+		{"li a0, +0x10", 0, "41 45"},
+		{"la a0, +0x2000", 0x1000, "17 15 00 00 13 05 05 00"},
+		{"la a0, +-0x7ffff000", 0x1000, "17 05 00 80 13 05 05 00"},
+	}
+	for _, c := range cases {
+		require.Equal(
+			t,
+			c.want,
+			hexOf(assembleOne(t, c.src, c.base)),
+			"case %q",
+			c.src,
+		)
+	}
+
+	rnd := mr.New(mr.NewPCG(7, 8))
+	alphabet := []rune("+-0123456789xab")
+	forms := []string{"li a0, ", "la a0, ", "call ", "tail "}
+	for i := 0; i < 5000; i++ {
+		var sb strings.Builder
+		for j := 0; j < 1+rnd.IntN(12); j++ {
+			sb.WriteRune(alphabet[rnd.IntN(len(alphabet))])
+		}
+
+		src := forms[i%len(forms)] + sb.String()
+		require.NotPanics(t, func() {
+			_, _ = asm.Assemble(src, 0x1000, NewASMBackend())
+		}, "case %q", src)
+	}
 }

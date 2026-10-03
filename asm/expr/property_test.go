@@ -7,9 +7,11 @@ package expr_test
 // (property_test.go).
 
 import (
+	"iter"
 	"math"
 	mrnd "math/rand/v2"
 	"os"
+	"slices"
 	"strconv"
 	"testing"
 
@@ -59,23 +61,48 @@ func renderExpr(e *expr.Expr) string {
 	return "?"
 }
 
+// renderBare is the same tree with BARE unary chains: a sign run over a
+// leaf or another unary fuses without parentheses ("+-5", "-~x") - the
+// spelling an operand takes in a source line. A unary over a BINARY node
+// keeps its parentheses ("+(1 + 2)": without them the chain would
+// re-associate into binary(+, unary(+, 1), 2)).
+func renderBare(e *expr.Expr) string {
+	switch e.Kind {
+	case expr.ExprNum:
+		return strconv.FormatInt(e.Num, 10)
+	case expr.ExprSym:
+		return e.Sym
+	case expr.ExprUnary:
+		if e.X.Kind == expr.ExprBinary {
+			return "(" + e.Op + renderBare(e.X) + ")"
+		}
+
+		return e.Op + renderBare(e.X)
+	case expr.ExprBinary:
+		return "(" + renderBare(e.X) + " " + e.Op + " " + renderBare(e.Y) + ")"
+	}
+
+	return "?"
+}
+
 // TestPropertyParseRenderRoundTrip is the "round trip" property: the
 // canonical text of a tree parses back into the same tree. Equality is by
 // ExprKey: the key is injective on structure and it is the same predicate
-// as literal pool deduplication.
+// as literal pool deduplication. Both renders walk: the parenthesized
+// canonical form and the bare unary-chain spelling.
 func TestPropertyParseRenderRoundTrip(t *testing.T) {
 	ohsnap.Check(t, 100000, arbx.Tree(seedRnd(t)), func(e *expr.Expr) bool {
-		src := renderExpr(e)
+		for _, src := range []string{renderExpr(e), renderBare(e)} {
+			back, err := expr.ParseExpr(src)
+			if err != nil {
+				t.Logf("%q: parse: %v", src, err)
+				return false
+			}
 
-		back, err := expr.ParseExpr(src)
-		if err != nil {
-			t.Logf("%q: parse: %v", src, err)
-			return false
-		}
-
-		if expr.ExprKey(back) != expr.ExprKey(e) {
-			t.Logf("%q: %s ≠ %s", src, expr.ExprKey(back), expr.ExprKey(e))
-			return false
+			if expr.ExprKey(back) != expr.ExprKey(e) {
+				t.Logf("%q: %s ≠ %s", src, expr.ExprKey(back), expr.ExprKey(e))
+				return false
+			}
 		}
 
 		return true
@@ -213,4 +240,156 @@ func TestPropertyEvalRobustness(t *testing.T) {
 		_ = err // an error is allowed (shift/division by zero), a panic is not
 		return true
 	})
+}
+
+// precLevels - the binary ladder from the loosest to the tightest
+// level. The table is the SPEC of the binding order (the grammar's
+// binLevel chain): a grammar that deviates from it fails the property.
+var precLevels = [][]string{
+	{"|"},
+	{"^"},
+	{"&"},
+	{"<<", ">>"},
+	{"+", "-"},
+	{"*", "/", "%"},
+}
+
+// precOf - the level index of a binary operator (the tighter, the
+// bigger).
+func precOf(op string) int {
+	for l, ops := range precLevels {
+		if slices.Contains(ops, op) {
+			return l
+		}
+	}
+
+	panic("unknown operator " + op)
+}
+
+// precAllBinOps - the binary operators in ladder order.
+func precAllBinOps() []string {
+	var out []string
+	for _, ops := range precLevels {
+		out = append(out, ops...)
+	}
+
+	return out
+}
+
+// precUnOps - the unary operators (the tightest level, above every
+// binary one).
+var precUnOps = []string{"-", "~", "+"}
+
+// bin - a binary node.
+func bin(op string, x, y *expr.Expr) *expr.Expr {
+	return expr.NewExpr(expr.ExprBinary, 0, "", op, x, y)
+}
+
+// un - a unary node.
+func un(op string, x *expr.Expr) *expr.Expr {
+	return expr.NewExpr(expr.ExprUnary, 0, "", op, x, nil)
+}
+
+// precLeaf - a leaf of a precedence text: its spelling and its tree.
+type precLeaf struct {
+	text string
+	tree *expr.Expr
+}
+
+// precLeaves - three random leaves (dec/hex/bin/oct literals and
+// symbols - the spellings that can neighbor an operator in a source
+// line). Shrinking is structural only (the leaf axis carries no law).
+type precLeaves struct {
+	a, b, c precLeaf
+}
+
+type precLeafGen struct {
+	rnd *mrnd.Rand
+}
+
+func (g precLeafGen) leaf() precLeaf {
+	v := int64(g.rnd.IntN(1 << 12))
+	switch g.rnd.IntN(5) {
+	case 0:
+		return precLeaf{strconv.FormatInt(v, 10), expr.Num(v)}
+	case 1:
+		return precLeaf{"0x" + strconv.FormatInt(v, 16), expr.Num(v)}
+	case 2:
+		return precLeaf{"0b" + strconv.FormatInt(v&0xff, 2), expr.Num(v & 0xff)}
+	case 3:
+		return precLeaf{"0" + strconv.FormatInt(v&0x3ff, 8), expr.Num(v & 0x3ff)}
+	default:
+		s := []string{"a", "zz", "q7", "sym_2", ".L"}[g.rnd.IntN(5)]
+		return precLeaf{s, expr.Sym(s)}
+	}
+}
+
+func (g precLeafGen) Generate() iter.Seq[precLeaves] {
+	return arb.Stream(func() precLeaves {
+		return precLeaves{
+			a: g.leaf(),
+			b: g.leaf(),
+			c: g.leaf(),
+		}
+	})
+}
+
+func (precLeafGen) Shrink(precLeaves) iter.Seq[precLeaves] {
+	return slices.Values([]precLeaves{})
+}
+
+// TestPropertyPrecedence - the binding order of the grammar against the
+// spec table: EVERY ordered pair of binary operators (the equal pair is
+// the left-associativity law) and every unary x binary combination,
+// over random literal/symbol leaves. The check is structural (ExprKey):
+// "a x b y c" must parse into the tree the table prescribes.
+func TestPropertyPrecedence(t *testing.T) {
+	check := func(t *testing.T, src string, want *expr.Expr) bool {
+		t.Helper()
+
+		got, err := expr.ParseExpr(src)
+		if err != nil {
+			t.Logf("%q: parse: %v", src, err)
+			return false
+		}
+
+		if expr.ExprKey(got) != expr.ExprKey(want) {
+			t.Logf("%q: %s ≠ %s", src, expr.ExprKey(got), expr.ExprKey(want))
+			return false
+		}
+
+		return true
+	}
+
+	for _, x := range precAllBinOps() {
+		for _, y := range precAllBinOps() {
+			t.Run(x+"_"+y, func(t *testing.T) {
+				ohsnap.Check(t, 40, precLeafGen{rnd: seedRnd(t)}, func(p precLeaves) bool {
+					src := p.a.text + " " + x + " " + p.b.text + " " + y + " " + p.c.text
+
+					// prec(x) >= prec(y): x folds first - either x is
+					// tighter, or the level is equal and the parse is
+					// left-associative
+					if precOf(x) >= precOf(y) {
+						return check(t, src, bin(y, bin(x, p.a.tree, p.b.tree), p.c.tree))
+					}
+
+					return check(t, src, bin(x, p.a.tree, bin(y, p.b.tree, p.c.tree)))
+				})
+			})
+		}
+	}
+
+	for _, u := range precUnOps {
+		for _, x := range precAllBinOps() {
+			t.Run("un"+u+"_"+x, func(t *testing.T) {
+				ohsnap.Check(t, 40, precLeafGen{rnd: seedRnd(t)}, func(p precLeaves) bool {
+					// the unary binds tighter than any binary operator,
+					// on either side of it
+					return check(t, u+p.a.text+" "+x+" "+p.b.text, bin(x, un(u, p.a.tree), p.b.tree)) &&
+						check(t, p.a.text+" "+x+" "+u+p.b.text, bin(x, p.a.tree, un(u, p.b.tree)))
+				})
+			})
+		}
+	}
 }
