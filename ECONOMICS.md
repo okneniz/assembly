@@ -134,26 +134,124 @@ the qemu gates gained TestDapProg (the frame carries synthetic.go:42
 then the test file's own line after a step) and the relay carries its
 unit suite (cat as the spawned child).
 
+## 09-20 — the unit output round
+
+Instruction output became two typed phases: the unresolved Unit the
+prog layer deposits into and the fixed form that assembly resolves —
+prog no longer formats bytes itself, and the dcc inline-asm path was
+unblocked on top of it.
+
+## 09-27 … 09-28 — the c14 gaps and parsec v0.0.4
+
+The kernel-source gap round: variant barriers and case-insensitive
+sysreg spellings for dmb/dsb/isb, the hlt/hvc immediate width fix,
+smc end to end, Mach-O symbols bound at end of stream — and the
+parsec v0.0.4 migration underneath it (combinators carry parser
+state; the assembly grammars went stateless).
+
+## 09-28 … 09-29 — the isa-xml round
+
+The decoder-rebuild groundwork on a branch: form ids and the alias
+split over the ARM XML tables. The branch was later dropped
+unmerged — the round's cost is recorded here, its code is not in
+main.
+
+## 09-30 … 10-01 — the GAS compatibility round
+
+Real kernel sources (seL4) drove the assembler to full GAS behavior:
+`.macro`/`.endm` captured and invoked with `\param` substitution, the
+IC/DC/TLBI system operations as one arch keyword table (53
+clang-pinned spellings), the wfi/wfe/sev/sevl hints, the unit mode
+(a whole .S source assembling into a *unit.Unit), stp/ldp over the
+whole register file (x/w/s/d/q) and all three addressing forms — the
+w/s/d constructor bases were the NP forms, a decode-visible bug —
+and the fragment layer taking compiler-output directives
+(`.arch_extension fp/nofp` from inline-asm templates). The defect
+round pinned the literal-pool rule: every slot aligned at its
+natural size, a quad `ldr=` tail at 4 mod 8 padded with a zero udf
+word.
+
+## 10-01 — the linker specimen tests
+
+tests/link/arb grows whole multi-source programs together with the
+value they must exit with, then checks three laws: clean resolve with
+a byte-identical re-link, native execution exiting with the program's
+passport (macho on darwin, elf on linux), and the clang differential
+— the same sources compiled and linked by clang exit identically.
+The exec law caught a real writer bug: `__bss` aligned 8 opened a
+hole at the unit's unaligned data end and a bss label sat in no
+section. The rule that fell out: the unit model aligns nothing —
+the section count and aligns are placement facts, both ends must
+build the same image. On 10-03 the round grew the image-reader law —
+the linked image read back through a neutral witness, 5,000 cases
+(in tree).
+
+## 10-01 … 10-03 — the property-coverage program
+
+The arb package: generators for every instruction family, all three
+architectures. arm64 in seven stages (~183 families — ALU, branches,
+load/store, scalar FP, SIMD vector, SIMD element, the copy group),
+riscv from 8 to 110 families with llvm-mc in the pinned docker image
+as the oracle, loong64 already mirrored and swept (1,550 texts, zero
+parity mismatches), then the alias and pseudo families on top. The
+oracles — clang on the host, llvm-mc in docker — caught some forty
+encoder and decoder defects across the arches: wrong opcode bases,
+unpinned schema-mask bits, decode quadrant errors, missing
+formatters; every fix pinned by a test. The generators also encode
+the acceptance laws the canonical assemblers enforce (rm never sp in
+the ext forms, the am* LAS-hazard restriction, the csrxchg mask
+registers), and the found-gaps round fixed everything the new
+families surfaced on the asm side.
+
+## 10-02 — the instruction-file consolidation
+
+One abstraction, one file, enforced by moving: all 560 Builder
+methods into each package's builder.go, all 521 per-instruction
+decode entry points into decode.go — pure moves, verified by
+byte-identical go doc inventories; the instruction files keep only
+the type, the constructor, Encode/ObjDump and the enc const. The
+arm64 property suite had outgrown a single go-test timeout, so
+prop-a64 became three chained processes with the oh-snap progress
+lines visible.
+
+## 10-03 — Len leaves the instruction
+
+Instruction length is a stream property, not an instruction field:
+the base type deleted from all three arches (the arm64 b-base
+constructor parameter, the riscv halfword base, the loong64 decode
+literals), disasm.ObjDump reduced to ObjDump(ctx) with Line taking
+the instruction's exact bytes, and per-arch InstrLen exported for
+the walks (the CLI, the debug targets, the diff tools, the tests).
+A net deletion: about 1,900 lines gone.
+
 ## Totals
 
 | Period | What | Days | Go lines | Go files | Sessions | Requests | Tokens in | Tokens out |
 |---|---|---|---|---|---|---|---|---|
 | 08-09 … 08-24 | base build: ARM64 + RISC-V, asm core, ELF/Mach-O, server, tests | 16 | 79,562 | 440 | 117 | 9,830 | ~2.32B | ~7.06M |
 | 08-28 … 08-29 | LoongArch: 248 instructions, pseudo layer, property suite, 3 VMs | 2 | 25,644 | 558 | 21 | 1,215 | ~321M | ~1.02M |
-| 09-03 … 09-08 | prog DSL, Mach-O writer, llvm-mc parity, arch exodus | 5 | 9,650 | 202 | 3 | ~90 | — | — |
+| 09-03 … 09-08 | prog DSL, Mach-O writer, llvm-mc parity, arch exodus | 5 | 9,650 | 202 | 5 | 1,235 | ~0.68B | ~0.71M |
 | 09-06 … 09-08 | arm64 ISA-audit closeout: 5 conflicts, SIMD copy family, MOV alias | 3 | 534 | 16 | 3 | — | — | — |
-| 09-09 | style unification: constructors, grammar structs, decoder/parser vocabulary, lint at zero | 1 | +1,639 | 200 | 1 | — | — | — |
-| 09-10 | debugger: RSP client, qemu executor, session engine, line maps, assembly-debug REPL | 1 | 2,933 | 21 | 1 | — | — | — |
-| 09-10 | DAP adapter: debug/dap server, debug/load split, assembly-debug-dap, VSCode extension | 1 | 2,844 | 19 | 2 | — | — | — |
-| 09-11 | prog editor debugging: dap relay + NewImageLauncher, riscv example -debug mode, TestDapProg gate | 1 | 453 | 10 | 3 | — | — | — |
-| 09-15 … 09-16 | prog/arm64 Builder parity: 88 chain twins, Mov pseudo deleted (the no-alias rule), reflect parity guard | 1 | +1,164 | 7 | 1 | — | — | — |
+| 09-09 | style unification: constructors, grammar structs, decoder/parser vocabulary, lint at zero | 1 | +1,639 | 200 | 2 | 1,312 | ~1.08B | ~0.56M |
+| 09-10 | debugger: RSP client, qemu executor, session engine, line maps, assembly-debug REPL | 1 | 2,933 | 21 | 7 | 712 | ~0.23B | ~0.47M |
+| 09-10 | DAP adapter: debug/dap server, debug/load split, assembly-debug-dap, VSCode extension | 1 | 2,844 | 19 | 1 | 257 | ~0.07B | ~0.19M |
+| 09-11 | prog editor debugging: dap relay + NewImageLauncher, riscv example -debug mode, TestDapProg gate | 1 | 453 | 10 | 3 | 253 | ~0.15B | ~0.22M |
+| 09-15 … 09-16 | prog/arm64 Builder parity: 88 chain twins, Mov pseudo deleted (the no-alias rule), reflect parity guard | 1 | +1,164 | 7 | 4 | 395 | ~0.08B | ~0.33M |
 | 09-16 | prog no-alias cleanup: riscv J/Bnez pseudos deleted (Bne twin added), chain-method guards for riscv+loong64 | 1 | +107 | 6 | — | — | — | — |
 | 09-16 | prog/riscv Builder parity: 98 chain twins (arith/logic/shifts/loads/stores/AMO/CSR/FP), two-way reflect guard | 1 | +1,286 | 4 | — | — | — | — |
-| 09-17 | universal Mach-O writer: arbitrary sections/symbols/bss with generated linkedit (byte-identical legacy), placement policies for prog and asm, streams+La in the DSL, symbolic adrp page fix | 1 | +2,856 | 25 | 1 | — | — | — |
-| 09-18 | arm64 scalar FP: per-op instruction types on the Builder (the one construction API — the asm FP ctors and FP ldr/str route through it), FReg operands, 22 prog twins + D0-D7/S0-S7, llvm-pinned encodings | 1 | +1,853 | 36 | 1 | — | — | — |
-| 09-18 | arm64 SIMD decomposition: the op-stringed Simd2/3/Shift/Widen/CopyGPR/DupElem/V1arr/ByElem families replaced by ~60 per-op types + VReg, asm ctors through the Builder, 60 prog twins (parity 119→179), llvm-pinned encodings fix the by-element table, shifts, rbit, ins and tbl | 1 | +4,988 | 86 | 1 | — | — | — |
-| 09-30 | in-memory linker (library): the link/ driver over asm.SourceUnit (parse → deposit text+data of all → bss of all → resolve), .L locals namespaced per file, .global promoted, Unit.Label dup-error, bss aggregated as the single tail, link/arm64 Macho/ELF twins, the link==monolithic property, macho+elf native-exec gates | 1 | +1,101 | 14 | 1 | — | — | — |
-| **total** | | **34** | **136,614** | **1,543** | **156** | **~11,135** | **~2.64B** | **~8.08M** |
+| 09-17 | universal Mach-O writer: arbitrary sections/symbols/bss with generated linkedit (byte-identical legacy), placement policies for prog and asm, streams+La in the DSL, symbolic adrp page fix | 1 | +2,856 | 25 | 2 | 307 | ~0.10B | ~0.26M |
+| 09-18 | arm64 scalar FP: per-op instruction types on the Builder (the one construction API — the asm FP ctors and FP ldr/str route through it), FReg operands, 22 prog twins + D0-D7/S0-S7, llvm-pinned encodings | 1 | +1,853 | 36 | 1 | 222 | ~0.09B | ~0.19M |
+| 09-18 | arm64 SIMD decomposition: the op-stringed Simd2/3/Shift/Widen/CopyGPR/DupElem/V1arr/ByElem families replaced by ~60 per-op types + VReg, asm ctors through the Builder, 60 prog twins (parity 119→179), llvm-pinned encodings fix the by-element table, shifts, rbit, ins and tbl | 1 | +4,988 | 86 | 2 | 179 | ~0.16B | ~0.15M |
+| 09-20 | unit output round: two typed phases (unresolved Unit / fixed form), prog deposits into unit, dcc inline-asm unblocked | 1 | +2,275 | 60 | 1 | 305 | ~0.14B | ~0.21M |
+| 09-27 … 09-28 | c14 gaps + parsec v0.0.4: variant barriers, case-insensitive sysregs, hlt/hvc imm16, smc, Mach-O end-of-stream symbols, stateless combinators | 2 | +1,131 | 76 | 4 | 231 | ~0.08B | ~0.10M |
+| 09-28 … 09-29 | isa-xml round (branch dropped unmerged): form ids + alias split over the ARM XML tables | 2 | — | — | 1 | 537 | ~0.30B | ~0.34M |
+| 09-30 | in-memory linker (library): the link/ driver over asm.SourceUnit (parse → deposit text+data of all → bss of all → resolve), .L locals namespaced per file, .global promoted, Unit.Label dup-error, bss aggregated as the single tail, link/arm64 Macho/ELF twins, the link==monolithic property, macho+elf native-exec gates | 1 | +1,101 | 14 | 1 | 284 | ~0.06B | ~0.15M |
+| 09-30 … 10-01 | GAS compatibility: .macro/.endm, IC/DC/TLBI sysop table (53 spellings), wfi/wfe/sev/sevl hints, the unit mode, stp/ldp whole register file + 3 addressing forms, .arch_extension in fragments, literal-pool slot alignment | 2 | +3,269 | 45 | 6 | 760 | ~0.19B | ~0.52M |
+| 10-01 … 10-03 | linker specimen tests: whole programs + exit passports, resolve/relink law, native-exec law, clang differential, __bss align fix, the image-reader law (5,000 cases, in tree) | 2 | +786 | 7 | 1 | 239 | ~0.15B | ~0.14M |
+| 10-01 … 10-03 | arb: property coverage on all arches — arm64 stages 1-7 (~183 families), riscv 8→110, loong64 llvm-mc sweep, alias/pseudo families, found-gaps fixes; some forty oracle-pinned bug fixes | 3 | +20,228 | 363 | 3 | 1,819 | ~1.06B | ~0.90M |
+| 10-02 | arch consolidation: 560 Builder methods → builder.go, 521 decoders → decode.go, prop-a64 split into three chained processes (pure moves, doc-identical) | 1 | +43 | 537 | 1 | 137 | ~0.02B | ~0.11M |
+| 10-03 | disasm: Len leaves the instruction — base type deleted in all three arches, per-arch InstrLen, ObjDump(ctx); net deletion | 1 | -1,920 | 708 | 2 | 203 | ~0.04B | ~0.16M |
+| **total** | | **41** | **169,752** | **1,683** | **213** | **~20,400** | **~7.30B** | **~13.8M** |
 
 ### Cost
 
@@ -161,7 +259,9 @@ In reality the whole run cost a flat monthly coding subscription —
 no per-token billing. For reference only: the same volume at
 pay-per-token API rates would have been roughly ~$200 (budget models)
 to ~$5,200 (frontier models) for the base, ~$30–$740 for LoongArch,
-almost all of it cache reads at their discounted rate.
+almost all of it cache reads at their discounted rate. The
+09-03 … 10-03 stretch added another ~4.65B tokens in and ~5.7M out
+on top of those two.
 
 Fun ratio for the base: the full pipeline burned ~29K tokens per line
 of code — that is what it costs to weigh, test and review every line;
