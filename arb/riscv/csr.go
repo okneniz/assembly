@@ -14,7 +14,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -110,16 +109,14 @@ func Csr(rnd *rand.Rand, op CsrOp) ohsnap.Arbitrary[CsrParams] {
 	return csrGen{rnd: rnd, op: op}
 }
 
-func (g csrGen) Generate() iter.Seq[CsrParams] {
-	return arb.Stream(func() CsrParams {
-		return NewCsrParams(
-			g.op,
-			reg(g.rnd),
-			csrPool[g.rnd.IntN(len(csrPool))],
-			reg(g.rnd),
-			uint8(g.rnd.IntN(32)),
-		)
-	})
+func (g csrGen) Generate() CsrParams {
+	return NewCsrParams(
+		g.op,
+		reg(g.rnd),
+		csrPool[g.rnd.IntN(len(csrPool))],
+		reg(g.rnd),
+		uint8(g.rnd.IntN(32)),
+	)
 }
 
 func (g csrGen) Shrink(p CsrParams) iter.Seq[CsrParams] {

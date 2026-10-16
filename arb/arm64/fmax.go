@@ -45,10 +45,8 @@ type fmaxArb struct {
 	base f3Gen
 }
 
-func (a fmaxArb) Generate() iter.Seq[FmaxParams] {
-	return arbStream(func() FmaxParams {
-		return NewFmaxParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmaxArb) Generate() FmaxParams {
+	return NewFmaxParams(a.base.Generate())
 }
 
 func (a fmaxArb) Shrink(p FmaxParams) iter.Seq[FmaxParams] {

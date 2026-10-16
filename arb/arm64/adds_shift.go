@@ -60,10 +60,8 @@ type addsShiftArb struct {
 	base ohsnap.Arbitrary[AddShiftParams]
 }
 
-func (a addsShiftArb) Generate() iter.Seq[AddsShiftParams] {
-	return arbStream(func() AddsShiftParams {
-		return AddsShiftParams(ohsnap.First(a.base.Generate()))
-	})
+func (a addsShiftArb) Generate() AddsShiftParams {
+	return AddsShiftParams(a.base.Generate())
 }
 
 func (a addsShiftArb) Shrink(p AddsShiftParams) iter.Seq[AddsShiftParams] {

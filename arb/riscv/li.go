@@ -14,7 +14,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 )
 
@@ -50,40 +49,28 @@ func newLiGen(rnd *rand.Rand) liGen {
 	return liGen{rnd: rnd}
 }
 
-func (g liGen) Generate() iter.Seq[LiParams] {
+func (g liGen) Generate() LiParams {
 	rd := reg(g.rnd)
 	switch g.rnd.IntN(4) {
 	case 0: // the c.li window
-		return arb.Stream(func() LiParams {
-			return NewLiParams(rd, int64(g.rnd.IntN(64)-32))
-		})
+		return NewLiParams(rd, int64(g.rnd.IntN(64)-32))
 	case 1: // the addi window and its edges
 		if g.rnd.IntN(2) == 1 {
-			return arb.Stream(func() LiParams {
-				return NewLiParams(rd, int64(g.rnd.IntN(4096)-2048))
-			})
+			return NewLiParams(rd, int64(g.rnd.IntN(4096)-2048))
 		}
 
-		return arb.Stream(func() LiParams {
-			return NewLiParams(rd, []int64{2047, -2048, 2048, -2049}[g.rnd.IntN(4)])
-		})
+		return NewLiParams(rd, []int64{2047, -2048, 2048, -2049}[g.rnd.IntN(4)])
 	case 2: // the lui-only window (lo == 0) and the int32 edges
 		if g.rnd.IntN(2) == 1 {
-			return arb.Stream(func() LiParams {
-				return NewLiParams(rd, (int64(g.rnd.IntN(1<<20))-(1<<19))<<12)
-			})
+			return NewLiParams(rd, (int64(g.rnd.IntN(1<<20))-(1<<19))<<12)
 		}
 
-		return arb.Stream(func() LiParams {
-			return NewLiParams(rd, []int64{
-				1<<31 - 1, -(1 << 31), 1<<31 - 2048, -(1 << 31) + 2047,
-				1 << 12, -(1 << 12), 0xfff000, -0xfff000,
-			}[g.rnd.IntN(8)])
-		})
+		return NewLiParams(rd, []int64{
+			1<<31 - 1, -(1 << 31), 1<<31 - 2048, -(1 << 31) + 2047,
+			1 << 12, -(1 << 12), 0xfff000, -0xfff000,
+		}[g.rnd.IntN(8)])
 	default: // the whole signed 32-bit domain
-		return arb.Stream(func() LiParams {
-			return NewLiParams(rd, int64(g.rnd.Uint64()&0xffffffff)-(1<<31))
-		})
+		return NewLiParams(rd, int64(g.rnd.Uint64()&0xffffffff)-(1<<31))
 	}
 }
 

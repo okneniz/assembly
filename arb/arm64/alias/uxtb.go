@@ -54,13 +54,11 @@ func newUxtbGen(rnd *rand.Rand) uxtbGen {
 	return uxtbGen{rnd: rnd}
 }
 
-func (g uxtbGen) Generate() iter.Seq[UxtbParams] {
-	return stream(func() UxtbParams {
-		return NewUxtbParams(
-			a64.GenReg(g.rnd, false, false, true),
-			a64.GenReg(g.rnd, false, false, true),
-		)
-	})
+func (g uxtbGen) Generate() UxtbParams {
+	return NewUxtbParams(
+		a64.GenReg(g.rnd, false, false, true),
+		a64.GenReg(g.rnd, false, false, true),
+	)
 }
 
 func (g uxtbGen) Shrink(p UxtbParams) iter.Seq[UxtbParams] {

@@ -45,10 +45,8 @@ type saddwArb struct {
 	base v3Gen
 }
 
-func (a saddwArb) Generate() iter.Seq[SaddwParams] {
-	return arbStream(func() SaddwParams {
-		return NewSaddwParams(ohsnap.First(a.base.Generate()))
-	})
+func (a saddwArb) Generate() SaddwParams {
+	return NewSaddwParams(a.base.Generate())
 }
 
 func (a saddwArb) Shrink(p SaddwParams) iter.Seq[SaddwParams] {

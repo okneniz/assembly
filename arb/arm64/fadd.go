@@ -45,10 +45,8 @@ type faddArb struct {
 	base f3Gen
 }
 
-func (a faddArb) Generate() iter.Seq[FaddParams] {
-	return arbStream(func() FaddParams {
-		return NewFaddParams(ohsnap.First(a.base.Generate()))
-	})
+func (a faddArb) Generate() FaddParams {
+	return NewFaddParams(a.base.Generate())
 }
 
 func (a faddArb) Shrink(p FaddParams) iter.Seq[FaddParams] {

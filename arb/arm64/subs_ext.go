@@ -45,10 +45,8 @@ type subsExtArb struct {
 	base extGen
 }
 
-func (a subsExtArb) Generate() iter.Seq[SubsExtParams] {
-	return arbStream(func() SubsExtParams {
-		return NewSubsExtParams(ohsnap.First(a.base.Generate()))
-	})
+func (a subsExtArb) Generate() SubsExtParams {
+	return NewSubsExtParams(a.base.Generate())
 }
 
 func (a subsExtArb) Shrink(p SubsExtParams) iter.Seq[SubsExtParams] {

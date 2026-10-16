@@ -13,7 +13,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -28,10 +27,8 @@ func ScaledOff(rnd *rand.Rand, scale uint32) ohsnap.Arbitrary[arm64.Off] {
 	return newScaledOffArb(rnd, scale)
 }
 
-func (a scaledOffArb) Generate() iter.Seq[arm64.Off] {
-	return arb.Stream(func() arm64.Off {
-		return arm64.Off(a.rnd.Int64N(0x1000) << a.scale)
-	})
+func (a scaledOffArb) Generate() arm64.Off {
+	return arm64.Off(a.rnd.Int64N(0x1000) << a.scale)
 }
 
 func (a scaledOffArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {
@@ -48,10 +45,8 @@ func UnscaledOff(rnd *rand.Rand) ohsnap.Arbitrary[arm64.Off] {
 	return newUnscaledOffArb(rnd)
 }
 
-func (a unscaledOffArb) Generate() iter.Seq[arm64.Off] {
-	return arb.Stream(func() arm64.Off {
-		return arm64.Off(a.rnd.Int64N(512) - 256)
-	})
+func (a unscaledOffArb) Generate() arm64.Off {
+	return arm64.Off(a.rnd.Int64N(512) - 256)
 }
 
 func (a unscaledOffArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {
@@ -97,10 +92,8 @@ func newPairOffArb(rnd *rand.Rand, scale uint32) pairOffArb {
 	}
 }
 
-func (a pairOffArb) Generate() iter.Seq[arm64.Off] {
-	return arb.Stream(func() arm64.Off {
-		return arm64.Off((a.rnd.Int64N(128) - 64) << a.scale)
-	})
+func (a pairOffArb) Generate() arm64.Off {
+	return arm64.Off((a.rnd.Int64N(128) - 64) << a.scale)
 }
 
 func (a pairOffArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {

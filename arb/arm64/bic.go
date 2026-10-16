@@ -45,10 +45,8 @@ type bicArb struct {
 	base v3Gen
 }
 
-func (a bicArb) Generate() iter.Seq[BicVParams] {
-	return arbStream(func() BicVParams {
-		return NewBicVParams(ohsnap.First(a.base.Generate()))
-	})
+func (a bicArb) Generate() BicVParams {
+	return NewBicVParams(a.base.Generate())
 }
 
 func (a bicArb) Shrink(p BicVParams) iter.Seq[BicVParams] {

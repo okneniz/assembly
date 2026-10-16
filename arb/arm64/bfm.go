@@ -58,21 +58,19 @@ func newBfmGen(rnd *rand.Rand) bfmGen {
 	return bfmGen{rnd: rnd}
 }
 
-func (g bfmGen) Generate() iter.Seq[BfmParams] {
-	return arbStream(func() BfmParams {
-		hi := uint32(64)
-		is64 := g.rnd.IntN(2) == 1
-		if !is64 {
-			hi = 32
-		}
+func (g bfmGen) Generate() BfmParams {
+	hi := uint32(64)
+	is64 := g.rnd.IntN(2) == 1
+	if !is64 {
+		hi = 32
+	}
 
-		return NewBfmParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			uint32(g.rnd.IntN(int(hi))),
-			uint32(g.rnd.IntN(int(hi))),
-		)
-	})
+	return NewBfmParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		uint32(g.rnd.IntN(int(hi))),
+		uint32(g.rnd.IntN(int(hi))),
+	)
 }
 
 func (g bfmGen) Shrink(p BfmParams) iter.Seq[BfmParams] {

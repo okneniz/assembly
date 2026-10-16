@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -41,10 +40,8 @@ type mvGen struct {
 	rnd *rand.Rand
 }
 
-func (g mvGen) Generate() iter.Seq[MvParams] {
-	return arb.Stream(func() MvParams {
-		return NewMvParams(reg(g.rnd), reg(g.rnd))
-	})
+func (g mvGen) Generate() MvParams {
+	return NewMvParams(reg(g.rnd), reg(g.rnd))
 }
 
 func (g mvGen) Shrink(p MvParams) iter.Seq[MvParams] {

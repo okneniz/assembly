@@ -102,44 +102,42 @@ func newMovGen(rnd *rand.Rand) movGen {
 	return movGen{rnd: rnd}
 }
 
-func (g movGen) Generate() iter.Seq[MovParams] {
-	return stream(func() MovParams {
-		is64 := g.rnd.IntN(2) == 1
-		if g.rnd.IntN(2) == 1 {
-			return NewMovParams(
-				a64.GenReg(g.rnd, is64, false, true),
-				a64.GenReg(g.rnd, is64, false, true),
-				0,
-				0,
-				movClassZ,
-				true,
-			)
-		}
-
-		maxHw := uint32(1)
-		if is64 {
-			maxHw = 3
-		}
-
-		class := g.rnd.IntN(2)
-		if is64 && g.rnd.IntN(2) == 1 {
-			class = movClassPN // the all-ones pattern is a 64-bit form
-		}
-
-		lane := g.rnd.Int64N(0x10000)
-		if class == movClassPN && lane == 0 {
-			lane = 1 // the all-ones pattern needs a nonzero lane
-		}
-
+func (g movGen) Generate() MovParams {
+	is64 := g.rnd.IntN(2) == 1
+	if g.rnd.IntN(2) == 1 {
 		return NewMovParams(
 			a64.GenReg(g.rnd, is64, false, true),
 			a64.GenReg(g.rnd, is64, false, true),
-			lane,
-			uint32(g.rnd.IntN(int(maxHw)+1)),
-			class,
-			false,
+			0,
+			0,
+			movClassZ,
+			true,
 		)
-	})
+	}
+
+	maxHw := uint32(1)
+	if is64 {
+		maxHw = 3
+	}
+
+	class := g.rnd.IntN(2)
+	if is64 && g.rnd.IntN(2) == 1 {
+		class = movClassPN // the all-ones pattern is a 64-bit form
+	}
+
+	lane := g.rnd.Int64N(0x10000)
+	if class == movClassPN && lane == 0 {
+		lane = 1 // the all-ones pattern needs a nonzero lane
+	}
+
+	return NewMovParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		lane,
+		uint32(g.rnd.IntN(int(maxHw)+1)),
+		class,
+		false,
+	)
 }
 
 func (g movGen) Shrink(p MovParams) iter.Seq[MovParams] {

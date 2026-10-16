@@ -45,10 +45,8 @@ type sshrArb struct {
 	base vShiftGen
 }
 
-func (a sshrArb) Generate() iter.Seq[SshrParams] {
-	return arbStream(func() SshrParams {
-		return NewSshrParams(ohsnap.First(a.base.Generate()))
-	})
+func (a sshrArb) Generate() SshrParams {
+	return NewSshrParams(a.base.Generate())
 }
 
 func (a sshrArb) Shrink(p SshrParams) iter.Seq[SshrParams] {

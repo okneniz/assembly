@@ -9,8 +9,6 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	ohsnap "github.com/okneniz/oh-snap"
-
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -57,18 +55,16 @@ func pairX(rnd *rand.Rand) pairGen {
 	return newPairGen(rnd, &x, &s)
 }
 
-func (g pairGen) Generate() iter.Seq[PairParams] {
-	return arbStream(func() PairParams {
-		is64 := g.is64()
-		scale := g.curScale(is64)
+func (g pairGen) Generate() PairParams {
+	is64 := g.is64()
+	scale := g.curScale(is64)
 
-		return NewPairParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, true, true, false),
-			ohsnap.First(PairOff(g.rnd, scale).Generate()),
-		)
-	})
+	return NewPairParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, true, true, false),
+		PairOff(g.rnd, scale).Generate(),
+	)
 }
 
 func (g pairGen) Shrink(p PairParams) iter.Seq[PairParams] {

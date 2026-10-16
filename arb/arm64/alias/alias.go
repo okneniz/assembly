@@ -9,22 +9,15 @@ package alias
 
 import (
 	"fmt"
-	"iter"
 	"math/rand/v2"
 	"strconv"
 
 	parsec "github.com/okneniz/parsec"
 	parsecbytes "github.com/okneniz/parsec/bytes"
 
-	"github.com/okneniz/assembly/arb"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
 	asmalias "github.com/okneniz/assembly/asm/arm64/alias"
 )
-
-// stream — the lazy source of a value constructor (arb.Stream).
-func stream[T any](f func() T) iter.Seq[T] {
-	return arb.Stream(f)
-}
 
 // instrOfText — the instruction of one alias text (assemble + decode);
 // the bridge of the alias families to the arch instruction.

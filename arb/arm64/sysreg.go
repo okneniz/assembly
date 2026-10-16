@@ -11,8 +11,8 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -34,15 +34,13 @@ func newSysregArb(rnd *rand.Rand) sysregArb {
 	}
 }
 
-func (a sysregArb) Generate() iter.Seq[string] {
-	return arb.Stream(func() string {
-		return a.names[a.rnd.IntN(len(a.names))]
-	})
+func (a sysregArb) Generate() string {
+	return a.names[a.rnd.IntN(len(a.names))]
 }
 
 func (a sysregArb) Shrink(name string) iter.Seq[string] {
 	if name == a.names[0] {
-		return ohsnap.Empty[string]()
+		return shrink.NoShrink[string]()(name)
 	}
 
 	return slices.Values([]string{a.names[0]})

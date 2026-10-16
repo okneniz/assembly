@@ -10,7 +10,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,16 +45,15 @@ func newBrkGen(rnd *rand.Rand) brkGen {
 	return brkGen{rnd: rnd}
 }
 
-func (g brkGen) Generate() iter.Seq[BrkParams] {
-	return arb.Stream(func() BrkParams {
-		return NewBrkParams(imm16(g.rnd.Int64N(0x10000)))
-	})
+func (g brkGen) Generate() BrkParams {
+	return NewBrkParams(imm16(g.rnd.Int64N(0x10000)))
 }
 
 func (g brkGen) Shrink(p BrkParams) iter.Seq[BrkParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[BrkParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[BrkParams]()(p)
 	}
 
 	var out []BrkParams

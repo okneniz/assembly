@@ -50,11 +50,9 @@ func MovSimd(rnd *rand.Rand) ohsnap.Arbitrary[MovSimdParams] {
 	return movSimdGen{base: newV2Gen(rnd, arrLogical())}
 }
 
-func (g movSimdGen) Generate() iter.Seq[MovSimdParams] {
-	return arbStream(func() MovSimdParams {
-		p := ohsnap.First(g.base.Generate())
-		return NewMovSimdParams(p.Rd, p.Rn, p.Arr)
-	})
+func (g movSimdGen) Generate() MovSimdParams {
+	p := g.base.Generate()
+	return NewMovSimdParams(p.Rd, p.Rn, p.Arr)
 }
 
 func (g movSimdGen) Shrink(p MovSimdParams) iter.Seq[MovSimdParams] {

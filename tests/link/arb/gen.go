@@ -187,14 +187,8 @@ func NewArchProgramArb(rnd *mrnd.Rand, arch Arch) ohsnap.Arbitrary[ArchProgram] 
 	return archArb{gen: NewGen(rnd), arch: arch}
 }
 
-func (a archArb) Generate() iter.Seq[ArchProgram] {
-	return iter.Seq[ArchProgram](func(yield func(ArchProgram) bool) {
-		for {
-			if !yield(ArchProgram{Arch: a.arch, Prog: a.gen.Program(a.arch)}) {
-				return
-			}
-		}
-	})
+func (a archArb) Generate() ArchProgram {
+	return ArchProgram{Arch: a.arch, Prog: a.gen.Program(a.arch)}
 }
 
 func (a archArb) Shrink(v ArchProgram) iter.Seq[ArchProgram] {

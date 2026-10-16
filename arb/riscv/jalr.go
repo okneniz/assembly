@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,10 +45,8 @@ type jalrGen struct {
 	rnd *rand.Rand
 }
 
-func (g jalrGen) Generate() iter.Seq[JalrParams] {
-	return arb.Stream(func() JalrParams {
-		return NewJalrParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
-	})
+func (g jalrGen) Generate() JalrParams {
+	return NewJalrParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
 }
 
 func (g jalrGen) Shrink(p JalrParams) iter.Seq[JalrParams] {

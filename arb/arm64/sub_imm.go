@@ -11,7 +11,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -60,22 +59,21 @@ func newSubImmGen(rnd *rand.Rand) subImmGen {
 	return subImmGen{rnd: rnd}
 }
 
-func (g subImmGen) Generate() iter.Seq[SubImmParams] {
-	return arb.Stream(func() SubImmParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewSubImmParams(
-			genReg(g.rnd, is64, true, false),
-			genReg(g.rnd, is64, true, false),
-			imm12(g.rnd.Int64N(0x1000)),
-			arm64.Sh12(g.rnd.IntN(2)),
-		)
-	})
+func (g subImmGen) Generate() SubImmParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewSubImmParams(
+		genReg(g.rnd, is64, true, false),
+		genReg(g.rnd, is64, true, false),
+		imm12(g.rnd.Int64N(0x1000)),
+		arm64.Sh12(g.rnd.IntN(2)),
+	)
 }
 
 func (g subImmGen) Shrink(p SubImmParams) iter.Seq[SubImmParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[SubImmParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[SubImmParams]()(p)
 	}
 
 	var out []SubImmParams

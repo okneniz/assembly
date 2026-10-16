@@ -12,7 +12,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -87,10 +86,8 @@ func branchOff(rnd *rand.Rand) int64 {
 	return branchOffMin + 2*rnd.Int64N((branchOffMax-branchOffMin)/2+1)
 }
 
-func (g branchGen) Generate() iter.Seq[BranchParams] {
-	return arb.Stream(func() BranchParams {
-		return NewBranchParams(g.op, reg(g.rnd), reg(g.rnd), branchOff(g.rnd))
-	})
+func (g branchGen) Generate() BranchParams {
+	return NewBranchParams(g.op, reg(g.rnd), reg(g.rnd), branchOff(g.rnd))
 }
 
 func (g branchGen) Shrink(p BranchParams) iter.Seq[BranchParams] {

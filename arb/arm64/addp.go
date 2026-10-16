@@ -45,10 +45,8 @@ type addpArb struct {
 	base v3Gen
 }
 
-func (a addpArb) Generate() iter.Seq[AddpParams] {
-	return arbStream(func() AddpParams {
-		return NewAddpParams(ohsnap.First(a.base.Generate()))
-	})
+func (a addpArb) Generate() AddpParams {
+	return NewAddpParams(a.base.Generate())
 }
 
 func (a addpArb) Shrink(p AddpParams) iter.Seq[AddpParams] {

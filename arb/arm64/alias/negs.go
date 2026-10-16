@@ -58,33 +58,31 @@ func newNegsGen(rnd *rand.Rand) negsGen {
 	return negsGen{rnd: rnd}
 }
 
-func (g negsGen) Generate() iter.Seq[NegsParams] {
-	return stream(func() NegsParams {
-		is64 := g.rnd.IntN(2) == 1
-		width := int64(32)
-		if is64 {
-			width = 64
-		}
+func (g negsGen) Generate() NegsParams {
+	is64 := g.rnd.IntN(2) == 1
+	width := int64(32)
+	if is64 {
+		width = 64
+	}
 
-		sh := ""
-		amt := int64(0)
-		if g.rnd.IntN(2) == 1 {
-			sh = addSubShiftKinds()[g.rnd.IntN(3)]
-			amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
-		}
+	sh := ""
+	amt := int64(0)
+	if g.rnd.IntN(2) == 1 {
+		sh = addSubShiftKinds()[g.rnd.IntN(3)]
+		amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
+	}
 
-		return NewNegsParams(
-			a64.GenReg(
-				g.rnd,
-				is64,
-				false,
-				false,
-			), // zr would read back as cmp (a decoder-canon gap)
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-			amt,
-		)
-	})
+	return NewNegsParams(
+		a64.GenReg(
+			g.rnd,
+			is64,
+			false,
+			false,
+		), // zr would read back as cmp (a decoder-canon gap)
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+		amt,
+	)
 }
 
 func (g negsGen) Shrink(p NegsParams) iter.Seq[NegsParams] {

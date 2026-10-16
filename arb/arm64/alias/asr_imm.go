@@ -60,20 +60,18 @@ func newAsrImmGen(rnd *rand.Rand) asrImmGen {
 	return asrImmGen{rnd: rnd}
 }
 
-func (g asrImmGen) Generate() iter.Seq[AsrImmParams] {
-	return stream(func() AsrImmParams {
-		is64 := g.rnd.IntN(2) == 1
-		sh := uint32(1 + g.rnd.IntN(62))
-		if !is64 {
-			sh = uint32(1 + g.rnd.IntN(30))
-		}
+func (g asrImmGen) Generate() AsrImmParams {
+	is64 := g.rnd.IntN(2) == 1
+	sh := uint32(1 + g.rnd.IntN(62))
+	if !is64 {
+		sh = uint32(1 + g.rnd.IntN(30))
+	}
 
-		return NewAsrImmParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-		)
-	})
+	return NewAsrImmParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+	)
 }
 
 func (g asrImmGen) Shrink(p AsrImmParams) iter.Seq[AsrImmParams] {

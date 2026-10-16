@@ -52,28 +52,27 @@ func shifted(rnd *rand.Rand) shiftedGen {
 	return newShiftedGen(rnd)
 }
 
-func (g shiftedGen) Generate() iter.Seq[ShiftedParams] {
-	return arbStream(func() ShiftedParams {
-		is64 := g.rnd.IntN(2) == 1
-		hi := int64(63)
-		if !is64 {
-			hi = 31
-		}
+func (g shiftedGen) Generate() ShiftedParams {
+	is64 := g.rnd.IntN(2) == 1
+	hi := int64(63)
+	if !is64 {
+		hi = 31
+	}
 
-		return NewShiftedParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			imm6(g.rnd.Int64N(hi+1)),
-			arm64.Shift(g.rnd.IntN(4)),
-		)
-	})
+	return NewShiftedParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		imm6(g.rnd.Int64N(hi+1)),
+		arm64.Shift(g.rnd.IntN(4)),
+	)
 }
 
 func (g shiftedGen) Shrink(p ShiftedParams) iter.Seq[ShiftedParams] {
 	v, err := immValue(p.Imm6)
 	if err != nil {
-		return ohsnapEmpty[ShiftedParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[ShiftedParams]()(p)
 	}
 
 	var out []ShiftedParams

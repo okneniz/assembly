@@ -45,10 +45,8 @@ type scvtfArb struct {
 	base fgprGen
 }
 
-func (a scvtfArb) Generate() iter.Seq[ScvtfParams] {
-	return arbStream(func() ScvtfParams {
-		return NewScvtfParams(ohsnap.First(a.base.Generate()))
-	})
+func (a scvtfArb) Generate() ScvtfParams {
+	return NewScvtfParams(a.base.Generate())
 }
 
 func (a scvtfArb) Shrink(p ScvtfParams) iter.Seq[ScvtfParams] {

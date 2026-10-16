@@ -60,14 +60,12 @@ func TstImm(rnd *rand.Rand) ohsnap.Arbitrary[TstImmParams] {
 	}
 }
 
-func (a tstImmArb) Generate() iter.Seq[TstImmParams] {
-	return stream(func() TstImmParams {
-		p := ohsnap.First(a.base.Generate())
-		return NewTstImmParams(
-			a64.GenReg(a.rnd, p.Rd.Is64(), false, true),
-			p,
-		)
-	})
+func (a tstImmArb) Generate() TstImmParams {
+	p := a.base.Generate()
+	return NewTstImmParams(
+		a64.GenReg(a.rnd, p.Rd.Is64(), false, true),
+		p,
+	)
 }
 
 func (a tstImmArb) Shrink(p TstImmParams) iter.Seq[TstImmParams] {

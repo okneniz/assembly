@@ -45,10 +45,8 @@ type orrShiftArb struct {
 	base shiftedGen
 }
 
-func (a orrShiftArb) Generate() iter.Seq[OrrShiftParams] {
-	return arbStream(func() OrrShiftParams {
-		return NewOrrShiftParams(ohsnap.First(a.base.Generate()))
-	})
+func (a orrShiftArb) Generate() OrrShiftParams {
+	return NewOrrShiftParams(a.base.Generate())
 }
 
 func (a orrShiftArb) Shrink(p OrrShiftParams) iter.Seq[OrrShiftParams] {

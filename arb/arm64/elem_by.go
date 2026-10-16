@@ -370,8 +370,8 @@ func byElemValid(spec byElemSpec, p ByElemParams) bool {
 	return p.Idx < spec.idxOf(p.Arr) && int(p.Rm.Num()) < rmMax
 }
 
-func (a byElemArb) Generate() iter.Seq[ByElemParams] {
-	return arbStream(a.gen)
+func (a byElemArb) Generate() ByElemParams {
+	return a.gen()
 }
 
 func (a byElemArb) Shrink(p ByElemParams) iter.Seq[ByElemParams] {

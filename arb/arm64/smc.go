@@ -10,7 +10,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -46,16 +45,15 @@ func newSmcGen(rnd *rand.Rand) smcGen {
 	return smcGen{rnd: rnd}
 }
 
-func (g smcGen) Generate() iter.Seq[SmcParams] {
-	return arb.Stream(func() SmcParams {
-		return NewSmcParams(imm16(g.rnd.Int64N(0x10000)))
-	})
+func (g smcGen) Generate() SmcParams {
+	return NewSmcParams(imm16(g.rnd.Int64N(0x10000)))
 }
 
 func (g smcGen) Shrink(p SmcParams) iter.Seq[SmcParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[SmcParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[SmcParams]()(p)
 	}
 
 	var out []SmcParams

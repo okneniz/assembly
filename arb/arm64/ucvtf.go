@@ -45,10 +45,8 @@ type ucvtfArb struct {
 	base fgprGen
 }
 
-func (a ucvtfArb) Generate() iter.Seq[UcvtfParams] {
-	return arbStream(func() UcvtfParams {
-		return NewUcvtfParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ucvtfArb) Generate() UcvtfParams {
+	return NewUcvtfParams(a.base.Generate())
 }
 
 func (a ucvtfArb) Shrink(p UcvtfParams) iter.Seq[UcvtfParams] {

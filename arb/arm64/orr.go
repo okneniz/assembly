@@ -45,10 +45,8 @@ type orrArb struct {
 	base v3Gen
 }
 
-func (a orrArb) Generate() iter.Seq[OrrVParams] {
-	return arbStream(func() OrrVParams {
-		return NewOrrVParams(ohsnap.First(a.base.Generate()))
-	})
+func (a orrArb) Generate() OrrVParams {
+	return NewOrrVParams(a.base.Generate())
 }
 
 func (a orrArb) Shrink(p OrrVParams) iter.Seq[OrrVParams] {

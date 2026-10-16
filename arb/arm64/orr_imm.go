@@ -45,10 +45,8 @@ type orrImmArb struct {
 	base bitmaskGen
 }
 
-func (a orrImmArb) Generate() iter.Seq[OrrImmParams] {
-	return arbStream(func() OrrImmParams {
-		return NewOrrImmParams(ohsnap.First(a.base.Generate()))
-	})
+func (a orrImmArb) Generate() OrrImmParams {
+	return NewOrrImmParams(a.base.Generate())
 }
 
 func (a orrImmArb) Shrink(p OrrImmParams) iter.Seq[OrrImmParams] {

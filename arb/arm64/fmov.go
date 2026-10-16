@@ -45,10 +45,8 @@ type fmovArb struct {
 	base f2Gen
 }
 
-func (a fmovArb) Generate() iter.Seq[FmovParams] {
-	return arbStream(func() FmovParams {
-		return NewFmovParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmovArb) Generate() FmovParams {
+	return NewFmovParams(a.base.Generate())
 }
 
 func (a fmovArb) Shrink(p FmovParams) iter.Seq[FmovParams] {

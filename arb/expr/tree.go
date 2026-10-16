@@ -15,7 +15,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/asm/expr"
 )
 
@@ -46,10 +45,8 @@ func Tree(rnd *rand.Rand) ohsnap.Arbitrary[*expr.Expr] {
 	return treeGen{rnd: rnd}
 }
 
-func (g treeGen) Generate() iter.Seq[*expr.Expr] {
-	return arb.Stream(func() *expr.Expr {
-		return g.grow(4)
-	})
+func (g treeGen) Generate() *expr.Expr {
+	return g.grow(4)
 }
 
 // Shrink — one axis at a time: structural simplification (unary → operand,
@@ -58,7 +55,7 @@ func (g treeGen) Generate() iter.Seq[*expr.Expr] {
 // candidates), operator → vals[0].
 func (g treeGen) Shrink(e *expr.Expr) iter.Seq[*expr.Expr] {
 	if e == nil {
-		return ohsnap.Empty[*expr.Expr]()
+		return shrink.NoShrink[*expr.Expr]()(e)
 	}
 
 	var out []*expr.Expr

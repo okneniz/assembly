@@ -88,22 +88,20 @@ func newOffArb(rnd *rand.Rand) offArb {
 	return offArb{rnd: rnd}
 }
 
-func (a immArb[T]) Generate() iter.Seq[T] {
-	return arb.Stream(func() T {
-		v, err := a.make(a.rnd.Int64N(a.max + 1))
-		if err != nil {
-			var zero T // unreachable: the range [0, max] is set by the generator's constructor
-			return zero
-		}
+func (a immArb[T]) Generate() T {
+	v, err := a.make(a.rnd.Int64N(a.max + 1))
+	if err != nil {
+		var zero T // unreachable: the range [0, max] is set by the generator's constructor
+		return zero
+	}
 
-		return v
-	})
+	return v
 }
 
 func (a immArb[T]) Shrink(v T) iter.Seq[T] {
 	n, err := immValue(v)
 	if err != nil {
-		return ohsnap.Empty[T]() // String() of our own type is unparseable — invariant
+		return shrink.NoShrink[T]()(v) // String() of our own type is unparseable — invariant
 	}
 
 	var out []T
@@ -124,10 +122,8 @@ func (a immArb[T]) Shrink(v T) iter.Seq[T] {
 	return slices.Values(out)
 }
 
-func (a offArb) Generate() iter.Seq[arm64.Off] {
-	return arb.Stream(func() arm64.Off {
-		return arm64.Off(a.rnd.Int64N(0x1000) * 4)
-	})
+func (a offArb) Generate() arm64.Off {
+	return arm64.Off(a.rnd.Int64N(0x1000) * 4)
 }
 
 func (a offArb) Shrink(o arm64.Off) iter.Seq[arm64.Off] {

@@ -10,7 +10,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -58,19 +57,18 @@ func newMovkGen(rnd *rand.Rand) movkGen {
 	return movkGen{rnd: rnd}
 }
 
-func (g movkGen) Generate() iter.Seq[MovkParams] {
-	return arb.Stream(func() MovkParams {
-		hw := arm64.Hw(g.rnd.IntN(4))
-		// hw>=Hw2 (lsl #32/#48) occurs only in the 64-bit form.
-		is64 := hw >= arm64.Hw2 || g.rnd.IntN(2) == 1
-		return NewMovkParams(genReg(g.rnd, is64, false, true), imm16(g.rnd.Int64N(0x10000)), hw)
-	})
+func (g movkGen) Generate() MovkParams {
+	hw := arm64.Hw(g.rnd.IntN(4))
+	// hw>=Hw2 (lsl #32/#48) occurs only in the 64-bit form.
+	is64 := hw >= arm64.Hw2 || g.rnd.IntN(2) == 1
+	return NewMovkParams(genReg(g.rnd, is64, false, true), imm16(g.rnd.Int64N(0x10000)), hw)
 }
 
 func (g movkGen) Shrink(p MovkParams) iter.Seq[MovkParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[MovkParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[MovkParams]()(p)
 	}
 
 	var out []MovkParams

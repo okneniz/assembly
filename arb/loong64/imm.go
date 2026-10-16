@@ -14,7 +14,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -128,11 +127,9 @@ func newImmArb[T immRole](
 	}
 }
 
-func (a immArb[T]) Generate() iter.Seq[T] {
-	return arb.Stream(func() T {
-		steps := (a.to - a.from) / a.step
-		return wrapImm(a.from+a.step*a.rnd.Int64N(steps+1), a.mk)
-	})
+func (a immArb[T]) Generate() T {
+	steps := (a.to - a.from) / a.step
+	return wrapImm(a.from+a.step*a.rnd.Int64N(steps+1), a.mk)
 }
 
 func (a immArb[T]) Shrink(v T) iter.Seq[T] {

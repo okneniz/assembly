@@ -124,17 +124,11 @@ type pairArb struct {
 	rnd *mrnd.Rand
 }
 
-func (p pairArb) Generate() iter.Seq[linkPair] {
-	return iter.Seq[linkPair](func(yield func(linkPair) bool) {
-		for {
-			if !yield(linkPair{
-				a: p.genSide(".LAret", "gb1"),
-				b: p.genSide(".LBret", "ga1"),
-			}) {
-				return
-			}
-		}
-	})
+func (p pairArb) Generate() linkPair {
+	return linkPair{
+		a: p.genSide(".LAret", "gb1"),
+		b: p.genSide(".LBret", "ga1"),
+	}
 }
 
 func (p pairArb) Shrink(v linkPair) iter.Seq[linkPair] {

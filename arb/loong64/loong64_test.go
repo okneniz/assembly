@@ -29,7 +29,7 @@ func TestRegGenDistribution(t *testing.T) {
 	rnd := arb.Rnd(42)
 	seen := map[string]bool{}
 	for range 1000 {
-		seen[ohsnap.First(Reg(rnd).Generate()).String()] = true
+		seen[Reg(rnd).Generate().String()] = true
 	}
 
 	for _, want := range []string{"$zero", "$ra", "$tp", "$sp", "$a0", "$t0", "$r21", "$s8"} {
@@ -484,12 +484,12 @@ func newInstrCase[P laInstrParam](name string, mk func() ohsnap.Arbitrary[P]) in
 	return instrCase{
 		name: name,
 		sample: func() (arch.Instr, string) {
-			p := ohsnap.First(mk().Generate())
+			p := mk().Generate()
 			return p.Instr(), p.String()
 		},
 		shrink: func() []arch.Instr {
 			g := mk()
-			cs := slices.Collect(g.Shrink(ohsnap.First(g.Generate())))
+			cs := slices.Collect(g.Shrink(g.Generate()))
 			out := make([]arch.Instr, len(cs))
 			for i, c := range cs {
 				out[i] = c.Instr()

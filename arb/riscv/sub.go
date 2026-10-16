@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -50,10 +49,8 @@ func newSubGen(rnd *rand.Rand) subGen {
 	return subGen{rnd: rnd}
 }
 
-func (g subGen) Generate() iter.Seq[SubParams] {
-	return arb.Stream(func() SubParams {
-		return NewSubParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
-	})
+func (g subGen) Generate() SubParams {
+	return NewSubParams(reg(g.rnd), reg(g.rnd), reg(g.rnd))
 }
 
 func (g subGen) Shrink(p SubParams) iter.Seq[SubParams] {

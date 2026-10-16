@@ -45,10 +45,8 @@ type cntArb struct {
 	base v2Gen
 }
 
-func (a cntArb) Generate() iter.Seq[CntParams] {
-	return arbStream(func() CntParams {
-		return NewCntParams(ohsnap.First(a.base.Generate()))
-	})
+func (a cntArb) Generate() CntParams {
+	return NewCntParams(a.base.Generate())
 }
 
 func (a cntArb) Shrink(p CntParams) iter.Seq[CntParams] {

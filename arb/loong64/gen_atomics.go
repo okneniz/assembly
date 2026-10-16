@@ -13,7 +13,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -106,15 +105,13 @@ func amHazardFree(p R3Params) bool {
 	return p.Rd.Num() != p.Rj.Num() && p.Rd.Num() != p.Rk.Num()
 }
 
-func (g atomicsGen) Generate() iter.Seq[R3Params] {
-	return arb.Stream(func() R3Params {
-		p := ohsnap.First(g.base.Generate())
-		for !amHazardFree(p) {
-			p = ohsnap.First(g.base.Generate())
-		}
+func (g atomicsGen) Generate() R3Params {
+	p := g.base.Generate()
+	for !amHazardFree(p) {
+		p = g.base.Generate()
+	}
 
-		return p
-	})
+	return p
 }
 
 func (g atomicsGen) Shrink(p R3Params) iter.Seq[R3Params] {

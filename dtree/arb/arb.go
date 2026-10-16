@@ -15,7 +15,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	basearb "github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/dtree"
 )
 
@@ -56,35 +55,33 @@ type lookupCase struct {
 	rnd *rand.Rand
 }
 
-func (a lookupCase) Generate() iter.Seq[Case] {
-	return basearb.Stream(func() Case {
-		n := a.rnd.IntN(41)
-		rules := make([]dtree.Rule[int], 0, n)
+func (a lookupCase) Generate() Case {
+	n := a.rnd.IntN(41)
+	rules := make([]dtree.Rule[int], 0, n)
 
-		for range n {
-			var mask uint32
-			switch a.rnd.IntN(4) {
-			case 0:
-				for range 1 + a.rnd.IntN(4) {
-					mask |= 1 << a.rnd.IntN(32)
-				}
-
-			case 1: // catch-all
-				mask = 0
-			default:
-				mask = a.rnd.Uint32()
+	for range n {
+		var mask uint32
+		switch a.rnd.IntN(4) {
+		case 0:
+			for range 1 + a.rnd.IntN(4) {
+				mask |= 1 << a.rnd.IntN(32)
 			}
 
-			match := a.rnd.Uint32() & mask
-			if a.rnd.IntN(5) == 0 {
-				match = a.rnd.Uint32() // dead rule
-			}
-
-			rules = append(rules, dtree.NewRule(mask, match, len(rules)))
+		case 1: // catch-all
+			mask = 0
+		default:
+			mask = a.rnd.Uint32()
 		}
 
-		return NewCase(rules, a.rnd.Uint32())
-	})
+		match := a.rnd.Uint32() & mask
+		if a.rnd.IntN(5) == 0 {
+			match = a.rnd.Uint32() // dead rule
+		}
+
+		rules = append(rules, dtree.NewRule(mask, match, len(rules)))
+	}
+
+	return NewCase(rules, a.rnd.Uint32())
 }
 
 // Shrink produces simpler candidates: without each rule one at a time; the

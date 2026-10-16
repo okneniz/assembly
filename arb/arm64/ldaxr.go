@@ -45,10 +45,8 @@ type ldaxrArb struct {
 	base atomGen
 }
 
-func (a ldaxrArb) Generate() iter.Seq[LdaxrParams] {
-	return arbStream(func() LdaxrParams {
-		return NewLdaxrParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ldaxrArb) Generate() LdaxrParams {
+	return NewLdaxrParams(a.base.Generate())
 }
 
 func (a ldaxrArb) Shrink(p LdaxrParams) iter.Seq[LdaxrParams] {

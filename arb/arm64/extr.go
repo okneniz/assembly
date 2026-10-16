@@ -58,21 +58,19 @@ func newExtrGen(rnd *rand.Rand) extrGen {
 	return extrGen{rnd: rnd}
 }
 
-func (g extrGen) Generate() iter.Seq[ExtrParams] {
-	return arbStream(func() ExtrParams {
-		is64 := g.rnd.IntN(2) == 1
-		lsb := uint32(g.rnd.IntN(64))
-		if !is64 {
-			lsb = uint32(g.rnd.IntN(32))
-		}
+func (g extrGen) Generate() ExtrParams {
+	is64 := g.rnd.IntN(2) == 1
+	lsb := uint32(g.rnd.IntN(64))
+	if !is64 {
+		lsb = uint32(g.rnd.IntN(32))
+	}
 
-		return NewExtrParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			lsb,
-		)
-	})
+	return NewExtrParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		lsb,
+	)
 }
 
 func (g extrGen) Shrink(p ExtrParams) iter.Seq[ExtrParams] {

@@ -54,15 +54,13 @@ func newMnegGen(rnd *rand.Rand) mnegGen {
 	return mnegGen{rnd: rnd}
 }
 
-func (g mnegGen) Generate() iter.Seq[MnegParams] {
-	return stream(func() MnegParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewMnegParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-		)
-	})
+func (g mnegGen) Generate() MnegParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewMnegParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+	)
 }
 
 func (g mnegGen) Shrink(p MnegParams) iter.Seq[MnegParams] {

@@ -44,10 +44,8 @@ type stpArb struct {
 	base pairGen
 }
 
-func (a stpArb) Generate() iter.Seq[StpParams] {
-	return arbStream(func() StpParams {
-		return NewStpParams(ohsnap.First(a.base.Generate()))
-	})
+func (a stpArb) Generate() StpParams {
+	return NewStpParams(a.base.Generate())
 }
 
 func (a stpArb) Shrink(p StpParams) iter.Seq[StpParams] {

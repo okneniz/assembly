@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -50,10 +49,8 @@ func newDmbGen(rnd *rand.Rand) dmbGen {
 	return dmbGen{domains: BarrierDomain(rnd)}
 }
 
-func (g dmbGen) Generate() iter.Seq[DmbParams] {
-	return arb.Stream(func() DmbParams {
-		return NewDmbParams(ohsnap.First(g.domains.Generate()))
-	})
+func (g dmbGen) Generate() DmbParams {
+	return NewDmbParams(g.domains.Generate())
 }
 
 func (g dmbGen) Shrink(p DmbParams) iter.Seq[DmbParams] {

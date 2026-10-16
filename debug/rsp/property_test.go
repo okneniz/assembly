@@ -4,6 +4,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arb"
 )
@@ -18,7 +19,7 @@ const payloadAlphabet = "0123456789abcdefABCDEFmxcsgpHqvMX,:;?.=+-"
 // TestPacketRoundTrip - the codec law: what was encoded, parses back.
 func TestPacketRoundTrip(t *testing.T) {
 	rnd := arb.Rnd(42)
-	payloads := ohsnap.ArbitraryString(rnd, payloadAlphabet, 0, 40)
+	payloads := arbitrary.String(rnd, payloadAlphabet, 0, 40)
 	ohsnap.Check(t, 12000, payloads, func(p string) bool {
 		got, ok := parsePacket(encodePacket(p))
 		return ok && got == p
@@ -36,7 +37,7 @@ func TestPacketRoundTrip(t *testing.T) {
 // wording.
 func TestPacketSingleFlipDetected(t *testing.T) {
 	rnd := arb.Rnd(7)
-	payloads := ohsnap.ArbitraryString(rnd, payloadAlphabet, 0, 40)
+	payloads := arbitrary.String(rnd, payloadAlphabet, 0, 40)
 	ohsnap.Check(t, 12000, payloads, func(p string) bool {
 		pkt := encodePacket(p)
 		for i := range pkt {
@@ -57,7 +58,7 @@ func TestPacketSingleFlipDetected(t *testing.T) {
 // never panic it, the answer is always (payload, ok).
 func TestPacketParseTotalOnGarbage(t *testing.T) {
 	rnd := arb.Rnd(9)
-	raw := ohsnap.ArbitrarySlice(rnd, ohsnap.ArbitraryByte(rnd, 0, 255), 0, 32)
+	raw := arbitrary.Slice(rnd, arbitrary.Byte(rnd, 0, 255), 0, 32)
 	ohsnap.Check(t, 12000, raw, func(b []byte) bool {
 		parsePacket(b) // the call itself is the property: no panic
 		return true

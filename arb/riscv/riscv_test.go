@@ -28,7 +28,7 @@ func TestRegGenDistribution(t *testing.T) {
 	rnd := arb.Rnd(42)
 	seen := map[string]bool{}
 	for range 1000 {
-		seen[ohsnap.First(Reg(rnd).Generate()).String()] = true
+		seen[Reg(rnd).Generate().String()] = true
 	}
 
 	for _, want := range []string{"zero", "ra", "sp", "t0", "a0", "t6"} {
@@ -152,9 +152,9 @@ func TestInstrGenValid(t *testing.T) {
 // TestInstrGenText — String() of the parameters = ObjDump of the instruction.
 func TestInstrGenText(t *testing.T) {
 	rnd := arb.Rnd(42)
-	got := ohsnap.First(Add(rnd).Generate()).String()
+	got := Add(rnd).Generate().String()
 	require.Equal(t, "add ", got[:4], "AddParams.String() = %q", got)
-	got = ohsnap.First(Lui(rnd).Generate()).String()
+	got = Lui(rnd).Generate().String()
 	require.Equal(t, "lui ", got[:4], "LuiParams.String() = %q", got)
 }
 
@@ -163,7 +163,7 @@ func TestInstrGenShrinkValid(t *testing.T) {
 	rnd := arb.Rnd(9)
 	addi := Addi(rnd)
 	for range 200 {
-		p := ohsnap.First(addi.Generate())
+		p := addi.Generate()
 		for s := range addi.Shrink(p) {
 			s.Instr() // must not panic
 		}
@@ -188,28 +188,28 @@ func newInstrCase(name string, gen func() riscv.Instr) instrCase {
 func instrCases(rnd *rand.Rand) []instrCase {
 	return []instrCase{
 		newInstrCase("Add", func() riscv.Instr {
-			return ohsnap.First(Add(rnd).Generate()).Instr()
+			return Add(rnd).Generate().Instr()
 		}),
 		newInstrCase("Sub", func() riscv.Instr {
-			return ohsnap.First(Sub(rnd).Generate()).Instr()
+			return Sub(rnd).Generate().Instr()
 		}),
 		newInstrCase("Addi", func() riscv.Instr {
-			return ohsnap.First(Addi(rnd).Generate()).Instr()
+			return Addi(rnd).Generate().Instr()
 		}),
 		newInstrCase("Lui", func() riscv.Instr {
-			return ohsnap.First(Lui(rnd).Generate()).Instr()
+			return Lui(rnd).Generate().Instr()
 		}),
 		newInstrCase("Lw", func() riscv.Instr {
-			return ohsnap.First(Lw(rnd).Generate()).Instr()
+			return Lw(rnd).Generate().Instr()
 		}),
 		newInstrCase("Ld", func() riscv.Instr {
-			return ohsnap.First(Ld(rnd).Generate()).Instr()
+			return Ld(rnd).Generate().Instr()
 		}),
 		newInstrCase("Sw", func() riscv.Instr {
-			return ohsnap.First(Sw(rnd).Generate()).Instr()
+			return Sw(rnd).Generate().Instr()
 		}),
 		newInstrCase("Sd", func() riscv.Instr {
-			return ohsnap.First(Sd(rnd).Generate()).Instr()
+			return Sd(rnd).Generate().Instr()
 		}),
 	}
 }

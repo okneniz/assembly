@@ -49,10 +49,8 @@ func newFcmpZeroGen(rnd *rand.Rand) fcmpZeroGen {
 	return fcmpZeroGen{rnd: rnd}
 }
 
-func (g fcmpZeroGen) Generate() iter.Seq[FcmpZeroParams] {
-	return arbStream(func() FcmpZeroParams {
-		return NewFcmpZeroParams(genFp(g.rnd, g.rnd.IntN(2) == 1))
-	})
+func (g fcmpZeroGen) Generate() FcmpZeroParams {
+	return NewFcmpZeroParams(genFp(g.rnd, g.rnd.IntN(2) == 1))
 }
 
 func (g fcmpZeroGen) Shrink(p FcmpZeroParams) iter.Seq[FcmpZeroParams] {

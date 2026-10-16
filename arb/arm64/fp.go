@@ -31,11 +31,9 @@ type f2Gen struct {
 	rnd *rand.Rand
 }
 
-func (g f2Gen) Generate() iter.Seq[F2Params] {
-	return arbStream(func() F2Params {
-		is64 := g.rnd.IntN(2) == 1
-		return NewF2Params(genFp(g.rnd, is64), genFp(g.rnd, is64))
-	})
+func (g f2Gen) Generate() F2Params {
+	is64 := g.rnd.IntN(2) == 1
+	return NewF2Params(genFp(g.rnd, is64), genFp(g.rnd, is64))
 }
 
 func (g f2Gen) Shrink(p F2Params) iter.Seq[F2Params] {
@@ -70,11 +68,9 @@ type f3Gen struct {
 	rnd *rand.Rand
 }
 
-func (g f3Gen) Generate() iter.Seq[F3Params] {
-	return arbStream(func() F3Params {
-		is64 := g.rnd.IntN(2) == 1
-		return NewF3Params(genFp(g.rnd, is64), genFp(g.rnd, is64), genFp(g.rnd, is64))
-	})
+func (g f3Gen) Generate() F3Params {
+	is64 := g.rnd.IntN(2) == 1
+	return NewF3Params(genFp(g.rnd, is64), genFp(g.rnd, is64), genFp(g.rnd, is64))
 }
 
 func (g f3Gen) Shrink(p F3Params) iter.Seq[F3Params] {
@@ -114,16 +110,14 @@ type f4Gen struct {
 	rnd *rand.Rand
 }
 
-func (g f4Gen) Generate() iter.Seq[F4Params] {
-	return arbStream(func() F4Params {
-		is64 := g.rnd.IntN(2) == 1
-		return NewF4Params(
-			genFp(g.rnd, is64),
-			genFp(g.rnd, is64),
-			genFp(g.rnd, is64),
-			genFp(g.rnd, is64),
-		)
-	})
+func (g f4Gen) Generate() F4Params {
+	is64 := g.rnd.IntN(2) == 1
+	return NewF4Params(
+		genFp(g.rnd, is64),
+		genFp(g.rnd, is64),
+		genFp(g.rnd, is64),
+		genFp(g.rnd, is64),
+	)
 }
 
 func (g f4Gen) Shrink(p F4Params) iter.Seq[F4Params] {
@@ -171,20 +165,18 @@ type fgprGen struct {
 	any bool
 }
 
-func (g fgprGen) Generate() iter.Seq[FGprParams] {
-	return arbStream(func() FGprParams {
-		is64 := g.rnd.IntN(2) == 1
-		r64 := is64
-		if g.any {
-			r64 = g.rnd.IntN(2) == 1
-		}
+func (g fgprGen) Generate() FGprParams {
+	is64 := g.rnd.IntN(2) == 1
+	r64 := is64
+	if g.any {
+		r64 = g.rnd.IntN(2) == 1
+	}
 
-		return NewFGprParams(
-			genFp(g.rnd, is64),
-			genReg(g.rnd, r64, false, true),
-			g.any,
-		)
-	})
+	return NewFGprParams(
+		genFp(g.rnd, is64),
+		genReg(g.rnd, r64, false, true),
+		g.any,
+	)
 }
 
 func (g fgprGen) Shrink(p FGprParams) iter.Seq[FGprParams] {
@@ -309,10 +301,8 @@ func (p FpImmParams) Value() float64 {
 	return float64(arm64.VfpExpandImm32(uint32(p.Imm)))
 }
 
-func (g fpImmGen) Generate() iter.Seq[FpImmParams] {
-	return arbStream(func() FpImmParams {
-		return NewFpImmParams(genFp(g.rnd, g.rnd.IntN(2) == 1), uint8(g.rnd.IntN(256)))
-	})
+func (g fpImmGen) Generate() FpImmParams {
+	return NewFpImmParams(genFp(g.rnd, g.rnd.IntN(2) == 1), uint8(g.rnd.IntN(256)))
 }
 
 func (g fpImmGen) Shrink(p FpImmParams) iter.Seq[FpImmParams] {

@@ -11,7 +11,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -74,10 +73,8 @@ func Ri(rnd *rand.Rand, op RiOp) ohsnap.Arbitrary[RiParams] {
 	return riGen{rnd: rnd, op: op}
 }
 
-func (g riGen) Generate() iter.Seq[RiParams] {
-	return arb.Stream(func() RiParams {
-		return NewRiParams(g.op, reg(g.rnd), reg(g.rnd), imm12(g.rnd))
-	})
+func (g riGen) Generate() RiParams {
+	return NewRiParams(g.op, reg(g.rnd), reg(g.rnd), imm12(g.rnd))
 }
 
 func (g riGen) Shrink(p RiParams) iter.Seq[RiParams] {

@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -50,10 +49,8 @@ func newBlrGen(rnd *rand.Rand) blrGen {
 	return blrGen{rnd: rnd}
 }
 
-func (g blrGen) Generate() iter.Seq[BlrParams] {
-	return arb.Stream(func() BlrParams {
-		return NewBlrParams(genReg(g.rnd, true, false, true))
-	})
+func (g blrGen) Generate() BlrParams {
+	return NewBlrParams(genReg(g.rnd, true, false, true))
 }
 
 func (g blrGen) Shrink(p BlrParams) iter.Seq[BlrParams] {

@@ -12,7 +12,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -62,17 +61,15 @@ type r3RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func (g r3RoleGen[T]) Generate() iter.Seq[R3RoleParams[T]] {
-	return arb.Stream(func() R3RoleParams[T] {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR3RoleParams(
-			reg(g.rnd),
-			reg(g.rnd),
-			reg(g.rnd),
-			ohsnap.First(g.role.Generate()),
-			e.ctor,
-		)
-	})
+func (g r3RoleGen[T]) Generate() R3RoleParams[T] {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewR3RoleParams(
+		reg(g.rnd),
+		reg(g.rnd),
+		reg(g.rnd),
+		g.role.Generate(),
+		e.ctor,
+	)
 }
 
 func (g r3RoleGen[T]) Shrink(p R3RoleParams[T]) iter.Seq[R3RoleParams[T]] {
@@ -150,13 +147,11 @@ func FieldW(rnd *rand.Rand) ohsnap.Arbitrary[FieldWParams] {
 	return newFieldWGen(rnd)
 }
 
-func (g fieldWGen) Generate() iter.Seq[FieldWParams] {
-	return arb.Stream(func() FieldWParams {
-		e := fieldW[g.rnd.IntN(len(fieldW))]
-		lsb := wrapImm(g.rnd.Int64N(32), arch.New().UImm5)
-		msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.New().UImm5)
-		return NewFieldWParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
-	})
+func (g fieldWGen) Generate() FieldWParams {
+	e := fieldW[g.rnd.IntN(len(fieldW))]
+	lsb := wrapImm(g.rnd.Int64N(32), arch.New().UImm5)
+	msb := wrapImm(lsb.Val()+g.rnd.Int64N(32-lsb.Val()), arch.New().UImm5)
+	return NewFieldWParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
 }
 
 func (g fieldWGen) Shrink(p FieldWParams) iter.Seq[FieldWParams] {
@@ -241,13 +236,11 @@ func FieldD(rnd *rand.Rand) ohsnap.Arbitrary[FieldDParams] {
 	return newFieldDGen(rnd)
 }
 
-func (g fieldDGen) Generate() iter.Seq[FieldDParams] {
-	return arb.Stream(func() FieldDParams {
-		e := fieldD[g.rnd.IntN(len(fieldD))]
-		lsb := wrapImm(g.rnd.Int64N(64), arch.New().UImm6)
-		msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.New().UImm6)
-		return NewFieldDParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
-	})
+func (g fieldDGen) Generate() FieldDParams {
+	e := fieldD[g.rnd.IntN(len(fieldD))]
+	lsb := wrapImm(g.rnd.Int64N(64), arch.New().UImm6)
+	msb := wrapImm(lsb.Val()+g.rnd.Int64N(64-lsb.Val()), arch.New().UImm6)
+	return NewFieldDParams(reg(g.rnd), reg(g.rnd), msb, lsb, e.ctor)
 }
 
 func (g fieldDGen) Shrink(p FieldDParams) iter.Seq[FieldDParams] {

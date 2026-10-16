@@ -59,22 +59,20 @@ func newSbfizGen(rnd *rand.Rand) sbfizGen {
 	return sbfizGen{rnd: rnd}
 }
 
-func (g sbfizGen) Generate() iter.Seq[SbfizParams] {
-	return stream(func() SbfizParams {
-		is64 := g.rnd.IntN(2) == 1
-		size := uint32(32)
-		if is64 {
-			size = 64
-		}
+func (g sbfizGen) Generate() SbfizParams {
+	is64 := g.rnd.IntN(2) == 1
+	size := uint32(32)
+	if is64 {
+		size = 64
+	}
 
-		lsb := g.rnd.IntN(int(size))
-		return NewSbfizParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			uint32(lsb),
-			uint32(g.rnd.IntN(int(size)-lsb))+1,
-		)
-	})
+	lsb := g.rnd.IntN(int(size))
+	return NewSbfizParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		uint32(lsb),
+		uint32(g.rnd.IntN(int(size)-lsb))+1,
+	)
 }
 
 func (g sbfizGen) Shrink(p SbfizParams) iter.Seq[SbfizParams] {

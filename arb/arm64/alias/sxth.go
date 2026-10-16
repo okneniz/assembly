@@ -55,13 +55,11 @@ func newSxthGen(rnd *rand.Rand) sxthGen {
 	return sxthGen{rnd: rnd}
 }
 
-func (g sxthGen) Generate() iter.Seq[SxthParams] {
-	return stream(func() SxthParams {
-		return NewSxthParams(
-			a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
-			a64.GenReg(g.rnd, false, false, true),
-		)
-	})
+func (g sxthGen) Generate() SxthParams {
+	return NewSxthParams(
+		a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+		a64.GenReg(g.rnd, false, false, true),
+	)
 }
 
 func (g sxthGen) Shrink(p SxthParams) iter.Seq[SxthParams] {

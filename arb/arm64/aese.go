@@ -45,10 +45,8 @@ type aeseArb struct {
 	base v2PlainGen
 }
 
-func (a aeseArb) Generate() iter.Seq[AeseParams] {
-	return arbStream(func() AeseParams {
-		return NewAeseParams(ohsnap.First(a.base.Generate()))
-	})
+func (a aeseArb) Generate() AeseParams {
+	return NewAeseParams(a.base.Generate())
 }
 
 func (a aeseArb) Shrink(p AeseParams) iter.Seq[AeseParams] {

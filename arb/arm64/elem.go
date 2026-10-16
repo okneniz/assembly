@@ -57,16 +57,14 @@ func Ins(rnd *rand.Rand) ohsnap.Arbitrary[InsParams] {
 	return insArb{rnd: rnd}
 }
 
-func (a insArb) Generate() iter.Seq[InsParams] {
-	return arbStream(func() InsParams {
-		elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
-		return NewInsParams(
-			genV(a.rnd),
-			uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
-			genWidthReg(a.rnd, elem == "d"),
-			elem,
-		)
-	})
+func (a insArb) Generate() InsParams {
+	elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
+	return NewInsParams(
+		genV(a.rnd),
+		uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
+		genWidthReg(a.rnd, elem == "d"),
+		elem,
+	)
 }
 
 func (a insArb) Shrink(p InsParams) iter.Seq[InsParams] {
@@ -143,18 +141,16 @@ type insElemArb struct {
 	rnd *rand.Rand
 }
 
-func (a insElemArb) Generate() iter.Seq[InsElemParams] {
-	return arbStream(func() InsElemParams {
-		elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
-		lanes := int(elemLanes(elemWidth(elem)))
-		return NewInsElemParams(
-			genV(a.rnd),
-			genV(a.rnd),
-			elem,
-			uint32(a.rnd.IntN(lanes)),
-			uint32(a.rnd.IntN(lanes)),
-		)
-	})
+func (a insElemArb) Generate() InsElemParams {
+	elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
+	lanes := int(elemLanes(elemWidth(elem)))
+	return NewInsElemParams(
+		genV(a.rnd),
+		genV(a.rnd),
+		elem,
+		uint32(a.rnd.IntN(lanes)),
+		uint32(a.rnd.IntN(lanes)),
+	)
 }
 
 func (a insElemArb) Shrink(p InsElemParams) iter.Seq[InsElemParams] {
@@ -223,17 +219,15 @@ type smovArb struct {
 	rnd *rand.Rand
 }
 
-func (a smovArb) Generate() iter.Seq[SmovParams] {
-	return arbStream(func() SmovParams {
-		elem := genElem(a.rnd, []string{"b", "h", "s"})
-		is64 := elem == "s" || a.rnd.IntN(2) == 1
-		return NewSmovParams(
-			genWidthReg(a.rnd, is64),
-			genV(a.rnd),
-			elem,
-			uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
-		)
-	})
+func (a smovArb) Generate() SmovParams {
+	elem := genElem(a.rnd, []string{"b", "h", "s"})
+	is64 := elem == "s" || a.rnd.IntN(2) == 1
+	return NewSmovParams(
+		genWidthReg(a.rnd, is64),
+		genV(a.rnd),
+		elem,
+		uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
+	)
 }
 
 func (a smovArb) Shrink(p SmovParams) iter.Seq[SmovParams] {
@@ -299,16 +293,14 @@ type umovArb struct {
 	rnd *rand.Rand
 }
 
-func (a umovArb) Generate() iter.Seq[UmovParams] {
-	return arbStream(func() UmovParams {
-		elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
-		return NewUmovParams(
-			genWidthReg(a.rnd, elem == "d"),
-			genV(a.rnd),
-			elem,
-			uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
-		)
-	})
+func (a umovArb) Generate() UmovParams {
+	elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
+	return NewUmovParams(
+		genWidthReg(a.rnd, elem == "d"),
+		genV(a.rnd),
+		elem,
+		uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
+	)
 }
 
 func (a umovArb) Shrink(p UmovParams) iter.Seq[UmovParams] {
@@ -377,16 +369,14 @@ type dupElemArb struct {
 	rnd *rand.Rand
 }
 
-func (a dupElemArb) Generate() iter.Seq[DupElemParams] {
-	return arbStream(func() DupElemParams {
-		arr := genElem(a.rnd, arrDupElem())
-		return NewDupElemParams(
-			genV(a.rnd),
-			genV(a.rnd),
-			arr,
-			uint32(a.rnd.IntN(int(elemLanes(elemWidth(arr[len(arr)-1:]))))),
-		)
-	})
+func (a dupElemArb) Generate() DupElemParams {
+	arr := genElem(a.rnd, arrDupElem())
+	return NewDupElemParams(
+		genV(a.rnd),
+		genV(a.rnd),
+		arr,
+		uint32(a.rnd.IntN(int(elemLanes(elemWidth(arr[len(arr)-1:]))))),
+	)
 }
 
 func (a dupElemArb) Shrink(p DupElemParams) iter.Seq[DupElemParams] {
@@ -500,16 +490,14 @@ type dupScalarArb struct {
 	rnd *rand.Rand
 }
 
-func (a dupScalarArb) Generate() iter.Seq[DupScalarParams] {
-	return arbStream(func() DupScalarParams {
-		elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
-		return NewDupScalarParams(
-			genV(a.rnd),
-			genV(a.rnd),
-			elem,
-			uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
-		)
-	})
+func (a dupScalarArb) Generate() DupScalarParams {
+	elem := genElem(a.rnd, []string{"b", "h", "s", "d"})
+	return NewDupScalarParams(
+		genV(a.rnd),
+		genV(a.rnd),
+		elem,
+		uint32(a.rnd.IntN(int(elemLanes(elemWidth(elem))))),
+	)
 }
 
 func (a dupScalarArb) Shrink(p DupScalarParams) iter.Seq[DupScalarParams] {

@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,15 +53,13 @@ func newUdivGen(rnd *rand.Rand) udivGen {
 	return udivGen{rnd: rnd}
 }
 
-func (g udivGen) Generate() iter.Seq[UdivParams] {
-	return arb.Stream(func() UdivParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewUdivParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-		)
-	})
+func (g udivGen) Generate() UdivParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewUdivParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+	)
 }
 
 func (g udivGen) Shrink(p UdivParams) iter.Seq[UdivParams] {

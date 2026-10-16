@@ -2,7 +2,7 @@ package expr
 
 // Junk string generator: parser robustness — arbitrary junk from the runes
 // of the expression lexicon either parses or is rejected with an error.
-// Not ohsnap.ArbitraryString: that one picks runes with a global rand.IntN
+// Not arbitrary.String: that one picks runes with a global rand.IntN
 // (not the passed rnd), the seed is not reproduced — hence a custom
 // generator for deterministic failures.
 
@@ -12,8 +12,6 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
-
-	"github.com/okneniz/assembly/arb"
 )
 
 // junkAlphabet — runes of the expression lexicon: digits and base prefixes,
@@ -30,15 +28,13 @@ func Junk(rnd *rand.Rand) ohsnap.Arbitrary[string] {
 	return junkGen{rnd: rnd}
 }
 
-func (g junkGen) Generate() iter.Seq[string] {
-	return arb.Stream(func() string {
-		rs := make([]rune, g.rnd.IntN(33))
-		for i := range rs {
-			rs[i] = rune(junkAlphabet[g.rnd.IntN(len(junkAlphabet))])
-		}
+func (g junkGen) Generate() string {
+	rs := make([]rune, g.rnd.IntN(33))
+	for i := range rs {
+		rs[i] = rune(junkAlphabet[g.rnd.IntN(len(junkAlphabet))])
+	}
 
-		return string(rs)
-	})
+	return string(rs)
 }
 
 // Shrink — prefix-half and "drop one" (like arb.Seq): a minimal

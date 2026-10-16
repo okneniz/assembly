@@ -45,10 +45,8 @@ type aesmcArb struct {
 	base v2PlainGen
 }
 
-func (a aesmcArb) Generate() iter.Seq[AesmcParams] {
-	return arbStream(func() AesmcParams {
-		return NewAesmcParams(ohsnap.First(a.base.Generate()))
-	})
+func (a aesmcArb) Generate() AesmcParams {
+	return NewAesmcParams(a.base.Generate())
 }
 
 func (a aesmcArb) Shrink(p AesmcParams) iter.Seq[AesmcParams] {

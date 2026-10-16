@@ -45,10 +45,8 @@ type rbitvArb struct {
 	base v2Gen
 }
 
-func (a rbitvArb) Generate() iter.Seq[RbitVParams] {
-	return arbStream(func() RbitVParams {
-		return NewRbitVParams(ohsnap.First(a.base.Generate()))
-	})
+func (a rbitvArb) Generate() RbitVParams {
+	return NewRbitVParams(a.base.Generate())
 }
 
 func (a rbitvArb) Shrink(p RbitVParams) iter.Seq[RbitVParams] {

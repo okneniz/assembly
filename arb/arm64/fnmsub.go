@@ -45,10 +45,8 @@ type fnmsubArb struct {
 	base f4Gen
 }
 
-func (a fnmsubArb) Generate() iter.Seq[FnmsubParams] {
-	return arbStream(func() FnmsubParams {
-		return NewFnmsubParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fnmsubArb) Generate() FnmsubParams {
+	return NewFnmsubParams(a.base.Generate())
 }
 
 func (a fnmsubArb) Shrink(p FnmsubParams) iter.Seq[FnmsubParams] {

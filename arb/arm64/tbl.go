@@ -45,10 +45,8 @@ type tblArb struct {
 	base v3PlainGen
 }
 
-func (a tblArb) Generate() iter.Seq[TblParams] {
-	return arbStream(func() TblParams {
-		return NewTblParams(ohsnap.First(a.base.Generate()))
-	})
+func (a tblArb) Generate() TblParams {
+	return NewTblParams(a.base.Generate())
 }
 
 func (a tblArb) Shrink(p TblParams) iter.Seq[TblParams] {

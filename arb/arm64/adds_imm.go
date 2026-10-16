@@ -60,22 +60,21 @@ func newAddsImmGen(rnd *rand.Rand) addsImmGen {
 	return addsImmGen{rnd: rnd}
 }
 
-func (g addsImmGen) Generate() iter.Seq[AddsImmParams] {
-	return arbStream(func() AddsImmParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewAddsImmParams(
-			genReg(g.rnd, is64, false, true), // rd 31 reads as zr (the S form)
-			genReg(g.rnd, is64, true, false), // rn 31 reads as sp
-			imm12(g.rnd.Int64N(0x1000)),
-			arm64.Sh12(g.rnd.IntN(2)),
-		)
-	})
+func (g addsImmGen) Generate() AddsImmParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewAddsImmParams(
+		genReg(g.rnd, is64, false, true), // rd 31 reads as zr (the S form)
+		genReg(g.rnd, is64, true, false), // rn 31 reads as sp
+		imm12(g.rnd.Int64N(0x1000)),
+		arm64.Sh12(g.rnd.IntN(2)),
+	)
 }
 
 func (g addsImmGen) Shrink(p AddsImmParams) iter.Seq[AddsImmParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnapEmpty[AddsImmParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[AddsImmParams]()(p)
 	}
 
 	var out []AddsImmParams

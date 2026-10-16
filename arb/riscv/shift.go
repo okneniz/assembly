@@ -13,7 +13,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -96,11 +95,9 @@ func Shift(rnd *rand.Rand, op ShiftOp) ohsnap.Arbitrary[ShiftParams] {
 	return shiftGen{rnd: rnd, op: op}
 }
 
-func (g shiftGen) Generate() iter.Seq[ShiftParams] {
-	return arb.Stream(func() ShiftParams {
-		p := NewShiftParams(g.op, reg(g.rnd), reg(g.rnd), 0)
-		return NewShiftParams(p.Op, p.Rd, p.Rs1, uint32(g.rnd.IntN(int(p.shiftMax())+1)))
-	})
+func (g shiftGen) Generate() ShiftParams {
+	p := NewShiftParams(g.op, reg(g.rnd), reg(g.rnd), 0)
+	return NewShiftParams(p.Op, p.Rd, p.Rs1, uint32(g.rnd.IntN(int(p.shiftMax())+1)))
 }
 
 func (g shiftGen) Shrink(p ShiftParams) iter.Seq[ShiftParams] {

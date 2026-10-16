@@ -4,7 +4,6 @@ import (
 	"math/rand/v2"
 	"testing"
 
-	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/arb"
@@ -41,67 +40,67 @@ func newInstrCase(mnem string, gen func() arm64.Instr) instrCase {
 func instrCases(rnd *rand.Rand) []instrCase {
 	return []instrCase{
 		newInstrCase("cmp", func() arm64.Instr {
-			return ohsnap.First(Cmp(rnd).Generate()).Instr()
+			return Cmp(rnd).Generate().Instr()
 		}),
 		newInstrCase("cmn", func() arm64.Instr {
-			return ohsnap.First(Cmn(rnd).Generate()).Instr()
+			return Cmn(rnd).Generate().Instr()
 		}),
 		newInstrCase("neg", func() arm64.Instr {
-			return ohsnap.First(Neg(rnd).Generate()).Instr()
+			return Neg(rnd).Generate().Instr()
 		}),
 		newInstrCase("negs", func() arm64.Instr {
-			return ohsnap.First(Negs(rnd).Generate()).Instr()
+			return Negs(rnd).Generate().Instr()
 		}),
 		newInstrCase("tst", func() arm64.Instr {
-			return ohsnap.First(Tst(rnd).Generate()).Instr()
+			return Tst(rnd).Generate().Instr()
 		}),
 		newInstrCase("mvn", func() arm64.Instr {
-			return ohsnap.First(Mvn(rnd).Generate()).Instr()
+			return Mvn(rnd).Generate().Instr()
 		}),
 		newInstrCase("mov", func() arm64.Instr {
-			return ohsnap.First(Mov(rnd).Generate()).Instr()
+			return Mov(rnd).Generate().Instr()
 		}),
 		newInstrCase("mul", func() arm64.Instr {
-			return ohsnap.First(Mul(rnd).Generate()).Instr()
+			return Mul(rnd).Generate().Instr()
 		}),
 		newInstrCase("mneg", func() arm64.Instr {
-			return ohsnap.First(Mneg(rnd).Generate()).Instr()
+			return Mneg(rnd).Generate().Instr()
 		}),
 		newInstrCase("cset", func() arm64.Instr {
-			return ohsnap.First(Cset(rnd).Generate()).Instr()
+			return Cset(rnd).Generate().Instr()
 		}),
 		newInstrCase("csetm", func() arm64.Instr {
-			return ohsnap.First(Csetm(rnd).Generate()).Instr()
+			return Csetm(rnd).Generate().Instr()
 		}),
 		newInstrCase("cinc", func() arm64.Instr {
-			return ohsnap.First(Cinc(rnd).Generate()).Instr()
+			return Cinc(rnd).Generate().Instr()
 		}),
 		newInstrCase("cinv", func() arm64.Instr {
-			return ohsnap.First(Cinv(rnd).Generate()).Instr()
+			return Cinv(rnd).Generate().Instr()
 		}),
 		newInstrCase("cneg", func() arm64.Instr {
-			return ohsnap.First(Cneg(rnd).Generate()).Instr()
+			return Cneg(rnd).Generate().Instr()
 		}),
 		newInstrCase("sxtb", func() arm64.Instr {
-			return ohsnap.First(Sxtb(rnd).Generate()).Instr()
+			return Sxtb(rnd).Generate().Instr()
 		}),
 		newInstrCase("sxth", func() arm64.Instr {
-			return ohsnap.First(Sxth(rnd).Generate()).Instr()
+			return Sxth(rnd).Generate().Instr()
 		}),
 		newInstrCase("sxtw", func() arm64.Instr {
-			return ohsnap.First(Sxtw(rnd).Generate()).Instr()
+			return Sxtw(rnd).Generate().Instr()
 		}),
 		newInstrCase("ubfiz", func() arm64.Instr {
-			return ohsnap.First(Ubfiz(rnd).Generate()).Instr()
+			return Ubfiz(rnd).Generate().Instr()
 		}),
 		newInstrCase("ubfx", func() arm64.Instr {
-			return ohsnap.First(Ubfx(rnd).Generate()).Instr()
+			return Ubfx(rnd).Generate().Instr()
 		}),
 		newInstrCase("sbfiz", func() arm64.Instr {
-			return ohsnap.First(Sbfiz(rnd).Generate()).Instr()
+			return Sbfiz(rnd).Generate().Instr()
 		}),
 		newInstrCase("sbfx", func() arm64.Instr {
-			return ohsnap.First(Sbfx(rnd).Generate()).Instr()
+			return Sbfx(rnd).Generate().Instr()
 		}),
 	}
 }

@@ -11,7 +11,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -68,28 +67,27 @@ func newSubShiftGen(rnd *rand.Rand) subShiftGen {
 	return subShiftGen{rnd: rnd}
 }
 
-func (g subShiftGen) Generate() iter.Seq[SubShiftParams] {
-	return arb.Stream(func() SubShiftParams {
-		is64 := g.rnd.IntN(2) == 1
-		hi := int64(63)
-		if !is64 {
-			hi = 31
-		}
+func (g subShiftGen) Generate() SubShiftParams {
+	is64 := g.rnd.IntN(2) == 1
+	hi := int64(63)
+	if !is64 {
+		hi = 31
+	}
 
-		return NewSubShiftParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			imm6(g.rnd.Int64N(hi+1)),
-			arm64.Shift(g.rnd.IntN(3)),
-		)
-	})
+	return NewSubShiftParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		imm6(g.rnd.Int64N(hi+1)),
+		arm64.Shift(g.rnd.IntN(3)),
+	)
 }
 
 func (g subShiftGen) Shrink(p SubShiftParams) iter.Seq[SubShiftParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[SubShiftParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[SubShiftParams]()(p)
 	}
 
 	var out []SubShiftParams

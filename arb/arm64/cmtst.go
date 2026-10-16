@@ -45,10 +45,8 @@ type cmtstArb struct {
 	base v3Gen
 }
 
-func (a cmtstArb) Generate() iter.Seq[CmtstParams] {
-	return arbStream(func() CmtstParams {
-		return NewCmtstParams(ohsnap.First(a.base.Generate()))
-	})
+func (a cmtstArb) Generate() CmtstParams {
+	return NewCmtstParams(a.base.Generate())
 }
 
 func (a cmtstArb) Shrink(p CmtstParams) iter.Seq[CmtstParams] {

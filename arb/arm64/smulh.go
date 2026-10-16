@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,14 +53,12 @@ func newSmulhGen(rnd *rand.Rand) smulhGen {
 	return smulhGen{rnd: rnd}
 }
 
-func (g smulhGen) Generate() iter.Seq[SmulhParams] {
-	return arb.Stream(func() SmulhParams {
-		return NewSmulhParams(
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-		)
-	})
+func (g smulhGen) Generate() SmulhParams {
+	return NewSmulhParams(
+		genReg(g.rnd, true, false, true),
+		genReg(g.rnd, true, false, true),
+		genReg(g.rnd, true, false, true),
+	)
 }
 
 func (g smulhGen) Shrink(p SmulhParams) iter.Seq[SmulhParams] {

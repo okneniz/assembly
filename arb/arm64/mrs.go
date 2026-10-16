@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -59,10 +58,8 @@ func newMrsGen(rnd *rand.Rand) mrsGen {
 	}
 }
 
-func (g mrsGen) Generate() iter.Seq[MrsParams] {
-	return arb.Stream(func() MrsParams {
-		return NewMrsParams(genReg(g.rnd, true, false, true), ohsnap.First(g.sysregs.Generate()))
-	})
+func (g mrsGen) Generate() MrsParams {
+	return NewMrsParams(genReg(g.rnd, true, false, true), g.sysregs.Generate())
 }
 
 func (g mrsGen) Shrink(p MrsParams) iter.Seq[MrsParams] {

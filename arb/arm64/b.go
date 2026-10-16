@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -45,10 +44,8 @@ func newBGen(rnd *rand.Rand) bGen {
 	return bGen{off: BrOff(rnd, 1<<27)}
 }
 
-func (g bGen) Generate() iter.Seq[BParams] {
-	return arb.Stream(func() BParams {
-		return NewBParams(ohsnap.First(g.off.Generate()))
-	})
+func (g bGen) Generate() BParams {
+	return NewBParams(g.off.Generate())
 }
 
 func (g bGen) Shrink(p BParams) iter.Seq[BParams] {

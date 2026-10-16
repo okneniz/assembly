@@ -45,10 +45,8 @@ type fmaddArb struct {
 	base f4Gen
 }
 
-func (a fmaddArb) Generate() iter.Seq[FmaddParams] {
-	return arbStream(func() FmaddParams {
-		return NewFmaddParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmaddArb) Generate() FmaddParams {
+	return NewFmaddParams(a.base.Generate())
 }
 
 func (a fmaddArb) Shrink(p FmaddParams) iter.Seq[FmaddParams] {

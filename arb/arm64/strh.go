@@ -46,10 +46,8 @@ type strhArb struct {
 	base lsGen
 }
 
-func (a strhArb) Generate() iter.Seq[StrhParams] {
-	return arbStream(func() StrhParams {
-		return NewStrhParams(ohsnap.First(a.base.Generate()))
-	})
+func (a strhArb) Generate() StrhParams {
+	return NewStrhParams(a.base.Generate())
 }
 
 func (a strhArb) Shrink(p StrhParams) iter.Seq[StrhParams] {

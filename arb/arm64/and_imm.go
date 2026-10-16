@@ -45,10 +45,8 @@ type andImmArb struct {
 	base bitmaskGen
 }
 
-func (a andImmArb) Generate() iter.Seq[AndImmParams] {
-	return arbStream(func() AndImmParams {
-		return NewAndImmParams(ohsnap.First(a.base.Generate()))
-	})
+func (a andImmArb) Generate() AndImmParams {
+	return NewAndImmParams(a.base.Generate())
 }
 
 func (a andImmArb) Shrink(p AndImmParams) iter.Seq[AndImmParams] {

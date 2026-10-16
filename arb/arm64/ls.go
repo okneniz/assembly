@@ -37,11 +37,8 @@ type lsGen struct {
 	off  ohsnapOff
 }
 
-// ohsnapOff — the offset arbitrary interface (Generate/Shrink).
-type ohsnapOff interface {
-	Generate() iter.Seq[arm64.Off]
-	Shrink(off arm64.Off) iter.Seq[arm64.Off]
-}
+// ohsnapOff — the offset arbitrary (Generate/Shrink).
+type ohsnapOff = ohsnap.Arbitrary[arm64.Off]
 
 func newLsGen(rnd *rand.Rand, rt64 *bool, off ohsnapOff) lsGen {
 	return lsGen{
@@ -51,15 +48,13 @@ func newLsGen(rnd *rand.Rand, rt64 *bool, off ohsnapOff) lsGen {
 	}
 }
 
-func (g lsGen) Generate() iter.Seq[LsParams] {
-	return arbStream(func() LsParams {
-		is64 := g.is64()
-		return NewLsParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, true, true, false),
-			ohsnap.First(g.off.Generate()),
-		)
-	})
+func (g lsGen) Generate() LsParams {
+	is64 := g.is64()
+	return NewLsParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, true, true, false),
+		g.off.Generate(),
+	)
 }
 
 func (g lsGen) Shrink(p LsParams) iter.Seq[LsParams] {

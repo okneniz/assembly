@@ -7,8 +7,8 @@ import (
 	"math/rand/v2"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -43,10 +43,10 @@ func newNopGen(rnd *rand.Rand) nopGen {
 	return nopGen{rnd: rnd}
 }
 
-func (g nopGen) Generate() iter.Seq[NopParams] {
-	return arb.Stream(NewNopParams)
+func (g nopGen) Generate() NopParams {
+	return NewNopParams()
 }
 
 func (g nopGen) Shrink(p NopParams) iter.Seq[NopParams] {
-	return ohsnap.Empty[NopParams]()
+	return shrink.NoShrink[NopParams]()(p)
 }

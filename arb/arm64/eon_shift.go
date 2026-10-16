@@ -45,10 +45,8 @@ type eonShiftArb struct {
 	base shiftedGen
 }
 
-func (a eonShiftArb) Generate() iter.Seq[EonShiftParams] {
-	return arbStream(func() EonShiftParams {
-		return NewEonShiftParams(ohsnap.First(a.base.Generate()))
-	})
+func (a eonShiftArb) Generate() EonShiftParams {
+	return NewEonShiftParams(a.base.Generate())
 }
 
 func (a eonShiftArb) Shrink(p EonShiftParams) iter.Seq[EonShiftParams] {

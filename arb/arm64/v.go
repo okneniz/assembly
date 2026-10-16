@@ -36,14 +36,12 @@ type v2Gen struct {
 	set []string
 }
 
-func (g v2Gen) Generate() iter.Seq[V2Params] {
-	return arbStream(func() V2Params {
-		return NewV2Params(
-			genV(g.rnd),
-			genV(g.rnd),
-			g.set[g.rnd.IntN(len(g.set))],
-		)
-	})
+func (g v2Gen) Generate() V2Params {
+	return NewV2Params(
+		genV(g.rnd),
+		genV(g.rnd),
+		g.set[g.rnd.IntN(len(g.set))],
+	)
 }
 
 func (g v2Gen) Shrink(p V2Params) iter.Seq[V2Params] {
@@ -85,15 +83,13 @@ type v3Gen struct {
 	set []string
 }
 
-func (g v3Gen) Generate() iter.Seq[V3Params] {
-	return arbStream(func() V3Params {
-		return NewV3Params(
-			genV(g.rnd),
-			genV(g.rnd),
-			genV(g.rnd),
-			g.set[g.rnd.IntN(len(g.set))],
-		)
-	})
+func (g v3Gen) Generate() V3Params {
+	return NewV3Params(
+		genV(g.rnd),
+		genV(g.rnd),
+		genV(g.rnd),
+		g.set[g.rnd.IntN(len(g.set))],
+	)
 }
 
 func (g v3Gen) Shrink(p V3Params) iter.Seq[V3Params] {
@@ -136,10 +132,8 @@ type v2PlainGen struct {
 	rnd *rand.Rand
 }
 
-func (g v2PlainGen) Generate() iter.Seq[V2PlainParams] {
-	return arbStream(func() V2PlainParams {
-		return NewV2PlainParams(genV(g.rnd), genV(g.rnd))
-	})
+func (g v2PlainGen) Generate() V2PlainParams {
+	return NewV2PlainParams(genV(g.rnd), genV(g.rnd))
 }
 
 func (g v2PlainGen) Shrink(p V2PlainParams) iter.Seq[V2PlainParams] {
@@ -174,10 +168,8 @@ type v3PlainGen struct {
 	rnd *rand.Rand
 }
 
-func (g v3PlainGen) Generate() iter.Seq[V3PlainParams] {
-	return arbStream(func() V3PlainParams {
-		return NewV3PlainParams(genV(g.rnd), genV(g.rnd), genV(g.rnd))
-	})
+func (g v3PlainGen) Generate() V3PlainParams {
+	return NewV3PlainParams(genV(g.rnd), genV(g.rnd), genV(g.rnd))
 }
 
 func (g v3PlainGen) Shrink(p V3PlainParams) iter.Seq[V3PlainParams] {
@@ -223,22 +215,20 @@ type vShiftGen struct {
 	min1 bool
 }
 
-func (g vShiftGen) Generate() iter.Seq[VShiftParams] {
-	return arbStream(func() VShiftParams {
-		arr := g.set[g.rnd.IntN(len(g.set))]
-		bits := int(elemBits(arr))
-		shift := g.rnd.IntN(bits)
-		if g.min1 {
-			shift++ // the right-shift families: 1..elemBits
-		}
+func (g vShiftGen) Generate() VShiftParams {
+	arr := g.set[g.rnd.IntN(len(g.set))]
+	bits := int(elemBits(arr))
+	shift := g.rnd.IntN(bits)
+	if g.min1 {
+		shift++ // the right-shift families: 1..elemBits
+	}
 
-		return NewVShiftParams(
-			genV(g.rnd),
-			genV(g.rnd),
-			arr,
-			uint32(shift),
-		)
-	})
+	return NewVShiftParams(
+		genV(g.rnd),
+		genV(g.rnd),
+		arr,
+		uint32(shift),
+	)
 }
 
 func (g vShiftGen) Shrink(p VShiftParams) iter.Seq[VShiftParams] {
@@ -413,16 +403,14 @@ func newDupGen(rnd *rand.Rand) dupGen {
 	return dupGen{rnd: rnd}
 }
 
-func (g dupGen) Generate() iter.Seq[DupParams] {
-	return arbStream(func() DupParams {
-		arr := ohsnap.First(arbEnumArr(g.rnd).Generate())
-		is64 := arr == "2d"
-		return NewDupParams(
-			genV(g.rnd),
-			genReg(g.rnd, is64, false, true),
-			arr,
-		)
-	})
+func (g dupGen) Generate() DupParams {
+	arr := arbEnumArr(g.rnd).Generate()
+	is64 := arr == "2d"
+	return NewDupParams(
+		genV(g.rnd),
+		genReg(g.rnd, is64, false, true),
+		arr,
+	)
 }
 
 func (g dupGen) Shrink(p DupParams) iter.Seq[DupParams] {

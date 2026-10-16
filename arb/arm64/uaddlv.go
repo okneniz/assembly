@@ -45,10 +45,8 @@ type uaddlvArb struct {
 	base v2Gen
 }
 
-func (a uaddlvArb) Generate() iter.Seq[UaddlvParams] {
-	return arbStream(func() UaddlvParams {
-		return NewUaddlvParams(ohsnap.First(a.base.Generate()))
-	})
+func (a uaddlvArb) Generate() UaddlvParams {
+	return NewUaddlvParams(a.base.Generate())
 }
 
 func (a uaddlvArb) Shrink(p UaddlvParams) iter.Seq[UaddlvParams] {

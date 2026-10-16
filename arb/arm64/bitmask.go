@@ -65,24 +65,22 @@ type bitmaskGen struct {
 	rnd *rand.Rand
 }
 
-func (g bitmaskGen) Generate() iter.Seq[BitmaskParams] {
-	return arbStream(func() BitmaskParams {
-		is64 := g.rnd.IntN(2) == 1
-		choices := eszChoices(is64)
-		esz := choices[g.rnd.IntN(len(choices))]
-		return NewBitmaskParams(
-			genReg(
-				g.rnd,
-				is64,
-				false,
-				false,
-			), // clang refuses a zr destination (the encoding is fine)
-			genReg(g.rnd, is64, false, true),
-			esz,
-			uint32(g.rnd.IntN(int(esz)-1))+1, // 1..esz-1
-			uint32(g.rnd.IntN(int(esz))),
-		)
-	})
+func (g bitmaskGen) Generate() BitmaskParams {
+	is64 := g.rnd.IntN(2) == 1
+	choices := eszChoices(is64)
+	esz := choices[g.rnd.IntN(len(choices))]
+	return NewBitmaskParams(
+		genReg(
+			g.rnd,
+			is64,
+			false,
+			false,
+		), // clang refuses a zr destination (the encoding is fine)
+		genReg(g.rnd, is64, false, true),
+		esz,
+		uint32(g.rnd.IntN(int(esz)-1))+1, // 1..esz-1
+		uint32(g.rnd.IntN(int(esz))),
+	)
 }
 
 func (g bitmaskGen) Shrink(p BitmaskParams) iter.Seq[BitmaskParams] {

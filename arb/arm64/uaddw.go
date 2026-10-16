@@ -45,10 +45,8 @@ type uaddwArb struct {
 	base v3Gen
 }
 
-func (a uaddwArb) Generate() iter.Seq[UaddwParams] {
-	return arbStream(func() UaddwParams {
-		return NewUaddwParams(ohsnap.First(a.base.Generate()))
-	})
+func (a uaddwArb) Generate() UaddwParams {
+	return NewUaddwParams(a.base.Generate())
 }
 
 func (a uaddwArb) Shrink(p UaddwParams) iter.Seq[UaddwParams] {

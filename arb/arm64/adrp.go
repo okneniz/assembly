@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -60,10 +59,8 @@ func newAdrpGen(rnd *rand.Rand) adrpGen {
 	}
 }
 
-func (g adrpGen) Generate() iter.Seq[AdrpParams] {
-	return arb.Stream(func() AdrpParams {
-		return NewAdrpParams(genReg(g.rnd, true, false, true), ohsnap.First(g.pages.Generate()))
-	})
+func (g adrpGen) Generate() AdrpParams {
+	return NewAdrpParams(genReg(g.rnd, true, false, true), g.pages.Generate())
 }
 
 func (g adrpGen) Shrink(p AdrpParams) iter.Seq[AdrpParams] {

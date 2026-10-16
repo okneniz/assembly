@@ -50,14 +50,12 @@ func atomW(rnd *rand.Rand) atomGen {
 	return newAtomGen(rnd, &w)
 }
 
-func (g atomGen) Generate() iter.Seq[LsParams] {
-	return arbStream(func() LsParams {
-		return NewLsParams(
-			genReg(g.rnd, g.is64(), false, true),
-			genReg(g.rnd, true, true, false),
-			0,
-		)
-	})
+func (g atomGen) Generate() LsParams {
+	return NewLsParams(
+		genReg(g.rnd, g.is64(), false, true),
+		genReg(g.rnd, true, true, false),
+		0,
+	)
 }
 
 func (g atomGen) Shrink(p LsParams) iter.Seq[LsParams] {
@@ -107,14 +105,12 @@ func exclW(rnd *rand.Rand) exclGen {
 	return newExclGen(rnd, &w)
 }
 
-func (g exclGen) Generate() iter.Seq[ExclParams] {
-	return arbStream(func() ExclParams {
-		return NewExclParams(
-			genReg(g.rnd, false, false, true),
-			genReg(g.rnd, g.is64(), false, true),
-			genReg(g.rnd, true, true, false),
-		)
-	})
+func (g exclGen) Generate() ExclParams {
+	return NewExclParams(
+		genReg(g.rnd, false, false, true),
+		genReg(g.rnd, g.is64(), false, true),
+		genReg(g.rnd, true, true, false),
+	)
 }
 
 func (g exclGen) Shrink(p ExclParams) iter.Seq[ExclParams] {

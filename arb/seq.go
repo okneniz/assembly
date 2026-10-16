@@ -27,16 +27,14 @@ func Seq[T any](rnd *rand.Rand, gens []func() T) ohsnap.Arbitrary[[]T] {
 	}
 }
 
-func (s seqArb[T]) Generate() iter.Seq[[]T] {
-	return Stream(func() []T {
-		n := 1 + s.rnd.IntN(32)
-		out := make([]T, n)
-		for i := range out {
-			out[i] = s.gens[s.rnd.IntN(len(s.gens))]()
-		}
+func (s seqArb[T]) Generate() []T {
+	n := 1 + s.rnd.IntN(32)
+	out := make([]T, n)
+	for i := range out {
+		out[i] = s.gens[s.rnd.IntN(len(s.gens))]()
+	}
 
-		return out
-	})
+	return out
 }
 
 func (s seqArb[T]) Shrink(v []T) iter.Seq[[]T] {

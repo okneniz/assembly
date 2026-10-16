@@ -14,7 +14,6 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 )
 
@@ -129,10 +128,8 @@ func newLaGen(rnd *rand.Rand) laGen {
 	return laGen{rnd: rnd}
 }
 
-func (g laGen) Generate() iter.Seq[LaParams] {
-	return arb.Stream(func() LaParams {
-		return NewLaParams(reg(g.rnd), genOff(g.rnd))
-	})
+func (g laGen) Generate() LaParams {
+	return NewLaParams(reg(g.rnd), genOff(g.rnd))
 }
 
 func (g laGen) Shrink(p LaParams) iter.Seq[LaParams] {
@@ -157,10 +154,8 @@ func newCallGen(rnd *rand.Rand) callGen {
 	return callGen{rnd: rnd}
 }
 
-func (g callGen) Generate() iter.Seq[CallParams] {
-	return arb.Stream(func() CallParams {
-		return NewCallParams(genOff(g.rnd))
-	})
+func (g callGen) Generate() CallParams {
+	return NewCallParams(genOff(g.rnd))
 }
 
 func (g callGen) Shrink(p CallParams) iter.Seq[CallParams] {
@@ -181,10 +176,8 @@ func newTailGen(rnd *rand.Rand) tailGen {
 	return tailGen{rnd: rnd}
 }
 
-func (g tailGen) Generate() iter.Seq[TailParams] {
-	return arb.Stream(func() TailParams {
-		return NewTailParams(genTailOff(g.rnd))
-	})
+func (g tailGen) Generate() TailParams {
+	return NewTailParams(genTailOff(g.rnd))
 }
 
 func (g tailGen) Shrink(p TailParams) iter.Seq[TailParams] {

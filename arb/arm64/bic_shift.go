@@ -45,10 +45,8 @@ type bicShiftArb struct {
 	base shiftedGen
 }
 
-func (a bicShiftArb) Generate() iter.Seq[BicShiftParams] {
-	return arbStream(func() BicShiftParams {
-		return NewBicShiftParams(ohsnap.First(a.base.Generate()))
-	})
+func (a bicShiftArb) Generate() BicShiftParams {
+	return NewBicShiftParams(a.base.Generate())
 }
 
 func (a bicShiftArb) Shrink(p BicShiftParams) iter.Seq[BicShiftParams] {

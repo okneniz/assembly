@@ -16,6 +16,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/arb"
@@ -85,7 +86,7 @@ func TestPropertyLiteralFormats(t *testing.T) {
 			ohsnap.Check(
 				t,
 				100000,
-				ohsnap.ArbitraryUint64(seedRnd(t), row.from, row.to),
+				arbitrary.Uint64(seedRnd(t), row.from, row.to),
 				func(v uint64) bool {
 					src := row.render(v)
 
@@ -194,14 +195,12 @@ type precLeafGen struct {
 	rnd *mrnd.Rand
 }
 
-func (g precLeafGen) Generate() iter.Seq[precLeaves] {
-	return arb.Stream(func() precLeaves {
-		return precLeaves{
-			a: g.leaf(),
-			b: g.leaf(),
-			c: g.leaf(),
-		}
-	})
+func (g precLeafGen) Generate() precLeaves {
+	return precLeaves{
+		a: g.leaf(),
+		b: g.leaf(),
+		c: g.leaf(),
+	}
 }
 
 func (precLeafGen) Shrink(precLeaves) iter.Seq[precLeaves] {

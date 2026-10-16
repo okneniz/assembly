@@ -16,7 +16,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 )
 
@@ -66,16 +65,14 @@ func Off(rnd *rand.Rand) ohsnap.Arbitrary[riscv.Off] {
 	}
 }
 
-func (a immArb[T]) Generate() iter.Seq[T] {
-	return arb.Stream(func() T {
-		v, err := a.make(a.from + a.rnd.Int64N(a.to-a.from+1))
-		if err != nil {
-			var zero T // unreachable: the from..to range is bounded by construction
-			return zero
-		}
+func (a immArb[T]) Generate() T {
+	v, err := a.make(a.from + a.rnd.Int64N(a.to-a.from+1))
+	if err != nil {
+		var zero T // unreachable: the from..to range is bounded by construction
+		return zero
+	}
 
-		return v
-	})
+	return v
 }
 
 func (a immArb[T]) Shrink(v T) iter.Seq[T] {

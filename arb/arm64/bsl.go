@@ -45,10 +45,8 @@ type bslArb struct {
 	base v3Gen
 }
 
-func (a bslArb) Generate() iter.Seq[BslParams] {
-	return arbStream(func() BslParams {
-		return NewBslParams(ohsnap.First(a.base.Generate()))
-	})
+func (a bslArb) Generate() BslParams {
+	return NewBslParams(a.base.Generate())
 }
 
 func (a bslArb) Shrink(p BslParams) iter.Seq[BslParams] {

@@ -46,10 +46,8 @@ type sturbArb struct {
 	base lsGen
 }
 
-func (a sturbArb) Generate() iter.Seq[SturbParams] {
-	return arbStream(func() SturbParams {
-		return NewSturbParams(ohsnap.First(a.base.Generate()))
-	})
+func (a sturbArb) Generate() SturbParams {
+	return NewSturbParams(a.base.Generate())
 }
 
 func (a sturbArb) Shrink(p SturbParams) iter.Seq[SturbParams] {

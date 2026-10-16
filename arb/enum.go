@@ -6,6 +6,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 )
 
 // enumArb — enum generator: uniform over the values, shrink to the first.
@@ -24,15 +25,13 @@ func Enum[T comparable](rnd *rand.Rand, vals ...T) ohsnap.Arbitrary[T] {
 	}
 }
 
-func (a enumArb[T]) Generate() iter.Seq[T] {
-	return Stream(func() T {
-		return a.vals[a.rnd.IntN(len(a.vals))]
-	})
+func (a enumArb[T]) Generate() T {
+	return a.vals[a.rnd.IntN(len(a.vals))]
 }
 
 func (a enumArb[T]) Shrink(v T) iter.Seq[T] {
 	if v == a.vals[0] {
-		return ohsnap.Empty[T]()
+		return shrink.NoShrink[T]()(v)
 	}
 
 	return slices.Values([]T{a.vals[0]})

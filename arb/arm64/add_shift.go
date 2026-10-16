@@ -11,7 +11,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -68,28 +67,27 @@ func newAddShiftGen(rnd *rand.Rand) addShiftGen {
 	return addShiftGen{rnd: rnd}
 }
 
-func (g addShiftGen) Generate() iter.Seq[AddShiftParams] {
-	return arb.Stream(func() AddShiftParams {
-		is64 := g.rnd.IntN(2) == 1
-		hi := int64(63)
-		if !is64 {
-			hi = 31
-		}
+func (g addShiftGen) Generate() AddShiftParams {
+	is64 := g.rnd.IntN(2) == 1
+	hi := int64(63)
+	if !is64 {
+		hi = 31
+	}
 
-		return NewAddShiftParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			imm6(g.rnd.Int64N(hi+1)),
-			arm64.Shift(g.rnd.IntN(3)),
-		)
-	})
+	return NewAddShiftParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		imm6(g.rnd.Int64N(hi+1)),
+		arm64.Shift(g.rnd.IntN(3)),
+	)
 }
 
 func (g addShiftGen) Shrink(p AddShiftParams) iter.Seq[AddShiftParams] {
 	v, err := immValue(p.Imm)
 	if err != nil {
-		return ohsnap.Empty[AddShiftParams]() // String() of our own type is unparseable — invariant
+		// String() of our own type is unparseable — invariant
+		return shrink.NoShrink[AddShiftParams]()(p)
 	}
 
 	var out []AddShiftParams

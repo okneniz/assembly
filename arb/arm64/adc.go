@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,14 +53,12 @@ func newAdcGen(rnd *rand.Rand) adcGen {
 	return adcGen{rnd: rnd}
 }
 
-func (g adcGen) Generate() iter.Seq[AdcParams] {
-	return arb.Stream(func() AdcParams {
-		return NewAdcParams(
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-			genReg(g.rnd, true, false, true),
-		)
-	})
+func (g adcGen) Generate() AdcParams {
+	return NewAdcParams(
+		genReg(g.rnd, true, false, true),
+		genReg(g.rnd, true, false, true),
+		genReg(g.rnd, true, false, true),
+	)
 }
 
 func (g adcGen) Shrink(p AdcParams) iter.Seq[AdcParams] {

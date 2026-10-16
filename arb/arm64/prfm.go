@@ -50,10 +50,8 @@ func newPrfmGen(rnd *rand.Rand) prfmGen {
 	return prfmGen{rnd: rnd}
 }
 
-func (g prfmGen) Generate() iter.Seq[PrfmParams] {
-	return arbStream(func() PrfmParams {
-		return NewPrfmParams(genReg(g.rnd, true, true, false))
-	})
+func (g prfmGen) Generate() PrfmParams {
+	return NewPrfmParams(genReg(g.rnd, true, true, false))
 }
 
 func (g prfmGen) Shrink(p PrfmParams) iter.Seq[PrfmParams] {

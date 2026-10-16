@@ -13,7 +13,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -60,11 +59,9 @@ type r2RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func (g r2RoleGen[T]) Generate() iter.Seq[R2RoleParams[T]] {
-	return arb.Stream(func() R2RoleParams[T] {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR2RoleParams(reg(g.rnd), reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
-	})
+func (g r2RoleGen[T]) Generate() R2RoleParams[T] {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewR2RoleParams(reg(g.rnd), reg(g.rnd), g.role.Generate(), e.ctor)
 }
 
 func (g r2RoleGen[T]) Shrink(p R2RoleParams[T]) iter.Seq[R2RoleParams[T]] {
@@ -126,11 +123,9 @@ type r1RoleGen[T immRole] struct {
 	role  ohsnap.Arbitrary[T]
 }
 
-func (g r1RoleGen[T]) Generate() iter.Seq[R1RoleParams[T]] {
-	return arb.Stream(func() R1RoleParams[T] {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR1RoleParams(reg(g.rnd), ohsnap.First(g.role.Generate()), e.ctor)
-	})
+func (g r1RoleGen[T]) Generate() R1RoleParams[T] {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewR1RoleParams(reg(g.rnd), g.role.Generate(), e.ctor)
 }
 
 func (g r1RoleGen[T]) Shrink(p R1RoleParams[T]) iter.Seq[R1RoleParams[T]] {
@@ -186,11 +181,9 @@ type codeGen struct {
 	code  ohsnap.Arbitrary[arch.Code15]
 }
 
-func (g codeGen) Generate() iter.Seq[CodeParams] {
-	return arb.Stream(func() CodeParams {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewCodeParams(ohsnap.First(g.code.Generate()), e.ctor)
-	})
+func (g codeGen) Generate() CodeParams {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewCodeParams(g.code.Generate(), e.ctor)
 }
 
 func (g codeGen) Shrink(p CodeParams) iter.Seq[CodeParams] {

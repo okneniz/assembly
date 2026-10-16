@@ -45,10 +45,8 @@ type fmov_from_gprArb struct {
 	base fgprGen
 }
 
-func (a fmov_from_gprArb) Generate() iter.Seq[FmovFromGprParams] {
-	return arbStream(func() FmovFromGprParams {
-		return NewFmovFromGprParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmov_from_gprArb) Generate() FmovFromGprParams {
+	return NewFmovFromGprParams(a.base.Generate())
 }
 
 func (a fmov_from_gprArb) Shrink(p FmovFromGprParams) iter.Seq[FmovFromGprParams] {

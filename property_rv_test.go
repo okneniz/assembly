@@ -998,7 +998,7 @@ func csrWrite(csr uint16) func(rv.CsrParams) rv.CsrParams {
 // is created once; see instrOf in property_a64_test.go).
 func rvInstrOf[P rvInstrParam](a ohsnap.Arbitrary[P]) func() riscv.Instr {
 	return func() riscv.Instr {
-		return ohsnap.First(a.Generate()).Instr()
+		return a.Generate().Instr()
 	}
 }
 

@@ -45,10 +45,8 @@ type strFArb struct {
 	base fGen
 }
 
-func (a strFArb) Generate() iter.Seq[StrFParams] {
-	return arbStream(func() StrFParams {
-		return NewStrFParams(ohsnap.First(a.base.Generate()))
-	})
+func (a strFArb) Generate() StrFParams {
+	return NewStrFParams(a.base.Generate())
 }
 
 func (a strFArb) Shrink(p StrFParams) iter.Seq[StrFParams] {

@@ -20,7 +20,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -39,10 +38,8 @@ func newRegArb(rnd *rand.Rand) regArb {
 	return regArb{rnd: rnd}
 }
 
-func (a regArb) Generate() iter.Seq[arch.Reg] {
-	return arb.Stream(func() arch.Reg {
-		return reg(a.rnd)
-	})
+func (a regArb) Generate() arch.Reg {
+	return reg(a.rnd)
 }
 
 func (a regArb) Shrink(r arch.Reg) iter.Seq[arch.Reg] {

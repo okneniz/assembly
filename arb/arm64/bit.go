@@ -45,10 +45,8 @@ type bitArb struct {
 	base v3Gen
 }
 
-func (a bitArb) Generate() iter.Seq[BitParams] {
-	return arbStream(func() BitParams {
-		return NewBitParams(ohsnap.First(a.base.Generate()))
-	})
+func (a bitArb) Generate() BitParams {
+	return NewBitParams(a.base.Generate())
 }
 
 func (a bitArb) Shrink(p BitParams) iter.Seq[BitParams] {

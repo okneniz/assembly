@@ -45,10 +45,8 @@ type ssubwArb struct {
 	base v3Gen
 }
 
-func (a ssubwArb) Generate() iter.Seq[SsubwParams] {
-	return arbStream(func() SsubwParams {
-		return NewSsubwParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ssubwArb) Generate() SsubwParams {
+	return NewSsubwParams(a.base.Generate())
 }
 
 func (a ssubwArb) Shrink(p SsubwParams) iter.Seq[SsubwParams] {

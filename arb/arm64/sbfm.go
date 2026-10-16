@@ -45,10 +45,8 @@ type sbfmArb struct {
 	base ohsnap.Arbitrary[BfmParams]
 }
 
-func (a sbfmArb) Generate() iter.Seq[SbfmParams] {
-	return arbStream(func() SbfmParams {
-		return NewSbfmParams(ohsnap.First(a.base.Generate()))
-	})
+func (a sbfmArb) Generate() SbfmParams {
+	return NewSbfmParams(a.base.Generate())
 }
 
 func (a sbfmArb) Shrink(p SbfmParams) iter.Seq[SbfmParams] {

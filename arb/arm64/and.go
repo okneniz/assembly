@@ -45,10 +45,8 @@ type andArb struct {
 	base v3Gen
 }
 
-func (a andArb) Generate() iter.Seq[AndVParams] {
-	return arbStream(func() AndVParams {
-		return NewAndVParams(ohsnap.First(a.base.Generate()))
-	})
+func (a andArb) Generate() AndVParams {
+	return NewAndVParams(a.base.Generate())
 }
 
 func (a andArb) Shrink(p AndVParams) iter.Seq[AndVParams] {

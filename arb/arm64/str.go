@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -58,20 +57,18 @@ func newStrGen(rnd *rand.Rand) strGen {
 	return strGen{rnd: rnd}
 }
 
-func (g strGen) Generate() iter.Seq[StrParams] {
-	return arb.Stream(func() StrParams {
-		is64 := g.rnd.IntN(2) == 1
-		align := int64(4)
-		if is64 {
-			align = 8
-		}
+func (g strGen) Generate() StrParams {
+	is64 := g.rnd.IntN(2) == 1
+	align := int64(4)
+	if is64 {
+		align = 8
+	}
 
-		return NewStrParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, true, true, false),
-			arm64.Off(g.rnd.Int64N(0x1000)*align),
-		)
-	})
+	return NewStrParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, true, true, false),
+		arm64.Off(g.rnd.Int64N(0x1000)*align),
+	)
 }
 
 func (g strGen) Shrink(p StrParams) iter.Seq[StrParams] {

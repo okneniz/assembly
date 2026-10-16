@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -55,15 +54,13 @@ func newLsrRegGen(rnd *rand.Rand) lsrRegGen {
 	return lsrRegGen{rnd: rnd}
 }
 
-func (g lsrRegGen) Generate() iter.Seq[LsrRegParams] {
-	return arb.Stream(func() LsrRegParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewLsrRegParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-		)
-	})
+func (g lsrRegGen) Generate() LsrRegParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewLsrRegParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+	)
 }
 
 func (g lsrRegGen) Shrink(p LsrRegParams) iter.Seq[LsrRegParams] {

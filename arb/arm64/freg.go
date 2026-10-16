@@ -9,8 +9,6 @@ import (
 	"math/rand/v2"
 	"slices"
 
-	ohsnap "github.com/okneniz/oh-snap"
-
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -58,15 +56,13 @@ func mustD(n int) arm64.FReg {
 	return r
 }
 
-func (g fregGen) Generate() iter.Seq[arm64.FReg] {
-	return arbStream(func() arm64.FReg {
-		n := g.rnd.IntN(32)
-		if g.rnd.IntN(2) == 1 {
-			return mustD(n)
-		}
+func (g fregGen) Generate() arm64.FReg {
+	n := g.rnd.IntN(32)
+	if g.rnd.IntN(2) == 1 {
+		return mustD(n)
+	}
 
-		return mustS(n)
-	})
+	return mustS(n)
 }
 
 // Shrink — toward d0/s0, then the halved number of the same width.
@@ -112,20 +108,18 @@ func f(rnd *rand.Rand) fGen {
 	return newFGen(rnd)
 }
 
-func (g fGen) Generate() iter.Seq[FParams] {
-	return arbStream(func() FParams {
-		rt := ohsnap.First(g.freg.Generate())
-		scale := uint32(2)
-		if rt.Is64() {
-			scale = 3
-		}
+func (g fGen) Generate() FParams {
+	rt := g.freg.Generate()
+	scale := uint32(2)
+	if rt.Is64() {
+		scale = 3
+	}
 
-		return NewFParams(
-			rt,
-			genReg(g.rnd, true, true, false),
-			ohsnap.First(ScaledOff(g.rnd, scale).Generate()),
-		)
-	})
+	return NewFParams(
+		rt,
+		genReg(g.rnd, true, true, false),
+		ScaledOff(g.rnd, scale).Generate(),
+	)
 }
 
 func (g fGen) Shrink(p FParams) iter.Seq[FParams] {

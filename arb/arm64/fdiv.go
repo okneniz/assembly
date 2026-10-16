@@ -45,10 +45,8 @@ type fdivArb struct {
 	base f3Gen
 }
 
-func (a fdivArb) Generate() iter.Seq[FdivParams] {
-	return arbStream(func() FdivParams {
-		return NewFdivParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fdivArb) Generate() FdivParams {
+	return NewFdivParams(a.base.Generate())
 }
 
 func (a fdivArb) Shrink(p FdivParams) iter.Seq[FdivParams] {

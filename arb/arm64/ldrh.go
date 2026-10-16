@@ -46,10 +46,8 @@ type ldrhArb struct {
 	base lsGen
 }
 
-func (a ldrhArb) Generate() iter.Seq[LdrhParams] {
-	return arbStream(func() LdrhParams {
-		return NewLdrhParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ldrhArb) Generate() LdrhParams {
+	return NewLdrhParams(a.base.Generate())
 }
 
 func (a ldrhArb) Shrink(p LdrhParams) iter.Seq[LdrhParams] {

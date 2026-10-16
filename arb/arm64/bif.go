@@ -45,10 +45,8 @@ type bifArb struct {
 	base v3Gen
 }
 
-func (a bifArb) Generate() iter.Seq[BifParams] {
-	return arbStream(func() BifParams {
-		return NewBifParams(ohsnap.First(a.base.Generate()))
-	})
+func (a bifArb) Generate() BifParams {
+	return NewBifParams(a.base.Generate())
 }
 
 func (a bifArb) Shrink(p BifParams) iter.Seq[BifParams] {

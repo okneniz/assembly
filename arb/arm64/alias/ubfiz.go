@@ -59,22 +59,20 @@ func newUbfizGen(rnd *rand.Rand) ubfizGen {
 	return ubfizGen{rnd: rnd}
 }
 
-func (g ubfizGen) Generate() iter.Seq[UbfizParams] {
-	return stream(func() UbfizParams {
-		is64 := g.rnd.IntN(2) == 1
-		size := uint32(32)
-		if is64 {
-			size = 64
-		}
+func (g ubfizGen) Generate() UbfizParams {
+	is64 := g.rnd.IntN(2) == 1
+	size := uint32(32)
+	if is64 {
+		size = 64
+	}
 
-		lsb := g.rnd.IntN(int(size))
-		return NewUbfizParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			uint32(lsb),
-			uint32(g.rnd.IntN(int(size)-lsb))+1,
-		)
-	})
+	lsb := g.rnd.IntN(int(size))
+	return NewUbfizParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		uint32(lsb),
+		uint32(g.rnd.IntN(int(size)-lsb))+1,
+	)
 }
 
 func (g ubfizGen) Shrink(p UbfizParams) iter.Seq[UbfizParams] {

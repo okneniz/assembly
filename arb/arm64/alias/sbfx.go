@@ -59,22 +59,20 @@ func newSbfxGen(rnd *rand.Rand) sbfxGen {
 	return sbfxGen{rnd: rnd}
 }
 
-func (g sbfxGen) Generate() iter.Seq[SbfxParams] {
-	return stream(func() SbfxParams {
-		is64 := g.rnd.IntN(2) == 1
-		size := uint32(32)
-		if is64 {
-			size = 64
-		}
+func (g sbfxGen) Generate() SbfxParams {
+	is64 := g.rnd.IntN(2) == 1
+	size := uint32(32)
+	if is64 {
+		size = 64
+	}
 
-		lsb := g.rnd.IntN(int(size))
-		return NewSbfxParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			uint32(lsb),
-			uint32(g.rnd.IntN(int(size)-lsb))+1,
-		)
-	})
+	lsb := g.rnd.IntN(int(size))
+	return NewSbfxParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		uint32(lsb),
+		uint32(g.rnd.IntN(int(size)-lsb))+1,
+	)
 }
 
 func (g sbfxGen) Shrink(p SbfxParams) iter.Seq[SbfxParams] {

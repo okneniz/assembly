@@ -45,10 +45,8 @@ type stxrbArb struct {
 	base exclGen
 }
 
-func (a stxrbArb) Generate() iter.Seq[StxrbParams] {
-	return arbStream(func() StxrbParams {
-		return NewStxrbParams(ohsnap.First(a.base.Generate()))
-	})
+func (a stxrbArb) Generate() StxrbParams {
+	return NewStxrbParams(a.base.Generate())
 }
 
 func (a stxrbArb) Shrink(p StxrbParams) iter.Seq[StxrbParams] {

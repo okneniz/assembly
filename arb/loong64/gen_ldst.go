@@ -12,7 +12,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -145,16 +144,14 @@ type u5ri12Gen struct {
 	off   ohsnap.Arbitrary[arch.Imm12]
 }
 
-func (g u5ri12Gen) Generate() iter.Seq[U5RI12Params] {
-	return arb.Stream(func() U5RI12Params {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewU5RI12Params(
-			ohsnap.First(g.op.Generate()),
-			reg(g.rnd),
-			ohsnap.First(g.off.Generate()),
-			e.ctor,
-		)
-	})
+func (g u5ri12Gen) Generate() U5RI12Params {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewU5RI12Params(
+		g.op.Generate(),
+		reg(g.rnd),
+		g.off.Generate(),
+		e.ctor,
+	)
 }
 
 func (g u5ri12Gen) Shrink(p U5RI12Params) iter.Seq[U5RI12Params] {
@@ -228,11 +225,9 @@ type u5rrGen struct {
 	op    ohsnap.Arbitrary[arch.UImm5]
 }
 
-func (g u5rrGen) Generate() iter.Seq[U5RRParams] {
-	return arb.Stream(func() U5RRParams {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewU5RRParams(ohsnap.First(g.op.Generate()), reg(g.rnd), reg(g.rnd), e.ctor)
-	})
+func (g u5rrGen) Generate() U5RRParams {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewU5RRParams(g.op.Generate(), reg(g.rnd), reg(g.rnd), e.ctor)
 }
 
 func (g u5rrGen) Shrink(p U5RRParams) iter.Seq[U5RRParams] {

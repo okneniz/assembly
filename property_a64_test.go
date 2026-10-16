@@ -668,7 +668,7 @@ func newPropFamily[P instrParam](
 // created once and closed over; each sampler call is just Generate.
 func instrOf[P instrParam](a ohsnap.Arbitrary[P]) func() arm64.Instr {
 	return func() arm64.Instr {
-		return ohsnap.First(a.Generate()).Instr()
+		return a.Generate().Instr()
 	}
 }
 

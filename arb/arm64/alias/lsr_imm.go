@@ -61,20 +61,18 @@ func newLsrImmGen(rnd *rand.Rand) lsrImmGen {
 	return lsrImmGen{rnd: rnd}
 }
 
-func (g lsrImmGen) Generate() iter.Seq[LsrImmParams] {
-	return stream(func() LsrImmParams {
-		is64 := g.rnd.IntN(2) == 1
-		sh := uint32(1 + g.rnd.IntN(62))
-		if !is64 {
-			sh = uint32(1 + g.rnd.IntN(30))
-		}
+func (g lsrImmGen) Generate() LsrImmParams {
+	is64 := g.rnd.IntN(2) == 1
+	sh := uint32(1 + g.rnd.IntN(62))
+	if !is64 {
+		sh = uint32(1 + g.rnd.IntN(30))
+	}
 
-		return NewLsrImmParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-		)
-	})
+	return NewLsrImmParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+	)
 }
 
 func (g lsrImmGen) Shrink(p LsrImmParams) iter.Seq[LsrImmParams] {

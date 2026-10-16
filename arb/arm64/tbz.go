@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -62,22 +61,20 @@ func newTbzGen(rnd *rand.Rand) tbzGen {
 	}
 }
 
-func (g tbzGen) Generate() iter.Seq[TbzParams] {
-	return arb.Stream(func() TbzParams {
-		// the sf bit of the encoding IS the bit's b5: an x form exists
-		// only for bits 32..63 (a low bit canonizes to the w form), the
-		// w form covers bits 0..31.
-		bit := g.rnd.IntN(32)
-		if g.rnd.IntN(2) == 1 {
-			bit += 32
-		}
+func (g tbzGen) Generate() TbzParams {
+	// the sf bit of the encoding IS the bit's b5: an x form exists
+	// only for bits 32..63 (a low bit canonizes to the w form), the
+	// w form covers bits 0..31.
+	bit := g.rnd.IntN(32)
+	if g.rnd.IntN(2) == 1 {
+		bit += 32
+	}
 
-		return NewTbzParams(
-			genReg(g.rnd, bit >= 32, false, true),
-			uint32(bit),
-			ohsnap.First(g.off.Generate()),
-		)
-	})
+	return NewTbzParams(
+		genReg(g.rnd, bit >= 32, false, true),
+		uint32(bit),
+		g.off.Generate(),
+	)
 }
 
 func (g tbzGen) Shrink(p TbzParams) iter.Seq[TbzParams] {

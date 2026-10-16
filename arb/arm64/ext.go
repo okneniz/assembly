@@ -68,24 +68,22 @@ func extS(rnd *rand.Rand) extGen {
 	return newExtGen(rnd, true)
 }
 
-func (g extGen) Generate() iter.Seq[ExtParams] {
-	return arbStream(func() ExtParams {
-		is64 := g.rnd.IntN(2) == 1
-		names := extNames(is64)
-		ext := names[g.rnd.IntN(len(names))]
+func (g extGen) Generate() ExtParams {
+	is64 := g.rnd.IntN(2) == 1
+	names := extNames(is64)
+	ext := names[g.rnd.IntN(len(names))]
 
-		// rd reads as sp only in the plain add/sub x forms with a
-		// 64-bit extension (the sp arithmetic rule); rm is x/w with zr
-		// (never sp - clang refuses it there)
-		rdSp := !g.sForm && is64 && (ext == "uxtx" || ext == "sxtx")
-		return NewExtParams(
-			genReg(g.rnd, is64, rdSp, false),
-			genReg(g.rnd, is64, true, false),
-			genReg(g.rnd, is64, false, true),
-			ext,
-			uint32(g.rnd.IntN(8)),
-		)
-	})
+	// rd reads as sp only in the plain add/sub x forms with a
+	// 64-bit extension (the sp arithmetic rule); rm is x/w with zr
+	// (never sp - clang refuses it there)
+	rdSp := !g.sForm && is64 && (ext == "uxtx" || ext == "sxtx")
+	return NewExtParams(
+		genReg(g.rnd, is64, rdSp, false),
+		genReg(g.rnd, is64, true, false),
+		genReg(g.rnd, is64, false, true),
+		ext,
+		uint32(g.rnd.IntN(8)),
+	)
 }
 
 func (g extGen) Shrink(p ExtParams) iter.Seq[ExtParams] {

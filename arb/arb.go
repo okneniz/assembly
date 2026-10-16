@@ -8,10 +8,10 @@
 package arb
 
 import (
-	"iter"
 	"math/rand/v2"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 )
 
 // Rnd — a deterministic generator (math/rand/v2, PCG) from a seed.
@@ -21,17 +21,5 @@ func Rnd(seed uint64) *rand.Rand {
 
 // Word — an arbitrary 32-bit word (robustness properties of decoders).
 func Word(rnd *rand.Rand) ohsnap.Arbitrary[uint32] {
-	return ohsnap.ArbitraryUint32(rnd, 0, 0xffffffff)
-}
-
-// Stream — a lazy infinite sequence of values from f: the adapter that
-// turns a plain value constructor into the oh-snap Generate sequence.
-func Stream[T any](f func() T) iter.Seq[T] {
-	return func(yield func(T) bool) {
-		for {
-			if !yield(f()) {
-				return
-			}
-		}
-	}
+	return arbitrary.Uint32(rnd, 0, 0xffffffff)
 }

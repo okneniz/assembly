@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -51,10 +50,8 @@ func newSdGen(rnd *rand.Rand) sdGen {
 	return sdGen{rnd: rnd}
 }
 
-func (g sdGen) Generate() iter.Seq[SdParams] {
-	return arb.Stream(func() SdParams {
-		return NewSdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
-	})
+func (g sdGen) Generate() SdParams {
+	return NewSdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
 }
 
 func (g sdGen) Shrink(p SdParams) iter.Seq[SdParams] {

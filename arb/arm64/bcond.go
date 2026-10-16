@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -60,10 +59,8 @@ func newBcondGen(rnd *rand.Rand) bcondGen {
 	}
 }
 
-func (g bcondGen) Generate() iter.Seq[BcondParams] {
-	return arb.Stream(func() BcondParams {
-		return NewBcondParams(ohsnap.First(Cond(g.rnd).Generate()), ohsnap.First(g.off.Generate()))
-	})
+func (g bcondGen) Generate() BcondParams {
+	return NewBcondParams(Cond(g.rnd).Generate(), g.off.Generate())
 }
 
 func (g bcondGen) Shrink(p BcondParams) iter.Seq[BcondParams] {

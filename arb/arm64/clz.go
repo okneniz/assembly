@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -53,11 +52,9 @@ func newClzGen(rnd *rand.Rand) clzGen {
 	return clzGen{rnd: rnd}
 }
 
-func (g clzGen) Generate() iter.Seq[ClzParams] {
-	return arb.Stream(func() ClzParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewClzParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
-	})
+func (g clzGen) Generate() ClzParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewClzParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
 }
 
 func (g clzGen) Shrink(p ClzParams) iter.Seq[ClzParams] {

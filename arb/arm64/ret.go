@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -50,10 +49,8 @@ func newRetGen(rnd *rand.Rand) retGen {
 	return retGen{rnd: rnd}
 }
 
-func (g retGen) Generate() iter.Seq[RetParams] {
-	return arb.Stream(func() RetParams {
-		return NewRetParams(genReg(g.rnd, true, false, true))
-	})
+func (g retGen) Generate() RetParams {
+	return NewRetParams(genReg(g.rnd, true, false, true))
 }
 
 func (g retGen) Shrink(p RetParams) iter.Seq[RetParams] {

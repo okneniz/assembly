@@ -46,10 +46,8 @@ type fmovImmArb struct {
 	base fpImmGen
 }
 
-func (a fmovImmArb) Generate() iter.Seq[FmovImmParams] {
-	return arbStream(func() FmovImmParams {
-		return NewFmovImmParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmovImmArb) Generate() FmovImmParams {
+	return NewFmovImmParams(a.base.Generate())
 }
 
 func (a fmovImmArb) Shrink(p FmovImmParams) iter.Seq[FmovImmParams] {

@@ -14,7 +14,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 )
 
@@ -47,15 +46,13 @@ func CsrXchg(rnd *rand.Rand) ohsnap.Arbitrary[R2RoleParams[arch.UImm14]] {
 	return newCsrXchgGen(rnd)
 }
 
-func (g csrXchgGen) Generate() iter.Seq[R2RoleParams[arch.UImm14]] {
-	return arb.Stream(func() R2RoleParams[arch.UImm14] {
-		p := ohsnap.First(g.base.Generate())
-		for !csrXchgMaskOK(p.B) {
-			p = ohsnap.First(g.base.Generate())
-		}
+func (g csrXchgGen) Generate() R2RoleParams[arch.UImm14] {
+	p := g.base.Generate()
+	for !csrXchgMaskOK(p.B) {
+		p = g.base.Generate()
+	}
 
-		return p
-	})
+	return p
 }
 
 func (g csrXchgGen) Shrink(p R2RoleParams[arch.UImm14]) iter.Seq[R2RoleParams[arch.UImm14]] {

@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 )
 
@@ -28,10 +27,8 @@ func newRegArb(rnd *rand.Rand) regArb {
 	return regArb{rnd: rnd}
 }
 
-func (a regArb) Generate() iter.Seq[riscv.Reg] {
-	return arb.Stream(func() riscv.Reg {
-		return reg(a.rnd)
-	})
+func (a regArb) Generate() riscv.Reg {
+	return reg(a.rnd)
 }
 
 func (a regArb) Shrink(r riscv.Reg) iter.Seq[riscv.Reg] {

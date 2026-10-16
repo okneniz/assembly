@@ -7,6 +7,7 @@ import (
 	"testing"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/arb"
@@ -74,7 +75,7 @@ func TestFramingReadErrors(t *testing.T) {
 // as one envelope comes back as exactly that envelope.
 func TestFramingRoundTrip(t *testing.T) {
 	rnd := arb.Rnd(42)
-	bodies := ohsnap.ArbitrarySlice(rnd, ohsnap.ArbitraryByte(rnd, 0, 255), 0, 64)
+	bodies := arbitrary.Slice(rnd, arbitrary.Byte(rnd, 0, 255), 0, 64)
 	ohsnap.Check(t, 12000, bodies, func(b []byte) bool {
 		var buf bytes.Buffer
 		f := newFraming(&buf, &buf)

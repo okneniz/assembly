@@ -59,20 +59,18 @@ func newRorImmGen(rnd *rand.Rand) rorImmGen {
 	return rorImmGen{rnd: rnd}
 }
 
-func (g rorImmGen) Generate() iter.Seq[RorImmParams] {
-	return stream(func() RorImmParams {
-		is64 := g.rnd.IntN(2) == 1
-		sh := uint32(g.rnd.IntN(64))
-		if !is64 {
-			sh = uint32(g.rnd.IntN(32))
-		}
+func (g rorImmGen) Generate() RorImmParams {
+	is64 := g.rnd.IntN(2) == 1
+	sh := uint32(g.rnd.IntN(64))
+	if !is64 {
+		sh = uint32(g.rnd.IntN(32))
+	}
 
-		return NewRorImmParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-		)
-	})
+	return NewRorImmParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+	)
 }
 
 func (g rorImmGen) Shrink(p RorImmParams) iter.Seq[RorImmParams] {

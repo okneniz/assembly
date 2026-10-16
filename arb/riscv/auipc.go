@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -42,10 +41,8 @@ type auipcGen struct {
 	rnd *rand.Rand
 }
 
-func (g auipcGen) Generate() iter.Seq[AuipcParams] {
-	return arb.Stream(func() AuipcParams {
-		return NewAuipcParams(reg(g.rnd), imm20(g.rnd))
-	})
+func (g auipcGen) Generate() AuipcParams {
+	return NewAuipcParams(reg(g.rnd), imm20(g.rnd))
 }
 
 func (g auipcGen) Shrink(p AuipcParams) iter.Seq[AuipcParams] {

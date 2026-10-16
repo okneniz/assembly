@@ -45,10 +45,8 @@ type fcvtzuArb struct {
 	base fgprGen
 }
 
-func (a fcvtzuArb) Generate() iter.Seq[FcvtzuParams] {
-	return arbStream(func() FcvtzuParams {
-		return NewFcvtzuParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fcvtzuArb) Generate() FcvtzuParams {
+	return NewFcvtzuParams(a.base.Generate())
 }
 
 func (a fcvtzuArb) Shrink(p FcvtzuParams) iter.Seq[FcvtzuParams] {

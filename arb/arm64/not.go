@@ -45,10 +45,8 @@ type notArb struct {
 	base v2Gen
 }
 
-func (a notArb) Generate() iter.Seq[NotParams] {
-	return arbStream(func() NotParams {
-		return NewNotParams(ohsnap.First(a.base.Generate()))
-	})
+func (a notArb) Generate() NotParams {
+	return NewNotParams(a.base.Generate())
 }
 
 func (a notArb) Shrink(p NotParams) iter.Seq[NotParams] {

@@ -45,10 +45,8 @@ type fnegArb struct {
 	base f2Gen
 }
 
-func (a fnegArb) Generate() iter.Seq[FnegParams] {
-	return arbStream(func() FnegParams {
-		return NewFnegParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fnegArb) Generate() FnegParams {
+	return NewFnegParams(a.base.Generate())
 }
 
 func (a fnegArb) Shrink(p FnegParams) iter.Seq[FnegParams] {

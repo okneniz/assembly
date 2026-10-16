@@ -45,10 +45,8 @@ type cmgeArb struct {
 	base v3Gen
 }
 
-func (a cmgeArb) Generate() iter.Seq[CmgeParams] {
-	return arbStream(func() CmgeParams {
-		return NewCmgeParams(ohsnap.First(a.base.Generate()))
-	})
+func (a cmgeArb) Generate() CmgeParams {
+	return NewCmgeParams(a.base.Generate())
 }
 
 func (a cmgeArb) Shrink(p CmgeParams) iter.Seq[CmgeParams] {

@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -41,10 +40,8 @@ type fenceGen struct {
 	rnd *rand.Rand
 }
 
-func (g fenceGen) Generate() iter.Seq[FenceParams] {
-	return arb.Stream(func() FenceParams {
-		return NewFenceParams(0)
-	})
+func (g fenceGen) Generate() FenceParams {
+	return NewFenceParams(0)
 }
 
 func (g fenceGen) Shrink(FenceParams) iter.Seq[FenceParams] {

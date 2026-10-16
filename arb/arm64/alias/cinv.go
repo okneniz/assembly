@@ -55,15 +55,13 @@ func newCinvGen(rnd *rand.Rand) cinvGen {
 	return cinvGen{rnd: rnd}
 }
 
-func (g cinvGen) Generate() iter.Seq[CinvParams] {
-	return stream(func() CinvParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewCinvParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			genCond14(g.rnd),
-		)
-	})
+func (g cinvGen) Generate() CinvParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewCinvParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		genCond14(g.rnd),
+	)
 }
 
 func (g cinvGen) Shrink(p CinvParams) iter.Seq[CinvParams] {

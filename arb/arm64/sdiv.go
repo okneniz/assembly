@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -54,15 +53,13 @@ func newSdivGen(rnd *rand.Rand) sdivGen {
 	return sdivGen{rnd: rnd}
 }
 
-func (g sdivGen) Generate() iter.Seq[SdivParams] {
-	return arb.Stream(func() SdivParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewSdivParams(
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-			genReg(g.rnd, is64, false, true),
-		)
-	})
+func (g sdivGen) Generate() SdivParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewSdivParams(
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+		genReg(g.rnd, is64, false, true),
+	)
 }
 
 func (g sdivGen) Shrink(p SdivParams) iter.Seq[SdivParams] {

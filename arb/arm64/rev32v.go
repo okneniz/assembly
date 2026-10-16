@@ -45,10 +45,8 @@ type rev32vArb struct {
 	base v2Gen
 }
 
-func (a rev32vArb) Generate() iter.Seq[Rev32VParams] {
-	return arbStream(func() Rev32VParams {
-		return NewRev32VParams(ohsnap.First(a.base.Generate()))
-	})
+func (a rev32vArb) Generate() Rev32VParams {
+	return NewRev32VParams(a.base.Generate())
 }
 
 func (a rev32vArb) Shrink(p Rev32VParams) iter.Seq[Rev32VParams] {

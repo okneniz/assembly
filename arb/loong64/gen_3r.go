@@ -13,7 +13,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -58,11 +57,9 @@ type r3Gen struct {
 	ctors []r3Entry
 }
 
-func (g r3Gen) Generate() iter.Seq[R3Params] {
-	return arb.Stream(func() R3Params {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR3Params(reg(g.rnd), reg(g.rnd), reg(g.rnd), e.ctor)
-	})
+func (g r3Gen) Generate() R3Params {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewR3Params(reg(g.rnd), reg(g.rnd), reg(g.rnd), e.ctor)
 }
 
 func (g r3Gen) Shrink(p R3Params) iter.Seq[R3Params] {
@@ -176,11 +173,9 @@ type r2Gen struct {
 	ctors []r2Entry
 }
 
-func (g r2Gen) Generate() iter.Seq[R2Params] {
-	return arb.Stream(func() R2Params {
-		e := g.ctors[g.rnd.IntN(len(g.ctors))]
-		return NewR2Params(reg(g.rnd), reg(g.rnd), e.ctor)
-	})
+func (g r2Gen) Generate() R2Params {
+	e := g.ctors[g.rnd.IntN(len(g.ctors))]
+	return NewR2Params(reg(g.rnd), reg(g.rnd), e.ctor)
 }
 
 func (g r2Gen) Shrink(p R2Params) iter.Seq[R2Params] {

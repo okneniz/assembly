@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -53,11 +52,9 @@ func newRbitGen(rnd *rand.Rand) rbitGen {
 	return rbitGen{rnd: rnd}
 }
 
-func (g rbitGen) Generate() iter.Seq[RbitParams] {
-	return arb.Stream(func() RbitParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewRbitParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
-	})
+func (g rbitGen) Generate() RbitParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewRbitParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
 }
 
 func (g rbitGen) Shrink(p RbitParams) iter.Seq[RbitParams] {

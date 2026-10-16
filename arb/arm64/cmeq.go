@@ -45,10 +45,8 @@ type cmeqArb struct {
 	base v3Gen
 }
 
-func (a cmeqArb) Generate() iter.Seq[CmeqParams] {
-	return arbStream(func() CmeqParams {
-		return NewCmeqParams(ohsnap.First(a.base.Generate()))
-	})
+func (a cmeqArb) Generate() CmeqParams {
+	return NewCmeqParams(a.base.Generate())
 }
 
 func (a cmeqArb) Shrink(p CmeqParams) iter.Seq[CmeqParams] {

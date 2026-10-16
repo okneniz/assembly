@@ -54,15 +54,13 @@ func newMulGen(rnd *rand.Rand) mulGen {
 	return mulGen{rnd: rnd}
 }
 
-func (g mulGen) Generate() iter.Seq[MulParams] {
-	return stream(func() MulParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewMulParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-		)
-	})
+func (g mulGen) Generate() MulParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewMulParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+	)
 }
 
 func (g mulGen) Shrink(p MulParams) iter.Seq[MulParams] {

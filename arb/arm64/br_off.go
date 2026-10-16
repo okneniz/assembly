@@ -12,8 +12,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
-
-	"github.com/okneniz/assembly/arb"
 )
 
 // brOffArb — a signed 4-byte-aligned offset in [-lim, lim) bytes.
@@ -34,16 +32,14 @@ func newBrOffArb(rnd *rand.Rand, lim int64) brOffArb {
 	}
 }
 
-func (g brOffArb) Generate() iter.Seq[int64] {
+func (g brOffArb) Generate() int64 {
 	n := g.lim / 4
-	return arb.Stream(func() int64 {
-		return (g.rnd.Int64N(2*n) - n) * 4
-	})
+	return (g.rnd.Int64N(2*n) - n) * 4
 }
 
 func (g brOffArb) Shrink(off int64) iter.Seq[int64] {
 	if off == 0 {
-		return ohsnap.Empty[int64]()
+		return shrink.NoShrink[int64]()(off)
 	}
 
 	var out []int64

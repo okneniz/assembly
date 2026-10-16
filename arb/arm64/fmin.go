@@ -45,10 +45,8 @@ type fminArb struct {
 	base f3Gen
 }
 
-func (a fminArb) Generate() iter.Seq[FminParams] {
-	return arbStream(func() FminParams {
-		return NewFminParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fminArb) Generate() FminParams {
+	return NewFminParams(a.base.Generate())
 }
 
 func (a fminArb) Shrink(p FminParams) iter.Seq[FminParams] {

@@ -58,28 +58,26 @@ func newMvnGen(rnd *rand.Rand) mvnGen {
 	return mvnGen{rnd: rnd}
 }
 
-func (g mvnGen) Generate() iter.Seq[MvnParams] {
-	return stream(func() MvnParams {
-		is64 := g.rnd.IntN(2) == 1
-		width := int64(32)
-		if is64 {
-			width = 64
-		}
+func (g mvnGen) Generate() MvnParams {
+	is64 := g.rnd.IntN(2) == 1
+	width := int64(32)
+	if is64 {
+		width = 64
+	}
 
-		sh := ""
-		amt := int64(0)
-		if g.rnd.IntN(2) == 1 {
-			sh = shiftKinds()[g.rnd.IntN(4)]
-			amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
-		}
+	sh := ""
+	amt := int64(0)
+	if g.rnd.IntN(2) == 1 {
+		sh = shiftKinds()[g.rnd.IntN(4)]
+		amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
+	}
 
-		return NewMvnParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-			amt,
-		)
-	})
+	return NewMvnParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+		amt,
+	)
 }
 
 func (g mvnGen) Shrink(p MvnParams) iter.Seq[MvnParams] {

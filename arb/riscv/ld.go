@@ -10,7 +10,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -51,10 +50,8 @@ func newLdGen(rnd *rand.Rand) ldGen {
 	return ldGen{rnd: rnd}
 }
 
-func (g ldGen) Generate() iter.Seq[LdParams] {
-	return arb.Stream(func() LdParams {
-		return NewLdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
-	})
+func (g ldGen) Generate() LdParams {
+	return NewLdParams(reg(g.rnd), reg(g.rnd), off(g.rnd))
 }
 
 func (g ldGen) Shrink(p LdParams) iter.Seq[LdParams] {

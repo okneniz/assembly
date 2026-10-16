@@ -1,5 +1,5 @@
-github.com/okneniz/oh-snap v0.0.1 h1:lLfvLP0h9DqpXKP0fngZSHGEP68pF4tTo3wcfG9sZH4=
-github.com/okneniz/oh-snap v0.0.1/go.mod h1:uTSdxe5FwA4VEBH0cblEJ9QI1gULWCY5VhNRU7TQPig=
+github.com/okneniz/oh-snap v0.0.3 h1:Grm/kGiPCkmo23Pd45DZEc5YAyqqpAmasohXU9PIhbQ=
+github.com/okneniz/oh-snap v0.0.3/go.mod h1:uTSdxe5FwA4VEBH0cblEJ9QI1gULWCY5VhNRU7TQPig=
 github.com/okneniz/parsec v0.0.4 h1:yhvE7drechh/1XZNKWSYSFpRfBOW6iBBicqf0jJtQ/w=
 github.com/okneniz/parsec v0.0.4/go.mod h1:oUdfW0QihlFbjXzAk/6MzsU4RIZ2Yse9yLjx66u1vTY=
 github.com/stretchr/testify v1.12.1 h1:EuwCh5fleGS7H32xRwO3wRGT7DxrDhLAT6FF8MpWDWE=

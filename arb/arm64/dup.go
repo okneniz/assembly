@@ -45,10 +45,8 @@ type dupArb struct {
 	base dupGen
 }
 
-func (a dupArb) Generate() iter.Seq[DupGenParams] {
-	return arbStream(func() DupGenParams {
-		return NewDupGenParams(ohsnap.First(a.base.Generate()))
-	})
+func (a dupArb) Generate() DupGenParams {
+	return NewDupGenParams(a.base.Generate())
 }
 
 func (a dupArb) Shrink(p DupGenParams) iter.Seq[DupGenParams] {

@@ -45,10 +45,8 @@ type ldrFArb struct {
 	base fGen
 }
 
-func (a ldrFArb) Generate() iter.Seq[LdrFParams] {
-	return arbStream(func() LdrFParams {
-		return NewLdrFParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ldrFArb) Generate() LdrFParams {
+	return NewLdrFParams(a.base.Generate())
 }
 
 func (a ldrFArb) Shrink(p LdrFParams) iter.Seq[LdrFParams] {

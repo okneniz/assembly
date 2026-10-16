@@ -45,10 +45,8 @@ type addsExtArb struct {
 	base extGen
 }
 
-func (a addsExtArb) Generate() iter.Seq[AddsExtParams] {
-	return arbStream(func() AddsExtParams {
-		return NewAddsExtParams(ohsnap.First(a.base.Generate()))
-	})
+func (a addsExtArb) Generate() AddsExtParams {
+	return NewAddsExtParams(a.base.Generate())
 }
 
 func (a addsExtArb) Shrink(p AddsExtParams) iter.Seq[AddsExtParams] {

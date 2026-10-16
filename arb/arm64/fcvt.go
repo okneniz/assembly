@@ -53,11 +53,9 @@ func newFcvtGen(rnd *rand.Rand) fcvtGen {
 	return fcvtGen{rnd: rnd}
 }
 
-func (g fcvtGen) Generate() iter.Seq[FcvtParams] {
-	return arbStream(func() FcvtParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewFcvtParams(genFp(g.rnd, is64), genFp(g.rnd, !is64))
-	})
+func (g fcvtGen) Generate() FcvtParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewFcvtParams(genFp(g.rnd, is64), genFp(g.rnd, !is64))
 }
 
 func (g fcvtGen) Shrink(p FcvtParams) iter.Seq[FcvtParams] {

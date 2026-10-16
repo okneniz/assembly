@@ -13,7 +13,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -78,10 +77,8 @@ func Load(rnd *rand.Rand, op LoadOp) ohsnap.Arbitrary[LoadParams] {
 	return loadGen{rnd: rnd, op: op}
 }
 
-func (g loadGen) Generate() iter.Seq[LoadParams] {
-	return arb.Stream(func() LoadParams {
-		return NewLoadParams(g.op, reg(g.rnd), reg(g.rnd), off(g.rnd))
-	})
+func (g loadGen) Generate() LoadParams {
+	return NewLoadParams(g.op, reg(g.rnd), reg(g.rnd), off(g.rnd))
 }
 
 func (g loadGen) Shrink(p LoadParams) iter.Seq[LoadParams] {
@@ -156,10 +153,8 @@ func Store(rnd *rand.Rand, op StoreOp) ohsnap.Arbitrary[StoreParams] {
 	return storeGen{rnd: rnd, op: op}
 }
 
-func (g storeGen) Generate() iter.Seq[StoreParams] {
-	return arb.Stream(func() StoreParams {
-		return NewStoreParams(g.op, reg(g.rnd), reg(g.rnd), off(g.rnd))
-	})
+func (g storeGen) Generate() StoreParams {
+	return NewStoreParams(g.op, reg(g.rnd), reg(g.rnd), off(g.rnd))
 }
 
 func (g storeGen) Shrink(p StoreParams) iter.Seq[StoreParams] {

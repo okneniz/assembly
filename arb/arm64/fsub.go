@@ -45,10 +45,8 @@ type fsubArb struct {
 	base f3Gen
 }
 
-func (a fsubArb) Generate() iter.Seq[FsubParams] {
-	return arbStream(func() FsubParams {
-		return NewFsubParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fsubArb) Generate() FsubParams {
+	return NewFsubParams(a.base.Generate())
 }
 
 func (a fsubArb) Shrink(p FsubParams) iter.Seq[FsubParams] {

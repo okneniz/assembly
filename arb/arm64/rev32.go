@@ -9,7 +9,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -53,10 +52,8 @@ func newRev32Gen(rnd *rand.Rand) rev32Gen {
 	return rev32Gen{rnd: rnd}
 }
 
-func (g rev32Gen) Generate() iter.Seq[Rev32Params] {
-	return arb.Stream(func() Rev32Params {
-		return NewRev32Params(genReg(g.rnd, true, false, true), genReg(g.rnd, true, false, true))
-	})
+func (g rev32Gen) Generate() Rev32Params {
+	return NewRev32Params(genReg(g.rnd, true, false, true), genReg(g.rnd, true, false, true))
 }
 
 func (g rev32Gen) Shrink(p Rev32Params) iter.Seq[Rev32Params] {

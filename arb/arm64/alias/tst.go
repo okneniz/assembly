@@ -59,28 +59,26 @@ func newTstGen(rnd *rand.Rand) tstGen {
 	return tstGen{rnd: rnd}
 }
 
-func (g tstGen) Generate() iter.Seq[TstParams] {
-	return stream(func() TstParams {
-		is64 := g.rnd.IntN(2) == 1
-		width := int64(32)
-		if is64 {
-			width = 64
-		}
+func (g tstGen) Generate() TstParams {
+	is64 := g.rnd.IntN(2) == 1
+	width := int64(32)
+	if is64 {
+		width = 64
+	}
 
-		sh := ""
-		amt := int64(0)
-		if g.rnd.IntN(2) == 1 {
-			sh = shiftKinds()[g.rnd.IntN(4)]
-			amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
-		}
+	sh := ""
+	amt := int64(0)
+	if g.rnd.IntN(2) == 1 {
+		sh = shiftKinds()[g.rnd.IntN(4)]
+		amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
+	}
 
-		return NewTstParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			sh,
-			amt,
-		)
-	})
+	return NewTstParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		sh,
+		amt,
+	)
 }
 
 func (g tstGen) Shrink(p TstParams) iter.Seq[TstParams] {

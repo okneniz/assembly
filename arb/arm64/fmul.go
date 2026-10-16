@@ -45,10 +45,8 @@ type fmulArb struct {
 	base f3Gen
 }
 
-func (a fmulArb) Generate() iter.Seq[FmulParams] {
-	return arbStream(func() FmulParams {
-		return NewFmulParams(ohsnap.First(a.base.Generate()))
-	})
+func (a fmulArb) Generate() FmulParams {
+	return NewFmulParams(a.base.Generate())
 }
 
 func (a fmulArb) Shrink(p FmulParams) iter.Seq[FmulParams] {

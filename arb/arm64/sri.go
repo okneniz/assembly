@@ -45,10 +45,8 @@ type sriArb struct {
 	base vShiftGen
 }
 
-func (a sriArb) Generate() iter.Seq[SriParams] {
-	return arbStream(func() SriParams {
-		return NewSriParams(ohsnap.First(a.base.Generate()))
-	})
+func (a sriArb) Generate() SriParams {
+	return NewSriParams(a.base.Generate())
 }
 
 func (a sriArb) Shrink(p SriParams) iter.Seq[SriParams] {

@@ -67,17 +67,15 @@ func newCmnGen(rnd *rand.Rand) cmnGen {
 	return cmnGen{rnd: rnd}
 }
 
-func (g cmnGen) Generate() iter.Seq[CmnParams] {
-	return stream(func() CmnParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewCmnParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			g.rnd.Int64N(0x1000),
-			g.rnd.IntN(2) == 1,
-			g.rnd.IntN(2) == 1,
-		)
-	})
+func (g cmnGen) Generate() CmnParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewCmnParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		g.rnd.Int64N(0x1000),
+		g.rnd.IntN(2) == 1,
+		g.rnd.IntN(2) == 1,
+	)
 }
 
 func (g cmnGen) Shrink(p CmnParams) iter.Seq[CmnParams] {

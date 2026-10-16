@@ -45,10 +45,8 @@ type stlrbArb struct {
 	base atomGen
 }
 
-func (a stlrbArb) Generate() iter.Seq[StlrbParams] {
-	return arbStream(func() StlrbParams {
-		return NewStlrbParams(ohsnap.First(a.base.Generate()))
-	})
+func (a stlrbArb) Generate() StlrbParams {
+	return NewStlrbParams(a.base.Generate())
 }
 
 func (a stlrbArb) Shrink(p StlrbParams) iter.Seq[StlrbParams] {

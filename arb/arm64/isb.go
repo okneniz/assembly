@@ -7,8 +7,8 @@ import (
 	"math/rand/v2"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -47,10 +47,10 @@ func newIsbGen(rnd *rand.Rand) isbGen {
 	return isbGen{rnd: rnd}
 }
 
-func (g isbGen) Generate() iter.Seq[IsbParams] {
-	return arb.Stream(NewIsbParams)
+func (g isbGen) Generate() IsbParams {
+	return NewIsbParams()
 }
 
 func (g isbGen) Shrink(p IsbParams) iter.Seq[IsbParams] {
-	return ohsnap.Empty[IsbParams]()
+	return shrink.NoShrink[IsbParams]()(p)
 }

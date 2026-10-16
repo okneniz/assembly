@@ -45,10 +45,8 @@ type andsShiftArb struct {
 	base shiftedGen
 }
 
-func (a andsShiftArb) Generate() iter.Seq[AndsShiftParams] {
-	return arbStream(func() AndsShiftParams {
-		return NewAndsShiftParams(ohsnap.First(a.base.Generate()))
-	})
+func (a andsShiftArb) Generate() AndsShiftParams {
+	return NewAndsShiftParams(a.base.Generate())
 }
 
 func (a andsShiftArb) Shrink(p AndsShiftParams) iter.Seq[AndsShiftParams] {

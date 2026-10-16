@@ -55,10 +55,8 @@ func newCsetGen(rnd *rand.Rand) csetGen {
 	return csetGen{rnd: rnd}
 }
 
-func (g csetGen) Generate() iter.Seq[CsetParams] {
-	return stream(func() CsetParams {
-		return NewCsetParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), genCond14(g.rnd))
-	})
+func (g csetGen) Generate() CsetParams {
+	return NewCsetParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), genCond14(g.rnd))
 }
 
 func (g csetGen) Shrink(p CsetParams) iter.Seq[CsetParams] {

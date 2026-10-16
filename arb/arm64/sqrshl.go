@@ -45,10 +45,8 @@ type sqrshlArb struct {
 	base v3Gen
 }
 
-func (a sqrshlArb) Generate() iter.Seq[SqrshlParams] {
-	return arbStream(func() SqrshlParams {
-		return NewSqrshlParams(ohsnap.First(a.base.Generate()))
-	})
+func (a sqrshlArb) Generate() SqrshlParams {
+	return NewSqrshlParams(a.base.Generate())
 }
 
 func (a sqrshlArb) Shrink(p SqrshlParams) iter.Seq[SqrshlParams] {

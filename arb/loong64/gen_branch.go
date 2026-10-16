@@ -16,7 +16,6 @@ import (
 	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/okneniz/oh-snap/shrink"
 
-	"github.com/okneniz/assembly/arb"
 	arch "github.com/okneniz/assembly/arch/loong64"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -79,11 +78,9 @@ func Branch2(rnd *rand.Rand) ohsnap.Arbitrary[Branch2Params] {
 	return newBranch2Gen(rnd)
 }
 
-func (g branch2Gen) Generate() iter.Seq[Branch2Params] {
-	return arb.Stream(func() Branch2Params {
-		e := branch2[g.rnd.IntN(len(branch2))]
-		return NewBranch2Params(reg(g.rnd), reg(g.rnd), branchOffset(g.rnd, branch2Span), e.ctor)
-	})
+func (g branch2Gen) Generate() Branch2Params {
+	e := branch2[g.rnd.IntN(len(branch2))]
+	return NewBranch2Params(reg(g.rnd), reg(g.rnd), branchOffset(g.rnd, branch2Span), e.ctor)
 }
 
 func (g branch2Gen) Shrink(p Branch2Params) iter.Seq[Branch2Params] {
@@ -157,11 +154,9 @@ func Branch1(rnd *rand.Rand) ohsnap.Arbitrary[Branch1Params] {
 	return newBranch1Gen(rnd)
 }
 
-func (g branch1Gen) Generate() iter.Seq[Branch1Params] {
-	return arb.Stream(func() Branch1Params {
-		e := branch1[g.rnd.IntN(len(branch1))]
-		return NewBranch1Params(reg(g.rnd), branchOffset(g.rnd, branch1Span), e.ctor)
-	})
+func (g branch1Gen) Generate() Branch1Params {
+	e := branch1[g.rnd.IntN(len(branch1))]
+	return NewBranch1Params(reg(g.rnd), branchOffset(g.rnd, branch1Span), e.ctor)
 }
 
 func (g branch1Gen) Shrink(p Branch1Params) iter.Seq[Branch1Params] {
@@ -229,11 +224,9 @@ func Jump(rnd *rand.Rand) ohsnap.Arbitrary[JumpParams] {
 	return newJumpGen(rnd)
 }
 
-func (g jumpGen) Generate() iter.Seq[JumpParams] {
-	return arb.Stream(func() JumpParams {
-		e := jump[g.rnd.IntN(len(jump))]
-		return NewJumpParams(branchOffset(g.rnd, jumpSpan), e.ctor)
-	})
+func (g jumpGen) Generate() JumpParams {
+	e := jump[g.rnd.IntN(len(jump))]
+	return NewJumpParams(branchOffset(g.rnd, jumpSpan), e.ctor)
 }
 
 func (g jumpGen) Shrink(p JumpParams) iter.Seq[JumpParams] {

@@ -55,15 +55,13 @@ func newCnegGen(rnd *rand.Rand) cnegGen {
 	return cnegGen{rnd: rnd}
 }
 
-func (g cnegGen) Generate() iter.Seq[CnegParams] {
-	return stream(func() CnegParams {
-		is64 := g.rnd.IntN(2) == 1
-		return NewCnegParams(
-			a64.GenReg(g.rnd, is64, false, true),
-			a64.GenReg(g.rnd, is64, false, true),
-			genCond14(g.rnd),
-		)
-	})
+func (g cnegGen) Generate() CnegParams {
+	is64 := g.rnd.IntN(2) == 1
+	return NewCnegParams(
+		a64.GenReg(g.rnd, is64, false, true),
+		a64.GenReg(g.rnd, is64, false, true),
+		genCond14(g.rnd),
+	)
 }
 
 func (g cnegGen) Shrink(p CnegParams) iter.Seq[CnegParams] {

@@ -12,7 +12,6 @@ import (
 
 	ohsnap "github.com/okneniz/oh-snap"
 
-	"github.com/okneniz/assembly/arb"
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
 )
@@ -79,10 +78,8 @@ func Fp4(rnd *rand.Rand, op Fp4Op) ohsnap.Arbitrary[Fp4Params] {
 	return fp4Gen{rnd: rnd, op: op}
 }
 
-func (g fp4Gen) Generate() iter.Seq[Fp4Params] {
-	return arb.Stream(func() Fp4Params {
-		return NewFp4Params(g.op, reg(g.rnd), reg(g.rnd), reg(g.rnd), reg(g.rnd))
-	})
+func (g fp4Gen) Generate() Fp4Params {
+	return NewFp4Params(g.op, reg(g.rnd), reg(g.rnd), reg(g.rnd), reg(g.rnd))
 }
 
 func (g fp4Gen) Shrink(p Fp4Params) iter.Seq[Fp4Params] {

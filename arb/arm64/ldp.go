@@ -44,10 +44,8 @@ type ldpArb struct {
 	base pairGen
 }
 
-func (a ldpArb) Generate() iter.Seq[LdpParams] {
-	return arbStream(func() LdpParams {
-		return NewLdpParams(ohsnap.First(a.base.Generate()))
-	})
+func (a ldpArb) Generate() LdpParams {
+	return NewLdpParams(a.base.Generate())
 }
 
 func (a ldpArb) Shrink(p LdpParams) iter.Seq[LdpParams] {

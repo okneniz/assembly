@@ -45,10 +45,8 @@ type absArb struct {
 	base v2Gen
 }
 
-func (a absArb) Generate() iter.Seq[AbsParams] {
-	return arbStream(func() AbsParams {
-		return NewAbsParams(ohsnap.First(a.base.Generate()))
-	})
+func (a absArb) Generate() AbsParams {
+	return NewAbsParams(a.base.Generate())
 }
 
 func (a absArb) Shrink(p AbsParams) iter.Seq[AbsParams] {

@@ -5,7 +5,6 @@ import (
 	"slices"
 	"testing"
 
-	ohsnap "github.com/okneniz/oh-snap"
 	"github.com/stretchr/testify/require"
 
 	"github.com/okneniz/assembly/dtree"
@@ -17,7 +16,7 @@ func TestLookupCaseGenerate(t *testing.T) {
 
 	empty, nonEmpty := 0, 0
 	for range 1000 {
-		c := ohsnap.First(gen.Generate())
+		c := gen.Generate()
 		require.LessOrEqual(t, len(c.Rules), 40)
 
 		if len(c.Rules) == 0 {
