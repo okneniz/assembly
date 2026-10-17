@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -43,7 +44,8 @@ func (p CincParams) String() string {
 
 // cincGen — generator for cinc: same-width registers and a condition.
 type cincGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Cinc — an arbitrary cinc.
@@ -52,11 +54,14 @@ func Cinc(rnd *rand.Rand) ohsnap.Arbitrary[CincParams] {
 }
 
 func newCincGen(rnd *rand.Rand) cincGen {
-	return cincGen{rnd: rnd}
+	return cincGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g cincGen) Generate() CincParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewCincParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),

@@ -9,6 +9,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
+
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -31,6 +34,7 @@ func NewPairParams(rt arm64.Reg, rt2 arm64.Reg, rn arm64.Reg, off arm64.Off) Pai
 // comes from the family), the offset aligned to the pair scale.
 type pairGen struct {
 	rnd   *rand.Rand
+	coin  ohsnap.Arbitrary[bool]
 	rt64  *bool
 	scale *uint32 // pinned scale (Ldpsw: 2); nil: by the register width
 }
@@ -38,6 +42,7 @@ type pairGen struct {
 func newPairGen(rnd *rand.Rand, rt64 *bool, scale *uint32) pairGen {
 	return pairGen{
 		rnd:   rnd,
+		coin:  arbitrary.Bool(rnd),
 		rt64:  rt64,
 		scale: scale,
 	}
@@ -105,7 +110,7 @@ func (g pairGen) curScale(is64 bool) uint32 {
 
 func (g pairGen) is64() bool {
 	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
+		return g.coin.Generate()
 	}
 
 	return *g.rt64

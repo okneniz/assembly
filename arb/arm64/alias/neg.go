@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -46,7 +47,8 @@ func (p NegParams) String() string {
 // negGen — generator for neg: same-width registers, the shift amount
 // below the register width.
 type negGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Neg — an arbitrary neg.
@@ -55,11 +57,14 @@ func Neg(rnd *rand.Rand) ohsnap.Arbitrary[NegParams] {
 }
 
 func newNegGen(rnd *rand.Rand) negGen {
-	return negGen{rnd: rnd}
+	return negGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g negGen) Generate() NegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	width := int64(32)
 	if is64 {
 		width = 64
@@ -67,7 +72,7 @@ func (g negGen) Generate() NegParams {
 
 	sh := ""
 	amt := int64(0)
-	if g.rnd.IntN(2) == 1 {
+	if g.coin.Generate() {
 		sh = addSubShiftKinds()[g.rnd.IntN(3)]
 		amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
 	}

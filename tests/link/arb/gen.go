@@ -17,16 +17,21 @@ import (
 	"strings"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 )
 
 // Gen walks the axes: one Program per call.
 type Gen struct {
-	rnd *mrnd.Rand
+	rnd  *mrnd.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // NewGen is the generator over rnd.
 func NewGen(rnd *mrnd.Rand) *Gen {
-	return &Gen{rnd: rnd}
+	return &Gen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // Program builds one specimen in the dialect (the structure and the
@@ -59,7 +64,7 @@ func (g *Gen) Program(arch Arch) Program {
 	// (forward and backward references, repeats - every callee defined)
 	entry := g.rnd.IntN(n)
 	entryLoop := 0
-	if g.rnd.IntN(2) == 0 {
+	if g.coin.Generate() {
 		entryLoop = 1 + g.rnd.IntN(12)
 	}
 

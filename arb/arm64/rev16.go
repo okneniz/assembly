@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -40,7 +41,8 @@ func (p Rev16Params) String() string {
 
 // rev16Gen — generator for rev16: registers of the same width, 31st is zr.
 type rev16Gen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Rev16 — an arbitrary rev16.
@@ -49,11 +51,14 @@ func Rev16(rnd *rand.Rand) ohsnap.Arbitrary[Rev16Params] {
 }
 
 func newRev16Gen(rnd *rand.Rand) rev16Gen {
-	return rev16Gen{rnd: rnd}
+	return rev16Gen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g rev16Gen) Generate() Rev16Params {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewRev16Params(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
 }
 

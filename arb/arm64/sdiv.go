@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -41,7 +42,8 @@ func (p SdivParams) String() string {
 
 // sdivGen — generator for sdiv: registers of the same width, 31st is zr.
 type sdivGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Sdiv — an arbitrary sdiv.
@@ -50,11 +52,14 @@ func Sdiv(rnd *rand.Rand) ohsnap.Arbitrary[SdivParams] {
 }
 
 func newSdivGen(rnd *rand.Rand) sdivGen {
-	return sdivGen{rnd: rnd}
+	return sdivGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g sdivGen) Generate() SdivParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewSdivParams(
 		genReg(g.rnd, is64, false, true),
 		genReg(g.rnd, is64, false, true),

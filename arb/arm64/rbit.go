@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -40,7 +41,8 @@ func (p RbitParams) String() string {
 
 // rbitGen — generator for rbit: registers of the same width, 31st is zr.
 type rbitGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Rbit — an arbitrary rbit.
@@ -49,11 +51,14 @@ func Rbit(rnd *rand.Rand) ohsnap.Arbitrary[RbitParams] {
 }
 
 func newRbitGen(rnd *rand.Rand) rbitGen {
-	return rbitGen{rnd: rnd}
+	return rbitGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g rbitGen) Generate() RbitParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewRbitParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
 }
 

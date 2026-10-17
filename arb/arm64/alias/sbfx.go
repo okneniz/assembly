@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -47,7 +48,8 @@ func (p SbfxParams) String() string {
 // sbfxGen — generator for sbfx: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type sbfxGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Sbfx — an arbitrary sbfx.
@@ -56,11 +58,14 @@ func Sbfx(rnd *rand.Rand) ohsnap.Arbitrary[SbfxParams] {
 }
 
 func newSbfxGen(rnd *rand.Rand) sbfxGen {
-	return sbfxGen{rnd: rnd}
+	return sbfxGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g sbfxGen) Generate() SbfxParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	size := uint32(32)
 	if is64 {
 		size = 64

@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -42,7 +43,8 @@ func (p AsrRegParams) String() string {
 
 // asrRegGen — generator for asr: registers of the same width, 31st is zr.
 type asrRegGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // AsrReg — an arbitrary asr (register).
@@ -51,11 +53,14 @@ func AsrReg(rnd *rand.Rand) ohsnap.Arbitrary[AsrRegParams] {
 }
 
 func newAsrRegGen(rnd *rand.Rand) asrRegGen {
-	return asrRegGen{rnd: rnd}
+	return asrRegGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g asrRegGen) Generate() AsrRegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewAsrRegParams(
 		genReg(g.rnd, is64, false, true),
 		genReg(g.rnd, is64, false, true),

@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -49,7 +50,8 @@ func (p AddImmParams) String() string {
 // addImmGen — generator for add: registers of the same width (31st = sp/wsp),
 // immediate 0..0xfff, shift no/lsl#12.
 type addImmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // AddImm — an arbitrary add (immediate).
@@ -58,11 +60,14 @@ func AddImm(rnd *rand.Rand) ohsnap.Arbitrary[AddImmParams] {
 }
 
 func newAddImmGen(rnd *rand.Rand) addImmGen {
-	return addImmGen{rnd: rnd}
+	return addImmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g addImmGen) Generate() AddImmParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewAddImmParams(
 		genReg(g.rnd, is64, true, false),
 		genReg(g.rnd, is64, true, false),

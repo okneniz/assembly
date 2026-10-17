@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -41,7 +42,8 @@ func (p FcvtParams) String() string {
 
 // fcvtGen — generator for fcvt: the kinds are opposite by construction.
 type fcvtGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Fcvt — an arbitrary fcvt.
@@ -50,11 +52,14 @@ func Fcvt(rnd *rand.Rand) ohsnap.Arbitrary[FcvtParams] {
 }
 
 func newFcvtGen(rnd *rand.Rand) fcvtGen {
-	return fcvtGen{rnd: rnd}
+	return fcvtGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g fcvtGen) Generate() FcvtParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewFcvtParams(genFp(g.rnd, is64), genFp(g.rnd, !is64))
 }
 

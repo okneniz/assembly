@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -42,7 +43,8 @@ func (p MulParams) String() string {
 
 // mulGen — generator for mul: same-width registers, 31st is zr.
 type mulGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Mul — an arbitrary mul.
@@ -51,11 +53,14 @@ func Mul(rnd *rand.Rand) ohsnap.Arbitrary[MulParams] {
 }
 
 func newMulGen(rnd *rand.Rand) mulGen {
-	return mulGen{rnd: rnd}
+	return mulGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g mulGen) Generate() MulParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewMulParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),

@@ -14,6 +14,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -49,7 +50,8 @@ func (p LsrImmParams) String() string {
 // lsrImmGen — generator for lsr #imm: registers of the same width, the
 // amount 1..regsize-1.
 type lsrImmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // LsrImm — an arbitrary lsr #imm.
@@ -58,11 +60,14 @@ func LsrImm(rnd *rand.Rand) ohsnap.Arbitrary[LsrImmParams] {
 }
 
 func newLsrImmGen(rnd *rand.Rand) lsrImmGen {
-	return lsrImmGen{rnd: rnd}
+	return lsrImmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g lsrImmGen) Generate() LsrImmParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	sh := uint32(1 + g.rnd.IntN(62))
 	if !is64 {
 		sh = uint32(1 + g.rnd.IntN(30))

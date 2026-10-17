@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/riscv"
 	"github.com/okneniz/assembly/disasm"
@@ -37,7 +38,8 @@ func (p LuiParams) String() string {
 
 // luiGen — generator for lui: register x0..x31, U-type field 0..0xfffff.
 type luiGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Lui — an arbitrary lui.
@@ -46,7 +48,10 @@ func Lui(rnd *rand.Rand) ohsnap.Arbitrary[LuiParams] {
 }
 
 func newLuiGen(rnd *rand.Rand) luiGen {
-	return luiGen{rnd: rnd}
+	return luiGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g luiGen) Generate() LuiParams {
@@ -55,7 +60,7 @@ func (g luiGen) Generate() LuiParams {
 	// uniform 0..0xfffff draw almost never lands there
 	if g.rnd.IntN(4) == 0 {
 		imm := uint32(1 + g.rnd.IntN(31))
-		if g.rnd.IntN(2) == 1 {
+		if g.coin.Generate() {
 			imm = 0x100000 - imm // 0xfffff..0xffff0
 		}
 

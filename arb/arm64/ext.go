@@ -11,6 +11,8 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -48,12 +50,14 @@ func extNames(is64 bool) []string {
 // rd 31 as zr — the generator keeps the plain register there.
 type extGen struct {
 	rnd   *rand.Rand
+	coin  ohsnap.Arbitrary[bool]
 	sForm bool
 }
 
 func newExtGen(rnd *rand.Rand, sForm bool) extGen {
 	return extGen{
 		rnd:   rnd,
+		coin:  arbitrary.Bool(rnd),
 		sForm: sForm,
 	}
 }
@@ -69,7 +73,7 @@ func extS(rnd *rand.Rand) extGen {
 }
 
 func (g extGen) Generate() ExtParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	names := extNames(is64)
 	ext := names[g.rnd.IntN(len(names))]
 

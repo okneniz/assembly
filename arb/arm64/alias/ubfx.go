@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -47,7 +48,8 @@ func (p UbfxParams) String() string {
 // ubfxGen — generator for ubfx: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type ubfxGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Ubfx — an arbitrary ubfx.
@@ -56,11 +58,14 @@ func Ubfx(rnd *rand.Rand) ohsnap.Arbitrary[UbfxParams] {
 }
 
 func newUbfxGen(rnd *rand.Rand) ubfxGen {
-	return ubfxGen{rnd: rnd}
+	return ubfxGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g ubfxGen) Generate() UbfxParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	size := uint32(32)
 	if is64 {
 		size = 64

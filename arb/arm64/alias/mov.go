@@ -13,6 +13,7 @@ import (
 	"strconv"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -80,7 +81,8 @@ func (p MovParams) String() string {
 // movGen — generator for mov: the register form and the three immediate
 // classes of the width (the 32-bit form knows only hw 0/1).
 type movGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Mov — an arbitrary mov.
@@ -99,12 +101,15 @@ func movImmText(v uint64) string {
 }
 
 func newMovGen(rnd *rand.Rand) movGen {
-	return movGen{rnd: rnd}
+	return movGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g movGen) Generate() MovParams {
-	is64 := g.rnd.IntN(2) == 1
-	if g.rnd.IntN(2) == 1 {
+	is64 := g.coin.Generate()
+	if g.coin.Generate() {
 		return NewMovParams(
 			a64.GenReg(g.rnd, is64, false, true),
 			a64.GenReg(g.rnd, is64, false, true),
@@ -121,7 +126,7 @@ func (g movGen) Generate() MovParams {
 	}
 
 	class := g.rnd.IntN(2)
-	if is64 && g.rnd.IntN(2) == 1 {
+	if is64 && g.coin.Generate() {
 		class = movClassPN // the all-ones pattern is a 64-bit form
 	}
 

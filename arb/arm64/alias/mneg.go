@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -42,7 +43,8 @@ func (p MnegParams) String() string {
 
 // mnegGen — generator for mneg: same-width registers, 31st is zr.
 type mnegGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Mneg — an arbitrary mneg.
@@ -51,11 +53,14 @@ func Mneg(rnd *rand.Rand) ohsnap.Arbitrary[MnegParams] {
 }
 
 func newMnegGen(rnd *rand.Rand) mnegGen {
-	return mnegGen{rnd: rnd}
+	return mnegGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g mnegGen) Generate() MnegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewMnegParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),

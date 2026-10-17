@@ -14,6 +14,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 )
@@ -62,11 +63,12 @@ func (p BitmaskParams) Value() uint64 {
 
 // bitmaskGen — the family generator.
 type bitmaskGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func (g bitmaskGen) Generate() BitmaskParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	choices := eszChoices(is64)
 	esz := choices[g.rnd.IntN(len(choices))]
 	return NewBitmaskParams(
@@ -120,7 +122,10 @@ func Bitmask(rnd *rand.Rand) ohsnap.Arbitrary[BitmaskParams] {
 }
 
 func newBitmaskGen(rnd *rand.Rand) bitmaskGen {
-	return bitmaskGen{rnd: rnd}
+	return bitmaskGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // bitmask — the shared Generate/Shrink core of the four logical-imm families.

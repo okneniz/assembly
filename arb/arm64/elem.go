@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -212,16 +213,20 @@ func (p SmovParams) String() string {
 
 // Smov — an arbitrary smov (the .s form takes an x destination).
 func Smov(rnd *rand.Rand) ohsnap.Arbitrary[SmovParams] {
-	return smovArb{rnd: rnd}
+	return smovArb{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 type smovArb struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func (a smovArb) Generate() SmovParams {
 	elem := genElem(a.rnd, []string{"b", "h", "s"})
-	is64 := elem == "s" || a.rnd.IntN(2) == 1
+	is64 := elem == "s" || a.coin.Generate()
 	return NewSmovParams(
 		genWidthReg(a.rnd, is64),
 		genV(a.rnd),

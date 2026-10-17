@@ -9,6 +9,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
+
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -29,12 +32,14 @@ func NewExclParams(rs arm64.Reg, rt arm64.Reg, rn arm64.Reg) ExclParams {
 // the family.
 type atomGen struct {
 	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 	rt64 *bool
 }
 
 func newAtomGen(rnd *rand.Rand, rt64 *bool) atomGen {
 	return atomGen{
 		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
 		rt64: rt64,
 	}
 }
@@ -74,7 +79,7 @@ func (g atomGen) Shrink(p LsParams) iter.Seq[LsParams] {
 
 func (g atomGen) is64() bool {
 	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
+		return g.coin.Generate()
 	}
 
 	return *g.rt64
@@ -84,12 +89,14 @@ func (g atomGen) is64() bool {
 // rt of the family's width, rn x/sp.
 type exclGen struct {
 	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 	rt64 *bool
 }
 
 func newExclGen(rnd *rand.Rand, rt64 *bool) exclGen {
 	return exclGen{
 		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
 		rt64: rt64,
 	}
 }
@@ -133,7 +140,7 @@ func (g exclGen) Shrink(p ExclParams) iter.Seq[ExclParams] {
 
 func (g exclGen) is64() bool {
 	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
+		return g.coin.Generate()
 	}
 
 	return *g.rt64

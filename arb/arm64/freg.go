@@ -9,6 +9,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
+
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -29,11 +32,15 @@ func NewFParams(rt arm64.FReg, rn arm64.Reg, off arm64.Off) FParams {
 
 // fregGen — an FP register of either width: s0..s31 / d0..d31.
 type fregGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func newFregGen(rnd *rand.Rand) fregGen {
-	return fregGen{rnd: rnd}
+	return fregGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // mustS/mustD — the checked FReg constructors: the input is bounded by
@@ -58,7 +65,7 @@ func mustD(n int) arm64.FReg {
 
 func (g fregGen) Generate() arm64.FReg {
 	n := g.rnd.IntN(32)
-	if g.rnd.IntN(2) == 1 {
+	if g.coin.Generate() {
 		return mustD(n)
 	}
 

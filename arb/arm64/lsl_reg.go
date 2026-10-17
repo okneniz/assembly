@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -42,7 +43,8 @@ func (p LslRegParams) String() string {
 
 // lslRegGen — generator for lsl: registers of the same width, 31st is zr.
 type lslRegGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // LslReg — an arbitrary lsl (register).
@@ -51,11 +53,14 @@ func LslReg(rnd *rand.Rand) ohsnap.Arbitrary[LslRegParams] {
 }
 
 func newLslRegGen(rnd *rand.Rand) lslRegGen {
-	return lslRegGen{rnd: rnd}
+	return lslRegGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g lslRegGen) Generate() LslRegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewLslRegParams(
 		genReg(g.rnd, is64, false, true),
 		genReg(g.rnd, is64, false, true),

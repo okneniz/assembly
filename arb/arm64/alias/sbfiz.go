@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -47,7 +48,8 @@ func (p SbfizParams) String() string {
 // sbfizGen — generator for sbfiz: same-width registers; lsb < size,
 // 1 <= width, lsb+width <= size.
 type sbfizGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Sbfiz — an arbitrary sbfiz.
@@ -56,11 +58,14 @@ func Sbfiz(rnd *rand.Rand) ohsnap.Arbitrary[SbfizParams] {
 }
 
 func newSbfizGen(rnd *rand.Rand) sbfizGen {
-	return sbfizGen{rnd: rnd}
+	return sbfizGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g sbfizGen) Generate() SbfizParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	size := uint32(32)
 	if is64 {
 		size = 64

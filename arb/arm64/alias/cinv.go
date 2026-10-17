@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -43,7 +44,8 @@ func (p CinvParams) String() string {
 
 // cinvGen — generator for cinv: same-width registers and a condition.
 type cinvGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Cinv — an arbitrary cinv.
@@ -52,11 +54,14 @@ func Cinv(rnd *rand.Rand) ohsnap.Arbitrary[CinvParams] {
 }
 
 func newCinvGen(rnd *rand.Rand) cinvGen {
-	return cinvGen{rnd: rnd}
+	return cinvGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g cinvGen) Generate() CinvParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewCinvParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),

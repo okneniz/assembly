@@ -12,13 +12,15 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
 // regArb — an arbitrary register of any width and class.
 type regArb struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Reg — an arbitrary register of any width and class (including the named
@@ -42,11 +44,14 @@ func RegShrunk(r arm64.Reg) []arm64.Reg {
 }
 
 func newRegArb(rnd *rand.Rand) regArb {
-	return regArb{rnd: rnd}
+	return regArb{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (a regArb) Generate() arm64.Reg {
-	return genReg(a.rnd, a.rnd.IntN(2) == 1, true, true)
+	return genReg(a.rnd, a.coin.Generate(), true, true)
 }
 
 func (a regArb) Shrink(r arm64.Reg) iter.Seq[arm64.Reg] {

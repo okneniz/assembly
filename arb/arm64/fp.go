@@ -11,6 +11,9 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
+
 	"github.com/okneniz/assembly/arch/arm64"
 )
 
@@ -28,11 +31,12 @@ func NewF2Params(rd arm64.FReg, rn arm64.FReg) F2Params {
 
 // f2Gen — the two-register same-kind core.
 type f2Gen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func (g f2Gen) Generate() F2Params {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewF2Params(genFp(g.rnd, is64), genFp(g.rnd, is64))
 }
 
@@ -65,11 +69,12 @@ func NewF3Params(rd arm64.FReg, rn arm64.FReg, rm arm64.FReg) F3Params {
 
 // f3Gen — the three-register same-kind core.
 type f3Gen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func (g f3Gen) Generate() F3Params {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewF3Params(genFp(g.rnd, is64), genFp(g.rnd, is64), genFp(g.rnd, is64))
 }
 
@@ -107,11 +112,12 @@ func NewF4Params(rd arm64.FReg, rn arm64.FReg, rm arm64.FReg, ra arm64.FReg) F4P
 
 // f4Gen — the four-register same-kind core.
 type f4Gen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func (g f4Gen) Generate() F4Params {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewF4Params(
 		genFp(g.rnd, is64),
 		genFp(g.rnd, is64),
@@ -161,15 +167,16 @@ func NewFGprParams(f arm64.FReg, r arm64.Reg, anyPair bool) FGprParams {
 // fgprGen — the conversion core: the gpr width follows the FP kind
 // (fmov), or any pairing (cvt).
 type fgprGen struct {
-	rnd *rand.Rand
-	any bool
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
+	any  bool
 }
 
 func (g fgprGen) Generate() FGprParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	r64 := is64
 	if g.any {
-		r64 = g.rnd.IntN(2) == 1
+		r64 = g.coin.Generate()
 	}
 
 	return NewFGprParams(
@@ -196,7 +203,8 @@ func (g fgprGen) Shrink(p FGprParams) iter.Seq[FGprParams] {
 // fpImmGen — the immediate core: a random imm8 expanded by the arch
 // VfpExpand tables (every imm8 is encodable by construction).
 type fpImmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // FpImmParams — the destination and the imm8 of the value.
@@ -248,7 +256,10 @@ func fpShrunk(r arm64.FReg) []arm64.FReg {
 }
 
 func newF2Gen(rnd *rand.Rand) f2Gen {
-	return f2Gen{rnd: rnd}
+	return f2Gen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func f2(rnd *rand.Rand) f2Gen {
@@ -256,7 +267,10 @@ func f2(rnd *rand.Rand) f2Gen {
 }
 
 func newF3Gen(rnd *rand.Rand) f3Gen {
-	return f3Gen{rnd: rnd}
+	return f3Gen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func f3(rnd *rand.Rand) f3Gen {
@@ -264,7 +278,10 @@ func f3(rnd *rand.Rand) f3Gen {
 }
 
 func newF4Gen(rnd *rand.Rand) f4Gen {
-	return f4Gen{rnd: rnd}
+	return f4Gen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func f4(rnd *rand.Rand) f4Gen {
@@ -273,8 +290,9 @@ func f4(rnd *rand.Rand) f4Gen {
 
 func newFGprGen(rnd *rand.Rand, anyPair bool) fgprGen {
 	return fgprGen{
-		rnd: rnd,
-		any: anyPair,
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+		any:  anyPair,
 	}
 }
 
@@ -289,7 +307,10 @@ func fgprAny(rnd *rand.Rand) fgprGen {
 }
 
 func newFpImmGen(rnd *rand.Rand) fpImmGen {
-	return fpImmGen{rnd: rnd}
+	return fpImmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // Value — the expandable float of the destination's kind.
@@ -302,7 +323,7 @@ func (p FpImmParams) Value() float64 {
 }
 
 func (g fpImmGen) Generate() FpImmParams {
-	return NewFpImmParams(genFp(g.rnd, g.rnd.IntN(2) == 1), uint8(g.rnd.IntN(256)))
+	return NewFpImmParams(genFp(g.rnd, g.coin.Generate()), uint8(g.rnd.IntN(256)))
 }
 
 func (g fpImmGen) Shrink(p FpImmParams) iter.Seq[FpImmParams] {

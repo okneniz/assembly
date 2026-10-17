@@ -14,6 +14,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -184,93 +185,178 @@ var byElemSpecs = [byElemOpCount]byElemSpec{
 // shrunk sample fits its family's laws. One instance per family, the op
 // field binds the mnemonic.
 type byElemArb struct {
-	rnd *rand.Rand
-	op  ByElemOp
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
+	op   ByElemOp
 }
 
 // the 21 family generators (the exported faces of the group).
 func MlaElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemMla}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemMla,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func MlsElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemMls}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemMls,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func MulElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemMul}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemMul,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqdmulhElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqdmulh}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqdmulh,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqrdmulhElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqrdmulh}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqrdmulh,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqrdmlahElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqrdmlah}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqrdmlah,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqrdmlshElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqrdmlsh}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqrdmlsh,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func FmlaElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemFmla}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemFmla,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func FmlsElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemFmls}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemFmls,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func FmulElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemFmul}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemFmul,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func FmulxElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemFmulx}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemFmulx,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SmlalElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSmlal}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSmlal,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SmlslElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSmlsl}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSmlsl,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SmullElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSmull}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSmull,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func UmlalElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemUmlal}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemUmlal,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func UmlslElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemUmlsl}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemUmlsl,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func UmullElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemUmull}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemUmull,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqdmlalElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqdmlal}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqdmlal,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqdmlslElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqdmlsl}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqdmlsl,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func SqdmullElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemSqdmull}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemSqdmull,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func FcmlaElem(rnd *rand.Rand) ohsnap.Arbitrary[ByElemParams] {
-	return byElemArb{rnd: rnd, op: ByElemFcmla}
+	return byElemArb{
+		rnd:  rnd,
+		op:   ByElemFcmla,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // the per-kind arrangement sets.
@@ -433,7 +519,7 @@ func (a byElemArb) gen() ByElemParams {
 		genV(a.rnd),
 		arr,
 		uint32(a.rnd.IntN(int(spec.idxOf(arr)))),
-		spec.two && a.rnd.IntN(2) == 1,
+		spec.two && a.coin.Generate(),
 		rot,
 	).withRm(a, rmMax)
 }

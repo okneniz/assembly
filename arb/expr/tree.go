@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/asm/expr"
@@ -37,12 +38,16 @@ const (
 // literals (the grammar has no negative literals — unary minus is a
 // separate node) and symbol names, internal nodes are unary/binary.
 type treeGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Tree — an arbitrary expression tree.
 func Tree(rnd *rand.Rand) ohsnap.Arbitrary[*expr.Expr] {
-	return treeGen{rnd: rnd}
+	return treeGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g treeGen) Generate() *expr.Expr {
@@ -96,7 +101,7 @@ func (g treeGen) Shrink(e *expr.Expr) iter.Seq[*expr.Expr] {
 // grow — a subtree of depth <= depth; a 1/3 chance of a leaf and within the budget.
 func (g treeGen) grow(depth int) *expr.Expr {
 	if depth == 0 || g.rnd.IntN(3) == 0 {
-		if g.rnd.IntN(2) == 0 {
+		if g.coin.Generate() {
 			return expr.Num(int64(g.rnd.Uint64() >> 1)) // [0, MaxInt64]
 		}
 

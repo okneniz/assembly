@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -43,7 +44,8 @@ func (p SxthParams) String() string {
 // sxthGen — generator for sxth: the destination of either width, the
 // source a w-register.
 type sxthGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Sxth — an arbitrary sxth.
@@ -52,12 +54,15 @@ func Sxth(rnd *rand.Rand) ohsnap.Arbitrary[SxthParams] {
 }
 
 func newSxthGen(rnd *rand.Rand) sxthGen {
-	return sxthGen{rnd: rnd}
+	return sxthGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g sxthGen) Generate() SxthParams {
 	return NewSxthParams(
-		a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+		a64.GenReg(g.rnd, g.coin.Generate(), false, true),
 		a64.GenReg(g.rnd, false, false, true),
 	)
 }

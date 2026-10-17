@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -45,8 +46,9 @@ func (p TbzParams) String() string {
 // tbzGen — generator for tbz: the bit chooses the register width (bit
 // < 32 — w, else x), the offset uniform in the ±32KB imm14 range.
 type tbzGen struct {
-	rnd *rand.Rand
-	off ohsnap.Arbitrary[int64]
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
+	off  ohsnap.Arbitrary[int64]
 }
 
 // Tbz — an arbitrary tbz.
@@ -56,8 +58,9 @@ func Tbz(rnd *rand.Rand) ohsnap.Arbitrary[TbzParams] {
 
 func newTbzGen(rnd *rand.Rand) tbzGen {
 	return tbzGen{
-		rnd: rnd,
-		off: BrOff(rnd, 1<<15),
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+		off:  BrOff(rnd, 1<<15),
 	}
 }
 
@@ -66,7 +69,7 @@ func (g tbzGen) Generate() TbzParams {
 	// only for bits 32..63 (a low bit canonizes to the w form), the
 	// w form covers bits 0..31.
 	bit := g.rnd.IntN(32)
-	if g.rnd.IntN(2) == 1 {
+	if g.coin.Generate() {
 		bit += 32
 	}
 

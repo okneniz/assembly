@@ -5,6 +5,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/okneniz/oh-snap/arbitrary"
+
 	"github.com/okneniz/assembly/dtree"
 	"github.com/okneniz/assembly/dtree/arb"
 )
@@ -145,6 +147,7 @@ func benchCases(b *testing.B) (cases []arb.Case, big []dtree.Rule[int], words []
 
 	rnd := propSeed(b)
 	gen := arb.LookupCase(rnd)
+	coin := arbitrary.Bool(rnd)
 
 	for range 1000 {
 		c := gen.Generate()
@@ -156,7 +159,7 @@ func benchCases(b *testing.B) (cases []arb.Case, big []dtree.Rule[int], words []
 			}
 		}
 
-		if len(big) > 0 && rnd.IntN(2) == 0 {
+		if len(big) > 0 && coin.Generate() {
 			r := big[rnd.IntN(len(big))]
 			words = append(words, r.Match|(rnd.Uint32()&^r.Mask))
 

@@ -11,6 +11,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 )
@@ -33,6 +34,7 @@ func NewLsParams(rt arm64.Reg, rn arm64.Reg, off arm64.Off) LsParams {
 // offset generator come from the family.
 type lsGen struct {
 	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 	rt64 *bool // nil: either width; else pinned
 	off  ohsnapOff
 }
@@ -43,6 +45,7 @@ type ohsnapOff = ohsnap.Arbitrary[arm64.Off]
 func newLsGen(rnd *rand.Rand, rt64 *bool, off ohsnapOff) lsGen {
 	return lsGen{
 		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
 		rt64: rt64,
 		off:  off,
 	}
@@ -77,7 +80,7 @@ func (g lsGen) Shrink(p LsParams) iter.Seq[LsParams] {
 
 func (g lsGen) is64() bool {
 	if g.rt64 == nil {
-		return g.rnd.IntN(2) == 1
+		return g.coin.Generate()
 	}
 
 	return *g.rt64

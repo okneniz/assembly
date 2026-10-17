@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -46,7 +47,8 @@ func (p BfmParams) String() string {
 // bfmGen — generator for bfm: registers of one width, immr/imms below
 // the register width.
 type bfmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Bfm — an arbitrary bfm.
@@ -55,12 +57,15 @@ func Bfm(rnd *rand.Rand) ohsnap.Arbitrary[BfmParams] {
 }
 
 func newBfmGen(rnd *rand.Rand) bfmGen {
-	return bfmGen{rnd: rnd}
+	return bfmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g bfmGen) Generate() BfmParams {
 	hi := uint32(64)
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	if !is64 {
 		hi = 32
 	}

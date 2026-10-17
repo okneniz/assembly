@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -47,7 +48,8 @@ func (p SubImmParams) String() string {
 // subImmGen — generator for sub: registers of the same width (31st = sp/wsp),
 // immediate 0..0xfff, shift no/lsl#12.
 type subImmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // SubImm — an arbitrary sub (immediate).
@@ -56,11 +58,14 @@ func SubImm(rnd *rand.Rand) ohsnap.Arbitrary[SubImmParams] {
 }
 
 func newSubImmGen(rnd *rand.Rand) subImmGen {
-	return subImmGen{rnd: rnd}
+	return subImmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g subImmGen) Generate() SubImmParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewSubImmParams(
 		genReg(g.rnd, is64, true, false),
 		genReg(g.rnd, is64, true, false),

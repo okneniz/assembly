@@ -10,6 +10,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -46,7 +47,8 @@ func (p ExtrParams) String() string {
 // extrGen — generator for extr: registers of the same width, lsb
 // 0..regsize-1.
 type extrGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Extr — an arbitrary extr.
@@ -55,11 +57,14 @@ func Extr(rnd *rand.Rand) ohsnap.Arbitrary[ExtrParams] {
 }
 
 func newExtrGen(rnd *rand.Rand) extrGen {
-	return extrGen{rnd: rnd}
+	return extrGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g extrGen) Generate() ExtrParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	lsb := uint32(g.rnd.IntN(64))
 	if !is64 {
 		lsb = uint32(g.rnd.IntN(32))

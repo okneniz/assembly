@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -43,7 +44,8 @@ func (p CsetmParams) String() string {
 // csetmGen — generator for csetm: a register and a condition (al/nv are
 // not alias conditions).
 type csetmGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Csetm — an arbitrary csetm.
@@ -52,11 +54,14 @@ func Csetm(rnd *rand.Rand) ohsnap.Arbitrary[CsetmParams] {
 }
 
 func newCsetmGen(rnd *rand.Rand) csetmGen {
-	return csetmGen{rnd: rnd}
+	return csetmGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g csetmGen) Generate() CsetmParams {
-	return NewCsetmParams(a64.GenReg(g.rnd, g.rnd.IntN(2) == 1, false, true), genCond14(g.rnd))
+	return NewCsetmParams(a64.GenReg(g.rnd, g.coin.Generate(), false, true), genCond14(g.rnd))
 }
 
 func (g csetmGen) Shrink(p CsetmParams) iter.Seq[CsetmParams] {

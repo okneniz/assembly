@@ -10,6 +10,8 @@ import (
 	"math/rand/v2"
 	"slices"
 
+	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -40,11 +42,15 @@ func NewShiftedParams(
 
 // shiftedGen — the family generator.
 type shiftedGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 func newShiftedGen(rnd *rand.Rand) shiftedGen {
-	return shiftedGen{rnd: rnd}
+	return shiftedGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 // shifted — the shared Generate/Shrink core of the eight logical families.
@@ -53,7 +59,7 @@ func shifted(rnd *rand.Rand) shiftedGen {
 }
 
 func (g shiftedGen) Generate() ShiftedParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	hi := int64(63)
 	if !is64 {
 		hi = 31

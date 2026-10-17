@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -37,7 +38,8 @@ func (p FcmpZeroParams) String() string {
 
 // fcmpZeroGen — generator for the fcmp #0.0 form.
 type fcmpZeroGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // FcmpZero — an arbitrary fcmp #0.0.
@@ -46,11 +48,14 @@ func FcmpZero(rnd *rand.Rand) ohsnap.Arbitrary[FcmpZeroParams] {
 }
 
 func newFcmpZeroGen(rnd *rand.Rand) fcmpZeroGen {
-	return fcmpZeroGen{rnd: rnd}
+	return fcmpZeroGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g fcmpZeroGen) Generate() FcmpZeroParams {
-	return NewFcmpZeroParams(genFp(g.rnd, g.rnd.IntN(2) == 1))
+	return NewFcmpZeroParams(genFp(g.rnd, g.coin.Generate()))
 }
 
 func (g fcmpZeroGen) Shrink(p FcmpZeroParams) iter.Seq[FcmpZeroParams] {

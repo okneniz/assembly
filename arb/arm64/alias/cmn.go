@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -55,7 +56,8 @@ func (p CmnParams) String() string {
 
 // cmnGen — generator for cmn: same-width registers, immediate 0..4095.
 type cmnGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Cmn — an arbitrary cmn.
@@ -64,17 +66,20 @@ func Cmn(rnd *rand.Rand) ohsnap.Arbitrary[CmnParams] {
 }
 
 func newCmnGen(rnd *rand.Rand) cmnGen {
-	return cmnGen{rnd: rnd}
+	return cmnGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g cmnGen) Generate() CmnParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewCmnParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),
 		g.rnd.Int64N(0x1000),
-		g.rnd.IntN(2) == 1,
-		g.rnd.IntN(2) == 1,
+		g.coin.Generate(),
+		g.coin.Generate(),
 	)
 }
 

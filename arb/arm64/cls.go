@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -40,7 +41,8 @@ func (p ClsParams) String() string {
 
 // clsGen — generator for cls: registers of the same width, 31st is zr.
 type clsGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Cls — an arbitrary cls.
@@ -49,11 +51,14 @@ func Cls(rnd *rand.Rand) ohsnap.Arbitrary[ClsParams] {
 }
 
 func newClsGen(rnd *rand.Rand) clsGen {
-	return clsGen{rnd: rnd}
+	return clsGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g clsGen) Generate() ClsParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewClsParams(genReg(g.rnd, is64, false, true), genReg(g.rnd, is64, false, true))
 }
 

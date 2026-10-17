@@ -13,6 +13,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/riscv"
 )
@@ -37,7 +38,8 @@ func (p LiParams) String() string {
 // liGen — generator for li: the signed 32-bit domain, the ladder
 // classes (c.li / addi / lui-only) sampled head-on.
 type liGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Li — an arbitrary li.
@@ -46,7 +48,10 @@ func Li(rnd *rand.Rand) ohsnap.Arbitrary[LiParams] {
 }
 
 func newLiGen(rnd *rand.Rand) liGen {
-	return liGen{rnd: rnd}
+	return liGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g liGen) Generate() LiParams {
@@ -55,13 +60,13 @@ func (g liGen) Generate() LiParams {
 	case 0: // the c.li window
 		return NewLiParams(rd, int64(g.rnd.IntN(64)-32))
 	case 1: // the addi window and its edges
-		if g.rnd.IntN(2) == 1 {
+		if g.coin.Generate() {
 			return NewLiParams(rd, int64(g.rnd.IntN(4096)-2048))
 		}
 
 		return NewLiParams(rd, []int64{2047, -2048, 2048, -2049}[g.rnd.IntN(4)])
 	case 2: // the lui-only window (lo == 0) and the int32 edges
-		if g.rnd.IntN(2) == 1 {
+		if g.coin.Generate() {
 			return NewLiParams(rd, (int64(g.rnd.IntN(1<<20))-(1<<19))<<12)
 		}
 

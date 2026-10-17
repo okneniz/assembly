@@ -8,6 +8,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -42,8 +43,9 @@ func (p CbnzParams) String() string {
 // cbnzGen — generator for cbnz: an x/w register (zr allowed) and the
 // offset uniform in the ±1MB imm19 range.
 type cbnzGen struct {
-	rnd *rand.Rand
-	off ohsnap.Arbitrary[int64]
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
+	off  ohsnap.Arbitrary[int64]
 }
 
 // Cbnz — an arbitrary cbnz.
@@ -53,14 +55,15 @@ func Cbnz(rnd *rand.Rand) ohsnap.Arbitrary[CbnzParams] {
 
 func newCbnzGen(rnd *rand.Rand) cbnzGen {
 	return cbnzGen{
-		rnd: rnd,
-		off: BrOff(rnd, 1<<20),
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+		off:  BrOff(rnd, 1<<20),
 	}
 }
 
 func (g cbnzGen) Generate() CbnzParams {
 	return NewCbnzParams(
-		genReg(g.rnd, g.rnd.IntN(2) == 1, false, true),
+		genReg(g.rnd, g.coin.Generate(), false, true),
 		g.off.Generate(),
 	)
 }

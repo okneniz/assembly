@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 	"github.com/okneniz/oh-snap/shrink"
 
 	"github.com/okneniz/assembly/arch/arm64"
@@ -55,7 +56,8 @@ func (p SubShiftParams) String() string {
 // shift lsl/lsr/asr (ror is unallocated for add/sub), amount 0..63 (0..31
 // in the 32-bit form).
 type subShiftGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // SubShift — an arbitrary sub (shifted register).
@@ -64,11 +66,14 @@ func SubShift(rnd *rand.Rand) ohsnap.Arbitrary[SubShiftParams] {
 }
 
 func newSubShiftGen(rnd *rand.Rand) subShiftGen {
-	return subShiftGen{rnd: rnd}
+	return subShiftGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g subShiftGen) Generate() SubShiftParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	hi := int64(63)
 	if !is64 {
 		hi = 31

@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -43,7 +44,8 @@ func (p CnegParams) String() string {
 
 // cnegGen — generator for cneg: same-width registers and a condition.
 type cnegGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Cneg — an arbitrary cneg.
@@ -52,11 +54,14 @@ func Cneg(rnd *rand.Rand) ohsnap.Arbitrary[CnegParams] {
 }
 
 func newCnegGen(rnd *rand.Rand) cnegGen {
-	return cnegGen{rnd: rnd}
+	return cnegGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g cnegGen) Generate() CnegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewCnegParams(
 		a64.GenReg(g.rnd, is64, false, true),
 		a64.GenReg(g.rnd, is64, false, true),

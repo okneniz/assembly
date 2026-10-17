@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -45,7 +46,8 @@ func (p LdrParams) String() string {
 // the offset is aligned and within the range for the width of rt (scale 8
 // for x, 4 for w).
 type ldrGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Ldr — an arbitrary ldr (unsigned offset).
@@ -54,11 +56,14 @@ func Ldr(rnd *rand.Rand) ohsnap.Arbitrary[LdrParams] {
 }
 
 func newLdrGen(rnd *rand.Rand) ldrGen {
-	return ldrGen{rnd: rnd}
+	return ldrGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g ldrGen) Generate() LdrParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	align := int64(4)
 	if is64 {
 		align = 8

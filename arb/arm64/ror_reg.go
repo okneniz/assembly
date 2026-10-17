@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	"github.com/okneniz/assembly/arch/arm64"
 	"github.com/okneniz/assembly/disasm"
@@ -42,7 +43,8 @@ func (p RorRegParams) String() string {
 
 // rorRegGen — generator for ror: registers of the same width, 31st is zr.
 type rorRegGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // RorReg — an arbitrary ror (register).
@@ -51,11 +53,14 @@ func RorReg(rnd *rand.Rand) ohsnap.Arbitrary[RorRegParams] {
 }
 
 func newRorRegGen(rnd *rand.Rand) rorRegGen {
-	return rorRegGen{rnd: rnd}
+	return rorRegGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g rorRegGen) Generate() RorRegParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	return NewRorRegParams(
 		genReg(g.rnd, is64, false, true),
 		genReg(g.rnd, is64, false, true),

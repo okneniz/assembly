@@ -9,6 +9,7 @@ import (
 	"slices"
 
 	ohsnap "github.com/okneniz/oh-snap"
+	"github.com/okneniz/oh-snap/arbitrary"
 
 	a64 "github.com/okneniz/assembly/arb/arm64"
 	arm64 "github.com/okneniz/assembly/arch/arm64"
@@ -46,7 +47,8 @@ func (p MvnParams) String() string {
 // mvnGen — generator for mvn: same-width registers, the shift amount
 // below the register width.
 type mvnGen struct {
-	rnd *rand.Rand
+	rnd  *rand.Rand
+	coin ohsnap.Arbitrary[bool]
 }
 
 // Mvn — an arbitrary mvn.
@@ -55,11 +57,14 @@ func Mvn(rnd *rand.Rand) ohsnap.Arbitrary[MvnParams] {
 }
 
 func newMvnGen(rnd *rand.Rand) mvnGen {
-	return mvnGen{rnd: rnd}
+	return mvnGen{
+		rnd:  rnd,
+		coin: arbitrary.Bool(rnd),
+	}
 }
 
 func (g mvnGen) Generate() MvnParams {
-	is64 := g.rnd.IntN(2) == 1
+	is64 := g.coin.Generate()
 	width := int64(32)
 	if is64 {
 		width = 64
@@ -67,7 +72,7 @@ func (g mvnGen) Generate() MvnParams {
 
 	sh := ""
 	amt := int64(0)
-	if g.rnd.IntN(2) == 1 {
+	if g.coin.Generate() {
 		sh = shiftKinds()[g.rnd.IntN(4)]
 		amt = g.rnd.Int64N(width-1) + 1 // #0 is the no-shift canonical spelling
 	}
