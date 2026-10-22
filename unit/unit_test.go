@@ -143,6 +143,105 @@ func TestUnitQuadSymUndefined(t *testing.T) {
 	require.ErrorContains(t, f.Errs[0], `undefined label "nowhere"`)
 }
 
+func TestUnitSymDiff(t *testing.T) {
+	// the label difference of a static (the &&l2 - &&l1 initializer of
+	// the corpus): both labels of the text stream, the difference word in
+	// the data one - quad and word forms, the backward two's complement,
+	// the low word of a far one
+	cases := []struct {
+		name  string
+		width int
+		put   func(u *Unit)
+		place Place
+		want  uint64
+	}{
+		{
+			name:  "quad forward",
+			width: 8,
+			put:   func(u *Unit) { u.Data().QuadDiff(Pos{}, "b", "a") },
+			place: nopPlace,
+			want:  4,
+		},
+		{
+			name:  "quad backward",
+			width: 8,
+			put:   func(u *Unit) { u.Data().QuadDiff(Pos{}, "a", "b") },
+			place: nopPlace,
+			want:  0xFFFFFFFFFFFFFFFC, // a - b = -4
+		},
+		{
+			name:  "word forward",
+			width: 4,
+			put:   func(u *Unit) { u.Data().WordDiff(Pos{}, "b", "a") },
+			place: nopPlace,
+			want:  4,
+		},
+		{
+			name:  "word backward",
+			width: 4,
+			put:   func(u *Unit) { u.Data().WordDiff(Pos{}, "a", "b") },
+			place: nopPlace,
+			want:  0xFFFFFFFFFFFFFFFC, // a - b = -4
+		},
+		{
+			name:  "word far keeps its low word",
+			width: 4,
+			put: func(u *Unit) {
+				u.Data().Label("d").WordDiff(Pos{}, "d", "a")
+			},
+			place: func(text, data, dataMem int) (uint64, uint64) {
+				return 0x1000, 0x180000000
+			},
+			want: 0x7FFFF000,
+		},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			u := New()
+			u.Label("a")
+			u.Instr(Pos{}, newWordRes(0xAAAA), nil)
+			u.Label("b")
+			u.Instr(Pos{}, newWordRes(0xBBBB), nil)
+
+			tc.put(u)
+
+			f := u.Resolve(tc.place)
+			require.Empty(t, f.Errs)
+
+			data, dataErr := f.EncodeData()
+			require.NoError(t, dataErr)
+
+			want := make([]byte, 8)
+			binary.LittleEndian.PutUint64(want, tc.want)
+			require.Equal(t, want[:tc.width], data)
+			require.Equal(t, tc.width, f.DataMem)
+		})
+	}
+}
+
+func TestUnitSymDiffUndefined(t *testing.T) {
+	cases := []struct {
+		name string
+		put  func(u *Unit)
+	}{
+		{"from", func(u *Unit) { u.Data().QuadDiff(Pos{}, "gone", "a") }},
+		{"to", func(u *Unit) { u.Data().WordDiff(Pos{}, "a", "gone") }},
+	}
+
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			u := New()
+			u.Label("a")
+			tc.put(u)
+
+			f := u.Resolve(nopPlace)
+			require.Len(t, f.Errs, 1)
+			require.ErrorContains(t, f.Errs[0], `diff: undefined label "gone"`)
+		})
+	}
+}
+
 func TestUnitGuards(t *testing.T) {
 	// a bss reserve outside the data stream
 	f := New().Bss(Pos{}, 8).Resolve(nopPlace)

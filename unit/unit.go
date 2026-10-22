@@ -147,6 +147,14 @@ func (u *Unit) Quad(at Pos, vs ...uint64) *Unit {
 	return u.ready(at, blob(b))
 }
 
+// QuadDiff - the 64-bit little-endian difference of two labels' final
+// addresses, into the current stream: one deferred record - the byte
+// offset between two code positions as a quad word (the label-difference
+// initializer of a static, the .quad a - b form of the sources).
+func (u *Unit) QuadDiff(at Pos, from, to string) *Unit {
+	return u.Sym(at, newSymDiff(from, to, 8))
+}
+
 // QuadSym - 64-bit little-endian addresses of labels, into the current
 // stream: each label's final image address as one deferred record - the
 // address initializer of a static (a Quad whose value only the layout
@@ -186,6 +194,14 @@ func (u *Unit) Word(at Pos, vs ...uint32) *Unit {
 	}
 
 	return u.ready(at, blob(b))
+}
+
+// WordDiff - the 32-bit little-endian difference of two labels' final
+// addresses, into the current stream: one deferred record, the .word
+// a - b form of the sources (the int-sized label difference of a static,
+// truncated to its low word).
+func (u *Unit) WordDiff(at Pos, from, to string) *Unit {
+	return u.Sym(at, newSymDiff(from, to, 4))
 }
 
 // fail records a producer-side error (a refused instruction, a guard);
